@@ -13,6 +13,15 @@ spring:
         protocol: STREAMABLE
         type: SYNC
         instructions: "LWS conformance harness. Start with list_requirements or coverage."
+        annotation-scanner:
+          enabled: true
+
+# Harness locations (DESIGN.md paragraph 7.1: targets are pre-registered here, never passed to tools).
+touchstone:
+  catalog: catalog
+  manifests: manifests
+  targets: targets.yaml
+  runs: runs
 
 server:
   port: 9090

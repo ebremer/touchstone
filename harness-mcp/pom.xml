@@ -65,6 +65,14 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- End-to-end target for the MCP tools: the in-memory reference LWS server. The MCP
+         client used by the end-to-end test is already on the classpath transitively. -->
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-fixtures</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

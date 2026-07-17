@@ -1,0 +1,18 @@
+# Stdio profile for local agent attachment (DESIGN.md paragraph 6).
+# Protocol framing lives on stdout, so NOTHING else may write there: no web server,
+# no banner, and all logging goes to a file.
+spring:
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        stdio: true
+        protocol: STDIO
+
+logging:
+  pattern:
+    console:
+  file:
+    name: touchstone-mcp.log
