@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.ebremer.touchstone.fixtures.oidc.OidcIssuer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,17 +25,19 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.Callback;
 
 /**
- * In-memory reference LWS server: the compliant target for the conformance
- * self-test loop (DECISIONS.md D-0015). Implements the WD-20260622 happy paths the
- * core manifests exercise — container model with items/totalItems listings,
- * lws+json/ld+json/json conneg, Link rel="up"/rel="type" metadata, ETags with
- * conditional requests (304/412/428), containment-consistent create/delete, 409 on
- * non-recursive delete of a non-empty container, Depth: infinity recursion.
+ * In-memory reference LWS server: the target for the conformance self-test loop
+ * (DECISIONS.md D-0015). Implements the WD-20260622 happy paths — container model with
+ * items/totalItems listings, lws+json/ld+json/json conneg, Link rel="up"/rel="type"
+ * metadata, ETags with 304/412/428 conditional semantics, containment-consistent
+ * create/delete, 409 on non-recursive delete of a non-empty container, Depth: infinity
+ * recursion.
  *
- * Fidelity notes: emits an inline JSON-LD @context equivalent to the (currently
- * unpublished) https://www.w3.org/ns/lws/v1 context; linkset resources and range
- * requests are not implemented yet. No authentication — identity fixtures arrive
- * in Phase 4, alongside the deliberately broken twin of this server.
+ * <p>Three auth modes (DECISIONS.md D-0017): {@link AuthMode#OPEN} (no auth — the core
+ * happy-path suite), {@link AuthMode#SECURED} (validates Bearer tokens against the OIDC
+ * issuer; 401 + conforming WWW-Authenticate challenge on missing/invalid, 403 on a valid
+ * non-owner; owner = the identity that created the resource), and {@link AuthMode#BROKEN}
+ * (auth theater — never challenges or forbids). Range requests and linkset resources are
+ * not implemented yet; they grow with the suite.
  */
 public final class RefLwsServer implements AutoCloseable {
 
@@ -42,16 +45,20 @@ public final class RefLwsServer implements AutoCloseable {
     private static final Set<String> CONTAINER_MEDIA_TYPES =
             Set.of("application/lws+json", "application/ld+json", "application/json");
 
+    private final AuthMode authMode;
     private final Server server;
     private final ServerConnector connector;
     private final ConcurrentMap<String, Node> store = new ConcurrentHashMap<>();
     private final ObjectMapper mapper = new ObjectMapper();
+    private volatile TokenValidator validator;
+    private volatile String asUri;
 
     private static final class Node {
         final boolean container;
         volatile byte[] bytes;
         volatile String contentType;
         volatile String etag = newEtag();
+        volatile String owner;
         final Set<String> children = ConcurrentHashMap.newKeySet();
 
         Node(boolean container) {
@@ -59,7 +66,8 @@ public final class RefLwsServer implements AutoCloseable {
         }
     }
 
-    private RefLwsServer() {
+    private RefLwsServer(AuthMode authMode) {
+        this.authMode = authMode;
         this.server = new Server();
         this.connector = new ServerConnector(server);
         server.addConnector(connector);
@@ -67,8 +75,35 @@ public final class RefLwsServer implements AutoCloseable {
         store.put("/", new Node(true));
     }
 
+    /** Open mode: no authentication (the Phase 2/3 core suite). */
     public static RefLwsServer start(int port) {
-        RefLwsServer instance = new RefLwsServer();
+        return startIn(AuthMode.OPEN, port);
+    }
+
+    /**
+     * Secured mode: validate Bearer tokens against {@code issuer}. The realm is this
+     * server's own base URI, so a valid token's {@code aud} must match it.
+     */
+    public static RefLwsServer startSecured(int port, OidcIssuer issuer) {
+        RefLwsServer server = startIn(AuthMode.SECURED, port);
+        String realm = server.baseUri().toString();
+        try {
+            server.validator = new TokenValidator(issuer.issuer(), issuer.jwksUri().toURL(), realm);
+        } catch (Exception e) {
+            server.close();
+            throw new IllegalStateException("cannot build token validator", e);
+        }
+        server.asUri = issuer.issuer();
+        return server;
+    }
+
+    /** Broken mode: the deliberately non-compliant twin (validates nothing). */
+    public static RefLwsServer startBroken(int port) {
+        return startIn(AuthMode.BROKEN, port);
+    }
+
+    private static RefLwsServer startIn(AuthMode mode, int port) {
+        RefLwsServer instance = new RefLwsServer(mode);
         instance.connector.setPort(port);
         try {
             instance.server.start();
@@ -76,6 +111,10 @@ public final class RefLwsServer implements AutoCloseable {
             throw new IllegalStateException("cannot start reference LWS server", e);
         }
         return instance;
+    }
+
+    public AuthMode authMode() {
+        return authMode;
     }
 
     public URI baseUri() {
@@ -104,15 +143,70 @@ public final class RefLwsServer implements AutoCloseable {
         @Override
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             String path = request.getHttpURI().getCanonicalPath();
-            switch (request.getMethod()) {
+            String method = request.getMethod();
+
+            String subject = null;
+            if (authMode == AuthMode.SECURED) {
+                String bearer = bearerToken(request);
+                if (bearer == null) {
+                    challenge(response, callback, null);
+                    return true;
+                }
+                try {
+                    subject = validator.validate(bearer);
+                } catch (TokenValidator.InvalidTokenException e) {
+                    challenge(response, callback, "invalid_token");
+                    return true;
+                }
+                if (ownerForbids(method, path, subject)) {
+                    status(response, callback, 403);
+                    return true;
+                }
+            }
+
+            switch (method) {
                 case "GET" -> read(request, response, callback, path, true);
                 case "HEAD" -> read(request, response, callback, path, false);
-                case "POST" -> create(request, response, callback, path);
+                case "POST" -> create(request, response, callback, path, subject);
                 case "PUT" -> update(request, response, callback, path);
                 case "DELETE" -> delete(request, response, callback, path);
                 default -> methodNotAllowed(response, callback, "GET, HEAD, POST, PUT, DELETE");
             }
             return true;
+        }
+
+        // ---- auth ----
+
+        private String bearerToken(Request request) {
+            String header = request.getHeaders().get("Authorization");
+            if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                return null;
+            }
+            String token = header.substring(7).trim();
+            return token.isEmpty() ? null : token;
+        }
+
+        /** True when {@code subject} is not the owner of the resource the request targets. */
+        private boolean ownerForbids(String method, String path, String subject) {
+            // POST writes into the container at path; everything else targets the node at path.
+            Node node = store.get(path);
+            if (node == null) {
+                return false; // let the method handler answer 404
+            }
+            return node.owner != null && !node.owner.equals(subject);
+        }
+
+        private void challenge(Response response, Callback callback, String error) {
+            StringBuilder c = new StringBuilder("Bearer");
+            if (asUri != null) {
+                c.append(" as_uri=\"").append(asUri).append('"');
+                c.append(", realm=\"").append(validator.realm()).append('"');
+            }
+            if (error != null) {
+                c.append(", error=\"").append(error).append('"');
+            }
+            response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, c.toString());
+            status(response, callback, 401);
         }
 
         // ---- read ----
@@ -156,7 +250,8 @@ public final class RefLwsServer implements AutoCloseable {
 
         // ---- create ----
 
-        private void create(Request request, Response response, Callback callback, String path) throws Exception {
+        private void create(Request request, Response response, Callback callback, String path, String subject)
+                throws Exception {
             Node parent = store.get(path);
             if (parent == null) {
                 status(response, callback, 404);
@@ -173,6 +268,7 @@ public final class RefLwsServer implements AutoCloseable {
             String childPath = path + name + (isContainer ? "/" : "");
 
             Node child = new Node(isContainer);
+            child.owner = subject;
             if (!isContainer) {
                 byte[] body;
                 try (InputStream in = Content.Source.asInputStream(request)) {
