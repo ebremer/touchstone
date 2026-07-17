@@ -124,6 +124,25 @@ version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, 
 (EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
 GitHub remote still pending (D-0007).
 
+### D-0014 — Mass-extraction conventions (Phase 1)
+- **Granularity:** one Requirement per normative spec block (the draft's own
+  paragraph/list-item granularity as extracted); finer splitting happens later only
+  where a test needs it.
+- **Skipped:** exactly one block — the BCP 14 boilerplate sentence (§2.3), which is
+  definitional, not a conformance clause.
+- **Level rule:** strongest BCP 14 keyword in the block (MUST-family > SHOULD-family
+  > MAY); the exact keywords stay visible in clauseText.
+- **Status:** generated entries are `touchstone:Draft` pending batch review; only the
+  15 Gate-1 seeds are `Approved`. clauseText is the full block text (seeds may be
+  trimmed to the normative sentences).
+- **Drift detection is containment-based** (a stored clauseText must appear inside
+  some re-extracted block after normalization), so trimmed seeds and repeated
+  fragment clauses ("This property is REQUIRED.") behave correctly; identical
+  fragments share hashes by design.
+- **The curation file** (`catalog/sources/*.curation.json`) is the human-review
+  record. `emit_candidates.py` refuses unaccounted blocks, duplicate slugs, and
+  literal-unsafe text, and regenerates idempotently from a marker line.
+
 ### D-0011 — Tomcat ban carve-out: `tomcat-embed-el`
 Boot 4's `spring-boot-starter-jetty` itself ships `org.apache.tomcat.embed:tomcat-embed-el`
 — the Jakarta Expression Language implementation, not a servlet container (Jetty bundles
