@@ -1,0 +1,2784 @@
+[
+ {
+  "i": 1,
+  "section": "conformance",
+  "heading": "2.3 Conformance",
+  "path": [
+   "introduction",
+   "conformance"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "MUST NOT",
+   "OPTIONAL",
+   "RECOMMENDED",
+   "REQUIRED",
+   "SHOULD",
+   "SHOULD NOT"
+  ],
+  "text": "The key words MAY, MUST, MUST NOT, OPTIONAL, RECOMMENDED, REQUIRED, SHOULD, and SHOULD NOT in this document are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals, as shown here."
+ },
+ {
+  "i": 2,
+  "section": "conformance",
+  "heading": "2.3 Conformance",
+  "path": [
+   "introduction",
+   "conformance"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A LWS Server is an HTTP server [rfc9112] that complies with all of the relevant \"MUST\" statements in this specification. Specifically, the relevant normative \"MUST\" statements in 9. Operations of this document MUST be respected."
+ },
+ {
+  "i": 3,
+  "section": "conformance",
+  "heading": "2.3 Conformance",
+  "path": [
+   "introduction",
+   "conformance"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A LWS Client is an HTTP client [rfc9112] that complies with all of the relevant \"MUST\" statements in this specification. Specifically, the relevant normative \"MUST\" statements in 9. Operations of this document MUST be respected."
+ },
+ {
+  "i": 4,
+  "section": "authentication-data-model",
+  "heading": "4.1 Authentication Credential Data Model",
+  "path": [
+   "authentication",
+   "authentication-data-model"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "An authentication credential MUST include tamper evident claims about a subject, including:"
+ },
+ {
+  "i": 5,
+  "section": "authentication-data-model",
+  "heading": "4.1 Authentication Credential Data Model",
+  "path": [
+   "authentication",
+   "authentication-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "subject REQUIRED — an identifier for an end user. This MUST be a URI."
+ },
+ {
+  "i": 6,
+  "section": "authentication-data-model",
+  "heading": "4.1 Authentication Credential Data Model",
+  "path": [
+   "authentication",
+   "authentication-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "issuer REQUIRED — an identifier for the entity that issued the authentication credential. This MUST be a URI."
+ },
+ {
+  "i": 7,
+  "section": "authentication-data-model",
+  "heading": "4.1 Authentication Credential Data Model",
+  "path": [
+   "authentication",
+   "authentication-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED",
+   "SHOULD"
+  ],
+  "text": "client REQUIRED — an identifier for a client application. This SHOULD be a URI."
+ },
+ {
+  "i": 8,
+  "section": "authentication-data-model",
+  "heading": "4.1 Authentication Credential Data Model",
+  "path": [
+   "authentication",
+   "authentication-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "RECOMMENDED",
+   "SHOULD"
+  ],
+  "text": "audience restriction RECOMMENDED — a list of values that SHOULD include an authorization server identifier."
+ },
+ {
+  "i": 9,
+  "section": "authentication-validation",
+  "heading": "4.2 Authentication Credential Validation",
+  "path": [
+   "authentication",
+   "authentication-validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Validation of an authentication credential requires a trust relationship between the verifier and issuer of the credential. This trust relationship MAY be established through an out-of-band mechanism. Any additional mechanisms for establishing trust between a verifier and an issuer are outlined in specific authentication suites."
+ },
+ {
+  "i": 10,
+  "section": "authentication-validation",
+  "heading": "4.2 Authentication Credential Validation",
+  "path": [
+   "authentication",
+   "authentication-validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "RECOMMENDED"
+  ],
+  "text": "An authentication credential MUST be signed. It is RECOMMENDED that the signature uses asymmetric cryptography."
+ },
+ {
+  "i": 11,
+  "section": "authentication-type-identifier",
+  "heading": "4.3 Authentication Credential Type Identifiers",
+  "path": [
+   "authentication",
+   "authentication-type-identifier"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "Each authentication suite MUST be associated with a token type URI. An authentication suite SHOULD use a URI defined in the IANA \"OAuth URI\" registry."
+ },
+ {
+  "i": 12,
+  "section": "authorization",
+  "heading": "5. Authorization",
+  "path": [
+   "authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "This section defines an authorization framework based on OAuth 2.0 [RFC6749] as the baseline mechanism for obtaining and presenting access tokens. A server MAY support additional authorization mechanisms beyond this baseline."
+ },
+ {
+  "i": 13,
+  "section": "authorization-server-discovery",
+  "heading": "5.2.1 Authorization Server Discovery",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-discovery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A storage server generating a 401 (Unauthorized) response MUST send a WWW-Authenticate header field containing at least one conforming challenge. A conforming challenge will include the parameters described below:"
+ },
+ {
+  "i": 14,
+  "section": "authorization-server-discovery",
+  "heading": "5.2.1 Authorization Server Discovery",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-discovery"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "as_uri REQUIRED — The value of this parameter is a URI identifying the authorization server where a client can retrieve an access token. The value of this parameter will be the same as the iss claim of a valid access token."
+ },
+ {
+  "i": 15,
+  "section": "authorization-server-discovery",
+  "heading": "5.2.1 Authorization Server Discovery",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-discovery"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "realm REQUIRED — The value of this parameter is a URI indicating the scope of protection. This value will be included in the audience (aud) claim of an access token. A client MUST verify that the URI of the originating request is logically contained within the realm presented in this response."
+ },
+ {
+  "i": 16,
+  "section": "authorization-server-discovery",
+  "heading": "5.2.1 Authorization Server Discovery",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-discovery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Other headers and parameters MAY be included."
+ },
+ {
+  "i": 17,
+  "section": "authorization-server-metadata",
+  "heading": "5.2.2 Authorization Server Metadata",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "An authorization server MUST provide a metadata resource to allow clients to discover endpoint locations and capabilities as described in [RFC8414]. This metadata resource MUST be available at a URL with the path /.well-known/lws-configuration."
+ },
+ {
+  "i": 18,
+  "section": "authorization-server-metadata",
+  "heading": "5.2.2 Authorization Server Metadata",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "An authorization server SHOULD advertise the subject tokens that it supports by including a subject_token_types_supported entry in the server metadata document. This entry is a JSON array containing a list of valid subject_token_type values that can be supplied at the authorization server's token endpoint."
+ },
+ {
+  "i": 19,
+  "section": "authorization-token-exchange-request",
+  "heading": "5.2.3.1 Request",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-request"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The authorization server's token endpoint MUST support the urn:ietf:params:oauth:grant-type:token-exchange grant type, as described in OAuth 2.0 Token Exchange [RFC8693]."
+ },
+ {
+  "i": 20,
+  "section": "authorization-token-exchange-request",
+  "heading": "5.2.3.1 Request",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-request"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "The resource parameter is REQUIRED. The value of this parameter MUST be a URI and will be used to populate the aud (audience) claim in the resulting access token. The supplied value will be the same as the realm parameter response in a WWW-Authenticate challenge. The authorization server MUST reject any request in which the resource parameter identifies an unknown or untrusted storage."
+ },
+ {
+  "i": 21,
+  "section": "authorization-token-exchange-request",
+  "heading": "5.2.3.1 Request",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-request"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "The subject_token parameter is REQUIRED. The value of this parameter MUST include a valid subject token, such as an authentication credential."
+ },
+ {
+  "i": 22,
+  "section": "authorization-token-exchange-request",
+  "heading": "5.2.3.1 Request",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-request"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Before returning an access token to the client, the authorization server MUST successfully validate all presented tokens."
+ },
+ {
+  "i": 23,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If the token request is valid and the client is authorized to make the request, the authorization server response MUST conform to Section 5.1 from the OAuth 2.0 Authorization Framework [RFC6749]. The resulting access token MUST conform to the JSON Web Token Profile for OAuth 2.0 Access Tokens [RFC9068]."
+ },
+ {
+  "i": 24,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "sub (subject) — REQUIRED. This claim MUST be a URI identifying the agent performing the operation"
+ },
+ {
+  "i": 25,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "iss (issuer) — REQUIRED. This claim MUST be the URI of the authorization server"
+ },
+ {
+  "i": 26,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "client_id (client id) — REQUIRED. This claim MUST be a URI identifying the client."
+ },
+ {
+  "i": 27,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "aud (audience) — REQUIRED. This claim MUST include the URI supplied by the client in the resource parameter. This value will be used to restrict the entities for which the access token is valid. This will be the same value as provided by a storage server in the realm parameter of a WWW-Authenticate challenge."
+ },
+ {
+  "i": 28,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "RECOMMENDED",
+   "REQUIRED",
+   "SHOULD"
+  ],
+  "text": "exp (expiration) — REQUIRED. Authorization servers SHOULD issue tokens with short lifetimes (RECOMMENDED: 300 seconds or less) to limit exposure from token theft."
+ },
+ {
+  "i": 29,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "iat (issued at) — REQUIRED."
+ },
+ {
+  "i": 30,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "jti (JWT ID) — REQUIRED."
+ },
+ {
+  "i": 31,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "All invalid or unauthorized requests MUST result in an error response as described in Section 5.2 in the OAuth 2.0 Authorization Framework [RFC6749]."
+ },
+ {
+  "i": 32,
+  "section": "authorization-token-validation-presentation",
+  "heading": "5.2.4.1 Presentation",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-validation",
+   "authorization-token-validation-presentation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A client MUST present an access token to a storage server using the Authorization header with an authentication scheme as defined in [RFC6750]."
+ },
+ {
+  "i": 33,
+  "section": "authorization-token-validation-verification",
+  "heading": "5.2.4.2 Validation",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-validation",
+   "authorization-token-validation-verification"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A storage server MUST validate an access token by performing the following checks, rejecting the request upon any failure:"
+ },
+ {
+  "i": 34,
+  "section": "authorization-token-validation-verification",
+  "heading": "5.2.4.2 Validation",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-validation",
+   "authorization-token-validation-verification"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "JWT Signature Validation: Verify the JWT signature using the authorization server's public key retrieved from the jwks_uri specified in the authorization server metadata. Storage servers SHOULD cache these keys and MUST support key rotation."
+ },
+ {
+  "i": 35,
+  "section": "authorization-token-validation-verification",
+  "heading": "5.2.4.2 Validation",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-validation",
+   "authorization-token-validation-verification"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If validation fails, the storage server MUST return 401 Unauthorized with a WWW-Authenticate header containing an appropriate error parameter (e.g., invalid_token, invalid_request, or insufficient_scope)."
+ },
+ {
+  "i": 36,
+  "section": "authorization-token-validation-verification",
+  "heading": "5.2.4.2 Validation",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-validation",
+   "authorization-token-validation-verification"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If the token is otherwise valid but an authorization policy does not allow the requested operation, the storage server MUST reject the request."
+ },
+ {
+  "i": 37,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "id - the id property is REQUIRED. Its value MUST be a URI that identifies the storage."
+ },
+ {
+  "i": 38,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "type - the type property is REQUIRED. Its value MUST be a string that equals Storage or a set of strings that contains an item equal to Storage (case-sensitive)."
+ },
+ {
+  "i": 39,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "OPTIONAL"
+  ],
+  "text": "id - the id property is OPTIONAL. If present, its value MUST be a URI."
+ },
+ {
+  "i": 40,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "type - the type property is REQUIRED. Its value MUST be a string or a set of strings."
+ },
+ {
+  "i": 41,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "OPTIONAL"
+  ],
+  "text": "capability - the capability property is OPTIONAL. Its value MUST be a set of capabilities, where each capability is described by a map containing the following properties. Additional properties MAY be present."
+ },
+ {
+  "i": 42,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "OPTIONAL"
+  ],
+  "text": "id - the id property is OPTIONAL. If present, its value MUST be a URI."
+ },
+ {
+  "i": 43,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "type - the type property is REQUIRED. Its value MUST be a string or a set of strings."
+ },
+ {
+  "i": 44,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "serviceEndpoint - the serviceEndpoint property is REQUIRED. Its value MUST be a URI."
+ },
+ {
+  "i": 45,
+  "section": "storage-description-data-model",
+  "heading": "6.1.1 Data Model",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-data-model"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "service - the service property is REQUIRED. Its value MUST be a set of services, where each service is described by a map containing the following properties. Additional properties MAY be present."
+ },
+ {
+  "i": 46,
+  "section": "storage-description-binding",
+  "heading": "6.1.2 Discovery and Binding",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-binding"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "All responses to GET and HEAD requests targeting storage resources MUST include a Link header whose target is the URI of the storage description resource, including a relation (rel) parameter whose value equals https://www.w3.org/ns/lws#storageDescription."
+ },
+ {
+  "i": 47,
+  "section": "storage-description-binding",
+  "heading": "6.1.2 Discovery and Binding",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-binding"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "When dereferenced, the storage description MUST contain an id property that identifies the storage. In addition, the service property MUST contain a service description whose type equals StorageDescription and whose serviceEndpoint equals the URL of the storage description."
+ },
+ {
+  "i": 48,
+  "section": "storage-description-representation",
+  "heading": "6.1.5 Storage Description Representation",
+  "path": [
+   "discovery",
+   "storage-description",
+   "storage-description-representation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "A storage description resource MUST be serializable with the media type application/lws+json. Other representations MAY be available via content negotiation."
+ },
+ {
+  "i": 49,
+  "section": "container-model",
+  "heading": "7.1 Container Model",
+  "path": [
+   "logical-resource-organization",
+   "container-model"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Linked Web Storage organizes resources into containers. A container is a specialized resource that holds references to other resources, called its members. Containers serve as organizational units, analogous to directories or collections, enabling clients to group, discover, and navigate resources. A container maintains references to its member resources, which may comprise both non-container resources and additional container resources, thereby enabling hierarchical formations. Typically, a container holds minimal intrinsic content beyond metadata or enumerations of its members; its principal role is to aggregate and structure subordinate resources. The storage system's root is designated as a container, serving as the apex organizational unit devoid of a superior parent. Containers MUST support pagination for membership listings using 'ContainerPage' types, with properties such as 'first', 'next', 'prev', and 'last'. Representations MUST use JSON-LD with a specific frame and normative context, optionally advertising content negotiation via 'Vary: Accept' headers. Storage MAY function as a root container, enabling direct writes."
+ },
+ {
+  "i": 50,
+  "section": "containment",
+  "heading": "7.2 Containment",
+  "path": [
+   "logical-resource-organization",
+   "containment"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The containment relationship between a resource and its parent container is expressed via the rel=\"up\" link relation. Servers MUST include a Link header with rel=\"up\" pointing to the parent container in responses to GET and HEAD requests on any non-root resource."
+ },
+ {
+  "i": 51,
+  "section": "containment-integrity",
+  "heading": "7.3 Containment Integrity",
+  "path": [
+   "logical-resource-organization",
+   "containment-integrity"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The server MUST maintain containment integrity at all times:"
+ },
+ {
+  "i": 52,
+  "section": "containment-integrity",
+  "heading": "7.3 Containment Integrity",
+  "path": [
+   "logical-resource-organization",
+   "containment-integrity"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Creation: When a new resource is created in a container, the server MUST atomically add the resource to the container's items list."
+ },
+ {
+  "i": 53,
+  "section": "containment-integrity",
+  "heading": "7.3 Containment Integrity",
+  "path": [
+   "logical-resource-organization",
+   "containment-integrity"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Deletion: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. Deleting a container requires the container to be empty, unless recursive deletion is explicitly requested."
+ },
+ {
+  "i": 54,
+  "section": "containment-integrity",
+  "heading": "7.3 Containment Integrity",
+  "path": [
+   "logical-resource-organization",
+   "containment-integrity"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "No orphans: Every non-root resource MUST be reachable from the storage root through the containment hierarchy."
+ },
+ {
+  "i": 55,
+  "section": "containment-integrity",
+  "heading": "7.3 Containment Integrity",
+  "path": [
+   "logical-resource-organization",
+   "containment-integrity"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST NOT"
+  ],
+  "text": "No cycles: A container MUST NOT directly or indirectly contain itself."
+ },
+ {
+  "i": 56,
+  "section": "resource-identification-0",
+  "heading": "7.4 Resource Identification",
+  "path": [
+   "logical-resource-organization",
+   "resource-identification-0"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "SHOULD NOT"
+  ],
+  "text": "Resources are identified by URIs. The URI of a resource is independent of its position in the containment hierarchy. Servers assign URIs during resource creation and MAY incorporate client hints (e.g., the Slug header), but clients SHOULD NOT assume that URI structure reflects containment."
+ },
+ {
+  "i": 57,
+  "section": "container-membership-and-authorization",
+  "heading": "7.5 Container Membership and Authorization",
+  "path": [
+   "logical-resource-organization",
+   "container-membership-and-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "If a client has read access to a container, the container representation MUST include the identifiers for all resources contained in that container to which the client has access. It MAY also contain the identifiers for resources contained in that container to which the client does not have access."
+ },
+ {
+  "i": 58,
+  "section": "container-properties",
+  "heading": "8.1.1 Container Properties",
+  "path": [
+   "containers",
+   "container-representation",
+   "container-properties"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A container representation MUST include the following properties:"
+ },
+ {
+  "i": 59,
+  "section": "container-properties",
+  "heading": "8.1.1 Container Properties",
+  "path": [
+   "containers",
+   "container-representation",
+   "container-properties"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "SHOULD"
+  ],
+  "text": "totalItems: An integer indicating the total number of resources contained in the container which can be disclosed to the client. This count SHOULD be accurate but MAY be approximate."
+ },
+ {
+  "i": 60,
+  "section": "container-properties",
+  "heading": "8.1.1 Container Properties",
+  "path": [
+   "containers",
+   "container-representation",
+   "container-properties"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "items: An array of contained resource descriptions (see below). If the container is empty, this MUST be an empty array. When the container listing is paginated, items contains only the current page of resources; see Pagination for details."
+ },
+ {
+  "i": 61,
+  "section": "contained-resource-description",
+  "heading": "8.1.2 Contained Resource Description",
+  "path": [
+   "containers",
+   "container-representation",
+   "contained-resource-description"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Each entry in the items array describes a resource contained in the container. A contained resource description MUST include:"
+ },
+ {
+  "i": 62,
+  "section": "contained-resource-description",
+  "heading": "8.1.2 Contained Resource Description",
+  "path": [
+   "containers",
+   "container-representation",
+   "contained-resource-description"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "type: The type of the resource. MUST be \"DataResource\" or \"Container\", or an array containing at least one of these two strings. Servers MAY include additional user-defined types as URIs (e.g., [\"DataResource\", \"http://example.org/customType\"])."
+ },
+ {
+  "i": 63,
+  "section": "contained-resource-description",
+  "heading": "8.1.2 Contained Resource Description",
+  "path": [
+   "containers",
+   "container-representation",
+   "contained-resource-description"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "A contained resource description SHOULD include:"
+ },
+ {
+  "i": 64,
+  "section": "contained-resource-description",
+  "heading": "8.1.2 Contained Resource Description",
+  "path": [
+   "containers",
+   "container-representation",
+   "contained-resource-description"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "mediaType: The media type of the resource (e.g., \"text/plain\", \"image/jpeg\"). MUST be present for DataResources."
+ },
+ {
+  "i": 65,
+  "section": "operations",
+  "heading": "9. Operations",
+  "path": [
+   "operations"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "This section defines the four core operations that a Linked Web Storage (LWS) server MUST support. These operations manipulate resources and containers in a transport-independent manner, focusing on semantics rather than implementation details. Each operation specifies inputs, expected behaviors, and possible responses. Responses include success indicators, resource representations (where applicable), and error conditions. Implementations MUST handle these operations atomically and consistently, meaning each operation either succeeds completely or fails without partial side effects. In case of errors, responses SHOULD provide enough detail for agents to understand the issue without leaking sensitive information."
+ },
+ {
+  "i": 66,
+  "section": "operations",
+  "heading": "9. Operations",
+  "path": [
+   "operations"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Note: As all examples in this specifications, examples given in this section (HTTP request and response snippets) are non-normative, meant to illustrate typical usage. The actual requirements are stated in the descriptive text and tables. Also, while this binding covers HTTP (as the initial target protocol), the LWS operations could in principle be bound to other protocols in the future. Servers MUST support content negotiation for application/lws+json, application/ld+json, and application/json for container representations (see 11. LWS Media Type). Servers MAY additionally support formats like Turtle."
+ },
+ {
+  "i": 67,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The Linkset Resource For each resource in storage, a server MUST make metadata links available as a standalone resource according to [RFC9264]."
+ },
+ {
+  "i": 68,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Media Type: A linkset resource MUST be available as application/linkset+json."
+ },
+ {
+  "i": 69,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Integrity: The 'linkset' link MUST point to a server-managed resource. Updates to the linkset MUST be atomic with associated resource operations to maintain consistency."
+ },
+ {
+  "i": 70,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Storage Description: Servers MUST support a Link header with rel=\"storageDescription\" on relevant responses."
+ },
+ {
+  "i": 71,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Containment: Servers MUST include a Link header with rel=\"up\" pointing to the parent container for any non-root resource."
+ },
+ {
+  "i": 72,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Preferences: Clients MAY use the Prefer header [RFC7240] with the URI https://www.w3.org/ns/lws#PreferLinkRelations to include or omit specific relations."
+ },
+ {
+  "i": 73,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Modifiability Considerations Core metadata MAY be modified by clients. To ensure interoperability, servers MUST use standard HTTP headers to advertise their capabilities:"
+ },
+ {
+  "i": 74,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Method Discovery: Servers MUST advertise support for GET and PATCH operations on the linkset resource via the Allow header."
+ },
+ {
+  "i": 75,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Patch Format Discovery: Servers MUST advertise support for JSON Merge Patch [RFC7386] via the Accept-Patch header: Accept-Patch: application/merge-patch+json."
+ },
+ {
+  "i": 76,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Optional Methods: Servers MAY support PUT or alternative patch formats; if supported, these MUST be included in the Allow and Accept-Patch headers respectively."
+ },
+ {
+  "i": 77,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD NOT"
+  ],
+  "text": "[!IMPORTANT] Clients SHOULD NOT assume support for PUT or specific patch formats unless they are advertised in the resource headers and MUST handle 405 Method Not Allowed or 415 Unsupported Media Type responses gracefully."
+ },
+ {
+  "i": 78,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Managing Metadata Metadata is managed by interacting with the resource's associated linkset resource URI. Servers MUST support concurrency controls for updates."
+ },
+ {
+  "i": 79,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Partial Updates (PATCH): This is the primary mechanism for metadata management. Servers MUST support PATCH using application/merge-patch+json."
+ },
+ {
+  "i": 80,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Replacement (PUT): If advertised in the Allow header, a client MAY replace the entire linkset. If the server does not support PUT, it MUST reject the request with 405 Method Not Allowed."
+ },
+ {
+  "i": 81,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Restrictions: Servers MAY restrict modifications to specific links (like up or items) to maintain system integrity."
+ },
+ {
+  "i": 82,
+  "section": "metadata",
+  "heading": "9.1 Metadata",
+  "path": [
+   "operations",
+   "metadata"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Lifecycle: Metadata lifecycles are tied to the described resource; deleting a resource MUST result in the automatic removal of its associated linkset resource metadata."
+ },
+ {
+  "i": 83,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "New resources are created using POST to a target container URI, with the server assigning the final identifier. Clients MAY suggest a name via the Slug header. Clients MAY provide initial user-managed metadata for the new resource by including one or more Link headers in the POST request, following the syntax of Web Linking in [RFC8288]. Server-managed metadata MUST be generated automatically by the server upon creation and MUST NOT be overridden by client-provided links."
+ },
+ {
+  "i": 84,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "On success, the server MUST return the 201 status code with the new URI in the Location header. The server MUST include Link headers for key server-managed metadata, including a link to the parent container (rel=\"up\"), and a link to the created resource's dedicated linkset resource (rel=\"linkset\"; type=\"application/linkset+json\"). Additional links SHOULD include rel=\"type\" (indicating https://www.w3.org/ns/lws#Container or https://www.w3.org/ns/lws#DataResource). The body MAY be empty or include a minimal representation of the resource. All metadata creation and linking MUST be atomic with the resource creation to maintain consistency."
+ },
+ {
+  "i": 85,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "POST (to a container URI) – Create with server-assigned name: Use POST to add a new resource inside an existing container. The server assigns an identifier to the resource, optionally suggested via the Slug header. The server MAY honor the Slug header if it does not conflict with naming rules or existing resources. Clients indicate the type of resource to create as follows:"
+ },
+ {
+  "i": 86,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "To create a Container, the client MUST include a Link header with rel=\"type\" pointing to the Container type: Link: <https://www.w3.org/ns/lws#Container>; rel=\"type\"."
+ },
+ {
+  "i": 87,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "On success, return 201 Created with the new URI in the Location header. The body may be empty or a minimal representation. If the target container /alice/notes/ does not exist, the server MUST return a 404 error status unless another status code is more appropriate."
+ },
+ {
+  "i": 88,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "POST is not idempotent. Repeating it may create duplicates; clients SHOULD avoid unintentional retries or use unique identifiers/checks to prevent this."
+ },
+ {
+  "i": 89,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Metadata updates are atomic; servers MUST ensure the linkset resource is created and populated with mandatory server-managed fields before returning success."
+ },
+ {
+  "i": 90,
+  "section": "create-resource",
+  "heading": "9.2 Create resource",
+  "path": [
+   "operations",
+   "create-resource"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "For discoverability, servers SHOULD include a Link header with rel=\"storageDescription\" on 401 responses to guide clients without hardcoded URIs."
+ },
+ {
+  "i": 91,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "For containers, the server returns a listing of member resources which MAY be filtered based on authorization. Listings must include core metadata for each member."
+ },
+ {
+  "i": 92,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a container or a non-container resource (data resource). Servers MUST distinguish resource types via metadata. All responses MUST integrate with metadata as defined in Section 8.1, including Link headers for key relations such as rel=\"linkset\", rel=\"up\", and rel=\"type\". Servers MUST ensure atomicity between the resource state and its metadata during reads."
+ },
+ {
+  "i": 93,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "GET (non-container resource) – Retrieve a resource's content: Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers MUST support range requests per [RFC7233] for partial retrieval. Responses MUST include an ETag header for concurrency control and caching."
+ },
+ {
+  "i": 94,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "GET (container resource) – List a container's contents: When the target URI corresponds to a container (determined via metadata type), a GET request returns a listing of the container's members. The response body is a container representation as defined in the Container Representation section, using the LWS container media type. The listing includes metadata for each member: resource identifiers (MUST), types (MUST), media types (MUST for DataResources), sizes (SHOULD), and modification timestamps (SHOULD)."
+ },
+ {
+  "i": 95,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "In all cases, the server MUST include the following metadata in the response headers: an ETag (representing the listing version, which changes on membership modifications), and Link headers with rel=\"type\" indicating it is a container, rel=\"linkset\" and rel=\"up\"."
+ },
+ {
+  "i": 96,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "HEAD (any resource or container) – Headers/metadata only: The LWS server MUST support HEAD [RFC9110] for both containers and non-containers, returning the same headers as GET (including ETag, Content-Type, Link for metadata) but without a body. This enables metadata retrieval without transferring content."
+ },
+ {
+  "i": 97,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Caching and Conditional Requests: LWS leverages HTTP caching semantics. Servers MUST support conditional requests via If-None-Match (with ETags) or If-Modified-Since headers. If the resource or container listing has not changed, respond with 304 Not Modified to avoid redundant transfers. ETags MUST be provided in all GET/HEAD responses for concurrency and caching support."
+ },
+ {
+  "i": 98,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Discoverability and Authorization: For enhanced discoverability, servers SHOULD include WWW-Authenticate headers on 401 Unauthorized responses with parameters to guide clients without hardcoded URIs. Metadata links SHOULD be included where applicable."
+ },
+ {
+  "i": 99,
+  "section": "update-resource",
+  "heading": "9.4 Update resource",
+  "path": [
+   "operations",
+   "update-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "OPTIONAL"
+  ],
+  "text": "The update resource modifies the contents of an existing served resource by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource’s URL to perform these operations. Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.3.2. LWS servers MUST handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated linkset resource. To optionally update both content and metadata in a single atomic operation, clients MAY include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in RFC 7240). In this case, the server MUST interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is OPTIONAL for servers but, if supported, MUST be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates MUST ignore the preference or respond with 501 Not Implemented."
+ },
+ {
+  "i": 100,
+  "section": "update-resource",
+  "heading": "9.4 Update resource",
+  "path": [
+   "operations",
+   "update-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "PUT (replace full resource) – Send PUT to the resource URI with new full content in the body and matching Content-Type (generally consistent with existing type). PUT is idempotent for existing resources. For safety, include If-Match with current ETag (per Section 7.3 concurrency); mismatch yields 412 Precondition Failed or 409 Conflict. Without checks, updates are unconditional but risk overwriting concurrent changes. If a server supports Etags for a resource, it MUST reject unconditional PUT requests that lack an If-Match header with a 428 Precondition Required response."
+ },
+ {
+  "i": 101,
+  "section": "update-resource",
+  "heading": "9.4 Update resource",
+  "path": [
+   "operations",
+   "update-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "In this example, the client is updating an existing JSON resource at /alice/personalinfo.json. It includes an If-Match header with the ETag \"abc123456\" that it got from an earlier GET or HEAD request. The server will compare that to the current ETag; if they match, it proceeds to replace the content with the JSON provided. If they don’t match, the server rejects the update (because the resource was changed by someone else in the meantime). Successful response: If the update succeeds, the server can respond with 200 OK and possibly include the updated representation or some confirmation (like the new content or a part of it). Alternatively, the server may respond with 204 No Content to indicate success with no body (especially common if no further info needs to be conveyed). In either case, the server SHOULD include a new ETag to signify the new version, and maybe a Content-Type if a body is returned. For example:"
+ },
+ {
+  "i": 102,
+  "section": "update-resource",
+  "heading": "9.4 Update resource",
+  "path": [
+   "operations",
+   "update-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "PATCH (partial update) – The HTTP PATCH method [RFC5789] allows a client to specify partial modifications to a resource, rather than sending the whole new content. This is useful for large resources where sending the entire content would be inefficient if only a small part changed, or for concurrent editing where you want to apply specific changes. LWS server MUST minimally support JSON Merge Patch (application/merge-patch+json) as defined in [RFC7386]."
+ },
+ {
+  "i": 103,
+  "section": "update-resource",
+  "heading": "9.4 Update resource",
+  "path": [
+   "operations",
+   "update-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Concurrency Control for Metadata Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is critical. To ensure data integrity, LWS servers and clients MUST implement optimistic concurrency control using conditional requests [RFC7232] for all PUT and PATCH operations on a linkset resource. Server Responsibilities: A server MUST include an Etag header in its responses to GET and HEAD requests for a linkset resource. Upon a successful PUT or PATCH on the linkset, the server MUST generate a new, unique Etag value for the modified linkset and return it in the Etag header of the response. Client Responsibilities: When modifying a linkset resource, a client MUST include an If-Match header containing the most recent Etag it received for that resource. Processing Rules: If the If-Match header value does not match the linkset's current Etag, the server MUST reject the request with a 412 Precondition Failed status code. If the If-Match header is missing from a PUT or PATCH request to a linkset URI, the server MUST reject the request with a 428 Precondition Required status code [RFC6585]. Example (PUT to replace a linkset): A client first fetches the linkset and receives its ETag."
+ },
+ {
+  "i": 104,
+  "section": "delete-resource",
+  "heading": "9.5 Delete resource",
+  "path": [
+   "operations",
+   "delete-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "The DELETE request targets the URI of the resource or container to remove. Clients MAY include an If-Match header with an ETag for concurrency checks."
+ },
+ {
+  "i": 105,
+  "section": "delete-resource",
+  "heading": "9.5 Delete resource",
+  "path": [
+   "operations",
+   "delete-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "Deletion and Containment: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. The parent container's totalItems count SHOULD be updated accordingly, and its ETag MUST be updated to reflect the change."
+ },
+ {
+  "i": 106,
+  "section": "delete-resource",
+  "heading": "9.5 Delete resource",
+  "path": [
+   "operations",
+   "delete-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "For container resources, the server defaults to non-recursive deletion. If the container is not empty and recursion is not requested, the server MUST reject the request with 409 Conflict. Servers MAY support recursive deletion of all contained resources within the container that is being deleted. Clients MUST use the Depth: infinity header to request for a recursive delete, as defined in [RFC4918]."
+ },
+ {
+  "i": 107,
+  "section": "delete-resource",
+  "heading": "9.5 Delete resource",
+  "path": [
+   "operations",
+   "delete-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "On success, the server MUST respond with 204 No Content. Servers SHOULD support conditional requests, as defined in [RFC9110]."
+ },
+ {
+  "i": 108,
+  "section": "delete-resource",
+  "heading": "9.5 Delete resource",
+  "path": [
+   "operations",
+   "delete-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "If the client lacks authorization, the server MUST return 403 Forbidden (if the client's identity is known but permissions are insufficient) or 401 Unauthorized (if no valid authentication is provided). In cases where revealing resource existence poses a security risk, the server MAY return 404 Not Found instead."
+ },
+ {
+  "i": 109,
+  "section": "summary-of-http-status-mappings",
+  "heading": "9.6 Summary of HTTP Status Mappings",
+  "path": [
+   "operations",
+   "summary-of-http-status-mappings"
+  ],
+  "tag": "td",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Typically no response body (or a minimal representation of the new resource). The Location header is set to the new resource’s URI. Headers like ETag MUST be included for concurrency; Link headers for server-managed metadata."
+ },
+ {
+  "i": 110,
+  "section": "summary-of-http-status-mappings",
+  "heading": "9.6 Summary of HTTP Status Mappings",
+  "path": [
+   "operations",
+   "summary-of-http-status-mappings"
+  ],
+  "tag": "td",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "No response body. Indicates the resource was deleted or the request succeeded and there’s nothing else to say. Servers MAY use 410 Gone for permanent deletions."
+ },
+ {
+  "i": 111,
+  "section": "summary-of-http-status-mappings",
+  "heading": "9.6 Summary of HTTP Status Mappings",
+  "path": [
+   "operations",
+   "summary-of-http-status-mappings"
+  ],
+  "tag": "td",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Error details explaining what was wrong. Servers SHOULD use the standard format defined in [RFC9457] for structured error responses, such as a JSON object with fields like \"type\", \"title\", \"status\", \"detail\", and \"instance\"."
+ },
+ {
+  "i": 112,
+  "section": "access-discovery",
+  "heading": "10.1 Discovery",
+  "path": [
+   "access-requests-and-grants",
+   "access-discovery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "A storage MAY advertise support for access requests and access grants in its storage description resource. When such support is advertised, a service object describing an endpoint for access requests MUST have a type equal to the string AccessRequestService, and a service object describing an endpoint for access grants MUST have a type equal to the string AccessGrantService. A service object SHOULD include a conformsTo property whose value is a collection of one or more URIs identifying the access profiles supported at that endpoint. Additional properties MAY be included:"
+ },
+ {
+  "i": 113,
+  "section": "access-data-model",
+  "heading": "10.2 Data Model",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Other properties MAY be present on access requests and access grants."
+ },
+ {
+  "i": 114,
+  "section": "access-type-property",
+  "heading": "10.2.1 Types",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-type-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "The value of the type property MUST be one or more terms and absolute URL strings. For an access request, the value MUST include the term AccessRequest. For an access grant, the value MUST include the term AccessGrant. Additional type values MAY be included."
+ },
+ {
+  "i": 115,
+  "section": "access-type-property",
+  "heading": "10.2.1 Types",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-type-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "This property is REQUIRED."
+ },
+ {
+  "i": 116,
+  "section": "access-storage-property",
+  "heading": "10.2.2 Storage",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-storage-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The value of the storage property MUST be a URI."
+ },
+ {
+  "i": 117,
+  "section": "access-storage-property",
+  "heading": "10.2.2 Storage",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-storage-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "This property is REQUIRED."
+ },
+ {
+  "i": 118,
+  "section": "access-inbox-property",
+  "heading": "10.2.3 Inbox",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-inbox-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The value of the inbox property MUST be a URI."
+ },
+ {
+  "i": 119,
+  "section": "access-inbox-property",
+  "heading": "10.2.3 Inbox",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-inbox-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "This property is OPTIONAL."
+ },
+ {
+  "i": 120,
+  "section": "access-property",
+  "heading": "10.2.4 Access",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The value of the access property MUST be a collection of one or more objects."
+ },
+ {
+  "i": 121,
+  "section": "access-property",
+  "heading": "10.2.4 Access",
+  "path": [
+   "access-requests-and-grants",
+   "access-data-model",
+   "access-property"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "This property is REQUIRED."
+ },
+ {
+  "i": 122,
+  "section": "odrl-type",
+  "heading": "10.3.1 Types",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-type"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "The value of the type property MUST be one or more terms and absolute URL strings, and MUST include the term AccessPolicy. Additional type values MAY be included."
+ },
+ {
+  "i": 123,
+  "section": "odrl-type",
+  "heading": "10.3.1 Types",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-type"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "The property is REQUIRED."
+ },
+ {
+  "i": 124,
+  "section": "odrl-action",
+  "heading": "10.3.2 Actions",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-action"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The value of the action property MUST be a collection of one or more strings. Each value MUST correspond to an operation recognized by the server. The following values MUST be supported: read, modify, create, and delete. The read, modify, and delete values are defined by the ODRL Vocabulary. The create value is defined by this specification."
+ },
+ {
+  "i": 125,
+  "section": "odrl-action",
+  "heading": "10.3.2 Actions",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-action"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "This property is REQUIRED."
+ },
+ {
+  "i": 126,
+  "section": "odrl-assignee",
+  "heading": "10.3.3 Assignee",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-assignee"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "The value of the assignee property MUST be a URI. Public access MAY be assigned using the Agent class from the FOAF vocabulary, identified by the URI http://xmlns.com/foaf/0.1/Agent."
+ },
+ {
+  "i": 127,
+  "section": "odrl-assignee",
+  "heading": "10.3.3 Assignee",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-assignee"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "This property is REQUIRED."
+ },
+ {
+  "i": 128,
+  "section": "odrl-target",
+  "heading": "10.3.4 Targets",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-target"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The target property MUST be an object containing the following properties:"
+ },
+ {
+  "i": 129,
+  "section": "odrl-target",
+  "heading": "10.3.4 Targets",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-target"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "A server MAY support additional type values."
+ },
+ {
+  "i": 130,
+  "section": "odrl-target",
+  "heading": "10.3.4 Targets",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-target"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "This property is OPTIONAL."
+ },
+ {
+  "i": 131,
+  "section": "odrl-constraint",
+  "heading": "10.3.5 Constraints",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-constraint"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The value of the constraint property, if present, MUST be a collection of constraint objects. Each constraint object MUST include the following properties:"
+ },
+ {
+  "i": 132,
+  "section": "odrl-constraint",
+  "heading": "10.3.5 Constraints",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-constraint"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "When multiple constraint objects are present, all of them MUST be satisfied."
+ },
+ {
+  "i": 133,
+  "section": "odrl-constraint",
+  "heading": "10.3.5 Constraints",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-constraint"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A server advertising support for this profile MUST support the following leftOperand values:"
+ },
+ {
+  "i": 134,
+  "section": "odrl-constraint",
+  "heading": "10.3.5 Constraints",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-constraint"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "This property is OPTIONAL."
+ },
+ {
+  "i": 135,
+  "section": "constraint-combining",
+  "heading": "10.3.5.6 Combining Constraints",
+  "path": [
+   "access-requests-and-grants",
+   "access-profile",
+   "odrl-constraint",
+   "constraint-combining"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "When multiple constraint objects are present, all of them MUST be satisfied for access to be permitted. The following example restricts access to a specific client application before a specific date:"
+ },
+ {
+  "i": 136,
+  "section": "json-ld-serialization",
+  "heading": "10.4.1 JSON-LD Serialization",
+  "path": [
+   "access-requests-and-grants",
+   "access-serialization",
+   "json-ld-serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "This specification defines a JSON-LD serialization for access requests and access grants. Documents using this serialization MUST include an @context property whose value is an ordered set that includes https://www.w3.org/ns/lws/v1. Additional context entries MAY be included to define extension terms."
+ },
+ {
+  "i": 137,
+  "section": "access-protocol",
+  "heading": "10.5 Protocol",
+  "path": [
+   "access-requests-and-grants",
+   "access-protocol"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The access request and access grant endpoints are LWS containers and MUST conform to the rules defined in this specification."
+ },
+ {
+  "i": 138,
+  "section": "access-protocol",
+  "heading": "10.5 Protocol",
+  "path": [
+   "access-requests-and-grants",
+   "access-protocol"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "RECOMMENDED"
+  ],
+  "text": "These endpoints minimally require support for GET and POST operations. The DELETE operation is RECOMMENDED. Other operations MAY be supported."
+ },
+ {
+  "i": 139,
+  "section": "access-protocol",
+  "heading": "10.5 Protocol",
+  "path": [
+   "access-requests-and-grants",
+   "access-protocol"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "These endpoints MUST support the JSON-LD serialization defined in 10.4.1 JSON-LD Serialization for both request and response payloads. Servers MAY support additional serializations."
+ },
+ {
+  "i": 140,
+  "section": "access-protocol",
+  "heading": "10.5 Protocol",
+  "path": [
+   "access-requests-and-grants",
+   "access-protocol"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A successful POST operation MUST respond with a Location header set to the URL of the new resource."
+ },
+ {
+  "i": 141,
+  "section": "access-notifications",
+  "heading": "10.6 Notifications",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Notifications provide a mechanism for informing agents and storage controllers about changes to access requests and access grants. When an inbox property is present on an access request or access grant, the server SHOULD deliver notifications to that endpoint, informing an assignee of the event."
+ },
+ {
+  "i": 142,
+  "section": "access-notifications",
+  "heading": "10.6 Notifications",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The serialization of notifications MUST conform to the requirements of the LWS notification data model."
+ },
+ {
+  "i": 143,
+  "section": "access-notifications",
+  "heading": "10.6 Notifications",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Notifications delivered to an inbox endpoint MUST conform to the requirements defined in the LWS protocol for notification delivery."
+ },
+ {
+  "i": 144,
+  "section": "access-notification-events",
+  "heading": "10.6.1 Notification Events",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications",
+   "access-notification-events"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "A server SHOULD send notifications in response to the following events:"
+ },
+ {
+  "i": 145,
+  "section": "access-notification-events",
+  "heading": "10.6.1 Notification Events",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications",
+   "access-notification-events"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Access Request creation: When a new access request is submitted, the storage controller SHOULD be notified."
+ },
+ {
+  "i": 146,
+  "section": "access-notification-events",
+  "heading": "10.6.1 Notification Events",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications",
+   "access-notification-events"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Access Grant creation: When a new access grant is created, the requesting agent SHOULD be notified at the inbox specified in the associated access request."
+ },
+ {
+  "i": 147,
+  "section": "access-notification-events",
+  "heading": "10.6.1 Notification Events",
+  "path": [
+   "access-requests-and-grants",
+   "access-notifications",
+   "access-notification-events"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "A server MAY send notifications in response to other events."
+ },
+ {
+  "i": 148,
+  "section": "lws-media-type-0",
+  "heading": "11.1 LWS Media Type",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "LWS container representation and storage description resource MUST use the media type application/lws+json."
+ },
+ {
+  "i": 149,
+  "section": "lws-media-type-0",
+  "heading": "11.1 LWS Media Type",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "While LWS container representations use JSON-LD conventions, the constraints and requirements for LWS justify the use of a specific media type. Because LWS containers can be considered a restricted profile of JSON-LD, implementations SHOULD consider the application/ld+json; profile=\"https://www.w3.org/ns/lws/v1\" media type as equivalent to application/lws+json."
+ },
+ {
+  "i": 150,
+  "section": "content-negotiation",
+  "heading": "11.1.1 Content Negotiation",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "content-negotiation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Servers MUST support content negotiation for container representations. The response payload MUST be identical regardless of the requested media type — only the Content-Type response header varies:"
+ },
+ {
+  "i": 151,
+  "section": "content-negotiation",
+  "heading": "11.1.1 Content Negotiation",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "content-negotiation"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If a client requests application/lws+json, the server MUST respond with Content-Type: application/lws+json."
+ },
+ {
+  "i": 152,
+  "section": "content-negotiation",
+  "heading": "11.1.1 Content Negotiation",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "content-negotiation"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If a client requests application/ld+json, the server MUST respond with Content-Type: application/ld+json."
+ },
+ {
+  "i": 153,
+  "section": "content-negotiation",
+  "heading": "11.1.1 Content Negotiation",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "content-negotiation"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "If a client requests application/json, the server MUST respond with Content-Type: application/json."
+ },
+ {
+  "i": 154,
+  "section": "pagination",
+  "heading": "11.1.2 Pagination",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Certain composite resources, like containers, may hold a large number of resources. To allow clients to retrieve listings incrementally, servers SHOULD support pagination for containers whose membership exceeds a server-determined threshold."
+ },
+ {
+  "i": 155,
+  "section": "pagination-link-relations",
+  "heading": "11.1.2.2 Pagination Link Relations",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "pagination-link-relations"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "rel=\"first\": The URI of the first page of results. MUST be present on paginated responses."
+ },
+ {
+  "i": 156,
+  "section": "pagination-link-relations",
+  "heading": "11.1.2.2 Pagination Link Relations",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "pagination-link-relations"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "rel=\"last\": The URI of the last page of results. MAY be present on paginated responses."
+ },
+ {
+  "i": 157,
+  "section": "pagination-link-relations",
+  "heading": "11.1.2.2 Pagination Link Relations",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "pagination-link-relations"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "rel=\"next\": The URI of the next page of results. MUST be present when there are subsequent pages. MUST be omitted on the last page."
+ },
+ {
+  "i": 158,
+  "section": "pagination-link-relations",
+  "heading": "11.1.2.2 Pagination Link Relations",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "pagination-link-relations"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "rel=\"prev\": The URI of the previous page of results. MAY be present when there are preceding pages. MUST be omitted on the first page."
+ },
+ {
+  "i": 159,
+  "section": "pagination-link-relations",
+  "heading": "11.1.2.2 Pagination Link Relations",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "pagination-link-relations"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD",
+   "SHOULD NOT"
+  ],
+  "text": "All pagination URIs are opaque to the client. Clients SHOULD NOT construct or modify pagination URIs; they SHOULD use the URIs provided by the server."
+ },
+ {
+  "i": 160,
+  "section": "requesting-pages",
+  "heading": "11.1.2.3 Requesting Pages",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "requesting-pages"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "A client requests the composite resource's URI to obtain the first page. The response includes pagination Link headers that the client follows to retrieve subsequent pages. Servers MAY also support direct access to specific pages via the pagination URIs obtained during a previous scan."
+ },
+ {
+  "i": 161,
+  "section": "requesting-pages",
+  "heading": "11.1.2.3 Requesting Pages",
+  "path": [
+   "lws-media-type",
+   "lws-media-type-0",
+   "pagination",
+   "requesting-pages"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "When a paginated response is returned, the server MUST respond with 200 OK. The totalItems property in the response body SHOULD reflect the total number of items across all pages, not just the current page."
+ },
+ {
+  "i": 162,
+  "section": "normative-json-ld-context",
+  "heading": "12.1.1 Normative JSON-LD Context",
+  "path": [
+   "jsonld-context",
+   "json-ld-context-and-vocabulary",
+   "normative-json-ld-context"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Container representations MUST include the following @context value:"
+ },
+ {
+  "i": 163,
+  "section": "iana-media-type-registry",
+  "heading": "17.3 The application/lws+json Media Type",
+  "path": [
+   "iana-considerations",
+   "iana-media-type-registry"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Because LWS containers can be considered a restricted profile of JSON-LD, implementations SHOULD consider the application/ld+json; profile=\"https://www.w3.org/ns/lws/v1\" media type as equivalent to application/lws+json."
+ }
+]

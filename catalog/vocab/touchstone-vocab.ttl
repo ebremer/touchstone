@@ -1,0 +1,92 @@
+# Touchstone requirements-catalog vocabulary.
+# Namespace is a placeholder pending a permanent home (DECISIONS.md D-0001);
+# every file declares it once, so relocation is a prefix change.
+
+@prefix touchstone: <https://example.org/touchstone/vocab#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix earl:    <http://www.w3.org/ns/earl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://example.org/touchstone/vocab>
+    a owl:Ontology ;
+    rdfs:label "Touchstone requirements-catalog vocabulary"@en ;
+    rdfs:comment "Terms for recording RFC 2119 conformance clauses extracted from W3C Linked Web Storage (LWS) spec drafts, so tests can declare exactly which requirements they verify."@en ;
+    owl:versionInfo "0.1.0" .
+
+touchstone:Requirement
+    a rdfs:Class ;
+    rdfs:subClassOf earl:TestRequirement ;
+    rdfs:label "Requirement"@en ;
+    rdfs:comment "A single RFC 2119 conformance clause from a spec draft, with a stable IRI. Tests reference these IRIs; EARL reports reuse them as test criteria."@en .
+
+touchstone:level
+    a rdf:Property ;
+    rdfs:label "level"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Normative strength: MUST, SHOULD, or MAY. Negated keywords (MUST NOT, SHOULD NOT) collapse to their positive strength; the exact keyword is visible in clauseText. MUST failure = non-conformant; SHOULD/MAY = advisory."@en .
+
+touchstone:specModule
+    a rdf:Property ;
+    rdfs:label "spec module"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Key of the spec draft the clause comes from, e.g. lws10-core, lws10-authn-openid."@en .
+
+touchstone:section
+    a rdf:Property ;
+    rdfs:label "section"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:comment "Section anchor in the undated /TR/ URL of the spec (human-facing, follows the latest draft)."@en .
+
+touchstone:sourceDraft
+    a rdf:Property ;
+    rdfs:label "source draft"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:comment "Dated this-version URL (with section anchor) of the exact draft snapshot the clause was extracted from."@en .
+
+touchstone:clauseText
+    a rdf:Property ;
+    rdfs:label "clause text"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Verbatim clause text as extracted (Unicode NFC, whitespace runs collapsed to single spaces, trimmed)."@en .
+
+touchstone:clauseHash
+    a rdf:Property ;
+    rdfs:label "clause hash"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range xsd:string ;
+    rdfs:comment "sha256-<hex> over clauseText normalized per DECISIONS.md D-0008. A re-fetch of the spec that no longer contains a matching clause raises a drift alarm instead of going silently stale."@en .
+
+touchstone:summary
+    a rdf:Property ;
+    rdfs:label "summary"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range xsd:string ;
+    rdfs:comment "One-sentence, test-oriented restatement of the clause."@en .
+
+touchstone:status
+    a rdf:Property ;
+    rdfs:label "status"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range touchstone:Status ;
+    rdfs:comment "Review lifecycle of the catalog entry itself (not of the spec text)."@en .
+
+touchstone:Status a rdfs:Class ;
+    rdfs:label "Status"@en .
+
+touchstone:Draft a touchstone:Status ;
+    rdfs:label "Draft"@en ;
+    rdfs:comment "Extracted and curated, awaiting human review (Gate 1)."@en .
+
+touchstone:Approved a touchstone:Status ;
+    rdfs:label "Approved"@en ;
+    rdfs:comment "Reviewed and accepted as part of the conformance baseline."@en .
+
+touchstone:Deprecated a touchstone:Status ;
+    rdfs:label "Deprecated"@en ;
+    rdfs:comment "The clause disappeared or changed in a newer draft; kept for historical reports."@en .
