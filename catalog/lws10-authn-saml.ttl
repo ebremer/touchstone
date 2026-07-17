@@ -1,0 +1,68 @@
+# Requirements catalog — LWS 1.0 Authentication Suite: SAML 2.0.
+#
+# Source: editor's draft (unofficial proposal; no dated /TR/ — DECISIONS.md D-0010, D-0018).
+#   editor's draft: https://w3c.github.io/lws-protocol/lws10-authn-saml/
+#   snapshot:       catalog/sources/ED-lws10-authn-saml.html
+# A signed SAML 2.0 assertion as the authentication credential. Fixture is a documented
+# seam (OpenSAML) — DECISIONS.md D-0024.
+
+@prefix touchstone: <https://example.org/touchstone/vocab#> .
+@prefix req:     <https://example.org/touchstone/req/lws10-authn-saml/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+req:signed-and-required-assertions
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:summary "A SAML authentication credential is signed and includes the required assertions." ;
+    touchstone:clauseText """SAML tokens used as authentication credentials MUST be signed. In addition, a valid SAML token MUST include the following assertions:""" ;
+    touchstone:clauseHash "sha256-d6a73ae485224751a0b80f005711d5bd74e5e7cd27d0bc12e1dec22d27cf239e" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:nameid-subject
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:summary "The saml:NameID assertion carries the LWS subject identifier." ;
+    touchstone:clauseText """The SAML token MUST use the saml:NameID assertion for the LWS subject identifier.""" ;
+    touchstone:clauseHash "sha256-aea5b5887c5142fd39907692fc0ccdfc1597b2e440f596bb3f1b43e37562fc43" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:issuer-assertion
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:summary "The saml:Issuer assertion carries the LWS issuer identifier." ;
+    touchstone:clauseText """The SAML token MUST use the saml:Issuer assertion for the LWS issuer identifier.""" ;
+    touchstone:clauseHash "sha256-802b012c723c98ffed9504b12af34616d2b41762db32d49dde9ca76d9091459d" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:recipient-client-id
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:summary "The Recipient parameter in saml:SubjectConfirmationData carries the LWS client identifier." ;
+    touchstone:clauseText """The SAML token MUST use the Recipient parameter within a saml:SubjectConfirmationData assertion for the LWS client identifier.""" ;
+    touchstone:clauseHash "sha256-21d8dd16c0dbcf077d69c63474a44685099ddb4e8ff4bcc674e5d0fa676f1784" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:audience-restriction
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#serialization> ;
+    touchstone:summary "Any audience restriction uses the saml:Audience assertion (which should include the client and AS)." ;
+    touchstone:clauseText """Any audience restriction in the SAML token MUST use the saml:Audience assertion. The saml:Audience assertion SHOULD include a client identifier and any additional target audience such as an authorization server.""" ;
+    touchstone:clauseHash "sha256-aadbb7e46a6a3e6dfb0ab79ebcb2e58eeb3dc79486b40884c1e2ef8a4e6df106" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:validation-signature
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#validation> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#validation> ;
+    touchstone:summary "Using a trust relationship with the issuer, the credential signature is validated per SAML Core section 5." ;
+    touchstone:clauseText """Using a trust relationship with an issuer, the signature of the credential MUST be validated as described in SAML Core, section 5 [[!SAML2-CORE]].""" ;
+    touchstone:clauseHash "sha256-89ab40a265af363ae3e425a6d7ce78518e0bfeb0a750af0de02c587511c3ccf8" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+
+req:token-type-saml2
+    a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-saml/#token-type> ;
+    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-saml/#token-type> ;
+    touchstone:summary "A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server." ;
+    touchstone:clauseText """A SAML 2.0 assertion used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:saml2 URI when interacting with an authorization server.""" ;
+    touchstone:clauseHash "sha256-c2e56e3d2967fb0d3d70995a680e39b080a302e40f0a445acac3b9b540d13e6a" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .

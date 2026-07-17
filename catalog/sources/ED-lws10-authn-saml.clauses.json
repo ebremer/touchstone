@@ -1,0 +1,108 @@
+[
+ {
+  "i": 1,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "SAML tokens used as authentication credentials MUST be signed. In addition, a valid SAML token MUST include the following assertions:"
+ },
+ {
+  "i": 2,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The SAML token MUST use the saml:NameID assertion for the LWS subject identifier."
+ },
+ {
+  "i": 3,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The SAML token MUST use the saml:Issuer assertion for the LWS issuer identifier."
+ },
+ {
+  "i": 4,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The SAML token MUST use the Recipient parameter within a saml:SubjectConfirmationData assertion for the LWS client identifier."
+ },
+ {
+  "i": 5,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "Any audience restriction in the SAML token MUST use the saml:Audience assertion. The saml:Audience assertion SHOULD include a client identifier and any additional target audience such as an authorization server."
+ },
+ {
+  "i": 6,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Using a trust relationship with an issuer, the signature of the credential MUST be validated as described in SAML Core, section 5 [[!SAML2-CORE]]."
+ },
+ {
+  "i": 7,
+  "section": "token-type",
+  "heading": "Token Type Identifier",
+  "path": [
+   "token-type"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A SAML 2.0 assertion used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:saml2 URI when interacting with an authorization server."
+ }
+]

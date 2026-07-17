@@ -11,6 +11,10 @@ be re-derived from a byte-exact source.
 | `WD-lws10-core-20260622.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-07-16 |
 | `ED-lws10-authn-openid.html` | https://w3c.github.io/lws-protocol/lws10-authn-openid/ (editor's draft; no dated /TR/) | 2026-07-16 |
 | `ED-lws10-authn-openid.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-07-16 |
+| `ED-lws10-authn-ssi-did-key.html` | https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/ (editor's draft) | 2026-07-17 |
+| `ED-lws10-authn-ssi-cid.html` | https://w3c.github.io/lws-protocol/lws10-authn-ssi-cid/ (editor's draft) | 2026-07-17 |
+| `ED-lws10-authn-saml.html` | https://w3c.github.io/lws-protocol/lws10-authn-saml/ (editor's draft) | 2026-07-17 |
+| `ED-lws10-authn-ssi-*.clauses.json`, `ED-lws10-authn-saml.clauses.json` | extractor output over the above | 2026-07-17 |
 
 The snapshot is © W3C and redistributed unmodified under the
 [W3C Document License](https://www.w3.org/copyright/document-license/).

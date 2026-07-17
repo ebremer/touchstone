@@ -1,0 +1,213 @@
+[
+ {
+  "i": 1,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST NOT"
+  ],
+  "text": "The JWT MUST NOT use \"none\" as the signing algorithm."
+ },
+ {
+  "i": 2,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The JWT MUST use the sub (subject) claim for the LWS subject identifier."
+ },
+ {
+  "i": 3,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The JWT MUST use the iss (issuer) claim for the LWS issuer identifier."
+ },
+ {
+  "i": 4,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The JWT MUST use the client_id (client ID) claim for the LWS client identifier."
+ },
+ {
+  "i": 5,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The claims sub, iss, and client_id MUST all use the same URI value."
+ },
+ {
+  "i": 6,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Any audience restriction in the ID Token MUST use the aud (audience) claim. The aud claim MUST include the target authorization server."
+ },
+ {
+  "i": 7,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The JWT MUST include an exp (expiration) claim, indicating the time the token expires."
+ },
+ {
+  "i": 8,
+  "section": "serialization",
+  "heading": "Authentication Credential Serialization",
+  "path": [
+   "serialization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The JWT MUST include an iat (issued at) claim, indicating the time the token was issued."
+ },
+ {
+  "i": 9,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "In the absence of a pre-existing trust relationship, the verifier MUST dereference the sub (subject) claim in the authentication credential. The resulting resource MUST be formatted as a valid controlled identifier document [[!CID-1.0]] with an id value equal to the subject identifier."
+ },
+ {
+  "i": 10,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A verifier MUST reject any tokens using an alg header parameter that equals \"none\"."
+ },
+ {
+  "i": 11,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A verifier MUST validate all claims described by the authentication credential data model."
+ },
+ {
+  "i": 12,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The verifier MUST use the kid (key id) value from the signed JWT header to identify a verification method from the subject's controlled identifier document. This process is described in [[!CID-1.0]] Section 3.3. Using the selected verification method from the controlled identifier document, the signature of the JWT MUST be validated as described in [[!RFC7515]], Section 5.2."
+ },
+ {
+  "i": 13,
+  "section": "validation",
+  "heading": "Authentication Credential Validation",
+  "path": [
+   "validation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "A verifier MUST ensure that the current time is before the time represented by the exp claim. Implementers MAY provide for some small leeway to account for clock skew."
+ },
+ {
+  "i": 14,
+  "section": "token-type",
+  "heading": "Token Type Identifier",
+  "path": [
+   "token-type"
+  ],
+  "tag": "p",
+  "rfc2119_markup": false,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A self-issued JSON Web Token used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:jwt URI when interacting with an authorization server."
+ }
+]
