@@ -6,13 +6,15 @@ it fires HTTP requests and asserts on responses, and it runs controlled identity
 fixtures (throwaway OIDC issuer, SAML IdP, self-signed key material, hosted agent
 identity documents) so credential failure paths can be tested deterministically.
 
-**Status: Phase 2 complete** — declarative manifest executor over the frozen
-schema v1, assertion engine (status / headers / JSON Pointer / graph containment /
-isomorphism / SHACL / conneg equivalence), per-run + per-test isolation with a
-provisioning-adapter SPI, and 12 core happy-path manifests passing against the
-in-memory reference LWS server (DECISIONS.md D-0015) via `touchstone run` (parallel,
-virtual threads) and a JUnit `@TestFactory` self-test loop. Coverage: 21 of 162
-requirements. Next: Phase 3, reporting (EARL, HTML matrix, JUnit XML, run diff).
+**Status: Phase 3 complete** — every `touchstone run` now persists
+`runs/<runId>/{run.json, earl.ttl, junit.xml, report.html}`: W3C EARL assertions
+(one per test, linked to catalog requirement IRIs), JUnit XML for CI, and a
+FreeMarker HTML report whose per-requirement matrix links tests → requirements →
+spec sections with MUST/SHOULD/MAY rollups and a §5.1 conformance verdict.
+`touchstone diff <runA> <runB>` compares runs (regressions/fixes/added/removed;
+exit 1 on regressions). Engine: manifest executor over frozen schema v1, full
+assertion vocabulary, per-test isolation, 12 core manifests green against the
+in-memory reference LWS server. Next: Phase 4, identity fixtures + the OIDC suite.
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
 
