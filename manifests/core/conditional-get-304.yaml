@@ -1,0 +1,38 @@
+schemaVersion: 1
+id: core/conditional-get-304
+title: An unchanged resource answers a conditional GET with 304
+requirements:
+  - https://example.org/touchstone/req/lws10-core/etag-on-get-head-conditional-304
+steps:
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: note
+      body: "conditional request check"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: first read yields the ETag
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+    bind:
+      etag: "header:ETag"
+
+  - name: conditional re-read is a 304
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        If-None-Match: "${etag}"
+    expect:
+      status: 304

@@ -1,0 +1,39 @@
+schemaVersion: 1
+id: core/container-create-basic
+title: Creating a container returns 201 with Location and containment links, and it starts empty
+requirements:
+  - https://example.org/touchstone/req/lws10-core/create-container-type-link
+  - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+  - https://example.org/touchstone/req/lws10-core/container-empty-items-array
+steps:
+  - name: create a sub-container
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Slug: sub
+        Link: '<https://www.w3.org/ns/lws#Container>; rel="type"'
+    expect:
+      status: 201
+      headers:
+        Location: { present: true }
+        Link: { contains: 'rel="up"' }
+    bind:
+      sub: "header:Location"
+
+  - name: the new container starts empty
+    request:
+      method: GET
+      target: "${sub}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        Content-Type: { contains: application/lws+json }
+        ETag: { present: true }
+      json:
+        - pointer: "/totalItems"
+          equals: 0
+        - pointer: "/items"
+          equals: []

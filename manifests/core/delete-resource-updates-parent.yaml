@@ -1,0 +1,60 @@
+schemaVersion: 1
+id: core/delete-resource-updates-parent
+title: Deleting a resource removes it from the parent container's listing
+requirements:
+  - https://example.org/touchstone/req/lws10-core/delete-updates-parent-listing-etag
+  - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
+  - https://example.org/touchstone/req/lws10-core/containment-delete-atomic-items
+steps:
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: doomed
+      body: "short-lived resource"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: the parent lists it
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/totalItems"
+          equals: 1
+
+  - name: delete it
+    request:
+      method: DELETE
+      target: "${created}"
+    expect:
+      status: 204
+
+  - name: the parent listing is empty again
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/totalItems"
+          equals: 0
+        - pointer: "/items"
+          equals: []
+
+  - name: the resource itself is gone
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 404

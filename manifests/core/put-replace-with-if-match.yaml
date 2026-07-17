@@ -1,0 +1,49 @@
+schemaVersion: 1
+id: core/put-replace-with-if-match
+title: A conditional PUT replaces resource content and yields a fresh ETag
+requirements:
+  - https://example.org/touchstone/req/lws10-core/update-success-new-etag
+steps:
+  - name: create version one
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: note
+      body: "note version one"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: read the current ETag
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+    bind:
+      etag: "header:ETag"
+
+  - name: replace with If-Match
+    request:
+      method: PUT
+      target: "${created}"
+      headers:
+        Content-Type: text/plain
+        If-Match: "${etag}"
+      body: "note version two"
+    expect:
+      status: [200, 204]
+      headers:
+        ETag: { present: true }
+
+  - name: the content is replaced
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      body:
+        matches: "version two"
