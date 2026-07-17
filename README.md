@@ -6,7 +6,10 @@ it fires HTTP requests and asserts on responses, and it runs controlled identity
 fixtures (throwaway OIDC issuer, SAML IdP, self-signed key material, hosted agent
 identity documents) so credential failure paths can be tested deterministically.
 
-**Status: Phase 0/1 — scaffold + requirements catalog.**
+**Status: Phase 1 complete** — multi-module scaffold, full requirements catalog
+(162 clauses of the 2026-06-22 core Working Draft, stable IRIs + drift hashes),
+extraction/drift tooling, frozen manifest schema v1, and coverage computation
+over the (still empty) test set. Next: Phase 2, the manifest executor.
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
 

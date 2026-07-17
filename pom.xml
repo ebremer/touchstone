@@ -125,6 +125,13 @@
         <artifactId>logback-classic</artifactId>
         <version>${logback.version}</version>
       </dependency>
+      <!-- Pinned explicitly: jena-bom manages an older logback-core, which would
+           otherwise skew under logback-classic and trip version-mismatch warnings. -->
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-core</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>

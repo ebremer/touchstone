@@ -1,0 +1,25 @@
+# Minimal catalog fixture for CatalogRepository/CoverageReport tests.
+@prefix touchstone: <https://example.org/touchstone/vocab#> .
+@prefix req: <https://example.org/touchstone/req/test-module/> .
+
+req:alpha
+    a touchstone:Requirement ;
+    touchstone:level "MUST" ;
+    touchstone:specModule "test-module" ;
+    touchstone:section <https://example.org/spec#alpha> ;
+    touchstone:summary "Alpha requirement." ;
+    touchstone:status touchstone:Approved .
+
+req:beta
+    a touchstone:Requirement ;
+    touchstone:level "MUST" ;
+    touchstone:specModule "test-module" ;
+    touchstone:summary "Beta requirement." ;
+    touchstone:status touchstone:Draft .
+
+req:gamma
+    a touchstone:Requirement ;
+    touchstone:level "SHOULD" ;
+    touchstone:specModule "test-module" ;
+    touchstone:summary "Gamma requirement." ;
+    touchstone:status touchstone:Draft .

@@ -13,6 +13,10 @@ target/
 .DS_Store
 Thumbs.db
 
+# python tooling
+__pycache__/
+*.pyc
+
 # misc
 *.log
 dependency-reduced-pom.xml
