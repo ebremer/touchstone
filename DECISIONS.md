@@ -124,6 +124,48 @@ version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, 
 (EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
 GitHub remote still pending (D-0007).
 
+### D-0017 — Phase 4 shape: harness owns the AS; negative matrix proven via the self-test loop
+The brief's §4/§5.4 negative matrix (expired / wrong-audience / bad-signature / rotated
+key …) is fundamentally about the **access tokens the storage validates** — RFC 9068
+JWTs the storage checks against the authorization server's `jwks_uri` (core WD
+authorization §, clauses `authz-token-validation-*`, `authz-401-www-authenticate-challenge`,
+`authz-jwt-signature-jwks-rotation`, `authz-invalid-token-401-error-param`). So the harness
+owns an **OIDC issuer / authorization server fixture** (Nimbus): it publishes discovery +
+JWKS over ephemeral Jetty and mints valid *and* deliberately broken tokens. This is why
+fixtures are library-level fakes, not Keycloak (§5.4) — a real IdP will not mint corrupted
+credentials on demand.
+- **RefLwsServer gains three auth modes** (`AuthMode`): `OPEN` (no auth — the Phase 2/3
+  core suite still runs against it unchanged), `SECURED` (validates Bearer tokens against
+  the AS jwks_uri; 401 + conforming WWW-Authenticate challenge on missing/invalid, 403 on
+  a valid non-owner, owner policy = the identity that created the run root), and `BROKEN`
+  (auth theater: never challenges, never forbids — the deliberately broken twin).
+- **Acceptance is the self-test loop** (§8): the `auth-oidc` manifests assert the *correct*
+  secured behavior, so they PASS against `SECURED` and the negative ones FAIL against
+  `BROKEN` — exactly "negative tests demonstrably distinguish a compliant reference from a
+  deliberately broken stub." Both directions are asserted in
+  `OidcNegativeMatrixTest`.
+- **CLI auth targets** use the existing `env` provisioning adapter with pre-issued static
+  tokens (`token.<identity>` properties) — fine for a third-party SUT the operator has real
+  tokens for. Generating *broken* variants requires the harness to hold the AS signing keys
+  (i.e. to BE the AS), which is only true for the bundled reference scenario; wiring a
+  harness-owned AS that an external SUT already trusts is provisioning-adapter territory
+  (§5.3, out of spec scope, a documented seam), not faked here.
+- **Coverage vs §5.4 list**: expired, not-yet-valid, wrong-audience, wrong-issuer,
+  bad-signature (foreign key), unknown-key (kid not in JWKS), `alg=none`, missing-subject,
+  and **key-rotated-mid-session** (the AS retires the signing key; a previously valid token
+  stops validating) are all covered. **Replayed proof (DPoP) is deferred**: the current
+  OIDC editor's draft defines no sender-constrained/DPoP binding (D-0010), so there is no
+  proof to replay yet; the seam stays for when the suite adds one.
+
+### D-0018 — auth-oidc catalog module from the OIDC editor's draft
+`catalog/lws10-authn-openid.ttl`: 8 MUST-level clauses hand-curated from the
+`lws10-authn-openid` editor's draft (snapshot `catalog/sources/ED-lws10-authn-openid.html`;
+an "unofficial proposal" ED with no dated /TR/, per D-0010, so `sourceDraft` points at the
+editor's-draft URL). These are the ID-Token-as-subject-token rules (`sub`/`iss`/`azp`/`aud`
+claim mapping, `alg≠none`, CID dereferencing, token-type URI). The *storage-side* negative
+matrix references the already-catalogued **core** authorization requirements; auth-oidc
+manifests cite both modules' IRIs.
+
 ### D-0016 — json-schema-validator: 3.0.6, consumed only through its string API
 D-0009 flagged the new major for re-verification at first use; the verification had
 two rounds. networknt 3.x moved to the Jackson 3 generation (`tools.jackson.*` types

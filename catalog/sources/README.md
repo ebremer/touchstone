@@ -9,6 +9,8 @@ be re-derived from a byte-exact source.
 |---|---|---|
 | `WD-lws10-core-20260622.html` | https://www.w3.org/TR/2026/WD-lws10-core-20260622/ | 2026-07-16 |
 | `WD-lws10-core-20260622.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-07-16 |
+| `ED-lws10-authn-openid.html` | https://w3c.github.io/lws-protocol/lws10-authn-openid/ (editor's draft; no dated /TR/) | 2026-07-16 |
+| `ED-lws10-authn-openid.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-07-16 |
 
 The snapshot is © W3C and redistributed unmodified under the
 [W3C Document License](https://www.w3.org/copyright/document-license/).
