@@ -1,0 +1,21 @@
+# build output
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# misc
+*.log
+dependency-reduced-pom.xml
+
+# local agent state
+.claude/settings.local.json
