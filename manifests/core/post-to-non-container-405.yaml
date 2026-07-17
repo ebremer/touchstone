@@ -1,0 +1,34 @@
+# Harvested from solid-contrib/specification-tests (protocol/writing-resource): a POST
+# targeting a non-container resource must not mutate the tree. Adapted to the LWS
+# Operations model, where POST is defined only against containers (DECISIONS.md D-0025).
+schemaVersion: 1
+id: core/post-to-non-container-405
+title: POST to a data resource (not a container) is rejected with 405 and an Allow header
+requirements:
+  - https://example.org/touchstone/req/lws10-core/create-server-managed-metadata-protected
+  - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+steps:
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: leaf
+      body: "not a container"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: POST under the data resource is not allowed
+    request:
+      method: POST
+      target: "${created}"
+      headers:
+        Content-Type: text/plain
+      body: "should be refused"
+    expect:
+      status: 405
+      headers:
+        Allow: { present: true }

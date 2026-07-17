@@ -37,7 +37,7 @@ class RunCommandTest {
                     "--report-dir", reports.toString());
 
             assertThat(out.toString())
-                    .contains("12 passed, 0 failed, 0 errors, 0 skipped")
+                    .contains("13 passed, 0 failed, 0 errors, 0 skipped")
                     .doesNotContain("[FAILED]")
                     .doesNotContain("[ERROR ]");
             assertThat(exit).isZero();
@@ -57,7 +57,7 @@ class RunCommandTest {
             org.apache.jena.riot.RDFDataMgr.read(earl, runDir.resolve("earl.ttl").toUri().toString());
             assertThat(earl.listResourcesWithProperty(
                     org.apache.jena.vocabulary.RDF.type,
-                    earl.createResource("http://www.w3.org/ns/earl#Assertion")).toList()).hasSize(12);
+                    earl.createResource("http://www.w3.org/ns/earl#Assertion")).toList()).hasSize(13);
 
             // HTML matrix links tests -> requirements -> spec sections
             String html = Files.readString(runDir.resolve("report.html"));
@@ -68,7 +68,7 @@ class RunCommandTest {
                     .contains("No MUST-level failures");
 
             String junit = Files.readString(runDir.resolve("junit.xml"));
-            assertThat(junit).contains("tests=\"12\"").contains("failures=\"0\"");
+            assertThat(junit).contains("tests=\"13\"").contains("failures=\"0\"");
         }
     }
 
