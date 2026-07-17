@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: auth-oidc/unknown-key-401
+title: A token signed by a key absent from the issuer JWKS is rejected with 401
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+capabilities: [authentication]
+as: alice-unknown-key
+steps:
+  - name: a token whose signing key is not published is refused
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 401
+      headers:
+        WWW-Authenticate: { present: true }

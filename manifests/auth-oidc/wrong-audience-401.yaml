@@ -1,0 +1,20 @@
+schemaVersion: 1
+id: auth-oidc/wrong-audience-401
+title: A token whose audience is not this storage is rejected with 401
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
+  - https://example.org/touchstone/req/lws10-authn-openid/id-token-aud-claim
+capabilities: [authentication]
+as: alice-wrong-audience
+steps:
+  - name: a token minted for another audience is refused
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 401
+      headers:
+        WWW-Authenticate: { present: true }

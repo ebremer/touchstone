@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: auth-oidc/expired-token-401
+title: An expired access token is rejected with 401 and an invalid_token error
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-core/authz-invalid-token-401-error-param
+capabilities: [authentication]
+as: alice-expired
+steps:
+  - name: an expired token is refused
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 401
+      headers:
+        WWW-Authenticate: { contains: 'error="invalid_token"' }

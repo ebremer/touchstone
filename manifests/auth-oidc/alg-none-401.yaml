@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: auth-oidc/alg-none-401
+title: An unsigned (alg=none) token is rejected with 401
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-authn-openid/id-token-alg-not-none
+capabilities: [authentication]
+as: alice-alg-none
+steps:
+  - name: an unsigned token is refused
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 401
+      headers:
+        WWW-Authenticate: { present: true }

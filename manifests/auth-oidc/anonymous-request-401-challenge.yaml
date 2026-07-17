@@ -1,0 +1,23 @@
+schemaVersion: 1
+id: auth-oidc/anonymous-request-401-challenge
+title: An unauthenticated request is answered with 401 and a conforming WWW-Authenticate challenge
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+  - https://example.org/touchstone/req/lws10-core/authz-challenge-as-uri-param
+  - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
+capabilities: [authentication]
+as: anonymous
+steps:
+  - name: GET a protected resource without credentials yields 401 with a conforming challenge
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 401
+      headers:
+        # A conforming challenge names where to authenticate (as_uri) and the scope (realm).
+        WWW-Authenticate:
+          present: true
+          matches: 'as_uri="[^"]+".*realm="[^"]+"'

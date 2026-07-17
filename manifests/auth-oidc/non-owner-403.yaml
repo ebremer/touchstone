@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: auth-oidc/non-owner-403
+title: A valid token for a different identity is forbidden with 403, not 401
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+  - https://example.org/touchstone/req/lws10-core/delete-401-403-404-semantics
+capabilities: [authentication]
+as: bob
+steps:
+  - name: bob presents a valid token but does not own alice's storage
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      # 403 (authenticated but unauthorized), distinct from the 401 an anonymous or
+      # invalid-token request receives — the 401-vs-403 distinction of DESIGN.md 5.4.
+      status: 403

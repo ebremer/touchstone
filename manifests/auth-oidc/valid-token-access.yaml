@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: auth-oidc/valid-token-access
+title: A valid access token from the trusted issuer grants the owner access
+requirements:
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+  - https://example.org/touchstone/req/lws10-core/authz-bearer-presentation-rfc6750
+capabilities: [authentication]
+as: alice
+steps:
+  - name: alice reads her own run root
+    request:
+      method: GET
+      target: "${run.root}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }

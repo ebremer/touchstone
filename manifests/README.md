@@ -8,14 +8,20 @@ Declarative YAML test definitions — the single source of truth the JUnit 5
 manifests arrive with Phase 2's executor; every manifest must validate against
 the frozen schema.
 
-Planned layout once the gate opens:
+Layout:
 
 ```
 manifests/
-  core/            # storage, containers, CRUD, conditional requests, conneg, errors
+  core/            # storage, containers, CRUD, conditional requests, conneg, errors (12 tests)
     bodies/        # request-body fixtures referenced via bodyRef
-  auth-oidc/
-  auth-saml/
-  auth-cid/
-  auth-didkey/
+  auth-oidc/       # OIDC negative matrix: 401 + WWW-Authenticate, token validation (9 tests)
+  auth-saml/       # (Phase 6)
+  auth-cid/        # (Phase 6)
+  auth-didkey/     # (Phase 6)
 ```
+
+Auth manifests declare `capabilities: [authentication]`, so they run only against a
+target that advertises it (the secured reference server) and are skipped against the
+open one. They reference abstract identities (`alice`, `bob`, `anonymous`,
+`alice-expired`, `alice-bad-signature`, …) that the provisioning adapter resolves to
+credentials; the harness owns the OIDC issuer that mints them (DECISIONS.md D-0017).
