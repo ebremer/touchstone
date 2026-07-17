@@ -1,0 +1,63 @@
+# Worked example for the Gate 2 review — what test #1 will look like once the
+# schema freezes. Re-expressed against the WD-20260622 containment model
+# (container listing + Link rel="up"; no ldp:contains — DECISIONS.md D-0012).
+schemaVersion: 1
+id: core/container-containment-after-post
+title: POST to a container adds the resource to the parent's listing
+requirements:
+  - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+  - https://example.org/touchstone/req/lws10-core/container-empty-items-array
+capabilities: []
+as: alice
+steps:
+  - name: fresh test container starts empty
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+      json:
+        - pointer: "/items"
+          equals: []
+
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: note
+      body: "hello from touchstone"
+    expect:
+      status: 201
+      headers:
+        Location: { present: true }
+        Link: { contains: 'rel="up"' }
+    bind:
+      created: "header:Location"
+
+  - name: parent listing now contains exactly the new resource
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/totalItems"
+          equals: 1
+        - pointer: "/items"
+          count: 1
+      graph:
+        # JSON-LD reading of the same listing. Type IRI per the WD's vocabulary
+        # (https://www.w3.org/ns/lws#); the exact context mapping is confirmed
+        # against the published JSON-LD context during Phase 2 implementation.
+        contains:
+          - s: "${created}"
+            p: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+            o: "https://www.w3.org/ns/lws#DataResource"
