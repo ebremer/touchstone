@@ -10,7 +10,7 @@ import picocli.CommandLine.Command;
         name = "touchstone",
         mixinStandardHelpOptions = true,
         versionProvider = TouchstoneCli.VersionProvider.class,
-        subcommands = CoverageCommand.class,
+        subcommands = {RunCommand.class, CoverageCommand.class},
         description = "Conformance test harness for the W3C Linked Web Storage (LWS) protocol family.")
 public final class TouchstoneCli implements Callable<Integer> {
 

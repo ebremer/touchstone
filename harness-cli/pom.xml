@@ -40,6 +40,13 @@
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- End-to-end test target: the in-memory reference LWS server (DECISIONS.md D-0015). -->
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-fixtures</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

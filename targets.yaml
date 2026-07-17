@@ -1,0 +1,11 @@
+# Pre-registered SUT targets (DESIGN.md paragraph 7.1): Touchstone front ends accept
+# only these ids, never raw URLs — this file is the SSRF/abuse boundary.
+#
+# Start the local reference server first:
+#   mvn -pl harness-fixtures exec:java -Dexec.args=4711
+targets:
+  ref:
+    baseUrl: http://localhost:4711/
+    adapter: env
+    capabilities: []
+    properties: {}

@@ -3,6 +3,7 @@ package com.ebremer.touchstone.cli;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -10,6 +11,8 @@ import java.util.concurrent.Callable;
 import com.ebremer.touchstone.core.catalog.CatalogRepository;
 import com.ebremer.touchstone.core.catalog.Requirement;
 import com.ebremer.touchstone.core.coverage.CoverageReport;
+import com.ebremer.touchstone.core.manifest.Manifest;
+import com.ebremer.touchstone.core.manifest.ManifestLoader;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -27,6 +30,12 @@ final class CoverageCommand implements Callable<Integer> {
             description = "Requirements catalog directory (default: ${DEFAULT-VALUE}).")
     private Path catalogDir;
 
+    @Option(
+            names = "--manifests",
+            defaultValue = "manifests",
+            description = "Manifests directory; their requirement IRIs count as covered (default: ${DEFAULT-VALUE}).")
+    private Path manifestsDir;
+
     @Spec
     private CommandSpec spec;
 
@@ -37,11 +46,19 @@ final class CoverageCommand implements Callable<Integer> {
             return 2;
         }
         List<Requirement> requirements = CatalogRepository.load(catalogDir);
-        // The manifest loader arrives with Phase 2; until then no requirement is covered.
-        CoverageReport report = CoverageReport.compute(requirements, Set.of());
+
+        Set<String> covered = new HashSet<>();
+        int manifestCount = 0;
+        if (Files.isDirectory(manifestsDir)) {
+            List<Manifest> manifests = ManifestLoader.loadDirectory(manifestsDir);
+            manifestCount = manifests.size();
+            manifests.forEach(m -> covered.addAll(m.requirements()));
+        }
+        CoverageReport report = CoverageReport.compute(requirements, covered);
 
         PrintWriter out = spec.commandLine().getOut();
-        out.printf("Requirements coverage: %d of %d covered%n%n", report.totalCovered(), report.totalRequirements());
+        out.printf("Requirements coverage: %d of %d covered by %d manifest(s)%n%n",
+                report.totalCovered(), report.totalRequirements(), manifestCount);
         out.printf("%-16s %-8s %s%n", "module", "level", "covered/total");
         for (CoverageReport.Row row : report.rows()) {
             out.printf("%-16s %-8s %d/%d%n", row.specModule(), row.level(), row.covered(), row.total());
