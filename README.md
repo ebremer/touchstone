@@ -6,15 +6,20 @@ it fires HTTP requests and asserts on responses, and it runs controlled identity
 fixtures (throwaway OIDC issuer, SAML IdP, self-signed key material, hosted agent
 identity documents) so credential failure paths can be tested deterministically.
 
-**Status: Phase 3 complete** — every `touchstone run` now persists
-`runs/<runId>/{run.json, earl.ttl, junit.xml, report.html}`: W3C EARL assertions
-(one per test, linked to catalog requirement IRIs), JUnit XML for CI, and a
-FreeMarker HTML report whose per-requirement matrix links tests → requirements →
-spec sections with MUST/SHOULD/MAY rollups and a §5.1 conformance verdict.
-`touchstone diff <runA> <runB>` compares runs (regressions/fixes/added/removed;
-exit 1 on regressions). Engine: manifest executor over frozen schema v1, full
-assertion vocabulary, per-test isolation, 12 core manifests green against the
-in-memory reference LWS server. Next: Phase 4, identity fixtures + the OIDC suite.
+**Status: Phase 4 complete** — the harness now owns an ephemeral **OIDC issuer**
+(Nimbus): discovery + JWKS + minting of valid RFC 9068 access tokens and
+deliberately broken variants (expired, wrong audience/issuer, bad signature,
+unknown key, `alg=none`, mid-session key rotation). The reference LWS server gains
+`SECURED` mode (validates Bearer tokens against the issuer; 401 + conforming
+WWW-Authenticate, 403 for a valid non-owner) and a `BROKEN` twin. Nine `auth-oidc`
+negative-matrix manifests **pass against the compliant server and fail against the
+broken one** — the Phase 4 acceptance criterion, asserted in the self-test loop and
+verified end-to-end through `touchstone run --module auth-oidc`.
+
+Earlier phases: multi-module scaffold, 170-clause requirements catalog (core +
+auth-oidc) with drift hashing, frozen manifest schema v1, the declarative executor
+and assertion engine, and reporting (`runs/<id>/{run.json, earl.ttl, junit.xml,
+report.html}` + `touchstone diff`). Next: Phase 5, the MCP server.
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
 
