@@ -13,7 +13,9 @@ Ground rules for every Claude/agent session in this repository:
    - the frozen manifest JSON Schema before writing test #1.
    Gate status is tracked in `DECISIONS.md`.
 5. Git: conventional commits, author `Erich Bremer <erich@ebremer.com>`, commit at
-   each meaningful step. Verify dependency versions online before pinning (DESIGN.md §10).
+   each meaningful step. Commits carry **no AI attribution** — never add
+   `Co-Authored-By` or similar trailers. Verify dependency versions online before
+   pinning (DESIGN.md §10).
 6. Build: `./mvnw -B verify`, JDK 21 target (CI runs Temurin 21). `harness-core`
    must stay Spring-free; Tomcat must never reach `harness-mcp`'s classpath
    (enforcer-banned).
