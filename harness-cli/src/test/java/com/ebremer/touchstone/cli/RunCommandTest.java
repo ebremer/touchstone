@@ -19,9 +19,10 @@ class RunCommandTest {
     Path tmp;
 
     @Test
-    void coreSuitePassesAgainstTheReferenceServer() throws Exception {
+    void coreSuitePassesAgainstTheReferenceServerAndEmitsAllReports() throws Exception {
         try (RefLwsServer server = RefLwsServer.start(0)) {
             Path targets = targetsFile(server);
+            Path reports = tmp.resolve("runs");
             StringWriter out = new StringWriter();
             CommandLine cmd = new CommandLine(new TouchstoneCli());
             cmd.setOut(new PrintWriter(out));
@@ -31,13 +32,43 @@ class RunCommandTest {
                     "--target", "ref",
                     "--targets", targets.toString(),
                     "--manifests", "../manifests",
-                    "--module", "core");
+                    "--module", "core",
+                    "--catalog", "../catalog",
+                    "--report-dir", reports.toString());
 
             assertThat(out.toString())
                     .contains("12 passed, 0 failed, 0 errors, 0 skipped")
                     .doesNotContain("[FAILED]")
                     .doesNotContain("[ERROR ]");
             assertThat(exit).isZero();
+
+            // phase 3 acceptance: one run emits all three formats plus the machine record
+            Path runDir;
+            try (var dirs = Files.list(reports)) {
+                runDir = dirs.findFirst().orElseThrow();
+            }
+            assertThat(runDir.resolve("run.json")).exists();
+            assertThat(runDir.resolve("earl.ttl")).exists();
+            assertThat(runDir.resolve("junit.xml")).exists();
+            assertThat(runDir.resolve("report.html")).exists();
+
+            // EARL parses and holds one assertion per test
+            org.apache.jena.rdf.model.Model earl = org.apache.jena.rdf.model.ModelFactory.createDefaultModel();
+            org.apache.jena.riot.RDFDataMgr.read(earl, runDir.resolve("earl.ttl").toUri().toString());
+            assertThat(earl.listResourcesWithProperty(
+                    org.apache.jena.vocabulary.RDF.type,
+                    earl.createResource("http://www.w3.org/ns/earl#Assertion")).toList()).hasSize(12);
+
+            // HTML matrix links tests -> requirements -> spec sections
+            String html = Files.readString(runDir.resolve("report.html"));
+            assertThat(html)
+                    .contains("https://www.w3.org/TR/lws10-core/#")
+                    .contains("id=\"t-core-container-containment-after-post\"")
+                    .contains("href=\"#r-create-post-201-location-links\"")
+                    .contains("No MUST-level failures");
+
+            String junit = Files.readString(runDir.resolve("junit.xml"));
+            assertThat(junit).contains("tests=\"12\"").contains("failures=\"0\"");
         }
     }
 

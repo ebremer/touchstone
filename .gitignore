@@ -1,6 +1,9 @@
 # build output
 target/
 
+# local run artifacts (reports are per-run output, not source)
+runs/
+
 # IDE
 .idea/
 *.iml

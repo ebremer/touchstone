@@ -3,6 +3,7 @@ package com.ebremer.touchstone.cli;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.ebremer.touchstone.core.catalog.CatalogRepository;
+import com.ebremer.touchstone.core.catalog.Requirement;
 import com.ebremer.touchstone.core.exec.Executor;
 import com.ebremer.touchstone.core.exec.ProvisioningAdapters;
 import com.ebremer.touchstone.core.exec.RunContext;
@@ -19,6 +22,10 @@ import com.ebremer.touchstone.core.exec.Target;
 import com.ebremer.touchstone.core.exec.TargetRegistry;
 import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.manifest.ManifestLoader;
+import com.ebremer.touchstone.core.report.EarlReport;
+import com.ebremer.touchstone.core.report.HtmlReport;
+import com.ebremer.touchstone.core.report.JUnitXmlReport;
+import com.ebremer.touchstone.core.report.RunRecords;
 import com.ebremer.touchstone.core.results.Outcome;
 import com.ebremer.touchstone.core.results.Results;
 import com.ebremer.touchstone.core.results.RunResult;
@@ -31,7 +38,7 @@ import picocli.CommandLine.Spec;
 @Command(
         name = "run",
         mixinStandardHelpOptions = true,
-        description = "Execute conformance tests against a pre-registered target.")
+        description = "Execute conformance tests against a pre-registered target and emit reports.")
 final class RunCommand implements Callable<Integer> {
 
     @Option(
@@ -57,6 +64,18 @@ final class RunCommand implements Callable<Integer> {
             defaultValue = "targets.yaml",
             description = "Target registry file (default: ${DEFAULT-VALUE}).")
     private Path targetsFile;
+
+    @Option(
+            names = {"-c", "--catalog"},
+            defaultValue = "catalog",
+            description = "Requirements catalog directory, used by the HTML report (default: ${DEFAULT-VALUE}).")
+    private Path catalogDir;
+
+    @Option(
+            names = "--report-dir",
+            defaultValue = "runs",
+            description = "Directory receiving runs/<runId>/{run.json, earl.ttl, junit.xml, report.html} (default: ${DEFAULT-VALUE}).")
+    private Path reportDir;
 
     @Spec
     private CommandSpec spec;
@@ -88,6 +107,7 @@ final class RunCommand implements Callable<Integer> {
         }
 
         String runId = UUID.randomUUID().toString().substring(0, 8);
+        String startedAt = Instant.now().toString();
         List<TestResult> results = new ArrayList<>();
         // Parallel by default (DESIGN.md paragraph 5.3): one virtual thread per test,
         // each test isolated in its own container; steps stay sequential inside a test.
@@ -108,10 +128,23 @@ final class RunCommand implements Callable<Integer> {
                 out.println(Results.describe(result).indent(4).stripTrailing());
             }
         }
-        RunResult run = new RunResult(targetId, runId, List.copyOf(results));
+        RunResult run = new RunResult(targetId, target.baseUrl().toString(), runId, startedAt,
+                List.copyOf(results));
         out.printf("%n%d passed, %d failed, %d errors, %d skipped  (target %s, run %s)%n",
                 run.count(Outcome.PASSED), run.count(Outcome.FAILED),
                 run.count(Outcome.ERROR), run.count(Outcome.SKIPPED), targetId, runId);
+
+        Path runDir = reportDir.resolve(runId);
+        Files.createDirectories(runDir);
+        RunRecords.save(run, runDir.resolve("run.json"));
+        EarlReport.write(run, runDir.resolve("earl.ttl"));
+        JUnitXmlReport.write(run, runDir.resolve("junit.xml"));
+        List<Requirement> catalog = Files.isDirectory(catalogDir)
+                ? CatalogRepository.load(catalogDir)
+                : List.of();
+        HtmlReport.write(run, catalog, runDir.resolve("report.html"));
+        out.println("reports: " + runDir + " (run.json, earl.ttl, junit.xml, report.html)");
+
         return run.conformant() ? 0 : 1;
     }
 }
