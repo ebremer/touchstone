@@ -1,0 +1,8 @@
+.git
+**/target
+runs
+runs-*
+targets-secured.yaml
+*.log
+.claude
+tools/extractor/__pycache__

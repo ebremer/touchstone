@@ -1,0 +1,72 @@
+name: LWS Conformance (Touchstone)
+description: >-
+  Run the Touchstone conformance harness against a running LWS server and publish an
+  EARL + HTML + JUnit report. Add this to any server-implementation repo to get a
+  conformance report on every push.
+author: Erich Bremer
+
+inputs:
+  target-url:
+    description: Base URL of the running LWS server to test (the system under test).
+    required: true
+  module:
+    description: Test module to run (core, auth-oidc, ...).
+    required: false
+    default: core
+  fail-on-nonconformance:
+    description: Fail the job when the run is non-conformant (any failure or error).
+    required: false
+    default: "true"
+  report-path:
+    description: Directory (relative to the workspace) to write reports into.
+    required: false
+    default: touchstone-reports
+
+outputs:
+  report-dir:
+    description: Directory containing run.json, earl.ttl, junit.xml, and report.html.
+    value: ${{ steps.run.outputs.report-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build the Touchstone image
+      shell: bash
+      # github.action_path is .../.github/actions/lws-conformance; the repo root is three up.
+      run: docker build -t touchstone-harness:local "${{ github.action_path }}/../../.."
+
+    - name: Register the target (id only — never a URL to the tools; DESIGN.md 7.1)
+      shell: bash
+      run: |
+        mkdir -p "${{ github.workspace }}/${{ inputs.report-path }}"
+        cat > "${{ github.workspace }}/${{ inputs.report-path }}/targets.yaml" <<EOF
+        targets:
+          sut:
+            baseUrl: ${{ inputs.target-url }}
+            adapter: env
+        EOF
+
+    - name: Run conformance
+      id: run
+      shell: bash
+      run: |
+        set +e
+        docker run --rm --network host \
+          -v "${{ github.workspace }}/${{ inputs.report-path }}:/work" \
+          touchstone-harness:local \
+          run --target sut --module "${{ inputs.module }}" \
+              --targets /work/targets.yaml --report-dir /work/runs \
+              --catalog catalog --manifests manifests
+        code=$?
+        echo "report-dir=${{ inputs.report-path }}/runs" >> "$GITHUB_OUTPUT"
+        if [ "${{ inputs.fail-on-nonconformance }}" = "true" ]; then
+          exit $code
+        fi
+        exit 0
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: touchstone-conformance-report
+        path: ${{ inputs.report-path }}/runs
