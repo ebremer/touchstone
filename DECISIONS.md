@@ -5,8 +5,8 @@ with reality is recorded here, dated, with rationale. When the spec and the brie
 disagree, the spec wins.
 
 Gate status:
-- **Gate 1 (15 seed requirements before mass extraction): OPEN — awaiting Erich's review.**
-- **Gate 2 (frozen manifest JSON Schema before test #1): OPEN — proposal drafted, awaiting Erich's review.**
+- **Gate 1: CLOSED — Erich approved the 15 seed requirements on 2026-07-16; mass extraction authorized (D-0013).**
+- **Gate 2: CLOSED — manifest JSON Schema v1 frozen on 2026-07-16 (D-0013).**
 
 ## 2026-07-16
 
@@ -114,6 +114,15 @@ Implemented in `tools/extractor/` (the drift-check foundation for Phase 1).
   `build.shibboleth.net/maven/releases` (NOT Maven Central); harness-fixtures needs
   that repository added at Phase 6.
 - **GitHub Actions**: checkout@v7, setup-java@v5 (latest majors as of today).
+
+### D-0013 — Gate review outcomes (Erich, 2026-07-16)
+All four decisions taken as recommended: **Gate 1 approved** (seed status flips to
+Approved; mass extraction proceeds), **Gate 2 frozen** (schema `$id`
+`https://example.org/touchstone/schema/manifest/1-0-0` is fixed; changes bump the
+version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, and
+**WG posture: build independently, stay format-aligned** with w3c/lws-protocol#102
+(EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
+GitHub remote still pending (D-0007).
 
 ### D-0011 — Tomcat ban carve-out: `tomcat-embed-el`
 Boot 4's `spring-boot-starter-jetty` itself ships `org.apache.tomcat.embed:tomcat-embed-el`

@@ -1,9 +1,8 @@
 # Manifest JSON Schema v1 — proposal (Gate 2)
 
-Status: **PROPOSED — awaiting Erich's review (DESIGN.md §11). No test manifest is
-written until this freezes.** On approval the `$id`
-`https://example.org/touchstone/schema/manifest/1-0-0` is frozen; any later change
-bumps the version and gets a DECISIONS.md entry.
+Status: **FROZEN v1 — approved by Erich on 2026-07-16 (DECISIONS.md D-0013).**
+The `$id` `https://example.org/touchstone/schema/manifest/1-0-0` is fixed; any
+later change bumps the version and gets a DECISIONS.md entry.
 
 ## Shape
 

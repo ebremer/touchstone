@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.org/touchstone/schema/manifest/1-0-0",
   "title": "Touchstone test manifest",
-  "description": "One conformance test: metadata plus an HTTP step sequence with declarative assertions. PROPOSED under Gate 2 (DESIGN.md paragraph 11) - frozen only after review.",
+  "description": "One conformance test: metadata plus an HTTP step sequence with declarative assertions. FROZEN v1 on 2026-07-16 (Gate 2, DECISIONS.md D-0013); any change requires a version bump and a decision entry.",
   "type": "object",
   "required": ["schemaVersion", "id", "title", "requirements", "steps"],
   "additionalProperties": false,

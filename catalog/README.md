@@ -14,6 +14,7 @@ requirement IRIs they verify; coverage = requirements × tests.
 
 Tooling lives in `tools/extractor/`.
 
-**Gate 1 (DESIGN.md §11): the 15 seed requirements in `lws10-core.ttl` carry
-`touchstone:status touchstone:Draft` and await Erich's review before mass
-extraction of the remaining ~148 normative clauses.**
+**Gate 1 closed (2026-07-16): the 15 seeds are Approved and the full core-draft
+extraction lives in `lws10-core.ttl`** (generated entries carry
+`touchstone:status touchstone:Draft` pending batch review; the curation record
+sits alongside the snapshot in `sources/`).
