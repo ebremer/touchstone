@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/touchstone/schema/manifest/1-0-0",
+  "title": "Touchstone test manifest",
+  "description": "One conformance test: metadata plus an HTTP step sequence with declarative assertions. FROZEN v1 on 2026-07-16 (Gate 2, DECISIONS.md D-0013); any change requires a version bump and a decision entry.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "title", "requirements", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Manifest schema major version; changes only through a reviewed schema revision."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)+$",
+      "description": "module/slug, e.g. core/container-containment-after-post; the module segment matches the manifests/ directory."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "format": "uri" },
+      "description": "Catalog requirement IRIs this test verifies (coverage matrix input)."
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Server capability keys required to run this test; empty = always runs."
+    },
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "as": {
+      "$ref": "#/$defs/identity",
+      "default": "anonymous",
+      "description": "Default identity for all steps; individual steps may override."
+    },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Abstract credential reference resolved by the auth module: alice, bob, anonymous, alice-expired-token, ..."
+    },
+    "template": {
+      "type": "string",
+      "description": "String with ${...} placeholders. Variables: ${run.root} (per-run root container), ${test.container} (fresh container allocated per test), plus names bound by earlier steps' bind blocks."
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["request"] },
+        { "required": ["rawRequest"] }
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "as": { "$ref": "#/$defs/identity" },
+        "request": { "$ref": "#/$defs/request" },
+        "rawRequest": {
+          "$ref": "#/$defs/template",
+          "description": "Verbatim HTTP/1.1 message text for hostile or malformed cases; sent over a raw socket, bypassing client normalization (DESIGN.md paragraph 4)."
+        },
+        "expect": { "$ref": "#/$defs/expect" },
+        "bind": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^(header:[A-Za-z][A-Za-z0-9-]*|status|body)$"
+          },
+          "description": "Bind response parts to variables for later steps: header:<Name>, status, body."
+        },
+        "timeoutMillis": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "target"],
+      "not": { "required": ["body", "bodyRef"] },
+      "properties": {
+        "method": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] },
+        "target": { "$ref": "#/$defs/template" },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "$ref": "#/$defs/template" },
+              { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/template" } }
+            ]
+          },
+          "description": "Header name to value (or list of values for repeated headers). Values are templates."
+        },
+        "body": { "type": "string", "description": "Inline request body. Mutually exclusive with bodyRef." },
+        "bodyRef": {
+          "type": "string",
+          "pattern": "^[^/\\\\]",
+          "description": "Request-body fixture path relative to the manifest file (e.g. bodies/note.json). Mutually exclusive with body."
+        }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "status": {
+          "oneOf": [
+            { "$ref": "#/$defs/statusCode" },
+            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/statusCode" } }
+          ],
+          "description": "Exact status, or the acceptable set when the spec allows alternatives."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/headerAssertion" },
+          "description": "Assertions keyed by header name. Negative assertions via absent: true."
+        },
+        "json": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/jsonAssertion" },
+          "description": "JSON-pointer assertions on the response body (the WD's container representations are JSON-first; DECISIONS.md D-0012)."
+        },
+        "graph": { "$ref": "#/$defs/graphAssertion" },
+        "body": { "$ref": "#/$defs/bodyAssertion" },
+        "connegEquivalent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accepts"],
+          "properties": {
+            "accepts": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": { "type": "string" }
+            }
+          },
+          "description": "Executor re-issues this request once per listed media type and asserts the parsed graphs are isomorphic, resolving relative IRIs against the effective request URI (DESIGN.md paragraph 5.2 conneg round-trip)."
+        }
+      }
+    },
+    "statusCode": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "headerAssertion": {
+      "oneOf": [
+        { "$ref": "#/$defs/template" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "present": { "type": "boolean" },
+            "absent": { "type": "boolean" },
+            "equals": { "$ref": "#/$defs/template" },
+            "matches": { "type": "string", "format": "regex" },
+            "contains": { "$ref": "#/$defs/template" }
+          }
+        }
+      ],
+      "description": "Shorthand string = exact expected value; object form for presence/absence/regex/substring."
+    },
+    "jsonAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pointer"],
+      "minProperties": 2,
+      "properties": {
+        "pointer": { "type": "string", "description": "RFC 6901 JSON Pointer into the response body." },
+        "equals": { "description": "Deep equality against this value; templates expanded inside strings." },
+        "matches": { "type": "string", "format": "regex", "description": "Regex over the string value at the pointer." },
+        "exists": { "type": "boolean", "description": "Assert the pointer resolves (true) or does not (false)." },
+        "count": { "type": "integer", "minimum": 0, "description": "Array length or object member count at the pointer." }
+      }
+    },
+    "graphAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "parseAs": { "type": "string", "description": "Override media type when parsing the body as RDF; default is the response Content-Type." },
+        "contains": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/triple" }, "description": "Every listed triple must be entailed by the response graph." },
+        "notContains": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/triple" }, "description": "Negative assertion: none of these triples may appear." },
+        "isomorphicTo": { "type": "string", "description": "Fixture graph file relative to the manifest; blank-node-safe isomorphism (Jena IsoMatcher)." },
+        "shacl": { "type": "string", "description": "SHACL shapes file relative to the manifest; the response graph must conform." }
+      }
+    },
+    "triple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["s", "p", "o"],
+      "properties": {
+        "s": { "$ref": "#/$defs/template", "description": "Subject IRI after template expansion; the token \"_:any\" matches any blank node." },
+        "p": { "$ref": "#/$defs/template", "description": "Predicate IRI after template expansion." },
+        "o": {
+          "oneOf": [
+            { "$ref": "#/$defs/template" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value"],
+              "properties": {
+                "value": { "$ref": "#/$defs/template" },
+                "lang": { "type": "string" },
+                "datatype": { "type": "string", "format": "uri" }
+              }
+            }
+          ],
+          "description": "Object: IRI/\"_:any\" as a string, or a literal object with optional lang/datatype."
+        }
+      }
+    },
+    "bodyAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "equalsRef": { "type": "string", "description": "Byte-exact match against a fixture file relative to the manifest." },
+        "matches": { "type": "string", "format": "regex" },
+        "empty": { "type": "boolean" }
+      }
+    }
+  }
+}

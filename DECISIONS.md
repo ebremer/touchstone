@@ -124,6 +124,38 @@ version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, 
 (EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
 GitHub remote still pending (D-0007).
 
+### D-0016 — json-schema-validator: 3.0.6, consumed only through its string API
+D-0009 flagged the new major for re-verification at first use; the verification had
+two rounds. networknt 3.x moved to the Jackson 3 generation (`tools.jackson.*` types
+in its node-based API), so the first instinct was to pin the Jackson-2-era 1.5.x line
+— but that downgrade broke harness-mcp: **the MCP Java SDK itself requires networknt
+3.x** (`NoClassDefFoundError: com.networknt.schema.dialect.Dialects` in
+`McpSyncServer`), and harness-mcp inevitably has both the SDK and harness-core on one
+classpath. Resolution: pin **3.0.6** everywhere and have the manifest loader use only
+the string-based API (`SchemaRegistry.getSchema(InputStream)`,
+`Schema.validate(json, InputFormat.JSON)` → `List<Error>`), so validation parses
+internally with the library's own Jackson 3 while all Touchstone code stays on
+Jackson 2 (`com.fasterxml`) — the two Jackson generations coexist by design
+(different package namespaces).
+
+### D-0015 — Phase 2 reference target: built-in `RefLwsServer` fixture (not CSS)
+§8 suggested Community Solid Server as a stand-in "until LWS implementations exist —
+confirm current best option online." Confirmed 2026-07-16: the WG's Implementations.md
+is still an unmerged PR (404 on main) and no public LWS server implementation is
+identifiable; CSS remains a Solid Protocol implementation with no LWS support, so it
+would fail the WD-specific assertions our manifests make (`items` listings,
+`application/lws+json`, `Link rel="up"`, 428 on unconditional PUT). Decision: the
+Phase 2 reference target is an **in-memory reference LWS server in harness-fixtures**
+(embedded Jetty, WD happy-path semantics, no auth) — deterministic, Docker-free in CI,
+and it is the compliant half of the compliant-vs-broken stub pair Phase 4 requires
+anyway. CSS/Testcontainers stays on the roadmap for Solid-compat scenario harvesting.
+Two fidelity notes: (1) **https://www.w3.org/ns/lws/v1 — the WD's normative JSON-LD
+context — is itself a 404 as of today**; the ref server therefore emits an equivalent
+inline `@context` so JSON-LD parsing works offline; swap to the published context (with
+a cached local document loader) once W3C serves it. Candidate WG feedback item.
+(2) The ref server implements the subset our manifests exercise (no linkset resources,
+no range requests yet); it grows with the suite.
+
 ### D-0014 — Mass-extraction conventions (Phase 1)
 - **Granularity:** one Requirement per normative spec block (the draft's own
   paragraph/list-item granularity as extracted); finer splitting happens later only
