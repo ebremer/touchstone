@@ -1,0 +1,24 @@
+# Configuration baseline from DESIGN.md paragraph 6.
+spring:
+  application:
+    name: touchstone-mcp
+  threads:
+    virtual:
+      enabled: true
+  ai:
+    mcp:
+      server:
+        name: touchstone-harness
+        version: 0.1.0
+        protocol: STREAMABLE
+        type: SYNC
+        instructions: "LWS conformance harness. Start with list_requirements or coverage."
+
+server:
+  port: 9090
+  shutdown: graceful
+  jetty:
+    threads:
+      max: 64
+    # Streamable connections are long-lived; Jetty's default idle timeout kills them.
+    connection-idle-timeout: 300s

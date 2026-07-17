@@ -115,6 +115,37 @@ Implemented in `tools/extractor/` (the drift-check foundation for Phase 1).
   that repository added at Phase 6.
 - **GitHub Actions**: checkout@v7, setup-java@v5 (latest majors as of today).
 
+### D-0011 — Tomcat ban carve-out: `tomcat-embed-el`
+Boot 4's `spring-boot-starter-jetty` itself ships `org.apache.tomcat.embed:tomcat-embed-el`
+— the Jakarta Expression Language implementation, not a servlet container (Jetty bundles
+no EL). The enforcer `bannedDependencies` rule (stronger than §4's one-off
+`dependency:tree | grep -i tomcat` — it fails every build on regression) bans all Tomcat
+coordinates *except* exactly that jar, and a boot smoke test asserts the embedded server
+is a `JettyWebServer` instance. `dependency:tree` confirms tomcat-embed-el is the only
+Tomcat-groupId artifact on harness-mcp's classpath.
+
+### D-0012 — Core-draft clause drift vs the brief's §2 "known testable clauses"
+Checked over the full WD-20260622 extraction:
+- *"Last-Modified MUST be generated on GET/HEAD"* — **gone**. The WD mandates **ETags on
+  all GET/HEAD responses** plus conditional requests (304). Successor seeds:
+  `etag-on-get-head-conditional-304`, `get-data-resource-content-range-etag`.
+- *"PATCH insertion formulae MUST NOT contain blank nodes"* — **gone**. The PATCH baseline
+  is **JSON Merge Patch** (`application/merge-patch+json`); no RDF-patch format exists in
+  the core WD.
+- *"Failed credential validation MUST return 401 + WWW-Authenticate"* — **survives,
+  strengthened**, in the authorization/token sections: any 401 MUST carry a conforming
+  WWW-Authenticate challenge; failed validation MUST yield 401 with an error parameter
+  (`invalid_token`, …). Not in the seed set (seeds are Operations/Containers per §11.3);
+  queued for mass extraction.
+- Broader model shift: **no `ldp:` vocabulary anywhere in the WD.** Containment surfaces
+  as the container representation (`items`, `totalItems`) plus `Link rel="up"` /
+  `rel="linkset"` headers; container-representation conneg baseline is
+  `application/lws+json` / `application/ld+json` / `application/json` (Turtle is only MAY).
+  Consequence: the brief's §5.2 example (an `ldp#contains` graph assertion) is re-expressed
+  against the WD model in the manifest-schema example, and the manifest schema gains a
+  first-class JSON-pointer assertion block alongside the graph/SHACL assertions (JSON-LD
+  is still RDF; both views stay supported).
+
 ### D-0010 — Auth-suite drafts are early "unofficial proposal" editor's drafts
 The four suites live in-repo as `lws10-authn-{openid,saml,ssi-cid,ssi-did-key}`
 (brief's module names auth-oidc/-saml/-cid/-didkey map 1:1). The OIDC draft is thin:
