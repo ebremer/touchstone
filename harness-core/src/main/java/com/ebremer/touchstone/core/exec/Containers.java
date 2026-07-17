@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 
 /** Spec-standard container creation (POST + Link rel="type" lws#Container + Slug). */
 final class Containers {
@@ -14,16 +15,17 @@ final class Containers {
     private Containers() {
     }
 
-    static URI create(HttpClient http, URI parent, String slug) {
-        HttpRequest request = HttpRequest.newBuilder(parent)
+    /** Creates a container under {@code parent}, sending {@code headers} (e.g. the provisioner's credentials). */
+    static URI create(HttpClient http, URI parent, String slug, Map<String, String> headers) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(parent)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .header("Link", CONTAINER_TYPE_LINK)
                 .header("Slug", slug)
-                .timeout(Duration.ofSeconds(15))
-                .build();
+                .timeout(Duration.ofSeconds(15));
+        headers.forEach(builder::header);
         HttpResponse<Void> response;
         try {
-            response = http.send(request, HttpResponse.BodyHandlers.discarding());
+            response = http.send(builder.build(), HttpResponse.BodyHandlers.discarding());
         } catch (Exception e) {
             throw new ProvisioningException("cannot create container '" + slug + "' under " + parent, e);
         }

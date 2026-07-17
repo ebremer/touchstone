@@ -25,8 +25,12 @@ public final class EnvConfigProvisioningAdapter implements ProvisioningAdapter {
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
-        URI runRoot = Containers.create(http, target.baseUrl(), "touchstone-run-" + runId);
-        return new RunContext(target, runId, runRoot, identity -> resolve(target, identity), http);
+        CredentialResolver credentials = identity -> resolve(target, identity);
+        // The provisioner owns run-scoped containers; default anonymous, overridable for secured SUTs.
+        String provisioner = target.properties().getOrDefault("provisioner", "anonymous");
+        Map<String, String> provisionHeaders = credentials.headersFor(provisioner);
+        URI runRoot = Containers.create(http, target.baseUrl(), "touchstone-run-" + runId, provisionHeaders);
+        return new RunContext(target, runId, runRoot, credentials, http, provisionHeaders);
     }
 
     private static Map<String, String> resolve(Target target, String identity) {

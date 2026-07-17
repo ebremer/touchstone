@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -19,14 +20,22 @@ public final class RunContext implements AutoCloseable {
     private final URI runRoot;
     private final CredentialResolver credentials;
     private final HttpClient http;
+    private final Map<String, String> provisionHeaders;
     private final AtomicInteger testCounter = new AtomicInteger();
 
     public RunContext(Target target, String runId, URI runRoot, CredentialResolver credentials, HttpClient http) {
+        this(target, runId, runRoot, credentials, http, Map.of());
+    }
+
+    /** @param provisionHeaders credentials used to allocate run-owned containers (per-test roots). */
+    public RunContext(Target target, String runId, URI runRoot, CredentialResolver credentials, HttpClient http,
+                      Map<String, String> provisionHeaders) {
         this.target = target;
         this.runId = runId;
         this.runRoot = runRoot;
         this.credentials = credentials;
         this.http = http;
+        this.provisionHeaders = Map.copyOf(provisionHeaders);
     }
 
     public Target target() {
@@ -49,21 +58,21 @@ public final class RunContext implements AutoCloseable {
         return http;
     }
 
-    /** Allocates a fresh container for one test under the run root. */
+    /** Allocates a fresh container for one test under the run root, as the provisioning identity. */
     public URI allocateTestContainer(String slug) {
-        return Containers.create(http, runRoot, "t" + testCounter.incrementAndGet() + "-" + slug);
+        return Containers.create(http, runRoot, "t" + testCounter.incrementAndGet() + "-" + slug, provisionHeaders);
     }
 
     /** Best-effort recursive cleanup of the run root; failures are ignored by design. */
     @Override
     public void close() {
         try {
-            HttpRequest delete = HttpRequest.newBuilder(runRoot)
+            HttpRequest.Builder delete = HttpRequest.newBuilder(runRoot)
                     .DELETE()
                     .header("Depth", "infinity")
-                    .timeout(Duration.ofSeconds(10))
-                    .build();
-            http.send(delete, HttpResponse.BodyHandlers.discarding());
+                    .timeout(Duration.ofSeconds(10));
+            provisionHeaders.forEach(delete::header);
+            http.send(delete.build(), HttpResponse.BodyHandlers.discarding());
         } catch (Exception ignored) {
             // cleanup is advisory; the run root is uniquely named per run
         }
