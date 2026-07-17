@@ -35,6 +35,10 @@
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
+    </dependency>
     <!-- Compile-scope by design: the manifest-to-DynamicTest factory is public API (DESIGN.md paragraph 4). -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

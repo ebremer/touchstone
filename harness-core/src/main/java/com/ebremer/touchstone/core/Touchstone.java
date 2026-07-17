@@ -19,6 +19,12 @@ public final class Touchstone {
      */
     public static final String VOCAB_NS = "https://example.org/touchstone/vocab#";
 
+    /** Base IRI minted for test cases in EARL reports (same placeholder namespace). */
+    public static final String TEST_NS = "https://example.org/touchstone/test/";
+
+    /** IRI identifying the harness itself as the EARL assertor. */
+    public static final String HARNESS_IRI = "https://example.org/touchstone/harness";
+
     private static final String VERSION = loadVersion();
 
     private Touchstone() {
