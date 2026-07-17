@@ -6,25 +6,37 @@ it fires HTTP requests and asserts on responses, and it runs controlled identity
 fixtures (throwaway OIDC issuer, SAML IdP, self-signed key material, hosted agent
 identity documents) so credential failure paths can be tested deterministically.
 
-**Status: Phase 5 complete** — `harness-mcp` is a Spring AI MCP server (streamable
-HTTP on Jetty, endpoint `/mcp`, plus a stdio profile) exposing the harness as tools
-over the identical core engine: `list_requirements` / `get_requirement`,
-`list_tests`, `coverage`, `start_run` (async on virtual threads, progress
-notifications), `get_run`, `get_failures` (paged), `get_trace` (one redacted
-exchange at a time), `diff_runs`, `run_one`, plus the `report://{run}/earl` and
-`requirement://…` resources and `triage_run` / `draft_test` prompts. Targets are
-referenced by id only (the §7.1 SSRF boundary); traces are redacted server-side and
-labelled untrusted. A real MCP client drives start → watch → page → pull-trace
-end-to-end in the test suite — the Phase 5 acceptance criterion.
+**Status: Phases 0–6 complete.** Touchstone ships as a **Docker image + GitHub
+Action** so a third-party LWS server gets a conformance report by adding one workflow
+file (`docs/distribution.md`) — verified end-to-end: the container runs the core suite
+against a live server and emits the EARL/HTML/JUnit report. The **requirements
+catalog** spans all five published spec modules (203 requirements, drift-hashed). The
+**did:key and CID** authentication suites are real Ed25519 self-signed-credential
+fixtures with a negative matrix (valid verifies, every broken variant rejected); the
+**SAML** module is catalogued with the OpenSAML fixture as a documented seam
+(DECISIONS.md D-0024).
 
-Earlier phases: multi-module scaffold, 170-clause requirements catalog (core +
-auth-oidc) with drift hashing, frozen manifest schema v1, the declarative executor
-and assertion engine, reporting (`runs/<id>/{run.json, earl.ttl, junit.xml,
-report.html}` + `touchstone diff`), and the OIDC issuer + secured/broken reference
-servers with the auth-oidc negative matrix. Next: Phase 6, distribution + the
-remaining auth suites.
+The engine underneath: a declarative manifest executor over a frozen schema, the full
+assertion vocabulary (status / headers / JSON Pointer / graph containment /
+isomorphism / SHACL / conneg), per-test isolation, EARL + HTML + JUnit reporting with
+run diff, the OIDC issuer + secured/broken reference servers with the auth-oidc
+negative matrix, and a Spring AI **MCP server** (streamable HTTP + stdio) exposing the
+harness as tools. Three consumers — CLI, CI, MCP — over one engine.
+
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
+
+## Modules
+
+| Path | What |
+|---|---|
+| `harness-core` | catalog, manifests, executor, assertions, reporting, run orchestration — no Spring |
+| `harness-fixtures` | reference LWS server (open/secured/broken), OIDC issuer, did:key/CID credentials |
+| `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
+| `harness-mcp` | Spring AI MCP server over the core engine |
+| `catalog/` | requirements catalog (Turtle), 5 spec modules |
+| `manifests/` | declarative test manifests (`core`, `auth-oidc`) |
+| `docs/` | manifest schema, distribution, harvest method |
 
 ## Layout
 

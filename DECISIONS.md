@@ -124,6 +124,58 @@ version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, 
 (EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
 GitHub remote still pending (D-0007).
 
+### D-0022 — Distribution: build-from-source Docker image + composite GitHub Action
+The Phase 6 gate ("a third-party repo adds one workflow file and gets a conformance report")
+is delivered by a multi-stage `Dockerfile` (build the CLI with the Maven wrapper on
+`eclipse-temurin:21-jdk`, ship on `eclipse-temurin:21-jre` with the shaded jar + catalog +
+manifests) and a composite action `.github/actions/lws-conformance` that builds the image,
+runs the harness against a target URL, uploads the EARL/HTML/JUnit/JSON report, and fails
+the job on non-conformance. A consumer copies one workflow file
+(`docs/ci/example-conformance-workflow.yml`). Notes:
+- The image build uses `-pl harness-cli -am -Dmaven.test.skip=true` — `maven.test.skip`
+  (not `skipTests`) so the CLI's fixtures-dependent test sources aren't compiled in the
+  cut-down reactor. All four module POMs are copied so the aggregator parses; only
+  core+cli sources are.
+- **Verified end-to-end locally**: `docker build` then the container running `--module core`
+  against a host-side reference server via `host.docker.internal` produced the report
+  (12→13 passed). Docker Desktop's Linux engine must be running for the local build.
+- The Action generates the target registry (`sut → target-url`); tools still take an id
+  only (§7.1). Base images and `actions/*` pinned per §10 (checkout@v7, setup-java@v5,
+  upload-artifact@v4, temurin 21).
+
+### D-0023 — did:key + CID suites: real Ed25519 self-issued-credential fixtures + negative matrix
+did:key and CID are both **self-signed JWT** credentials (`sub = iss = client_id`, one URI;
+`alg ≠ none`; `exp` in the future; signature verified against a key derived from the
+identifier). Built for real over BouncyCastle (§4's hand-roll guidance): `DidKey` (Ed25519
+keygen + the multibase-`z`/multicodec-`ed25519-pub` did:key encoding and decode),
+`SelfIssuedJwt` (hand-built EdDSA compact JWS — avoids needing a JOSE Ed25519/Tink
+provider — plus an `alg=none` variant), `SelfIssuedCredentials` (valid + one-fault-each
+broken), `IdentityDocumentHost` (serves CID documents the verifier dereferences), and
+`SelfIssuedVerifier` (validates per suite; did:key key from the identifier, CID key from
+the dereferenced document selected by `kid`). `SelfIssuedNegativeMatrixTest` asserts a
+valid credential verifies and each broken variant (alg-none, bad signature, expired,
+mismatched claims, wrong audience) is rejected — for both suites, with genuine crypto.
+The credential→token-exchange→storage wiring is the §5.3 provisioning seam (already proven
+for access tokens in Phase 4); the suite-specific substance is credential validation, which
+this tests directly.
+
+### D-0024 — SAML suite: catalog now, OpenSAML fixture deferred as a documented seam
+The SAML catalog module is complete (`catalog/lws10-authn-saml.ttl`, 7 clauses). The
+fixture is deferred: unlike did:key/CID (JWT, reusing existing machinery), SAML needs
+OpenSAML 5 — a large dependency from `build.shibboleth.net` (NOT Maven Central, D-0009) plus
+XML-DSig assertion building/validation. Per §2's "harvest, don't over-build" and to avoid a
+shallow fake of XML/SAML, it is a recorded seam: add the Shibboleth repository + OpenSAML,
+then a `SamlAssertions` fixture mirroring `AccessTokens`/`SelfIssuedCredentials` (valid +
+broken: unsigned, wrong audience, bad signature, expired conditions) and a negative-matrix
+test. The catalog and the abstract-identity model already accommodate it.
+
+### D-0025 — Harvest: core manifests are the ported corpus; method documented
+The twelve original `core/` manifests are LWS-adapted ports of Solid-0.11-descended
+scenarios (the corpus is `solid-contrib/specification-tests`). `docs/harvest.md` records
+the Karate→manifest mapping and what is deliberately not ported (PUT-creates-intermediate,
+WAC/ACP, SPARQL-Update PATCH — Solid-specific or in still-draft LWS modules).
+`core/post-to-non-container-405.yaml` is one concrete, attributed port.
+
 ### D-0019 — `-parameters` compiler flag is required (Spring AI derives tool arg names by reflection)
 Spring AI's `@McpTool` uses reflected method parameter names as the JSON-schema property
 names for tool arguments (`@McpToolParam` has no `name()` member). Without javac
