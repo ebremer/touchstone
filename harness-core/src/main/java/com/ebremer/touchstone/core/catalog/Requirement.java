@@ -11,5 +11,6 @@ public record Requirement(
         String specModule,
         String section,
         String summary,
+        String clauseText,
         String status) {
 }

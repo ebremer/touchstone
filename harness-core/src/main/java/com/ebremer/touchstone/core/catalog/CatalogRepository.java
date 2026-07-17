@@ -41,6 +41,7 @@ public final class CatalogRepository {
         Property specModule = model.createProperty(Touchstone.VOCAB_NS, "specModule");
         Property section = model.createProperty(Touchstone.VOCAB_NS, "section");
         Property summary = model.createProperty(Touchstone.VOCAB_NS, "summary");
+        Property clauseText = model.createProperty(Touchstone.VOCAB_NS, "clauseText");
         Property status = model.createProperty(Touchstone.VOCAB_NS, "status");
         Resource requirementClass = model.createResource(Touchstone.VOCAB_NS + "Requirement");
 
@@ -52,6 +53,7 @@ public final class CatalogRepository {
                         literal(r, specModule),
                         resourceUri(r, section),
                         literal(r, summary),
+                        literal(r, clauseText),
                         localName(r, status))));
         out.sort(Comparator.comparing(Requirement::iri));
         return List.copyOf(out);

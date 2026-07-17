@@ -24,11 +24,11 @@ class HtmlReportTest {
 
     private static final List<Requirement> CATALOG = List.of(
             new Requirement(REQ_A, "MUST", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#read-resource", "Alpha requirement.", "Approved"),
+                    "https://www.w3.org/TR/lws10-core/#read-resource", "Alpha requirement.", "Alpha clause.", "Approved"),
             new Requirement(REQ_B, "SHOULD", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#metadata", "Beta requirement.", "Draft"),
+                    "https://www.w3.org/TR/lws10-core/#metadata", "Beta requirement.", "Beta clause.", "Draft"),
             new Requirement(REQ_UNCOVERED, "MAY", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#containers", "Gamma requirement.", "Draft"));
+                    "https://www.w3.org/TR/lws10-core/#containers", "Gamma requirement.", "Gamma clause.", "Draft"));
 
     @Test
     void matrixLinksTestsToRequirementsToSpecSections() throws Exception {

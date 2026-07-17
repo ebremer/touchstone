@@ -3,29 +3,17 @@ package com.ebremer.touchstone.cli;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import com.ebremer.touchstone.core.catalog.CatalogRepository;
 import com.ebremer.touchstone.core.catalog.Requirement;
-import com.ebremer.touchstone.core.exec.Executor;
-import com.ebremer.touchstone.core.exec.ProvisioningAdapters;
-import com.ebremer.touchstone.core.exec.RunContext;
+import com.ebremer.touchstone.core.exec.Harness;
 import com.ebremer.touchstone.core.exec.Target;
 import com.ebremer.touchstone.core.exec.TargetRegistry;
 import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.manifest.ManifestLoader;
-import com.ebremer.touchstone.core.report.EarlReport;
-import com.ebremer.touchstone.core.report.HtmlReport;
-import com.ebremer.touchstone.core.report.JUnitXmlReport;
-import com.ebremer.touchstone.core.report.RunRecords;
+import com.ebremer.touchstone.core.report.Reports;
 import com.ebremer.touchstone.core.results.Outcome;
 import com.ebremer.touchstone.core.results.Results;
 import com.ebremer.touchstone.core.results.RunResult;
@@ -106,43 +94,22 @@ final class RunCommand implements Callable<Integer> {
             return 2;
         }
 
-        String runId = UUID.randomUUID().toString().substring(0, 8);
-        String startedAt = Instant.now().toString();
-        List<TestResult> results = new ArrayList<>();
-        // Parallel by default (DESIGN.md paragraph 5.3): one virtual thread per test,
-        // each test isolated in its own container; steps stay sequential inside a test.
-        try (RunContext ctx = ProvisioningAdapters.forTarget(target).provision(target, runId);
-             ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<TestResult>> futures = manifests.stream()
-                    .map(m -> pool.submit(() -> Executor.execute(m, ctx)))
-                    .toList();
-            for (Future<TestResult> future : futures) {
-                results.add(future.get());
-            }
-        }
-        results.sort(Comparator.comparing(TestResult::manifestId));
+        RunResult run = Harness.run(target, manifests, Harness.ProgressListener.NONE);
 
-        for (TestResult result : results) {
+        for (TestResult result : run.results()) {
             out.printf("[%-6s] %s (%d ms)%n", result.outcome(), result.manifestId(), result.durationMillis());
             if (result.outcome() != Outcome.PASSED) {
                 out.println(Results.describe(result).indent(4).stripTrailing());
             }
         }
-        RunResult run = new RunResult(targetId, target.baseUrl().toString(), runId, startedAt,
-                List.copyOf(results));
         out.printf("%n%d passed, %d failed, %d errors, %d skipped  (target %s, run %s)%n",
                 run.count(Outcome.PASSED), run.count(Outcome.FAILED),
-                run.count(Outcome.ERROR), run.count(Outcome.SKIPPED), targetId, runId);
+                run.count(Outcome.ERROR), run.count(Outcome.SKIPPED), targetId, run.runId());
 
-        Path runDir = reportDir.resolve(runId);
-        Files.createDirectories(runDir);
-        RunRecords.save(run, runDir.resolve("run.json"));
-        EarlReport.write(run, runDir.resolve("earl.ttl"));
-        JUnitXmlReport.write(run, runDir.resolve("junit.xml"));
         List<Requirement> catalog = Files.isDirectory(catalogDir)
                 ? CatalogRepository.load(catalogDir)
                 : List.of();
-        HtmlReport.write(run, catalog, runDir.resolve("report.html"));
+        Path runDir = Reports.writeAll(run, catalog, reportDir);
         out.println("reports: " + runDir + " (run.json, earl.ttl, junit.xml, report.html)");
 
         return run.conformant() ? 0 : 1;
