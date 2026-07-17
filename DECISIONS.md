@@ -124,6 +124,38 @@ version with a decision entry), **version pins D-0004/D-0005/D-0011 all kept**, 
 (EARL, spec-anchor requirement links, exportable manifests; no outreach for now).
 GitHub remote still pending (D-0007).
 
+### D-0019 — `-parameters` compiler flag is required (Spring AI derives tool arg names by reflection)
+Spring AI's `@McpTool` uses reflected method parameter names as the JSON-schema property
+names for tool arguments (`@McpToolParam` has no `name()` member). Without javac
+`-parameters`, every argument becomes `arg0`, `arg1`, … and clients calling with real
+names fail input validation. We don't inherit `spring-boot-starter-parent` (BOM import
+only), so the flag is set explicitly in the root POM's `maven-compiler-plugin` config —
+applied to all modules (harmless elsewhere; picocli benefits too). Symptom when missing:
+`required property 'arg0' not found`.
+
+### D-0020 — MCP progress: get_run polling is the reliable watch; notifications are best-effort
+DESIGN §6 wants `start_run` to return a run_id immediately *and* emit progress
+notifications. With streamable HTTP, a tool call that returns immediately closes its
+response stream, so notifications the async job sends afterward may not route back to a
+detached client. Resolution: `start_run` emits an initial progress notification
+**synchronously** (while the request stream is live — this one reliably reaches the
+client) and the async per-test notifications follow best-effort; the **guaranteed**
+progress mechanism is polling `get_run` (which reports completed/total and live counts —
+that is literally what the §6 tool is for). The end-to-end test asserts both: get_run
+watched to COMPLETE (hard) and a progress notification received with the caller's token.
+MCP endpoint is the streamable default `/mcp`.
+
+### D-0021 — Run orchestration + report bundling extracted to harness-core (Harness, Reports)
+Per §3 ("if adding the MCP layer requires touching the executor, the layering is wrong"),
+the run loop (provision → parallel virtual-thread execution → collect) and the report
+bundle writer moved out of the CLI into `core.exec.Harness` and `core.report.Reports`, so
+CLI and MCP are thin over identical orchestration. `RunResult` gained `targetBaseUrl` and
+`startedAt`; `Requirement` gained `clauseText` (get_requirement / the requirement resource
+need the verbatim clause). The MCP target registry stays the file-based `TargetRegistry`
+referenced by a configured path (`touchstone.targets`); tools accept only a target *id*,
+never a URL — the §7.1 SSRF boundary holds whether the registry is inline `@ConfigurationProperties`
+or a path to the same file the CLI uses.
+
 ### D-0017 — Phase 4 shape: harness owns the AS; negative matrix proven via the self-test loop
 The brief's §4/§5.4 negative matrix (expired / wrong-audience / bad-signature / rotated
 key …) is fundamentally about the **access tokens the storage validates** — RFC 9068

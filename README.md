@@ -6,20 +6,23 @@ it fires HTTP requests and asserts on responses, and it runs controlled identity
 fixtures (throwaway OIDC issuer, SAML IdP, self-signed key material, hosted agent
 identity documents) so credential failure paths can be tested deterministically.
 
-**Status: Phase 4 complete** — the harness now owns an ephemeral **OIDC issuer**
-(Nimbus): discovery + JWKS + minting of valid RFC 9068 access tokens and
-deliberately broken variants (expired, wrong audience/issuer, bad signature,
-unknown key, `alg=none`, mid-session key rotation). The reference LWS server gains
-`SECURED` mode (validates Bearer tokens against the issuer; 401 + conforming
-WWW-Authenticate, 403 for a valid non-owner) and a `BROKEN` twin. Nine `auth-oidc`
-negative-matrix manifests **pass against the compliant server and fail against the
-broken one** — the Phase 4 acceptance criterion, asserted in the self-test loop and
-verified end-to-end through `touchstone run --module auth-oidc`.
+**Status: Phase 5 complete** — `harness-mcp` is a Spring AI MCP server (streamable
+HTTP on Jetty, endpoint `/mcp`, plus a stdio profile) exposing the harness as tools
+over the identical core engine: `list_requirements` / `get_requirement`,
+`list_tests`, `coverage`, `start_run` (async on virtual threads, progress
+notifications), `get_run`, `get_failures` (paged), `get_trace` (one redacted
+exchange at a time), `diff_runs`, `run_one`, plus the `report://{run}/earl` and
+`requirement://…` resources and `triage_run` / `draft_test` prompts. Targets are
+referenced by id only (the §7.1 SSRF boundary); traces are redacted server-side and
+labelled untrusted. A real MCP client drives start → watch → page → pull-trace
+end-to-end in the test suite — the Phase 5 acceptance criterion.
 
 Earlier phases: multi-module scaffold, 170-clause requirements catalog (core +
 auth-oidc) with drift hashing, frozen manifest schema v1, the declarative executor
-and assertion engine, and reporting (`runs/<id>/{run.json, earl.ttl, junit.xml,
-report.html}` + `touchstone diff`). Next: Phase 5, the MCP server.
+and assertion engine, reporting (`runs/<id>/{run.json, earl.ttl, junit.xml,
+report.html}` + `touchstone diff`), and the OIDC issuer + secured/broken reference
+servers with the auth-oidc negative matrix. Next: Phase 6, distribution + the
+remaining auth suites.
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
 
