@@ -9,3 +9,8 @@ targets:
     adapter: env
     capabilities: []
     properties: {}
+  vulcan:
+    baseUrl: https://vulcan.bmi.stonybrook.edu/alpha/
+    adapter: env
+    capabilities: []
+    properties: {}
