@@ -23,6 +23,12 @@
       <groupId>org.apache.jena</groupId>
       <artifactId>jena-shacl</artifactId>
     </dependency>
+    <!-- Direct: the offline JSON-LD document loader (JsonLdContexts) uses the Titanium API,
+         which jena-arq would otherwise supply only transitively (D-0026). -->
+    <dependency>
+      <groupId>com.apicatalog</groupId>
+      <artifactId>titanium-json-ld</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>

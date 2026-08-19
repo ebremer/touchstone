@@ -338,3 +338,44 @@ The four suites live in-repo as `lws10-authn-{openid,saml,ssi-cid,ssi-did-key}`
 claim-mapping clauses (`sub`/`iss`/`azp`/`aud`, "MUST NOT use 'none'"), no
 401/WWW-Authenticate text — that clause lives in core §4 Authentication. No impact
 on phase order; auth catalogs will be extracted per-suite at Phase 4+.
+
+## 2026-08-19
+
+### D-0026 — JSON-LD contexts ship with the harness; the parser never dereferences one
+First run against a third-party SUT (Halcyon at `vulcan.bmi.stonybrook.edu/alpha/`) failed
+`core/container-conneg` and `core/container-containment-after-post` with Jena's
+`Unexpected response code [404]`. Cause: a real server sends the context by IRI —
+`"@context": "https://www.w3.org/ns/lws/v1"`, which core WD §12.1.1 *requires* container
+representations to include — and **W3C has not published that document** (404 today;
+`lws10-core/jsonld-context.md` still carries the open TODO of w3c/lws-protocol#216 to add
+its digest "once the context document is finalized"). Titanium tried to fetch it mid-parse
+and failed. `RefLwsServer` emits an **inline** `@context` object, so the self-test loop
+never exercised the remote-IRI path and the gap stayed invisible for six phases.
+
+This was not a cosmetic failure: both tests carried their requirement IRIs into `earl.ttl`,
+so the harness recorded the SUT as failing six MUSTs (all five `conneg-*` plus
+`containment-create-atomic-items`) that it demonstrably satisfies — a false non-conformance
+claim in the artifact intended for W3C implementation reports.
+
+**Decision:** `harness-core` bundles the context documents it understands and
+`Graphs` routes every parse (response bodies, isomorphism fixtures, SHACL shapes) through
+an offline Titanium `DocumentLoader` (`JsonLdContexts`). A context IRI that is not bundled
+is a hard, explicit failure — never a network fetch. Rationale, in order of weight:
+- the context IRI comes out of the **SUT's response body**, and SUT responses are untrusted
+  input (DESIGN.md §7.3): a dereferencing parser lets any target steer harness requests and
+  redefine the term mappings a verdict is computed from;
+- a conformance verdict must not depend on third-party infrastructure being reachable;
+- the core draft says so itself: "Production systems are advised not to fetch remote JSON-LD
+  context documents at runtime. Bundling or caching contexts locally ... prevents context
+  manipulation attacks."
+
+`touchstone/context/lws-v1.jsonld` is copied **verbatim** from the pinned baseline draft
+(WD-lws10-core-20260622 §12.1.1 "Normative JSON-LD Context", the block introduced by "The
+context is defined as follows"), so the mapping the harness computes triples from is the
+one the spec normatively defines, not a reconstruction. sha256 of the bundled file:
+`364cc0859fe6e161a2d6c43401dc39718402b9120ac0c88383d33aae3aa78336`.
+
+**Follow-ups:** when W3C publishes `https://www.w3.org/ns/lws/v1`, re-copy it and check it
+against the digest table that #216 will fill in; extend `BUNDLED` deliberately (one entry
+per context the suite must understand) rather than reopening network access. Verified: the
+same run went from 6/13 to 8/13 with no change to any manifest.

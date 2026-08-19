@@ -17,7 +17,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFParser;
 
 /** RDF parsing and triple-pattern matching for graph assertions. */
@@ -39,6 +38,7 @@ final class Graphs {
                 .source(new ByteArrayInputStream(data.body()))
                 .lang(langFor(mediaType))
                 .base(data.uri().toString())
+                .context(JsonLdContexts.parserContext())
                 .parse(model);
         return model;
     }
@@ -48,12 +48,18 @@ final class Graphs {
         RDFParser.create()
                 .source(file.toUri().toString())
                 .base(base.toString())
+                .context(JsonLdContexts.parserContext())
                 .parse(model);
         return model;
     }
 
     static org.apache.jena.graph.Graph loadGraph(Path file) {
-        return RDFDataMgr.loadGraph(file.toUri().toString());
+        Model model = ModelFactory.createDefaultModel();
+        RDFParser.create()
+                .source(file.toUri().toString())
+                .context(JsonLdContexts.parserContext())
+                .parse(model);
+        return model.getGraph();
     }
 
     static Lang langFor(String mediaType) {
