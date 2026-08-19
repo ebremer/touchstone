@@ -6,7 +6,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * One provisioned conformance run against one target: a unique run-root container
@@ -14,6 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * depend on each other (DESIGN.md paragraph 5.3). Thread-safe; tests run in parallel.
  */
 public final class RunContext implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RunContext.class);
 
     private final Target target;
     private final String runId;
@@ -63,7 +69,13 @@ public final class RunContext implements AutoCloseable {
         return Containers.create(http, runRoot, "t" + testCounter.incrementAndGet() + "-" + slug, provisionHeaders);
     }
 
-    /** Best-effort recursive cleanup of the run root; failures are ignored by design. */
+    /**
+     * Best-effort recursive cleanup of the run root. The DELETE carries the run root's
+     * current {@code ETag} as {@code If-Match}, because a target may require conditional
+     * writes and answer an unconditional DELETE with 428 — which silently left a run root
+     * behind on every run against such a server (DECISIONS.md D-0027). Cleanup stays
+     * advisory: it is logged when it fails, never thrown.
+     */
     @Override
     public void close() {
         try {
@@ -72,9 +84,36 @@ public final class RunContext implements AutoCloseable {
                     .header("Depth", "infinity")
                     .timeout(Duration.ofSeconds(10));
             provisionHeaders.forEach(delete::header);
-            http.send(delete.build(), HttpResponse.BodyHandlers.discarding());
-        } catch (Exception ignored) {
-            // cleanup is advisory; the run root is uniquely named per run
+            currentEtag().ifPresent(etag -> delete.header("If-Match", etag));
+            int status = http.send(delete.build(), HttpResponse.BodyHandlers.discarding()).statusCode();
+            if (status >= 300 && status != 404) {
+                LOG.warn("run {}: run root {} left on the target - DELETE returned {}", runId, runRoot, status);
+            }
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            LOG.warn("run {}: run root {} left on the target - {}", runId, runRoot, e.toString());
+        }
+    }
+
+    /**
+     * The run root's ETag as of now; re-read at close time because the listing (and so the
+     * validator) changes as tests create resources under it. Empty when the target issues none.
+     */
+    private Optional<String> currentEtag() {
+        try {
+            HttpRequest.Builder head = HttpRequest.newBuilder(runRoot)
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .timeout(Duration.ofSeconds(10));
+            provisionHeaders.forEach(head::header);
+            return http.send(head.build(), HttpResponse.BodyHandlers.discarding())
+                    .headers().firstValue("ETag");
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return Optional.empty();
         }
     }
 }

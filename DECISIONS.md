@@ -379,3 +379,20 @@ one the spec normatively defines, not a reconstruction. sha256 of the bundled fi
 against the digest table that #216 will fill in; extend `BUNDLED` deliberately (one entry
 per context the suite must understand) rather than reopening network access. Verified: the
 same run went from 6/13 to 8/13 with no change to any manifest.
+
+### D-0027 — run-root cleanup sends `If-Match` and reports failure
+`RunContext.close()` sent an unconditional `DELETE`. A target may require conditional
+writes — Halcyon answers an unconditional DELETE with `428 Precondition Required` — so
+cleanup failed on every run and, because the failure was swallowed by design ("cleanup is
+advisory"), left a `touchstone-run-*` container behind on the SUT with nothing said about
+it. Cleanup now HEADs the run root for its current ETag (re-read at close time: the listing
+changes as tests create resources, so the validator captured at creation is stale) and
+sends it as `If-Match`, keeping `Depth: infinity`. When the target issues no ETag the DELETE
+stays unconditional, so servers like `RefLwsServer` are unaffected.
+
+Cleanup stays advisory — it is still never thrown — but it is no longer silent: a
+non-2xx status or an exception logs a warning naming the run root that was left behind.
+**Known limitation:** recursive delete is a MAY in the WD
+(`delete-non-empty-container-409-depth`), so a target that does not implement
+`Depth: infinity` will answer 409 and the run root will persist. That is now visible in the
+log instead of invisible; a client-side recursive sweep is the fix if a real target needs it.
