@@ -12,6 +12,10 @@ import com.fasterxml.jackson.databind.JsonNode;
  * against the frozen manifest schema v1 (docs/manifest-schema, DESIGN.md paragraph 5.2).
  * Records mirror the schema; {@code sourceFile} anchors relative references
  * (bodyRef, equalsRef, isomorphicTo, shacl).
+ *
+ * <p>{@code defaultIdentity} is null when the manifest declares no {@code as}, which
+ * lets the executor fall back to the target's default identity; an explicit
+ * {@code as: anonymous} is preserved and always wins (D-0028).
  */
 public record Manifest(
         String id,

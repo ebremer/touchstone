@@ -37,6 +37,24 @@ public final class Executor {
     private Executor() {
     }
 
+    /**
+     * Resolves the identity for one step: the step's own {@code as}, else the manifest's,
+     * else the target's {@code defaultIdentity} property, else anonymous. A manifest that
+     * names an identity always wins — including an explicit {@code as: anonymous}, so a
+     * negative auth test keeps its meaning on a target whose default is authenticated.
+     * The target-level default is what lets the spec-shaped core suite, which declares no
+     * identities, run against a storage that is not world-readable (D-0028).
+     */
+    private static String identityFor(Manifest.Step step, Manifest manifest, RunContext ctx) {
+        if (step.identity() != null) {
+            return step.identity();
+        }
+        if (manifest.defaultIdentity() != null) {
+            return manifest.defaultIdentity();
+        }
+        return ctx.target().properties().getOrDefault("defaultIdentity", "anonymous");
+    }
+
     public static TestResult execute(Manifest manifest, RunContext ctx) {
         long start = System.nanoTime();
         if (!ctx.target().capabilities().containsAll(manifest.capabilities())) {
@@ -85,7 +103,7 @@ public final class Executor {
 
     private static StepOutcome runStep(Manifest manifest, Manifest.Step step,
                                        Map<String, String> vars, RunContext ctx) {
-        String identity = step.identity() != null ? step.identity() : manifest.defaultIdentity();
+        String identity = identityFor(step, manifest, ctx);
         Duration timeout = step.timeoutMillis() != null ? Duration.ofMillis(step.timeoutMillis()) : DEFAULT_TIMEOUT;
         Path manifestDir = manifest.sourceFile().getParent();
 

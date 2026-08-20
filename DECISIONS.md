@@ -396,3 +396,24 @@ non-2xx status or an exception logs a warning naming the run root that was left 
 (`delete-non-empty-container-409-depth`), so a target that does not implement
 `Depth: infinity` will answer 409 and the run root will persist. That is now visible in the
 log instead of invisible; a client-side recursive sweep is the fix if a real target needs it.
+
+### D-0028 — the target may supply a default identity for manifests that declare none
+The core manifests declare no `as:` — correctly, since the operations they test are not about
+authentication — and the loader turned that absence into the literal identity `anonymous`. So
+the whole core suite was unauthenticated by construction and could only run against a
+world-readable storage. The moment a real SUT (vulcan `/alpha/`) restricted access to named
+identities, all 13 core tests would have failed on 401 with no way to configure otherwise.
+
+`ManifestLoader` now records an absent `as:` as **null** ("undeclared") instead of collapsing
+it to `anonymous`, and `Executor.identityFor` resolves in order: the step's `as`, then the
+manifest's `as`, then the target's `defaultIdentity` property, then `anonymous`. The
+distinction between *undeclared* and *explicitly `anonymous`* is the point: an explicit
+`as: anonymous` still wins over the target default, so
+`auth-oidc/anonymous-request-401-challenge` keeps testing what its name says even when the
+target authenticates everything else.
+
+This is target configuration, not a manifest change — the manifests stay spec-shaped and
+portable, and the same suite runs against an open reference server and a locked-down third
+party. The manifest schema is unchanged in validation terms; only the `as` annotation was
+reworded (its `default: "anonymous"` was an annotation, never a constraint), so Gate 2's
+freeze is intact.

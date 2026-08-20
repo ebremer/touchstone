@@ -35,8 +35,7 @@
     "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
     "as": {
       "$ref": "#/$defs/identity",
-      "default": "anonymous",
-      "description": "Default identity for all steps; individual steps may override."
+      "description": "Default identity for all steps; individual steps may override. When absent, the target's defaultIdentity property applies, and anonymous when it sets none (D-0028)."
     },
     "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
   },

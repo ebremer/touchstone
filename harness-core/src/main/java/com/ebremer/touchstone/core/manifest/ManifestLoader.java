@@ -90,7 +90,7 @@ public final class ManifestLoader {
                 strings(n.get("requirements")),
                 strings(n.get("capabilities")),
                 strings(n.get("tags")),
-                n.has("as") ? n.get("as").asText() : "anonymous",
+                n.has("as") ? n.get("as").asText() : null,   // undeclared: the target decides (D-0028)
                 mapSteps(n.get("steps")),
                 file);
     }
