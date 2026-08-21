@@ -11,12 +11,12 @@ import com.ebremer.touchstone.core.results.RunResult;
 
 /**
  * Writes the full report bundle for one run — {@code run.json}, {@code report.json},
- * {@code earl.ttl}, {@code junit.xml}, {@code report.html}, {@code report.pdf} — under
+ * {@code earl.ttl}, {@code junit.xml}, {@code report.html}, {@code report.md}, {@code report.pdf} — under
  * {@code runsDir/<stamp>-<runId>/} (DESIGN.md paragraph 5.5). Shared by the CLI and the MCP
  * layer.
  *
- * <p>{@code run.json} is the evidence: every step and every redacted exchange. The three
- * {@code report.*} files are the finding, and all three are rendered from one model, so they
+ * <p>{@code run.json} is the evidence: every step and every redacted exchange. The four
+ * {@code report.*} files are the finding, and all four are rendered from one model, so they
  * cannot disagree about whether the run conformed. See {@link RunDirs} for the directory name
  * and {@link RunDirs#locate} for finding a bundle by run id afterwards.
  */
@@ -37,6 +37,7 @@ public final class Reports {
         EarlReport.write(run, runDir.resolve("earl.ttl"));
         JUnitXmlReport.write(run, runDir.resolve("junit.xml"));
         HtmlReport.write(run, catalog, runDir.resolve("report.html"));
+        MarkdownReport.write(run, catalog, runDir.resolve("report.md"));
         PdfReport.write(run, catalog, runDir.resolve("report.pdf"));
         return runDir;
     }

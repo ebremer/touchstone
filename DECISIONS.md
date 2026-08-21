@@ -506,10 +506,10 @@ this format is portable to POSIX and to WSL's drvfs (tested) but not to a native
 host. `RunDirs.stamp` is the single place to change if that day comes — dropping the colons
 gives `2026-08-21T193247Z`, still ISO 8601 and still correctly ordered.
 
-The bundle gains `report.json` and `report.pdf` beside `report.html`. All three render
-`HtmlReport.model`, the map that already decided what the run found, so they cannot drift
-into disagreeing about whether a run conformed — there is one computation of conformance,
-not three. `report.json` is deliberately not `run.json`: that file is the evidence (every
+The bundle gains `report.json`, `report.md` and `report.pdf` beside `report.html`. All four
+render `HtmlReport.model`, the map that already decided what the run found, so they cannot
+drift into disagreeing about whether a run conformed — there is one computation of
+conformance, not four. `report.json` is deliberately not `run.json`: that file is the evidence (every
 step, every redacted exchange, ~80 KB) while this one is the finding (totals, per-level
 coverage, the 203-row requirement matrix with verdicts, the tests), which is what a
 dashboard or a CI gate actually reads.
@@ -522,7 +522,22 @@ filtered to what CP1252 can encode — the Standard 14 fonts are WinAnsi and PDF
 a character with no glyph, so one em dash in one catalog summary would otherwise have taken
 down the whole report.
 
+`report.md` is for where a conformance result is actually read — a pull request, an issue, a
+wiki, a terminal. It keeps the one thing the PDF cannot: every requirement in the matrix is a
+link to its section of the specification, which is what turns "this MUST failed" into
+something a reader can act on without going to look the clause up. Cell content is escaped,
+since a pipe or a newline in a catalog summary would otherwise end the cell and break the
+table.
+
 Verified end to end: a 13/13 vulcan run produced a 5-page PDF whose extracted text carries
-the verdict banner, the totals, all 13 tests and the matrix, and a `report.json` with 203
-requirement rows.
+the verdict banner, the totals, all 13 tests and the matrix; a `report.json` with 203
+requirement rows; and a `report.md` whose 203 matrix rows are all spec links, with no
+malformed rows.
+
+**A build trap worth knowing.** `mvn install` alone did not repackage `harness-mcp` after an
+earlier `verify` had aborted mid-reactor: the fat jar kept an embedded `harness-core` from
+two builds previously, so a freshly written reporter silently did not run. The symptom was
+`report.pdf` present and `report.md` absent — impossible from the source, which writes md
+first. `mvn clean install` fixed it. Check the artifact, not the source, when a change seems
+not to have taken.
 
