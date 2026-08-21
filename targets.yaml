@@ -14,12 +14,17 @@ targets:
     adapter: env
     capabilities: []
     properties:
-      # /alpha/ grants the public nothing, so the suite must act as a named agent
-      # (D-0028). This WebID is the storage's :LWSOwner, which AcpBootstrap seeds with
-      # full control over the root and, via acp:memberAccessControl, its descendants.
-      # It covers provisioning (the run root) as well as every step that declares no `as`.
-      defaultIdentity: erich
-      # The credential itself is NEVER stored here — this file is checked in. Supply it in
-      # the MCP server's environment as TOUCHSTONE_TOKEN_ERICH: an ID Token (not the access
-      # token) from https://ebremer.com/auth/realms/Halcyon, whose `sub` must be the WebID
-      # https://ebremer.com/id/erich for Halcyon's LWS-OIDC verifier to accept it.
+      # /alpha/ grants the public nothing, so the suite must act as a named agent (D-0028).
+      # This covers provisioning (the run root) as well as every step declaring no `as`.
+      defaultIdentity: touchstone
+      # The credential is NEVER stored here — this file is checked in and is the SSRF/abuse
+      # boundary. Supply it in the MCP server's environment as TOUCHSTONE_TOKEN_TOUCHSTONE:
+      # the ID Token (not the access token) from
+      #   POST https://ebremer.com/auth/realms/Halcyon/protocol/openid-connect/token
+      #        grant_type=password  client_id=lws-app  scope=openid
+      # whose `sub` is the WebID https://ebremer.com/id/touchstone. That WebID's controlled
+      # identifier document names the same realm as its lws:OpenIdProvider, which is what
+      # Halcyon's LwsOidcVerifier dereferences to decide whether to trust the issuer.
+      #
+      # The token lives 5 minutes (Keycloak default) and a core run takes ~60s, so one
+      # token covers a run; mint a fresh one per session. See D-0030.

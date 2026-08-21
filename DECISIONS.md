@@ -449,16 +449,41 @@ layer down. `provisioner` now falls back to `defaultIdentity` before `anonymous`
 stays a separate property because the two can legitimately differ: a suite may want the
 run root owned by one agent and the tests driven by another.
 
-`targets.yaml` gives `vulcan` `defaultIdentity: erich` — the WebID that storage names as
-its `:LWSOwner`, which `AcpBootstrap` seeds with full control of the root and, through
-`acp:memberAccessControl`, its descendants. The credential is never stored in that file:
-it is checked in, and the file is the SSRF/abuse boundary. It comes from the environment
-as `TOUCHSTONE_TOKEN_ERICH` and must be the **ID Token** from
-`https://ebremer.com/auth/realms/Halcyon` (the OpenID Provider that WebID's controlled
-identifier document names), whose `sub` is the WebID itself.
+`targets.yaml` gives `vulcan` `defaultIdentity: touchstone`. The credential is never
+stored in that file: it is checked in, and the file is the SSRF/abuse boundary. It comes
+from the environment as `TOUCHSTONE_TOKEN_TOUCHSTONE` and must be the **ID Token** (not
+the access token) from `https://ebremer.com/auth/realms/Halcyon` via the `lws-app` client
+— `account` and `halcyon-local` both refuse the direct-access grant — whose `sub` is
+`https://ebremer.com/id/touchstone`. That WebID's controlled identifier document names
+the same realm as its `lws:OpenIdProvider`, which is what Halcyon's `LwsOidcVerifier`
+dereferences to decide whether to trust the issuer.
 
 **Known limitation:** that is a static bearer token, per DESIGN.md §5.3's CTH-style
 minimum, and Keycloak's default ID Token lifetime is 5 minutes. A core run takes ~60s, so
 one token covers a run, but an operator must mint a fresh one per session. Teaching the
 adapter to obtain and refresh tokens from a configured OP (client-credentials or password
 grant, secret from the environment) is the durable fix and is not yet done.
+
+### D-0031 — a `sub` with a leading space is why vulcan refused every credential
+With the identity configured, `TOUCHSTONE_TOKEN_TOUCHSTONE` still got
+`401 the access token is not valid` from vulcan on both GET and POST.
+
+The ID Token from `https://ebremer.com/auth/realms/Halcyon` carries
+`sub = " https://ebremer.com/id/touchstone"` — 34 characters, with a **leading space**.
+Halcyon's `LwsOidcVerifier.isUrl()` requires the subject to start with `http://` or
+`https://`; a subject failing that is declined as "not an LWS-OIDC credential" so the
+chain moves on, and with Keycloak now disabled on that host there is no verifier behind
+it. The chain ends empty and answers `invalid_token`. Nothing anywhere names the space.
+
+The origin is `LWSSubMapper.resolveWebId` in **lws-authn**, which returned the configured
+user attribute verbatim. Fixed there (trim before it becomes the claim, blank-after-trim
+treated as unset); that fix needs the rebuilt provider jar deployed to the Keycloak at
+ebremer.com. Correcting the `webid` attribute on the `touchstone` user in the admin
+console unblocks it immediately without a redeploy.
+
+**Still unverified:** whether `https://ebremer.com/id/touchstone` is authorized on
+vulcan's `/alpha/`. That storage's `:LWSOwner` is `https://ebremer.com/id/erich`, and
+`AcpBootstrap` seeds only an owner policy and a creator policy, so unless a policy has
+been added for the harness WebID a valid token will still be refused — 403 rather than
+401, which will at least say so plainly. This cannot be checked without a token that
+verifies, so it is the next thing to test once one exists.
