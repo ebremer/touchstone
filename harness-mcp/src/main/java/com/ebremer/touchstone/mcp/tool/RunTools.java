@@ -70,7 +70,16 @@ public class RunTools {
                     + "progress and emitted progress notifications.")
     public StartRunResult startRun(
             McpSyncServerExchange exchange,
-            @McpProgressToken String progressToken,
+            // Object, not String. A progress token is `string | number` in the MCP schema, the SDK
+            // models it as Object at both ends (CallToolRequest.progressToken() and
+            // ProgressNotification's first component), and Spring AI binds this parameter by
+            // passing that Object straight through with NO conversion. Declaring it String
+            // therefore made every call from a client that sends a NUMERIC token — which Claude
+            // Code does — fail in Method.invoke with "argument type mismatch", before a line of
+            // this method ran. Keeping it Object also round-trips the token unchanged, which is
+            // what lets the client correlate notifications: a token echoed back as "3" instead of
+            // 3 matches nothing.
+            @McpProgressToken Object progressToken,
             @McpToolParam(description = "pre-registered target id") String targetId,
             @McpToolParam(required = false, description = "test module to run, default core") String module) {
         Target target = requireTarget(targetId);
@@ -175,7 +184,7 @@ public class RunTools {
 
     // ---- helpers ----
 
-    private RunStore.ProgressSink progressSink(McpSyncServerExchange exchange, String progressToken) {
+    private RunStore.ProgressSink progressSink(McpSyncServerExchange exchange, Object progressToken) {
         if (exchange == null || progressToken == null) {
             return RunStore.ProgressSink.NONE;
         }

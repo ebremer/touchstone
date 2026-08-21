@@ -417,3 +417,21 @@ portable, and the same suite runs against an open reference server and a locked-
 party. The manifest schema is unchanged in validation terms; only the `as` annotation was
 reworded (its `default: "anonymous"` was an annotation, never a constraint), so Gate 2's
 freeze is intact.
+
+### D-0029 — an MCP progress token is `string | number`, so the parameter is `Object`
+`start_run` was unusable from Claude Code: every call failed with
+`argument type mismatch` before a line of the method ran, while all ten other tools
+worked. It was the only tool declaring `@McpProgressToken String progressToken`.
+
+The MCP schema types a progress token as `string | number`, and the SDK agrees at both
+ends — `CallToolRequest.progressToken()` returns `Object`, and `ProgressNotification`'s
+first component is `Object`. Spring AI 2.0.0 binds the annotated parameter by passing
+that `Object` **straight through with no conversion** (verified in
+`AbstractMcpToolMethodCallback.buildMethodArguments`). A client that sends a numeric
+token — Claude Code does — therefore handed an `Integer` to a `String` parameter and
+`Method.invoke` threw. Declaring the parameter `Object` is not a widening for
+convenience; it is the type the protocol and the SDK both specify. It also round-trips
+the token unchanged, which is what lets a client correlate notifications: a token echoed
+back as `"3"` when it was sent as `3` matches nothing.
+
+`progressSink` takes `Object` for the same reason. String tokens are unaffected.
