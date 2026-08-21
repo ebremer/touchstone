@@ -580,3 +580,42 @@ the file to something that can open it.
 
 Resolution goes through `RunStore.reportDir`, which owns the runs directory, rather than
 injecting the properties into the tool layer.
+
+### D-0035 — coverage for the three Approved MUSTs that had none, and what blocked the third
+Of the 15 Approved requirements (Gate 1), 12 had tests and three did not. The other 129
+uncovered MUSTs are `status: Draft` from the mass extraction and are waiting on batch review,
+so they are not a test backlog yet — they are a review backlog. These three were the whole of
+the actionable work.
+
+Two are now covered and both pass against the reference server and a live SUT:
+
+- `core/patch-merge-patch-baseline` — a merge patch that replaces one member, adds another and
+  removes a third with null, which is the part of RFC 7386 a server can get wrong while
+  looking correct.
+- `core/contained-resource-type-values` — each container in the test holds exactly one member,
+  so the assertion names a determinate item instead of depending on listing order.
+
+**The third is blocked at Gate 2 and is not committed.** `linkset-accept-patch-advertised`
+needs the linkset's URI, and LWS says a linkset is found through `rel="linkset"` (RFC 9264),
+not at any particular path. Binding that relation needs a `link:<rel>` bind extractor, and the
+frozen manifest schema pins bind to `^(header:…|status|body)$`. Widening it is a schema change
+and CLAUDE.md rule 4 makes that a hard stop. The engine half is implemented and unit-tested
+(`LinkHeaders`, RFC 8288: separate fields or one comma-separated field, quoted parameters,
+relation lists, case-insensitivity, relative resolution) and the manifest is drafted; both
+wait on approval to widen the pattern. The alternative — hard-coding `{resource}.meta` —
+would test one server's convention rather than the specification, so it was not taken.
+
+**The reference server grew PATCH.** Its javadoc says outright that unimplemented areas "grow
+with the suite", and a test for an Approved MUST that the reference implementation answers 405
+would have made the self-test loop unrunnable. It now implements JSON Merge Patch on data
+resources. `If-Match` is honoured when sent but not demanded: the spec requires the conditional
+for PUT and for a linkset PUT/PATCH and is silent for a data resource, and a fixture that
+invented the requirement would fail a conforming server.
+
+**`matches` now applies to non-value nodes.** It required `isValueNode()`, so an assertion
+could only test one shape of "X, or an array containing X" — the phrasing the spec uses for a
+contained resource's `type` — and would have called a server conforming in the other way
+non-conforming. A non-value node is matched against its JSON text; value nodes keep `asText()`,
+so nothing that passed before changes.
+
+Per DESIGN.md §7.4 this lands on a branch for review rather than on master.

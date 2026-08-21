@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.ebremer.touchstone.fixtures.oidc.OidcIssuer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -30,7 +31,7 @@ import org.eclipse.jetty.util.Callback;
  * items/totalItems listings, lws+json/ld+json/json conneg, Link rel="up"/rel="type"
  * metadata, ETags with 304/412/428 conditional semantics, containment-consistent
  * create/delete, 409 on non-recursive delete of a non-empty container, Depth: infinity
- * recursion.
+ * recursion, JSON Merge Patch (RFC 7386) on data resources.
  *
  * <p>Three auth modes (DECISIONS.md D-0017): {@link AuthMode#OPEN} (no auth — the core
  * happy-path suite), {@link AuthMode#SECURED} (validates Bearer tokens against the OIDC
@@ -169,8 +170,9 @@ public final class RefLwsServer implements AutoCloseable {
                 case "HEAD" -> read(request, response, callback, path, false);
                 case "POST" -> create(request, response, callback, path, subject);
                 case "PUT" -> update(request, response, callback, path);
+                case "PATCH" -> patch(request, response, callback, path);
                 case "DELETE" -> delete(request, response, callback, path);
-                default -> methodNotAllowed(response, callback, "GET, HEAD, POST, PUT, DELETE");
+                default -> methodNotAllowed(response, callback, "GET, HEAD, POST, PUT, PATCH, DELETE");
             }
             return true;
         }
@@ -258,7 +260,7 @@ public final class RefLwsServer implements AutoCloseable {
                 return;
             }
             if (!parent.container) {
-                methodNotAllowed(response, callback, "GET, HEAD, PUT, DELETE");
+                methodNotAllowed(response, callback, "GET, HEAD, PUT, PATCH, DELETE");
                 return;
             }
             boolean isContainer = request.getHeaders().getValuesList("Link").stream()
@@ -325,6 +327,84 @@ public final class RefLwsServer implements AutoCloseable {
             response.setStatus(204);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
             callback.succeeded();
+        }
+
+        // ---- patch ----
+
+        /**
+         * JSON Merge Patch (RFC 7386), which lws10-core makes the baseline every server has to
+         * understand. Containers are not patchable — their representation is derived from
+         * containment, not stored.
+         *
+         * <p>{@code If-Match} is honoured when sent but not demanded. The spec requires the
+         * conditional for PUT and for a linkset PUT/PATCH, and says nothing about it for a data
+         * resource; a fixture that invented the requirement would fail a conforming server.
+         */
+        private void patch(Request request, Response response, Callback callback, String path)
+                throws Exception {
+            Node node = store.get(path);
+            if (node == null) {
+                status(response, callback, 404);
+                return;
+            }
+            if (node.container) {
+                methodNotAllowed(response, callback, "GET, HEAD, POST, DELETE");
+                return;
+            }
+            String contentType = request.getHeaders().get("Content-Type");
+            if (contentType == null || !contentType.toLowerCase(Locale.ROOT)
+                    .startsWith("application/merge-patch+json")) {
+                response.getHeaders().put("Accept-Patch", "application/merge-patch+json");
+                status(response, callback, 415);
+                return;
+            }
+            String ifMatch = request.getHeaders().get("If-Match");
+            if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.etag)) {
+                status(response, callback, 412);
+                return;
+            }
+            byte[] body;
+            try (InputStream in = Content.Source.asInputStream(request)) {
+                body = in.readAllBytes();
+            }
+            JsonNode target;
+            JsonNode patch;
+            try {
+                target = node.bytes == null || node.bytes.length == 0
+                        ? mapper.createObjectNode() : mapper.readTree(node.bytes);
+                patch = mapper.readTree(body);
+            } catch (Exception e) {
+                // Either the stored representation is not JSON, so a merge patch has nothing to
+                // merge into, or the patch itself is malformed.
+                status(response, callback, 415);
+                return;
+            }
+            node.bytes = mapper.writeValueAsBytes(mergePatch(target, patch));
+            node.contentType = "application/json";
+            node.etag = newEtag();
+            response.setStatus(204);
+            response.getHeaders().put(HttpHeader.ETAG, node.etag);
+            callback.succeeded();
+        }
+
+        /**
+         * RFC 7386 §2: a non-object patch replaces the target outright; otherwise each member is
+         * merged recursively, and a null member REMOVES the name rather than setting it to null.
+         */
+        private JsonNode mergePatch(JsonNode target, JsonNode patch) {
+            if (!patch.isObject()) {
+                return patch;
+            }
+            ObjectNode merged = target != null && target.isObject()
+                    ? (ObjectNode) target.deepCopy() : mapper.createObjectNode();
+            patch.properties().forEach(entry -> {
+                if (entry.getValue().isNull()) {
+                    merged.remove(entry.getKey());
+                } else {
+                    merged.set(entry.getKey(), mergePatch(merged.get(entry.getKey()), entry.getValue()));
+                }
+            });
+            return merged;
         }
 
         // ---- delete ----

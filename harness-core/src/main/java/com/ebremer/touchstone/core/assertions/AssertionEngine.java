@@ -118,9 +118,17 @@ public final class AssertionEngine {
                         expected.toString(), node.isMissingNode() ? "(missing)" : node.toString()));
             }
             if (a.matches() != null) {
-                boolean ok = node.isValueNode() && Pattern.compile(a.matches()).matcher(node.asText()).find();
+                // A non-value node is matched against its JSON text rather than failing outright.
+                // The spec repeatedly allows "X, or an array containing X" — a contained
+                // resource's `type` is the example — and the assertion vocabulary has no OR, so
+                // without this a manifest could only test one of the two shapes and would call a
+                // server conforming in the other way non-conforming. Value nodes keep asText(),
+                // so nothing that passed before changes.
+                String text = node.isMissingNode() ? null
+                        : node.isValueNode() ? node.asText() : node.toString();
+                boolean ok = text != null && Pattern.compile(a.matches()).matcher(text).find();
                 out.add(new AssertionResult(at + " matches", ok, "regex " + a.matches(),
-                        node.isMissingNode() ? "(missing)" : node.asText()));
+                        text == null ? "(missing)" : text));
             }
             if (a.count() != null) {
                 boolean ok = !node.isMissingNode() && node.size() == a.count();

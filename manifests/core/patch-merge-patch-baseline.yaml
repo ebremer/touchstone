@@ -1,0 +1,65 @@
+schemaVersion: 1
+id: core/patch-merge-patch-baseline
+title: PATCH supports JSON Merge Patch as its baseline format
+description: >-
+  lws10-core makes JSON Merge Patch the one patch format every server has to understand,
+  so a client can patch a JSON resource without first negotiating a dialect. The patch here
+  is the shape RFC 7386 is specific about: one member replaced, one added, and one removed
+  by being set to null.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/patch-json-merge-patch-baseline
+steps:
+  - name: create a JSON data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: application/json
+        Slug: doc.json
+      body: '{"title":"first","keep":true,"drop":"gone"}'
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: read its entity tag
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+    bind:
+      etag: "header:ETag"
+
+  - name: merge-patch it
+    request:
+      method: PATCH
+      target: "${created}"
+      headers:
+        Content-Type: application/merge-patch+json
+        If-Match: "${etag}"
+      body: '{"title":"second","added":42,"drop":null}'
+    expect:
+      status: [200, 204]
+
+  - name: the merge applied exactly as RFC 7386 defines it
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        Accept: application/json
+    expect:
+      status: 200
+      json:
+        # replaced
+        - pointer: "/title"
+          equals: "second"
+        # added
+        - pointer: "/added"
+          equals: 42
+        # untouched members survive — a merge patch is not a replacement
+        - pointer: "/keep"
+          equals: true
+        # null removes the member rather than setting it to null
+        - pointer: "/drop"
+          exists: false

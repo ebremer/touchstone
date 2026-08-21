@@ -207,6 +207,15 @@ public final class Executor {
                 if (header.equalsIgnoreCase("Location")) {
                     value = data.uri().resolve(value).toString();
                 }
+            } else if (extractor.startsWith("link:")) {
+                // Follow a relation rather than guessing a URI: LWS discovers a linkset through
+                // rel="linkset", not through any particular path convention, so a manifest that
+                // binds the relation stays portable across servers.
+                String rel = extractor.substring("link:".length());
+                value = LinkHeaders.target(data.headers(), rel, data.uri());
+                if (value == null) {
+                    return "bind '" + bind.getKey() + "': response advertises no Link with rel=\"" + rel + "\"";
+                }
             } else if (extractor.equals("status")) {
                 value = String.valueOf(data.status());
             } else if (extractor.equals("body")) {

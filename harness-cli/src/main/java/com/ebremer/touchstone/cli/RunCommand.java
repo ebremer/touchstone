@@ -62,7 +62,7 @@ final class RunCommand implements Callable<Integer> {
     @Option(
             names = "--report-dir",
             defaultValue = "runs",
-            description = "Directory receiving runs/<runId>/{run.json, earl.ttl, junit.xml, report.html} (default: ${DEFAULT-VALUE}).")
+            description = "Directory receiving runs/<stamp>-<runId>/{run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml} (default: ${DEFAULT-VALUE}).")
     private Path reportDir;
 
     @Spec
@@ -110,7 +110,8 @@ final class RunCommand implements Callable<Integer> {
                 ? CatalogRepository.load(catalogDir)
                 : List.of();
         Path runDir = Reports.writeAll(run, catalog, reportDir);
-        out.println("reports: " + runDir + " (run.json, earl.ttl, junit.xml, report.html)");
+        out.println("reports: " + runDir
+                + " (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)");
 
         return run.conformant() ? 0 : 1;
     }
