@@ -14,6 +14,7 @@ import com.ebremer.touchstone.core.exec.Harness;
 import com.ebremer.touchstone.core.exec.Target;
 import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.report.Reports;
+import com.ebremer.touchstone.core.report.RunDirs;
 import com.ebremer.touchstone.core.report.RunRecords;
 import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.mcp.config.TouchstoneProperties;
@@ -87,7 +88,12 @@ public final class RunStore {
     }
 
     private Optional<RunResult> loadPersisted(String runId) {
-        var runDir = props.runs().resolve(runId);
+        // Bundles are named <stamp>-<runId> now, so the id alone no longer resolves to a path.
+        var located = RunDirs.locate(props.runs(), runId);
+        if (located.isEmpty()) {
+            return Optional.empty();
+        }
+        var runDir = located.get();
         if (!Files.isRegularFile(runDir.resolve("run.json"))) {
             return Optional.empty();
         }

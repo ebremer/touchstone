@@ -1,5 +1,6 @@
 package com.ebremer.touchstone.mcp.mcp;
 
+import com.ebremer.touchstone.core.report.RunDirs;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -30,7 +31,9 @@ public class McpResources {
             description = "The W3C EARL conformance report (Turtle) for a completed run.",
             mimeType = "text/turtle")
     public ReadResourceResult earlReport(String runId) {
-        Path earl = props.runs().resolve(runId).resolve("earl.ttl");
+        Path earl = RunDirs.locate(props.runs(), runId)
+                .map(dir -> dir.resolve("earl.ttl"))
+                .orElseGet(() -> props.runs().resolve(runId).resolve("earl.ttl"));
         if (!Files.isRegularFile(earl)) {
             throw new IllegalArgumentException("no EARL report for run '" + runId + "' (has it completed?)");
         }

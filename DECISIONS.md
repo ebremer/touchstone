@@ -487,3 +487,42 @@ vulcan's `/alpha/`. That storage's `:LWSOwner` is `https://ebremer.com/id/erich`
 been added for the harness WebID a valid token will still be refused — 403 rather than
 401, which will at least say so plainly. This cannot be checked without a token that
 verifies, so it is the next thing to test once one exists.
+
+### D-0032 — run bundles are stamped, and the report ships as JSON and PDF too
+`runs/` was a list of hashes. A run id sorts arbitrarily because it is one, so a season of
+runs told you nothing about when any of them happened and finding the latest meant opening
+them. A bundle is now `runs/<xsd-dateTime>-<runId>/`, e.g.
+`2026-08-21T19:50:07Z-bda9ae4f`: the run's own `startedAt`, truncated to the second, in UTC,
+so lexical order is chronological order. The id stays, and stays last, because it is what
+everything else addresses a run by.
+
+`RunDirs.locate` resolves an id to its directory and is what `RunStore.loadPersisted` and the
+`report://{runId}/earl` MCP resource now use. It tries the bare id first, so the seven
+bundles written before this change are still found — verified after a restart, by loading
+`b8910c47` from disk. Nothing is renamed; old runs keep their old names.
+
+**The colons are deliberate.** An XSD `dateTime` has them and Windows filenames cannot, so
+this format is portable to POSIX and to WSL's drvfs (tested) but not to a native Windows
+host. `RunDirs.stamp` is the single place to change if that day comes — dropping the colons
+gives `2026-08-21T193247Z`, still ISO 8601 and still correctly ordered.
+
+The bundle gains `report.json` and `report.pdf` beside `report.html`. All three render
+`HtmlReport.model`, the map that already decided what the run found, so they cannot drift
+into disagreeing about whether a run conformed — there is one computation of conformance,
+not three. `report.json` is deliberately not `run.json`: that file is the evidence (every
+step, every redacted exchange, ~80 KB) while this one is the finding (totals, per-level
+coverage, the 203-row requirement matrix with verdicts, the tests), which is what a
+dashboard or a CI gate actually reads.
+
+PDF is drawn with **PDFBox 3.0.8**, not rendered from the HTML. The maintained HTML-to-PDF
+renderers want XHTML and `report.ftl` is HTML5; `com.openhtmltopdf` is dormant at 1.0.10 and
+the only newer build is a third-party fork. Drawing from the model needs no parser, adds one
+Apache dependency instead of two, and cannot disagree with the other two formats. Text is
+filtered to what CP1252 can encode — the Standard 14 fonts are WinAnsi and PDFBox throws on
+a character with no glyph, so one em dash in one catalog summary would otherwise have taken
+down the whole report.
+
+Verified end to end: a 13/13 vulcan run produced a 5-page PDF whose extracted text carries
+the verdict banner, the totals, all 13 tests and the matrix, and a `report.json` with 203
+requirement rows.
+

@@ -45,6 +45,14 @@
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
     </dependency>
+    <!-- report.pdf. PDFBox rather than an HTML-to-PDF renderer: the only maintained
+         ones are a dormant 1.0.10 and a third-party fork, and report.ftl is HTML5, not
+         the XHTML they parse. PdfReport draws from the same model HtmlReport renders,
+         so the two cannot disagree about what the run found. -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+    </dependency>
     <!-- Compile-scope by design: the manifest-to-DynamicTest factory is public API (DESIGN.md paragraph 4). -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

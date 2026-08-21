@@ -36,6 +36,7 @@
     <slf4j.version>2.0.18</slf4j.version>
     <logback.version>1.5.38</logback.version>
     <freemarker.version>2.3.34</freemarker.version>
+    <pdfbox.version>3.0.8</pdfbox.version>
     <!-- 3.x on purpose: the MCP Java SDK requires it on harness-mcp's classpath; core uses only its
          string-based API so no tools.jackson (Jackson 3) types leak into our code (D-0016). -->
     <json-schema-validator.version>3.0.6</json-schema-validator.version>
@@ -138,6 +139,11 @@
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
         <version>${freemarker.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>${pdfbox.version}</version>
       </dependency>
       <dependency>
         <groupId>com.networknt</groupId>
