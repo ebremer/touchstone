@@ -449,14 +449,15 @@ layer down. `provisioner` now falls back to `defaultIdentity` before `anonymous`
 stays a separate property because the two can legitimately differ: a suite may want the
 run root owned by one agent and the tests driven by another.
 
-`targets.yaml` gives `vulcan` `defaultIdentity: touchstone`. The credential is never
-stored in that file: it is checked in, and the file is the SSRF/abuse boundary. It comes
-from the environment as `TOUCHSTONE_TOKEN_TOUCHSTONE` and must be the **ID Token** (not
-the access token) from `https://ebremer.com/auth/realms/Halcyon` via the `lws-app` client
-— `account` and `halcyon-local` both refuse the direct-access grant — whose `sub` is
-`https://ebremer.com/id/touchstone`. That WebID's controlled identifier document names
-the same realm as its `lws:OpenIdProvider`, which is what Halcyon's `LwsOidcVerifier`
-dereferences to decide whether to trust the issuer.
+`targets.yaml` names a `defaultIdentity` per target. The credential is never stored in
+that file: it is checked in, and the file is the SSRF/abuse boundary. It comes from the
+environment as `TOUCHSTONE_TOKEN_<IDENTITY>` and, for an LWS-OIDC target, must be the
+**ID Token** (not the access token) from the OpenID Provider the identity's WebID names in
+its controlled identifier document, with `sub` equal to that WebID — the chain the resource
+server dereferences to decide whether to trust the issuer. Which OP, which OAuth client and
+which grant are deployment facts and stay in the operator's environment; note only that a
+realm's default client may refuse the direct-access grant, so the client is a thing to
+configure, not to assume.
 
 **Known limitation:** that is a static bearer token, per DESIGN.md §5.3's CTH-style
 minimum, and Keycloak's default ID Token lifetime is 5 minutes. A core run takes ~60s, so
@@ -464,29 +465,26 @@ one token covers a run, but an operator must mint a fresh one per session. Teach
 adapter to obtain and refresh tokens from a configured OP (client-credentials or password
 grant, secret from the environment) is the durable fix and is not yet done.
 
-### D-0031 — a `sub` with a leading space is why vulcan refused every credential
-With the identity configured, `TOUCHSTONE_TOKEN_TOUCHSTONE` still got
-`401 the access token is not valid` from vulcan on both GET and POST.
+### D-0031 — a `sub` with a leading whitespace character refuses every credential
+With the identity configured, a correctly minted ID Token still got
+`401 the access token is not valid` from the SUT on both GET and POST.
 
-The ID Token from `https://ebremer.com/auth/realms/Halcyon` carries
-`sub = " https://ebremer.com/id/touchstone"` — 34 characters, with a **leading space**.
-Halcyon's `LwsOidcVerifier.isUrl()` requires the subject to start with `http://` or
-`https://`; a subject failing that is declined as "not an LWS-OIDC credential" so the
-chain moves on, and with Keycloak now disabled on that host there is no verifier behind
-it. The chain ends empty and answers `invalid_token`. Nothing anywhere names the space.
+The token's `sub` carried a **leading space** before the WebID — one character, invisible
+in an OP's admin console and easily carried in on a paste. An LWS-OIDC verifier tests
+whether the subject starts with `http://` or `https://` before claiming the credential;
+a subject failing that is declined as "not an LWS-OIDC credential", so the chain moves on
+rather than reporting it malformed. Where no other verifier stands behind it, the chain
+ends empty and answers `invalid_token`. Nothing anywhere names the space, which is what
+made it expensive: the OP issues a token correct in every visible respect and every
+resource server refuses it.
 
-The origin is `LWSSubMapper.resolveWebId` in **lws-authn**, which returned the configured
-user attribute verbatim. Fixed there (trim before it becomes the claim, blank-after-trim
-treated as unset); that fix needs the rebuilt provider jar deployed to the Keycloak at
-ebremer.com. Correcting the `webid` attribute on the `touchstone` user in the admin
-console unblocks it immediately without a redeploy.
+The origin was the OP-side protocol mapper returning its configured user attribute
+verbatim. Fixed upstream (trim before it becomes the claim; blank-after-trim treated as
+unset), and correctable without a redeploy by fixing the attribute value itself.
 
-**Still unverified:** whether `https://ebremer.com/id/touchstone` is authorized on
-vulcan's `/alpha/`. That storage's `:LWSOwner` is `https://ebremer.com/id/erich`, and
-`AcpBootstrap` seeds only an owner policy and a creator policy, so unless a policy has
-been added for the harness WebID a valid token will still be refused — 403 rather than
-401, which will at least say so plainly. This cannot be checked without a token that
-verifies, so it is the next thing to test once one exists.
+The lesson for this harness: an authentication failure that reports only `invalid_token`
+is worth inspecting the credential's own claims for, byte by byte, before assuming the
+target's authorization is at fault.
 
 ### D-0032 — run bundles are stamped, and the report ships as JSON and PDF too
 `runs/` was a list of hashes. A run id sorts arbitrarily because it is one, so a season of
@@ -529,7 +527,7 @@ something a reader can act on without going to look the clause up. Cell content 
 since a pipe or a newline in a catalog summary would otherwise end the cell and break the
 table.
 
-Verified end to end: a 13/13 vulcan run produced a 5-page PDF whose extracted text carries
+Verified end to end: a 13/13 run against a live SUT produced a 5-page PDF whose text carries
 the verdict banner, the totals, all 13 tests and the matrix; a `report.json` with 203
 requirement rows; and a `report.md` whose 203 matrix rows are all spec links, with no
 malformed rows.
@@ -541,3 +539,22 @@ two builds previously, so a freshly written reporter silently did not run. The s
 first. `mvn clean install` fixed it. Check the artifact, not the source, when a change seems
 not to have taken.
 
+### D-0033 — no deployment specifics in files that ship with the harness
+D-0030 and D-0031 had grown a particular deployment into the repository: an OpenID
+Provider's URL, an operator's WebID, the OAuth client that happened to allow the
+direct-access grant. `targets.yaml` carried the same in its comments. None of it is secret —
+every one of those URLs answers an unauthenticated GET — but the harness is distributed as a
+Docker image and a GitHub Action for third parties to run against their own servers, and a
+file that ships with it should describe the mechanism, not one person's Keycloak.
+
+Both are now written generically: a target names a `defaultIdentity`, the credential comes
+from `TOUCHSTONE_TOKEN_<IDENTITY>` in the operator's environment, and for an LWS-OIDC target
+it must be an ID Token whose `sub` is the WebID that nominates the issuing OP. Which OP,
+which client, which grant are deployment facts and stay in the environment.
+
+The `vulcan` target entry itself stays: a pre-registered target is what `targets.yaml` is
+for, and the SSRF boundary depends on ids resolving to URLs here rather than being passed in.
+
+Credentials were never committed — checked across all three repositories, in tracked content,
+in full history and in commit messages. `runs/` is git-ignored, so no run bundle has ever
+been committed either.

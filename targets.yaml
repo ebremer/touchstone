@@ -17,14 +17,16 @@ targets:
       # /alpha/ grants the public nothing, so the suite must act as a named agent (D-0028).
       # This covers provisioning (the run root) as well as every step declaring no `as`.
       defaultIdentity: touchstone
-      # The credential is NEVER stored here — this file is checked in and is the SSRF/abuse
-      # boundary. Supply it in the MCP server's environment as TOUCHSTONE_TOKEN_TOUCHSTONE:
-      # the ID Token (not the access token) from
-      #   POST https://ebremer.com/auth/realms/Halcyon/protocol/openid-connect/token
-      #        grant_type=password  client_id=lws-app  scope=openid
-      # whose `sub` is the WebID https://ebremer.com/id/touchstone. That WebID's controlled
-      # identifier document names the same realm as its lws:OpenIdProvider, which is what
-      # Halcyon's LwsOidcVerifier dereferences to decide whether to trust the issuer.
+      # The credential is NEVER stored here — this file is checked in. Supply it in the
+      # harness's environment as TOUCHSTONE_TOKEN_<IDENTITY>, uppercased: for the identity
+      # above, TOUCHSTONE_TOKEN_TOUCHSTONE.
       #
-      # The token lives 5 minutes (Keycloak default) and a core run takes ~60s, so one
-      # token covers a run; mint a fresh one per session. See D-0030.
+      # For an LWS-OIDC target it must be an ID Token (not the access token) from the
+      # OpenID Provider that the identity's WebID names in its controlled identifier
+      # document, and its `sub` must be that WebID — that is the chain the resource server
+      # dereferences to decide whether to trust the issuer. Which OP, which client and which
+      # grant are deployment facts and belong in the operator's environment, not in a file
+      # that ships with the harness.
+      #
+      # ID Tokens are typically short-lived (5 minutes on a stock Keycloak) while a core run
+      # takes ~60s, so one token covers a run; mint a fresh one per session. See D-0030.
