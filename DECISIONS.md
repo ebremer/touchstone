@@ -558,3 +558,25 @@ for, and the SSRF boundary depends on ids resolving to URLs here rather than bei
 Credentials were never committed — checked across all three repositories, in tracked content,
 in full history and in commit messages. `runs/` is git-ignored, so no run bundle has ever
 been committed either.
+
+### D-0034 — get_report, and markdown is the default
+The report bundle has six renderings and the MCP surface exposed one of them, as the
+`report://{runId}/earl` resource. An agent that wanted to read what a run found had to
+reconstruct it from `get_run` and `get_failures`.
+
+`get_report(runId, format)` returns one rendering: `markdown` by default, or `json`, `html`,
+`earl`, `junit`, `pdf`. Common aliases are accepted (`md`, `ttl`, `turtle`, `xml`) rather than
+rejected, and an unknown format is refused by naming the ones that exist.
+
+Markdown is the default because it is the one an agent can actually read: 25 KB against
+JSON's 107 KB and HTML's 80 KB for the same run, and every requirement in its matrix carries
+a link to its clause. The tool description says so, so a caller asking for `json` is choosing
+to spend four times the tokens rather than discovering it afterwards. Nothing is truncated —
+half a JSON report is not a JSON report — so the size warning is the honest control.
+
+`pdf` returns its path and size with `content` null. An agent cannot read a PDF as text and
+base64 of one would spend thousands of tokens to say nothing; the path is what lets it hand
+the file to something that can open it.
+
+Resolution goes through `RunStore.reportDir`, which owns the runs directory, rather than
+injecting the properties into the tool layer.

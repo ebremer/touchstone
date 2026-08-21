@@ -1,8 +1,13 @@
 package com.ebremer.touchstone.mcp.tool;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.ebremer.touchstone.core.catalog.Requirement;
@@ -24,6 +29,7 @@ import com.ebremer.touchstone.mcp.dto.Dtos.ExchangeDto;
 import com.ebremer.touchstone.mcp.dto.Dtos.FailuresPage;
 import com.ebremer.touchstone.mcp.dto.Dtos.FailureSummary;
 import com.ebremer.touchstone.mcp.dto.Dtos.LevelCounts;
+import com.ebremer.touchstone.mcp.dto.Dtos.ReportDto;
 import com.ebremer.touchstone.mcp.dto.Dtos.RunStatusDto;
 import com.ebremer.touchstone.mcp.dto.Dtos.StartRunResult;
 import com.ebremer.touchstone.mcp.dto.Dtos.StepTraceDto;
@@ -151,6 +157,35 @@ public class RunTools {
                 .orElseThrow(() -> new IllegalArgumentException("test '" + testId + "' not in run " + runId));
         List<StepTraceDto> steps = test.steps().stream().map(RunTools::stepTrace).toList();
         return new TraceDto(runId, testId, test.requirements(), test.outcome().name(), UNTRUSTED_NOTE, steps);
+    }
+
+    @McpTool(name = "get_report",
+            description = "One completed run's report in the format you ask for: markdown (the "
+                    + "default, and the one to read), json, html, earl, junit or pdf. Markdown is "
+                    + "compact and linked; json and html are several times larger, so ask for them "
+                    + "only when something will parse or display them. pdf returns its path and "
+                    + "size, not its bytes.")
+    public ReportDto getReport(
+            @McpToolParam(description = "run id") String runId,
+            @McpToolParam(required = false,
+                    description = "markdown (default), json, html, earl, junit or pdf") String format) {
+        Format f = Format.of(format);
+        Path dir = runStore.reportDir(runId).orElseThrow(() -> new IllegalArgumentException(
+                "no report bundle for run '" + runId + "' (has it completed?)"));
+        Path file = dir.resolve(f.fileName);
+        if (!Files.isRegularFile(file)) {
+            throw new IllegalArgumentException(
+                    "run '" + runId + "' has no " + f.name().toLowerCase(Locale.ROOT) + " report at " + file);
+        }
+        try {
+            long bytes = Files.size(file);
+            // Binary formats are described, not returned: see ReportDto.
+            String content = f.binary ? null : Files.readString(file);
+            return new ReportDto(runId, f.name().toLowerCase(Locale.ROOT), f.mediaType,
+                    file.toAbsolutePath().toString(), bytes, content);
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot read " + file, e);
+        }
     }
 
     @McpTool(name = "diff_runs",
@@ -313,5 +348,46 @@ public class RunTools {
         return transitions.stream()
                 .map(t -> new TransitionDto(t.manifestId(), t.before().name(), t.after().name()))
                 .toList();
+    }
+
+    /**
+     * The report renderings a run bundle carries. Markdown is the default because it is the one
+     * an agent can actually read: compact, and every requirement carries a link to its clause.
+     */
+    private enum Format {
+        MARKDOWN("report.md", "text/markdown", false),
+        JSON("report.json", "application/json", false),
+        HTML("report.html", "text/html", false),
+        EARL("earl.ttl", "text/turtle", false),
+        JUNIT("junit.xml", "application/xml", false),
+        PDF("report.pdf", "application/pdf", true);
+
+        private final String fileName;
+        private final String mediaType;
+        private final boolean binary;
+
+        Format(String fileName, String mediaType, boolean binary) {
+            this.fileName = fileName;
+            this.mediaType = mediaType;
+            this.binary = binary;
+        }
+
+        /** Absent or blank means markdown; common aliases are accepted rather than rejected. */
+        static Format of(String requested) {
+            if (requested == null || requested.isBlank()) {
+                return MARKDOWN;
+            }
+            String key = requested.trim().toLowerCase(Locale.ROOT);
+            return switch (key) {
+                case "markdown", "md" -> MARKDOWN;
+                case "json" -> JSON;
+                case "html" -> HTML;
+                case "earl", "ttl", "turtle" -> EARL;
+                case "junit", "xml" -> JUNIT;
+                case "pdf" -> PDF;
+                default -> throw new IllegalArgumentException(
+                        "unknown format '" + requested + "' (markdown, json, html, earl, junit, pdf)");
+            };
+        }
     }
 }

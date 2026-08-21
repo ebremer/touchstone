@@ -1,6 +1,7 @@
 package com.ebremer.touchstone.mcp.run;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +86,15 @@ public final class RunStore {
             return Optional.of(job);
         }
         return loadPersisted(runId).map(result -> RunJob.completed(result, moduleOf(result)));
+    }
+
+    /**
+     * The directory holding a run's report bundle, whatever it is named — bundles are
+     * {@code <stamp>-<runId>} now, so the id alone no longer resolves to a path. RunStore owns
+     * the runs directory, so resolution lives here rather than being handed out to the tools.
+     */
+    public Optional<Path> reportDir(String runId) {
+        return RunDirs.locate(props.runs(), runId);
     }
 
     private Optional<RunResult> loadPersisted(String runId) {

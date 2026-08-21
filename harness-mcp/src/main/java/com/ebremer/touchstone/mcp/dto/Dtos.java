@@ -79,4 +79,15 @@ public final class Dtos {
             List<TransitionDto> regressions, List<TransitionDto> fixes, List<TransitionDto> otherChanges,
             List<String> added, List<String> removed, long unchanged, boolean hasRegressions) {
     }
+
+    /**
+     * One rendering of a completed run's report.
+     *
+     * <p>{@code content} is null for a binary format: an agent cannot read a PDF as text and
+     * base64 of it would cost thousands of tokens to say nothing. {@code path} and {@code bytes}
+     * are always populated, so the caller can hand the file to whoever can open it.
+     */
+    public record ReportDto(
+            String runId, String format, String mediaType, String path, long bytes, String content) {
+    }
 }
