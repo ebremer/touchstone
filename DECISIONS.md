@@ -435,3 +435,30 @@ the token unchanged, which is what lets a client correlate notifications: a toke
 back as `"3"` when it was sent as `3` matches nothing.
 
 `progressSink` takes `Object` for the same reason. String tokens are unaffected.
+
+### D-0030 — provisioning uses the target's `defaultIdentity` too
+D-0028 taught the **executor** to run undeclared-`as` steps as the target's
+`defaultIdentity`, so the suite could face a locked-down SUT. Provisioning kept its own
+hardcoded `anonymous` fallback, and the two disagreed.
+
+The result was a target that looked configured and still could not start. Every step
+would have authenticated correctly, but the run root they all live under was still
+requested anonymously, so `Containers.create` got 401 and the run died at provisioning
+with **0 of 13 tests executed** — the same total failure D-0028 set out to prevent, one
+layer down. `provisioner` now falls back to `defaultIdentity` before `anonymous`. It
+stays a separate property because the two can legitimately differ: a suite may want the
+run root owned by one agent and the tests driven by another.
+
+`targets.yaml` gives `vulcan` `defaultIdentity: erich` — the WebID that storage names as
+its `:LWSOwner`, which `AcpBootstrap` seeds with full control of the root and, through
+`acp:memberAccessControl`, its descendants. The credential is never stored in that file:
+it is checked in, and the file is the SSRF/abuse boundary. It comes from the environment
+as `TOUCHSTONE_TOKEN_ERICH` and must be the **ID Token** from
+`https://ebremer.com/auth/realms/Halcyon` (the OpenID Provider that WebID's controlled
+identifier document names), whose `sub` is the WebID itself.
+
+**Known limitation:** that is a static bearer token, per DESIGN.md §5.3's CTH-style
+minimum, and Keycloak's default ID Token lifetime is 5 minutes. A core run takes ~60s, so
+one token covers a run, but an operator must mint a fresh one per session. Teaching the
+adapter to obtain and refresh tokens from a configured OP (client-credentials or password
+grant, secret from the environment) is the durable fix and is not yet done.

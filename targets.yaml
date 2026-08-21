@@ -13,4 +13,13 @@ targets:
     baseUrl: https://vulcan.bmi.stonybrook.edu/alpha/
     adapter: env
     capabilities: []
-    properties: {}
+    properties:
+      # /alpha/ grants the public nothing, so the suite must act as a named agent
+      # (D-0028). This WebID is the storage's :LWSOwner, which AcpBootstrap seeds with
+      # full control over the root and, via acp:memberAccessControl, its descendants.
+      # It covers provisioning (the run root) as well as every step that declares no `as`.
+      defaultIdentity: erich
+      # The credential itself is NEVER stored here — this file is checked in. Supply it in
+      # the MCP server's environment as TOUCHSTONE_TOKEN_ERICH: an ID Token (not the access
+      # token) from https://ebremer.com/auth/realms/Halcyon, whose `sub` must be the WebID
+      # https://ebremer.com/id/erich for Halcyon's LWS-OIDC verifier to accept it.
