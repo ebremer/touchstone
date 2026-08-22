@@ -1,0 +1,84 @@
+schemaVersion: 1
+id: core/etag-on-head-and-container-listing
+title: Containers and HEAD responses carry entity tags, not only data resources on GET
+description: >-
+  "ETags MUST be provided in all GET/HEAD responses", and the conditional-request clause names
+  the container listing alongside the resource. A server that tags data resources on GET and
+  nothing else satisfies neither, and leaves a client unable to cache or safely modify a
+  listing at all. HEAD is checked against GET for the same resource so a divergence shows up
+  as such rather than as a missing header.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/etag-on-get-head-conditional-304
+  - https://example.org/touchstone/req/lws10-core/head-parity-with-get
+steps:
+  - name: the container itself carries an entity tag
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+    bind:
+      containerEtag: "header:ETag"
+
+  - name: HEAD of the container reports the same tag, without a body
+    request:
+      method: HEAD
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        ETag: "${containerEtag}"
+      body:
+        empty: true
+
+  - name: a conditional GET of the container listing is a 304
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+        If-None-Match: "${containerEtag}"
+    expect:
+      status: 304
+
+  - name: create a member
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: member
+      body: "member content"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: HEAD of the data resource carries the tag and the media type, without a body
+    request:
+      method: HEAD
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+        Content-Type: { contains: "text/plain" }
+      body:
+        empty: true
+    bind:
+      headEtag: "header:ETag"
+
+  - name: GET of the same resource reports the same tag
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        ETag: "${headEtag}"

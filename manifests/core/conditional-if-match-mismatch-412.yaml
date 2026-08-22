@@ -1,0 +1,66 @@
+schemaVersion: 1
+id: core/conditional-if-match-mismatch-412
+title: A PUT carrying a stale entity tag is refused with 412 and changes nothing
+description: >-
+  The half of optimistic concurrency that the 428 test cannot reach. A server that demands
+  If-Match and then writes without comparing it passes an unconditional-PUT-is-428 test and
+  still loses every concurrent update; only a stale validator distinguishes the two. The
+  final read is the real assertion — a 412 that wrote anyway is worse than no check at all.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/put-unconditional-rejected-428
+steps:
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: guarded
+      body: "original content"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: overwrite it once, so the tag the client holds goes stale
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+    bind:
+      stale: "header:ETag"
+
+  - name: a first conditional write succeeds and mints a new tag
+    request:
+      method: PUT
+      target: "${created}"
+      headers:
+        Content-Type: text/plain
+        If-Match: "${stale}"
+      body: "second content"
+    expect:
+      status: [200, 204]
+
+  - name: the same tag, now stale, is refused
+    request:
+      method: PUT
+      target: "${created}"
+      headers:
+        Content-Type: text/plain
+        If-Match: "${stale}"
+      body: "third content, must not land"
+    expect:
+      # The clause allows either: "mismatch yields 412 Precondition Failed or 409 Conflict".
+      status: [412, 409]
+
+  - name: the refused write left the resource untouched
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      body:
+        matches: "second content"

@@ -619,3 +619,39 @@ non-conforming. A non-value node is matched against its JSON text; value nodes k
 so nothing that passed before changes.
 
 Per DESIGN.md §7.4 this lands on a branch for review rather than on master.
+
+### D-0036 — six tests for the negative half of already-covered requirements
+Coverage counted a requirement as covered when any test referenced it, and the tests referenced
+happy paths. Six MUSTs were covered in that sense and still could not fail a broken server.
+
+The sharpest was concurrency. Two tests existed — correct entity tag succeeds, absent entity tag
+is 428 — and **no manifest asserted 412 at all**. A server implementing "no If-Match → 428, else
+write" passes both and loses every concurrent update, which is precisely the failure the
+mechanism exists to prevent. `conditional-if-match-mismatch-412` sends a tag that has gone stale
+and then reads the resource back, because a 412 that wrote anyway is worse than no check.
+
+The others follow the same shape: a conditional GET was tested only where it returns 304, so a
+server answering 304 to everything passed while starving its clients; ETags were checked on GET
+of a data resource, though the clause says "all GET/HEAD responses" and names container listings;
+`rel="linkset"` sat in the creation clause beside `rel="up"` with only the latter asserted;
+range requests are an unqualified MUST that nothing exercised; and a parent's ETag was never
+checked after a deletion, the one case where a surviving tag actively harms — every cache holding
+it is told a stale listing is current.
+
+All six map to requirements already Approved, so none needed the Draft batch review.
+
+**The reference server grew what the tests require**, as with PATCH before: single-range requests
+(`bytes=a-b`, `bytes=a-`, suffix `bytes=-n`, 416 when unsatisfiable) and a derived per-resource
+linkset. The linkset is *served*, not merely advertised — a relation pointing at a 404 is worse
+than none, because a client cannot distinguish "no metadata" from "metadata I failed to reach".
+
+**A harness inconsistency surfaced and is fixed.** A header assertion's `contains` tested every
+value of the field while `matches` tested only the first. `Link` is legally repeated (RFC 8288),
+so a response carrying `rel="up"`, `rel="type"` and `rel="linkset"` as three fields answered a
+regex for the third by examining only the first — reporting no match while printing the matching
+text in `actual`, which is the worst way to be wrong. `matches` now tests any value, as `contains`
+always did.
+
+All 21 core manifests pass against the reference server and against a live SUT. As expected they
+found no defect: their value is that the suite can no longer certify a server that gets these
+wrong, which until now it could.

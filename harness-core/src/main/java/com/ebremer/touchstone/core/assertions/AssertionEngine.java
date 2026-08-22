@@ -84,7 +84,14 @@ public final class AssertionEngine {
             out.add(new AssertionResult("header " + name + " equals", expected.equals(first), expected, actual));
         }
         if (h.matches() != null) {
-            boolean ok = first != null && Pattern.compile(h.matches()).matcher(first).find();
+            // ANY value, not just the first — matching what `contains` a few lines below has
+            // always done. A field like Link is legally repeated (RFC 8288), and a response
+            // carrying rel="up", rel="type" and rel="linkset" as three fields would answer a
+            // regex for the third by testing only the first and reporting no match, while
+            // printing the matching text in `actual`. The two spellings of "look at this header"
+            // disagreeing on which values they look at is a trap, not a feature.
+            Pattern pattern = Pattern.compile(h.matches());
+            boolean ok = values.stream().anyMatch(v -> pattern.matcher(v).find());
             out.add(new AssertionResult("header " + name + " matches", ok, "regex " + h.matches(), actual));
         }
         if (h.contains() != null) {

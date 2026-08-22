@@ -1,0 +1,78 @@
+schemaVersion: 1
+id: core/conditional-get-stale-validator-200
+title: A conditional GET answers 304 only when the validator still matches
+description: >-
+  The negative half of conditional GET. A server that answered 304 to every If-None-Match
+  would pass a test that only checks the matching case, and would starve its clients of
+  every update they asked for. RFC 9110 also forbids a body on a 304, which is asserted
+  here because a cache that receives one has no way to tell what it is being told.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/etag-on-get-head-conditional-304
+steps:
+  - name: create a data resource
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: cached
+      body: "first revision"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: read it and keep the validator
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+    bind:
+      etag: "header:ETag"
+
+  - name: the matching validator is a 304, and a 304 carries no body
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        If-None-Match: "${etag}"
+    expect:
+      status: 304
+      body:
+        empty: true
+
+  - name: a validator that never matched anything is not a 304
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        If-None-Match: '"touchstone-never-a-real-etag"'
+    expect:
+      status: 200
+      body:
+        matches: "first revision"
+
+  - name: change the resource, so the held validator goes stale
+    request:
+      method: PUT
+      target: "${created}"
+      headers:
+        Content-Type: text/plain
+        If-Match: "${etag}"
+      body: "second revision"
+    expect:
+      status: [200, 204]
+
+  - name: the now-stale validator yields the new representation, not a 304
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        If-None-Match: "${etag}"
+    expect:
+      status: 200
+      body:
+        matches: "second revision"

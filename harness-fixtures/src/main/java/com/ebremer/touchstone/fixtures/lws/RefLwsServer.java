@@ -31,7 +31,8 @@ import org.eclipse.jetty.util.Callback;
  * items/totalItems listings, lws+json/ld+json/json conneg, Link rel="up"/rel="type"
  * metadata, ETags with 304/412/428 conditional semantics, containment-consistent
  * create/delete, 409 on non-recursive delete of a non-empty container, Depth: infinity
- * recursion, JSON Merge Patch (RFC 7386) on data resources.
+ * recursion, JSON Merge Patch (RFC 7386) on data resources, single-range requests, and a
+ * derived linkset per resource.
  *
  * <p>Three auth modes (DECISIONS.md D-0017): {@link AuthMode#OPEN} (no auth — the core
  * happy-path suite), {@link AuthMode#SECURED} (validates Bearer tokens against the OIDC
@@ -216,6 +217,11 @@ public final class RefLwsServer implements AutoCloseable {
         private void read(Request request, Response response, Callback callback, String path, boolean withBody) {
             Node node = store.get(path);
             if (node == null) {
+                // A linkset is not a stored node; it is derived from the resource it describes.
+                if (path.endsWith(".meta") && store.get(path.substring(0, path.length() - ".meta".length())) != null) {
+                    linkset(response, callback, path, withBody);
+                    return;
+                }
                 status(response, callback, 404);
                 return;
             }
@@ -238,6 +244,37 @@ public final class RefLwsServer implements AutoCloseable {
                 contentType = node.contentType;
                 body = node.bytes;
             }
+            if (!node.container) {
+                // "Servers MUST support range requests per [RFC7233] for partial retrieval."
+                response.getHeaders().put("Accept-Ranges", "bytes");
+                String range = request.getHeaders().get("Range");
+                if (range != null) {
+                    long[] r = parseRange(range, body.length);
+                    if (r == null) {
+                        response.getHeaders().put("Content-Range", "bytes */" + body.length);
+                        addResourceLinks(request, response, path, node);
+                        status(response, callback, 416);
+                        return;
+                    }
+                    int from = (int) r[0];
+                    int to = (int) r[1];
+                    byte[] slice = new byte[to - from + 1];
+                    System.arraycopy(body, from, slice, 0, slice.length);
+                    response.setStatus(206);
+                    response.getHeaders().put(HttpHeader.CONTENT_TYPE, contentType);
+                    response.getHeaders().put(HttpHeader.ETAG, node.etag);
+                    response.getHeaders().put("Content-Range",
+                            "bytes " + from + "-" + to + "/" + body.length);
+                    addResourceLinks(request, response, path, node);
+                    if (withBody) {
+                        response.write(true, ByteBuffer.wrap(slice), callback);
+                    } else {
+                        response.getHeaders().put(HttpHeader.CONTENT_LENGTH, slice.length);
+                        callback.succeeded();
+                    }
+                    return;
+                }
+            }
             response.setStatus(200);
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, contentType);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
@@ -247,6 +284,64 @@ public final class RefLwsServer implements AutoCloseable {
             } else {
                 response.getHeaders().put(HttpHeader.CONTENT_LENGTH, body.length);
                 callback.succeeded();
+            }
+        }
+
+        /**
+         * A minimal linkset for the resource at {@code path}, advertising the patch format it
+         * accepts. Derived rather than stored, so it exists for every resource without the
+         * fixture having to keep one in step with its subject.
+         */
+        private void linkset(Response response, Callback callback, String path, boolean withBody) {
+            byte[] body = ("{\"linkset\":[{\"anchor\":\"" + path.substring(0, path.length() - ".meta".length())
+                    + "\"}]}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            response.setStatus(200);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/linkset+json");
+            response.getHeaders().put("Accept-Patch", "application/merge-patch+json");
+            if (withBody) {
+                response.write(true, ByteBuffer.wrap(body), callback);
+            } else {
+                response.getHeaders().put(HttpHeader.CONTENT_LENGTH, body.length);
+                callback.succeeded();
+            }
+        }
+
+        /**
+         * One byte range against an entity of {@code length} bytes, as {@code first,last}
+         * inclusive, or null when it cannot be satisfied (RFC 9110 §14.1.1). Only the single-range
+         * forms are handled — {@code bytes=a-b}, {@code bytes=a-} and the suffix {@code bytes=-n} —
+         * which is what "minimally support" asks for; a multipart range is left unsatisfied rather
+         * than answered wrongly.
+         */
+        private static long[] parseRange(String header, int length) {
+            if (header == null || !header.startsWith("bytes=") || header.indexOf(',') >= 0 || length == 0) {
+                return null;
+            }
+            String spec = header.substring("bytes=".length()).trim();
+            int dash = spec.indexOf('-');
+            if (dash < 0) {
+                return null;
+            }
+            String lo = spec.substring(0, dash).trim();
+            String hi = spec.substring(dash + 1).trim();
+            try {
+                if (lo.isEmpty()) {
+                    // Suffix: the last n bytes, clamped to the whole entity.
+                    long n = Long.parseLong(hi);
+                    if (n <= 0) {
+                        return null;
+                    }
+                    long from = Math.max(0, length - n);
+                    return new long[] {from, length - 1};
+                }
+                long from = Long.parseLong(lo);
+                if (from >= length) {
+                    return null;
+                }
+                long to = hi.isEmpty() ? length - 1 : Math.min(Long.parseLong(hi), length - 1);
+                return to < from ? null : new long[] {from, to};
+            } catch (NumberFormatException e) {
+                return null;
             }
         }
 
@@ -290,6 +385,8 @@ public final class RefLwsServer implements AutoCloseable {
             response.getHeaders().add("Link", "<" + absolute(request, path) + ">; rel=\"up\"");
             response.getHeaders().add("Link", "<" + LWS_NS + (isContainer ? "Container" : "DataResource")
                     + ">; rel=\"type\"");
+            response.getHeaders().add("Link", "<" + absolute(request, linksetOf(childPath))
+                    + ">; rel=\"linkset\"; type=\"application/linkset+json\"");
             callback.succeeded();
         }
 
@@ -484,6 +581,18 @@ public final class RefLwsServer implements AutoCloseable {
             }
             response.getHeaders().add("Link", "<" + LWS_NS + (node.container ? "Container" : "DataResource")
                     + ">; rel=\"type\"");
+            // The creation clause names rel="linkset" beside rel="up", and a client has no other
+            // way to find where a resource's metadata is edited — there is no path convention it
+            // is entitled to assume. The target is served, rather than merely advertised: a link
+            // relation pointing at a 404 is worse than none, because a client cannot tell the
+            // difference between "no metadata" and "metadata it failed to reach".
+            response.getHeaders().add("Link", "<" + absolute(request, linksetOf(path))
+                    + ">; rel=\"linkset\"; type=\"application/linkset+json\"");
+        }
+
+        /** A resource's linkset lives beside it; the suffix is this fixture's convention, not the spec's. */
+        private static String linksetOf(String path) {
+            return path.endsWith("/") ? path.substring(0, path.length() - 1) + ".meta" : path + ".meta";
         }
 
         private String negotiate(String accept) {

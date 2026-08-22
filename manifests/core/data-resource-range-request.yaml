@@ -1,0 +1,68 @@
+schemaVersion: 1
+id: core/data-resource-range-request
+title: A data resource serves byte ranges
+description: >-
+  "Servers MUST support range requests per [RFC7233] for partial retrieval." This is the clause
+  that lets a client resume an interrupted transfer or read the header of a large object, which
+  for a storage holding whole-slide images is the difference between usable and not. A server
+  that ignores Range answers 200 with the whole entity — which looks like success to a client
+  that does not check, and is how a resumed download silently restarts from zero.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
+steps:
+  - name: create a data resource with known bytes
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: ranged.txt
+      body: "0123456789"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: the full read advertises that ranges are accepted
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        Accept-Ranges: { contains: "bytes" }
+      body:
+        matches: "0123456789"
+
+  - name: a byte range yields 206 with just those bytes
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        Range: "bytes=0-3"
+    expect:
+      status: 206
+      headers:
+        Content-Range: { matches: 'bytes 0-3/10' }
+      body:
+        matches: "^0123$"
+
+  - name: a suffix range yields the last bytes
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        Range: "bytes=-2"
+    expect:
+      status: 206
+      body:
+        matches: "^89$"
+
+  - name: a range beyond the end is unsatisfiable
+    request:
+      method: GET
+      target: "${created}"
+      headers:
+        Range: "bytes=100-200"
+    expect:
+      status: 416

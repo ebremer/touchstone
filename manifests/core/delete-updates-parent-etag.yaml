@@ -1,0 +1,71 @@
+schemaVersion: 1
+id: core/delete-updates-parent-etag
+title: Deleting a member changes the parent container's entity tag
+description: >-
+  "its ETag MUST be updated to reflect the change". A listing whose tag survives a deletion is
+  the one case where caching actively harms correctness: every client holding that tag is told
+  its stale listing is current, and the removed member goes on being offered indefinitely. The
+  conditional GET at the end is what a cache would actually do, so it tests the consequence
+  rather than only the header.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/delete-updates-parent-listing-etag
+steps:
+  - name: create a member
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+        Slug: doomed
+      body: "not long for this world"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: read the parent's tag while the member is still there
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        ETag: { present: true }
+      json:
+        - pointer: "/totalItems"
+          equals: 1
+    bind:
+      before: "header:ETag"
+
+  - name: delete the member
+    request:
+      method: DELETE
+      target: "${created}"
+    expect:
+      status: 204
+
+  - name: the parent's listing no longer holds it
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/totalItems"
+          equals: 0
+        - pointer: "/items"
+          equals: []
+
+  - name: and a cache holding the old tag is not told it is still current
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+        If-None-Match: "${before}"
+    expect:
+      status: 200
