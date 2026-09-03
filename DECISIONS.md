@@ -881,3 +881,19 @@ recomputed.
 baselined on; the superseded June core snapshot and the four editor's drafts were removed
 rather than left alongside, since two snapshots would make it ambiguous which one a hash came
 from. Git holds them.
+
+### D-0043 — the key-rotation test grepped a JWKS for a two-character key id
+`OidcIssuerTest.rotationReplacesThePublishedKey` asserted `doesNotContain(beforeKid)`
+against the raw JWKS document. Key ids in this fixture are `k1` and `k2`; an RSA modulus
+is around 340 characters of base64url, so the literal pair `k1` turns up inside an
+unrelated key's `n` value about one run in twelve. It surfaced on the merge to master and
+had nothing to do with the merge: the fixture had simply generated a modulus containing
+`k1`, and the test read that as "the retired key is still published".
+
+The mirror direction was worse and silent: `contains(afterKid)` would have passed on a
+JWKS that published no such key at all, as long as those two characters appeared anywhere
+in it. A test that can pass for the wrong reason is not evidence of anything.
+
+The assertion now parses the JWKS and compares key ids — `containsExactly(afterKid)`,
+which also says the thing the test is named for: rotation *replaces* the key rather than
+appending to it. Run ten times in a row before committing.

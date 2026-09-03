@@ -4,7 +4,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,18 +61,29 @@ class OidcIssuerTest {
         assertThat(tokens.algNone("alice")).endsWith(".");
     }
 
+    /**
+     * The published key ids, parsed rather than grepped. Key ids here are two characters
+     * ("k1", "k2") and an RSA modulus is a few hundred characters of base64url, so a
+     * substring search over the raw JWKS finds "k1" inside the modulus of an unrelated key
+     * roughly one run in twelve — which made this test fail at random and, worse, could have
+     * passed for the wrong reason in the other direction.
+     */
+    private static List<String> publishedKids() throws Exception {
+        return JWKSet.parse(get(issuer.jwksUri())).getKeys().stream().map(JWK::getKeyID).toList();
+    }
+
     @Test
     void rotationReplacesThePublishedKey() throws Exception {
         String beforeKid = issuer.currentKey().getKeyID();
-        String jwksBefore = get(issuer.jwksUri());
-        assertThat(jwksBefore).contains(beforeKid);
+        assertThat(publishedKids()).contains(beforeKid);
 
         issuer.rotateKeys();
 
         String afterKid = issuer.currentKey().getKeyID();
         assertThat(afterKid).isNotEqualTo(beforeKid);
-        String jwksAfter = get(issuer.jwksUri());
-        assertThat(jwksAfter).contains(afterKid).doesNotContain(beforeKid);
+        assertThat(publishedKids())
+                .as("rotation retires the old key rather than publishing both")
+                .containsExactly(afterKid);
     }
 
     private static String get(URI uri) throws Exception {
