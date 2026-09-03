@@ -57,17 +57,24 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.apache.jena</groupId>
-        <artifactId>jena-bom</artifactId>
-        <version>${jena.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+      <!-- jetty-bom comes FIRST, and the order is the whole point. An imported BOM carries the
+           dependencyManagement it inherits, and org.apache.jena:jena (jena-bom's parent) pins
+           jetty-bom at 12.1.8. Maven resolves imports first-declared-first, so with jena-bom
+           ahead of this one the declared jetty.version was inert: every module resolved Jetty
+           12.1.8 while the property said otherwise. The same leak was already found and pinned
+           around for logback-core below. The enforcer rule in <build> now fails the build if a
+           Jetty older than the pin ever comes back. DECISIONS.md D-0044. -->
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.jena</groupId>
+        <artifactId>jena-bom</artifactId>
+        <version>${jena.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -221,6 +228,30 @@
                 <requireJavaVersion>
                   <version>[21,)</version>
                 </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <!-- A version property that quietly stops governing is worse than no property: it
+                 reads as a decision while another BOM makes the real one. Jena's parent pinned
+                 Jetty at 12.1.8 and Spring Boot's at 12.1.10, and for six phases the declared
+                 pin matched neither. Nothing below the pin may resolve; if a future BOM wins
+                 again, this fails the build instead of the pin going quietly stale. -->
+            <id>pin-jetty</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.eclipse.jetty*:*:(,${jetty.version})</exclude>
+                  </excludes>
+                  <searchTransitive>true</searchTransitive>
+                  <message>A Jetty older than the pinned ${jetty.version} resolved. Some
+                    imported BOM is deciding the version instead of jetty-bom: import jetty-bom
+                    ahead of it (DECISIONS.md D-0044).</message>
+                </bannedDependencies>
               </rules>
             </configuration>
           </execution>

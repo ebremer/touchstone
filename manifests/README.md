@@ -4,7 +4,7 @@ Declarative YAML test definitions — the single source of truth the JUnit 5
 `@TestFactory` loader compiles into `DynamicTest`s (DESIGN.md §5.2).
 
 **Gate 2 closed (2026-07-16): manifest JSON Schema v1 is frozen**
-(`docs/manifest-schema/manifest.schema.json`, `$id …/manifest/1-0-0`). Every manifest
+(`docs/manifest-schema/manifest.schema.json`, `$id …/manifest/1-1-0`). Every manifest
 must validate against it, and every requirement IRI a manifest declares must resolve to
 a catalog entry — a run refuses to start otherwise (DECISIONS.md D-0039).
 
@@ -13,7 +13,7 @@ Layout:
 ```
 manifests/
   core/            # storage discovery, containers, CRUD, conditional requests,
-                   # media-type equivalence, errors (23 tests)
+                   # media-type equivalence, linkset discovery, errors (24 tests)
     bodies/        # request-body fixtures referenced via bodyRef
   auth-oidc/       # OIDC negative matrix: 401 + WWW-Authenticate, token validation (9 tests)
 ```

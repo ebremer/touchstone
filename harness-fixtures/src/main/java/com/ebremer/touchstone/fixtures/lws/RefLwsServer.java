@@ -328,6 +328,10 @@ public final class RefLwsServer implements AutoCloseable {
                     + "\"}]}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
             response.setStatus(200);
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/linkset+json");
+            // "Servers MUST advertise support for GET and PATCH operations on the linkset
+            // resource via the Allow header", and the patch format via Accept-Patch. A client
+            // that cannot learn either has to guess and handle the 405 or 415 it gets wrong.
+            response.getHeaders().put(HttpHeader.ALLOW, "GET, HEAD, PATCH");
             response.getHeaders().put("Accept-Patch", "application/merge-patch+json");
             if (withBody) {
                 response.write(true, ByteBuffer.wrap(body), callback);

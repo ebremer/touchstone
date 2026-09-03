@@ -69,7 +69,6 @@ public final class AssertionEngine {
     private static void headers(List<AssertionResult> out, String name, Manifest.HeaderAssertion h,
                                 ResponseData data, EvalEnv env) {
         List<String> values = data.headers().allValues(name);
-        String first = values.isEmpty() ? null : values.getFirst();
         String actual = values.isEmpty() ? "(absent)" : String.join(", ", values);
         if (h.present() != null) {
             out.add(new AssertionResult("header " + name + " present", !values.isEmpty() == h.present(),
@@ -80,8 +79,13 @@ public final class AssertionEngine {
                     h.absent() ? "absent" : "may be present", actual));
         }
         if (h.equalsValue() != null) {
+            // ANY value, like `contains` and `matches`. Testing only the first was the last of
+            // the three spellings of "look at this header" to disagree with the others about
+            // which values it looks at (D-0036 fixed `matches`), and for a legally repeated
+            // field like Link that difference decides the verdict.
             String expected = TemplateEngine.resolve(h.equalsValue(), env.vars());
-            out.add(new AssertionResult("header " + name + " equals", expected.equals(first), expected, actual));
+            out.add(new AssertionResult("header " + name + " equals",
+                    values.contains(expected), expected, actual));
         }
         if (h.matches() != null) {
             // ANY value, not just the first — matching what `contains` a few lines below has
@@ -264,7 +268,7 @@ public final class AssertionEngine {
             return;
         }
         try {
-            Model reference = null;
+            byte[] referenceBody = null;
             String referenceType = null;
             for (String accept : accepts) {
                 ResponseData variant = env.refetchWithAccept().apply(accept);
@@ -273,20 +277,54 @@ public final class AssertionEngine {
                             "2xx", String.valueOf(variant.status())));
                     return;
                 }
-                Model model = Graphs.parse(variant, accept);
-                if (reference == null) {
-                    reference = model;
+                // "MUST set the Content-Type response header to the requested media type."
+                String contentType = variant.contentType();
+                out.add(new AssertionResult("conneg " + accept + " echoes its content type",
+                        contentType != null && contentType.startsWith(accept),
+                        accept, contentType == null ? "(absent)" : contentType));
+                if (referenceBody == null) {
+                    referenceBody = variant.body();
                     referenceType = accept;
-                } else {
-                    out.add(new AssertionResult(
-                            "conneg graphs equivalent: " + referenceType + " vs " + accept,
-                            reference.isIsomorphicWith(model),
-                            "isomorphic", reference.size() + " vs " + model.size() + " triples"));
+                    continue;
                 }
+                // "the response body is the same JSON-LD document ... and only the Content-Type
+                // response header varies" — so the bytes, not merely the graph. Isomorphism was
+                // the weaker reading and let a server vary the serialization per media type
+                // while passing. When the bytes differ the graphs are compared anyway, because
+                // "same data, different serialization" and "different data" are different
+                // defects and the report should say which one it found.
+                boolean identical = Arrays.equals(referenceBody, variant.body());
+                String detail = referenceBody.length + " vs " + variant.body().length + " bytes";
+                if (!identical) {
+                    detail += "; " + graphRelation(referenceBody, variant, referenceType, accept);
+                }
+                out.add(new AssertionResult(
+                        "conneg bodies identical: " + referenceType + " vs " + accept,
+                        identical, "byte-identical", detail));
             }
         } catch (Exception e) {
             out.add(AssertionResult.failed("conneg equivalence", "comparable representations",
                     String.valueOf(e.getMessage())));
+        }
+    }
+
+    /**
+     * Says whether two differing bodies at least carry the same graph, so a failure reads as
+     * "re-serialized" rather than only "not equal". Never throws: this is diagnosis attached to
+     * an assertion that has already failed.
+     */
+    private static String graphRelation(byte[] referenceBody, ResponseData variant,
+                                        String referenceType, String accept) {
+        try {
+            ResponseData reference = new ResponseData(variant.status(), variant.headers(),
+                    referenceBody, variant.uri(), referenceType);
+            Model a = Graphs.parse(reference, referenceType);
+            Model b = Graphs.parse(variant, accept);
+            return a.isIsomorphicWith(b)
+                    ? "same graph, so the document was re-serialized rather than changed"
+                    : "and the graphs differ too, so the representations disagree on content";
+        } catch (Exception e) {
+            return "graphs not comparable (" + e.getMessage() + ")";
         }
     }
 }

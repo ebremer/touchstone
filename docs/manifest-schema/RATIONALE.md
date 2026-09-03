@@ -1,7 +1,10 @@
 # Manifest JSON Schema v1 — proposal (Gate 2)
 
 Status: **FROZEN v1 — approved by Erich on 2026-07-16 (DECISIONS.md D-0013).**
-The `$id` `https://example.org/touchstone/schema/manifest/1-0-0` is fixed; any
+The `$id` is versioned and a change to it is a recorded decision, never a silent edit.
+It is `https://example.org/touchstone/schema/manifest/1-1-0` as of 2026-09-02 (D-0045,
+which added the `link:<rel>` bind extractor; `schemaVersion` stays `1`, so every manifest
+written against 1-0-0 validates unchanged). The original `1-0-0` was fixed; any
 later change bumps the version and gets a DECISIONS.md entry.
 
 ## Shape

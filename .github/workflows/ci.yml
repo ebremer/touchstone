@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # The default branch is master, not main. Naming the wrong one meant no push to the
+    # default branch ever ran CI, and only pull requests did — so the Phase 0 acceptance
+    # criterion ("green CI on main", D-0007) was never actually being met (D-0044).
+    branches: [master]
   pull_request:
 
 jobs:

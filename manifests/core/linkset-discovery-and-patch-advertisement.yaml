@@ -1,0 +1,100 @@
+schemaVersion: 1
+id: core/linkset-discovery-and-patch-advertisement
+title: A resource's linkset is reachable through its relation and advertises how to edit it
+description: >-
+  A resource's metadata lives in a standalone linkset resource, and LWS gives a client no other
+  way to find it: RFC 9264 says it is discovered through rel="linkset", and no path convention
+  is one a client is entitled to assume. So the test follows the relation the server advertises
+  rather than guessing a URI — which is what the `link:<rel>` bind extractor exists for (D-0045)
+  and why this test could not be written until the schema allowed it.
+
+  Having reached it, the two discovery clauses are what make it editable at all: a client that
+  cannot learn the linkset accepts PATCH, or in which format, has to guess and handle the 405 or
+  415 it gets wrong. That is the difference between metadata a client can manage and metadata it
+  can only read.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+  - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
+  - https://example.org/touchstone/req/lws10-core/linkset-media-type-json
+  - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
+  - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-advertised
+steps:
+  - name: create a data resource, which must advertise its linkset
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/plain
+      body: "a resource with metadata"
+    expect:
+      status: 201
+      headers:
+        Location: { present: true }
+        Link:
+          matches: 'rel="?linkset"?'
+    bind:
+      created: "header:Location"
+
+  - name: reading the resource advertises it too, and names where the metadata is
+    request:
+      method: GET
+      target: "${created}"
+    expect:
+      status: 200
+      headers:
+        Link:
+          matches: 'rel="?linkset"?'
+    bind:
+      linkset: "link:linkset"
+
+  - name: the advertised linkset is served, and says how it may be edited
+    request:
+      method: GET
+      target: "${linkset}"
+    expect:
+      # A relation pointing at a 404 is worse than none: a client cannot tell "no metadata"
+      # from "metadata I failed to reach".
+      status: 200
+      headers:
+        Content-Type: { contains: "application/linkset+json" }
+        # "Servers MUST advertise support for GET and PATCH operations on the linkset
+        # resource via the Allow header."
+        Allow:
+          matches: '(?s)(?=.*GET)(?=.*PATCH)'
+        # "Servers MUST advertise support for JSON Merge Patch via the Accept-Patch header."
+        Accept-Patch: { contains: "application/merge-patch+json" }
+
+  - name: a container has one as well, since its metadata is managed the same way
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Link: '<https://www.w3.org/ns/lws#Container>; rel="type"'
+    expect:
+      status: 201
+      headers:
+        Link:
+          matches: 'rel="?linkset"?'
+    bind:
+      sub: "header:Location"
+
+  - name: and it is reachable through the relation the container advertises
+    request:
+      method: GET
+      target: "${sub}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+    bind:
+      subLinkset: "link:linkset"
+
+  - name: which also advertises the patch format
+    request:
+      method: GET
+      target: "${subLinkset}"
+    expect:
+      status: 200
+      headers:
+        Content-Type: { contains: "application/linkset+json" }
+        Accept-Patch: { contains: "application/merge-patch+json" }

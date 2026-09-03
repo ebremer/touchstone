@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/manifest/1-0-0",
+  "$id": "https://example.org/touchstone/schema/manifest/1-1-0",
   "title": "Touchstone test manifest",
-  "description": "One conformance test: metadata plus an HTTP step sequence with declarative assertions. FROZEN v1 on 2026-07-16 (Gate 2, DECISIONS.md D-0013); any change requires a version bump and a decision entry.",
+  "description": "One conformance test: metadata plus an HTTP step sequence with declarative assertions. FROZEN v1 on 2026-07-16 (Gate 2, DECISIONS.md D-0013); any change requires a version bump and a decision entry. 1-1-0 (2026-09-02, D-0045) adds the link:<rel> bind extractor; schemaVersion stays 1, so every 1-0-0 manifest validates unchanged.",
   "type": "object",
   "required": ["schemaVersion", "id", "title", "requirements", "steps"],
   "additionalProperties": false,
@@ -70,9 +70,9 @@
           "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
           "additionalProperties": {
             "type": "string",
-            "pattern": "^(header:[A-Za-z][A-Za-z0-9-]*|status|body)$"
+            "pattern": "^(header:[A-Za-z][A-Za-z0-9-]*|link:\\S+|status|body)$"
           },
-          "description": "Bind response parts to variables for later steps: header:<Name>, status, body."
+          "description": "Bind response parts to variables for later steps: header:<Name>, link:<rel> (the target of a Link relation, RFC 8288, resolved against the request URI), status, body."
         },
         "timeoutMillis": { "type": "integer", "minimum": 1 }
       }

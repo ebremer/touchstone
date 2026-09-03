@@ -897,3 +897,98 @@ in it. A test that can pass for the wrong reason is not evidence of anything.
 The assertion now parses the JWKS and compares key ids — `containsExactly(afterKid)`,
 which also says the thing the test is named for: rotation *replaces* the key rather than
 appending to it. Run ten times in a row before committing.
+
+### D-0044 — the Jetty pin now governs, and the build fails if it stops
+`<jetty.version>12.1.11</jetty.version>` had no effect anywhere. `harness-core`,
+`-fixtures` and `-cli` resolved **12.1.8**; `harness-mcp` resolved **12.1.10**. An imported
+BOM carries the dependencyManagement it inherits, and `org.apache.jena:jena` — jena-bom's
+parent — imports `jetty-bom` at 12.1.8. Maven resolves imports first-declared-first, and
+jena-bom was declared above jetty-bom, so the property read like a decision while Jena made
+the real one. The same leak had already been found once, for `logback-core`, and pinned
+around with an explicit entry; Jetty was missed.
+
+Three changes:
+- `jetty-bom` is imported **first** in the root POM.
+- `harness-mcp` imports `jetty-bom` and `jetty-ee11-bom` ahead of `spring-boot-dependencies`.
+  A child's own dependencyManagement is consulted before the parent's, so the root import
+  does not reach that module, and Boot 4.0.7 would otherwise decide it (12.1.10). `jetty-bom`
+  alone was not enough: the servlet and websocket layers Boot's Jetty starter pulls live
+  under `org.eclipse.jetty.ee11` and need their own BOM. Jetty releases the two in lockstep,
+  so 12.1.11 core over a 12.1.10 servlet layer is a combination nobody upstream tests.
+- An enforcer `bannedDependencies` rule bans `org.eclipse.jetty*:*:(,${jetty.version})`
+  transitively, so a future BOM winning the argument fails the build instead of the pin going
+  quietly stale. It earned its keep immediately: it is what caught the ee11 half.
+
+`dependency:tree` now reports a single Jetty version, 12.1.11, in every module.
+
+**CI never ran on the default branch.** `.github/workflows/ci.yml` triggered on
+`push: branches: [main]`; the default branch is `master`. Pull requests ran, pushes did not,
+so D-0007's "green CI on main" acceptance was never actually being met on the branch it
+names. One word.
+
+**Two assertion-engine corrections.**
+- Conneg equivalence asserted graph **isomorphism**, which is weaker than the clause: "the
+  response body is the same JSON-LD document ... and only the Content-Type response header
+  varies". A server free to re-serialize per media type passed. It now compares the bytes,
+  and when they differ it reports whether the graphs still match, because "re-serialized" and
+  "different content" are different defects and a report should say which one it found. It
+  also asserts the Content-Type echoes the requested type on each variant, which the clause
+  requires and which the assertion was already fetching the evidence for.
+- A header `equals` tested only the field's **first** value while `contains` and `matches`
+  tested any. D-0036 fixed that disagreement for `matches`; this was the third spelling, and
+  for a legally repeated field like `Link` it decides the verdict. All three now agree.
+
+**Redaction reaches bodies and URLs.** `Redaction` stripped six header names and nothing
+else, which held only because no test yet exercised a flow carrying a credential elsewhere.
+Core 5.2.3 token exchange puts a `subject_token` in a request body and an `access_token` in
+the response, and OAuth has always permitted a token in a query string; any of those would
+have landed verbatim in `run.json`, `report.html` and every MCP `get_trace`. The scrub is
+name-based over the well-known credential parameter names, applied to JSON members, form
+fields and query parameters, and the header list gained `dpop-nonce`, `api-key`,
+`authentication-info` and `proxy-authenticate`. It cannot catch a credential under a name
+nobody standardised, so it is a floor rather than a guarantee — which is the other reason
+bodies stay truncated. `RedactionTest` covers the token-exchange request and response shapes
+and asserts that a `WWW-Authenticate` challenge, which is the evidence a 401 test exists to
+capture, is *not* redacted.
+
+**An unclassifiable failure no longer reads as conformant.** `RunTools.strongestLevel`
+returned `UNCLASSIFIED` for a requirement the catalog does not hold, and `mustFailures`
+counted only `MUST`, so a run against an unconfigured catalog could report every failure and
+still say `conformant: true`. D-0039 makes a dangling IRI stop the run, so the remaining path
+here is a missing catalog — which now logs, and whose failures count. Failing safe is the
+only defensible direction: a missing catalog must not look like a passing server.
+
+### D-0045 — manifest schema 1-1-0: a test may follow a link relation
+Gate 2 froze the manifest schema at `$id …/manifest/1-0-0` with the rule that a change bumps
+the version and is recorded (D-0013). This is that bump: `$id` is now
+`…/manifest/1-1-0` and `bind` accepts `link:<rel>` beside `header:<Name>`, `status` and
+`body`. `schemaVersion` stays `1` — the addition is backward compatible and every manifest
+written against 1-0-0 validates unchanged.
+
+The engine half has existed since D-0035: `LinkHeaders` implements RFC 8288 (separate or
+comma-joined fields, quoted parameters, relation lists, case-insensitivity, relative
+resolution) and `Executor.bind` has resolved `link:` all along. Only the schema forbade it,
+so the code was unreachable and the tests that needed it could not be written. D-0035
+recorded one Approved MUST blocked on this; by the 21 August re-baseline it was six, because
+storage-description discovery has the same shape — LWS says a linkset is found through
+`rel="linkset"` and a storage through `rel="…lws#storage"`, at no particular path. A test that
+guesses a URI tests one server's convention; a test that follows the relation tests the
+specification.
+
+Two tests follow from it:
+- `core/linkset-discovery-and-patch-advertisement` finally covers
+  `linkset-accept-patch-advertised`, the Approved MUST D-0035 had to leave uncovered, along
+  with the standalone-linkset, media-type and `Allow` clauses. A client that cannot learn
+  the linkset takes PATCH, or in which format, has to guess and handle the 405 or 415 it gets
+  wrong. The reference server grew the `Allow` header the clause requires.
+- `core/storage-description-discovery` now fetches the URI the server **advertises** rather
+  than the one the target was registered as, and checks the two agree. The gap that manifest
+  documented is closed.
+
+**A stray backslash proved the schema needed a guard.** The first edit wrote `link:\S+`,
+where JSON requires `link:\\S+`; the schema stopped parsing, and because `ManifestLoader`
+compiles it in a static initialiser the whole class failed to initialise and every test that
+loads a manifest died with `ExceptionInInitializerError`, saying nothing about the cause.
+`SchemaSyncTest` compared the two copies for equality but never asked whether either was
+valid JSON — two identical broken files passed. It now parses the schema, checks the `$id` is
+the version claimed, and exercises the `bind` pattern against real extractor strings.

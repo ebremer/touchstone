@@ -16,6 +16,29 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Ahead of spring-boot-dependencies deliberately. A child's own dependencyManagement is
+           consulted before the parent's, so the root pom's jetty-bom import does not reach this
+           module; without this, Boot's BOM would decide the Jetty version here (12.1.10) while
+           the declared pin said something else, and "which Jetty is this" would have two answers
+           in one repository. DECISIONS.md D-0044. -->
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- jetty-bom covers only the core artifacts; the servlet and websocket layers Boot's
+           Jetty starter pulls live under org.eclipse.jetty.ee11 and need their own BOM. Jetty
+           releases the two in lockstep, so a build carrying 12.1.11 core with a 12.1.10 servlet
+           layer is a configuration nobody upstream tests. -->
+      <dependency>
+        <groupId>org.eclipse.jetty.ee11</groupId>
+        <artifactId>jetty-ee11-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>

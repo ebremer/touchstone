@@ -28,8 +28,8 @@ import com.networknt.schema.SpecificationVersion;
  */
 public final class ManifestLoader {
 
-    /** Classpath copy of the frozen schema; a unit test keeps it byte-identical to docs/manifest-schema. */
-    static final String SCHEMA_RESOURCE = "/touchstone/manifest-schema-1-0-0.json";
+    /** Classpath copy of the schema; a unit test keeps it byte-identical to docs/manifest-schema. */
+    static final String SCHEMA_RESOURCE = "/touchstone/manifest-schema-1-1-0.json";
 
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
     private static final Schema SCHEMA = loadSchema();
