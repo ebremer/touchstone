@@ -655,3 +655,40 @@ always did.
 All 21 core manifests pass against the reference server and against a live SUT. As expected they
 found no defect: their value is that the suite can no longer certify a server that gets these
 wrong, which until now it could.
+
+## 2026-09-02
+
+### D-0037 — the spec baseline moved: WD 21 August 2026 supersedes the 22 June snapshot
+D-0002 pinned the catalog to "Linked Web Storage Protocol 1.0", W3C Working Draft
+**22 June 2026**. The live `/TR/lws10-core/` is now the **21 August 2026** WD
+(`https://www.w3.org/TR/2026/WD-lws10-core-20260821/`), and all four authentication suites
+have dated `/TR/` versions too (3 August, and 21 August for ssi-cid) — so D-0010's
+"unofficial-proposal editor's drafts with no dated /TR/" is obsolete as well.
+
+`tools/extractor/check_drift.py` against the new draft: **192 normative blocks** (was 163),
+**20 catalogued clauses gone**, **50 uncatalogued**. This is the "spec moved" alarm firing
+exactly as DESIGN.md §8 intended; it is recorded here rather than acted on silently.
+
+What changed that the harness asserts on, in order of weight:
+- **§10 Notifications is new** — 29 normative blocks (discovery via a `NotificationService`
+  in the storage description, a subscription protocol, envelope/Activity Streams data model,
+  and three authorization MUSTs about not delivering what a subscriber may not read). The
+  brief filed notifications under "future modules"; they are core now.
+- **Storage description** — `rel="…lws#storageDescription"` became `rel="…lws#storage"` and
+  now points at the *canonical storage URI*; the media type became `application/lws+cid`
+  (a CID document specialization) with a two-entry `@context` array starting
+  `https://www.w3.org/ns/cid/v1`; a `StorageRoot` service is required.
+- **`mediaType` → `format`** on contained resource descriptions. The bundled context defines
+  no `format` term, so a conforming server's value is dropped during expansion.
+- **Content Negotiation** (four clauses) collapsed into one **Media Type Equivalence** clause
+  in §12.1.1, plus a new `Vary: Accept` SHOULD. `core/container-conneg` cites five requirement
+  IRIs, all five of which the re-baseline retires.
+- **`Slug` is gone** from the draft entirely (0 occurrences; 6 in the June one).
+- **§13 no longer carries the normative JSON-LD context inline** — only the (still-404) URL
+  and the open digest TODO of w3c/lws-protocol#216. The verbatim copy D-0026 bundled now has
+  no source in the current draft.
+
+**Nothing has been re-extracted or re-curated yet.** Re-baselining rewrites `Approved`
+Gate-1 entries, so it waits on Erich (CLAUDE.md rule 4). The full itemized plan, with the
+independent code defects the same review turned up, is in `TODO.md`; this entry records the
+changed premise so the next session does not read `catalog/lws10-core.ttl` as current.
