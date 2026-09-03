@@ -23,7 +23,11 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ## P0 — broken now; fix before anything else
 
-- [ ] **`Reports.writeAll` throws on Windows and the whole run bundle is lost.**
+**Done 2026-09-02 (D-0038).** `./mvnw -B clean verify` is green on Windows across all five
+modules (106 tests), and `touchstone run --target ref --module core` exits **0** with the
+full seven-file bundle under `runs/2026-09-03T013153Z-b9e22538/`.
+
+- [x] **`Reports.writeAll` throws on Windows and the whole run bundle is lost.**
       `RunDirs.dirName` stamps the directory with an XSD `dateTime`
       (`2026-09-03T01:02:53Z-6ae2104a`); `:` is illegal in a Windows filename, so
       `runsDir.resolve(...)` throws `InvalidPathException` at
@@ -38,12 +42,17 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
       javadoc already names), keep `RunDirs.locate` matching both spellings, and add a
       `RunDirsTest` case that runs on every platform. Record as a decision amending D-0032.
       *Files:* `harness-core/.../report/RunDirs.java:52`, `Reports.java:29`.
+      → **Fixed.** Stamp is now ISO 8601 basic (`2026-08-21T193247Z`); `RunDirs.resolve`
+      falls back to the bare run id if a filesystem ever rejects a name, so this class can
+      no longer cost a run its evidence; `RunDirsTest` (9 cases) is platform-independent
+      and asserts the whole bundle is written.
 
-- [ ] **`harness-cli` is red on this branch.** `RunCommandTest.coreSuitePasses…:43` fails
+- [x] **`harness-cli` is red on this branch.** `RunCommandTest.coreSuitePasses…:43` fails
       for the reason above, so `./mvnw -B verify` does not pass today. CI (ubuntu) is green
       because the bug is Windows-only — which is exactly why it survived.
+      → **Green**, on Windows and unchanged on Linux.
 
-- [ ] **A manifest cites a requirement IRI that does not exist, and nothing checks.**
+- [x] **A manifest cites a requirement IRI that does not exist, and nothing checks.**
       `…/req/lws10-core/authz-token-validation-verification` is referenced by five
       `auth-oidc` manifests; the catalog entry is `authz-token-validation-checklist`.
       Consequences: EARL emits a `touchstone:verifies` triple pointing at nothing (this is
@@ -57,6 +66,13 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
       P1: the re-baseline will invalidate more IRIs (see below), and today they would fail
       silently.
       *Files:* `manifests/auth-oidc/{alg-none-401,expired-token-401,unknown-key-401,wrong-audience-401,wrong-issuer-401}.yaml`.
+      → **Fixed.** The five manifests now cite `authz-token-validation-checklist`, and
+      `RequirementRefs` makes an unresolvable IRI refuse the run: `touchstone run` exits
+      **2** (a configuration error, not a non-conformant server) and the MCP `start_run` /
+      `run_one` tools decline it. `coverage` warns rather than failing, since it is a report
+      and not a gate. `RequirementRefsTest` checks the shipped catalog against the shipped
+      manifests on every build, so the next typo fails in CI rather than in an EARL file.
+      Coverage rose 36 → 38 of 203: the corrected IRI now counts.
 
 ---
 

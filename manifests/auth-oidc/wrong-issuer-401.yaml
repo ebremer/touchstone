@@ -2,7 +2,7 @@ schemaVersion: 1
 id: auth-oidc/wrong-issuer-401
 title: A token from an untrusted issuer is rejected with 401
 requirements:
-  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
   - https://example.org/touchstone/req/lws10-core/authz-access-token-iss-claim
 capabilities: [authentication]
 as: alice-wrong-issuer

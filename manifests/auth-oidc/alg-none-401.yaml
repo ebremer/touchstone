@@ -2,7 +2,7 @@ schemaVersion: 1
 id: auth-oidc/alg-none-401
 title: An unsigned (alg=none) token is rejected with 401
 requirements:
-  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
   - https://example.org/touchstone/req/lws10-authn-openid/id-token-alg-not-none
 capabilities: [authentication]
 as: alice-alg-none

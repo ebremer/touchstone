@@ -57,8 +57,8 @@ class RunCommandTest {
             assertThat(runDir.resolve("report.md")).exists();
             assertThat(runDir.resolve("report.pdf")).exists();
             assertThat(runDir.getFileName().toString())
-                    .as("run directory is stamped <xsd-dateTime>-<runId>")
-                    .matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z-.+");
+                    .as("run directory is stamped <timestamp>-<runId>, with no character a filesystem rejects")
+                    .matches("\\d{4}-\\d{2}-\\d{2}T\\d{6}Z-.+");
 
             // EARL parses and holds one assertion per test
             org.apache.jena.rdf.model.Model earl = org.apache.jena.rdf.model.ModelFactory.createDefaultModel();
@@ -115,6 +115,48 @@ class RunCommandTest {
                     .contains("0 passed, 1 failed")
                     .contains("expected: [418]")
                     .contains("actual:   200");
+        }
+    }
+
+    @Test
+    void aRequirementIriTheCatalogDoesNotHoldRefusesTheRunAsAConfigurationError() throws Exception {
+        try (RefLwsServer server = RefLwsServer.start(0)) {
+            Path targets = targetsFile(server);
+            Path manifests = tmp.resolve("manifests");
+            Files.createDirectories(manifests.resolve("core"));
+            Files.writeString(manifests.resolve("core").resolve("dangling-requirement.yaml"), """
+                    schemaVersion: 1
+                    id: core/dangling-requirement
+                    title: declares a requirement that is not in the catalog
+                    requirements: [https://example.org/touchstone/req/lws10-core/no-such-requirement]
+                    steps:
+                      - request:
+                          method: GET
+                          target: "${test.container}"
+                          headers: { Accept: application/lws+json }
+                        expect:
+                          status: 200
+                    """);
+            StringWriter out = new StringWriter();
+            CommandLine cmd = new CommandLine(new TouchstoneCli());
+            cmd.setOut(new PrintWriter(out));
+            cmd.setErr(new PrintWriter(out));
+
+            int exit = cmd.execute("run",
+                    "--target", "ref",
+                    "--targets", targets.toString(),
+                    "--manifests", manifests.toString(),
+                    "--module", "core",
+                    "--catalog", "../catalog",
+                    "--report-dir", tmp.resolve("runs").toString());
+
+            // 2, not 1: the target was never asked anything, so this is the harness being
+            // misconfigured, not the server being non-conformant.
+            assertThat(exit).isEqualTo(2);
+            assertThat(out.toString())
+                    .contains("core/dangling-requirement -> "
+                            + "https://example.org/touchstone/req/lws10-core/no-such-requirement");
+            assertThat(tmp.resolve("runs")).doesNotExist();
         }
     }
 

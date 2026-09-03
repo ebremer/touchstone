@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 
 import com.ebremer.touchstone.core.catalog.CatalogRepository;
 import com.ebremer.touchstone.core.catalog.Requirement;
+import com.ebremer.touchstone.core.catalog.RequirementRefs;
 import com.ebremer.touchstone.core.coverage.CoverageReport;
 import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.manifest.ManifestLoader;
@@ -53,6 +54,13 @@ final class CoverageCommand implements Callable<Integer> {
             List<Manifest> manifests = ManifestLoader.loadDirectory(manifestsDir);
             manifestCount = manifests.size();
             manifests.forEach(m -> covered.addAll(m.requirements()));
+            // A requirement IRI that resolves to nothing covers nothing, so it silently
+            // understates the matrix. Coverage is a report, not a gate, so this is said
+            // rather than enforced — `run` is where it refuses.
+            List<RequirementRefs.Dangling> dangling = RequirementRefs.unresolved(manifests, requirements);
+            if (!dangling.isEmpty()) {
+                spec.commandLine().getErr().println("warning: " + RequirementRefs.describe(dangling));
+            }
         }
         CoverageReport report = CoverageReport.compute(requirements, covered);
 

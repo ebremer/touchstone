@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 
 import com.ebremer.touchstone.core.catalog.CatalogRepository;
 import com.ebremer.touchstone.core.catalog.Requirement;
+import com.ebremer.touchstone.core.catalog.RequirementRefs;
 import com.ebremer.touchstone.core.exec.Harness;
 import com.ebremer.touchstone.core.exec.Target;
 import com.ebremer.touchstone.core.exec.TargetRegistry;
@@ -94,6 +95,20 @@ final class RunCommand implements Callable<Integer> {
             return 2;
         }
 
+        // The catalog is loaded before the run, not after it, because the requirement IRIs the
+        // manifests declare are what the EARL report and the conformance verdict are built from.
+        // One that resolves to nothing would otherwise be discovered only by a reader of the
+        // report, and by then the report already claims something untrue.
+        List<Requirement> catalog = Files.isDirectory(catalogDir)
+                ? CatalogRepository.load(catalogDir)
+                : List.of();
+        List<RequirementRefs.Dangling> dangling = RequirementRefs.unresolved(manifests, catalog);
+        if (!dangling.isEmpty()) {
+            err.println(RequirementRefs.describe(dangling));
+            err.println("Fix the manifest, or add the requirement to " + catalogDir + ".");
+            return 2;
+        }
+
         RunResult run = Harness.run(target, manifests, Harness.ProgressListener.NONE);
 
         for (TestResult result : run.results()) {
@@ -106,9 +121,6 @@ final class RunCommand implements Callable<Integer> {
                 run.count(Outcome.PASSED), run.count(Outcome.FAILED),
                 run.count(Outcome.ERROR), run.count(Outcome.SKIPPED), targetId, run.runId());
 
-        List<Requirement> catalog = Files.isDirectory(catalogDir)
-                ? CatalogRepository.load(catalogDir)
-                : List.of();
         Path runDir = Reports.writeAll(run, catalog, reportDir);
         out.println("reports: " + runDir
                 + " (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)");

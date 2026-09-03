@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.ebremer.touchstone.core.catalog.Requirement;
+import com.ebremer.touchstone.core.catalog.RequirementRefs;
 import com.ebremer.touchstone.core.exec.Harness;
 import com.ebremer.touchstone.core.exec.Target;
 import com.ebremer.touchstone.core.manifest.Manifest;
@@ -94,6 +95,7 @@ public class RunTools {
         if (selected.isEmpty()) {
             throw new IllegalArgumentException("no manifests for module '" + selectedModule + "'");
         }
+        requireResolvableRequirements(selected);
         RunStore.ProgressSink sink = progressSink(exchange, progressToken);
         // Emit the first notification synchronously, while this request's stream is still open;
         // the per-test notifications then follow from the async job (best-effort once it detaches).
@@ -211,6 +213,7 @@ public class RunTools {
         Target target = requireTarget(targetId);
         Manifest manifest = manifests.find(testId).orElseThrow(
                 () -> new IllegalArgumentException("unknown test id: " + testId));
+        requireResolvableRequirements(List.of(manifest));
         TestResult test = Harness.runOne(target, manifest);
         List<StepTraceDto> steps = test.steps().stream().map(RunTools::stepTrace).toList();
         return new TraceDto("(synchronous)", testId, test.requirements(), test.outcome().name(),
@@ -230,6 +233,19 @@ public class RunTools {
     private Target requireTarget(String targetId) {
         return targets.find(targetId).orElseThrow(() -> new IllegalArgumentException(
                 "unknown target '" + targetId + "' (registered: " + targets.ids() + ")"));
+    }
+
+    /**
+     * Refuses to start a run whose manifests declare a requirement the catalog does not hold.
+     * The IRIs are what {@link #getRun}'s conformance verdict reads levels from and what the
+     * EARL report cites, so an unresolvable one produces a report that claims something untrue
+     * — quietly. Better to decline the run and name the manifest.
+     */
+    private void requireResolvableRequirements(List<Manifest> selected) {
+        List<RequirementRefs.Dangling> dangling = RequirementRefs.unresolved(selected, catalog.all());
+        if (!dangling.isEmpty()) {
+            throw new IllegalArgumentException(RequirementRefs.describe(dangling));
+        }
     }
 
     private RunJob requireJob(String runId) {

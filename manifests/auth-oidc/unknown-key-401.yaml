@@ -3,7 +3,7 @@ id: auth-oidc/unknown-key-401
 title: A token signed by a key absent from the issuer JWKS is rejected with 401
 requirements:
   - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
-  - https://example.org/touchstone/req/lws10-core/authz-token-validation-verification
+  - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
 capabilities: [authentication]
 as: alice-unknown-key
 steps:

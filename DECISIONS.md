@@ -692,3 +692,57 @@ What changed that the harness asserts on, in order of weight:
 Gate-1 entries, so it waits on Erich (CLAUDE.md rule 4). The full itemized plan, with the
 independent code defects the same review turned up, is in `TODO.md`; this entry records the
 changed premise so the next session does not read `catalog/lws10-core.ttl` as current.
+
+### D-0038 — the run bundle's name is filesystem-safe, and a name can never cost a run its evidence
+D-0032 named run bundles `<xsd-dateTime>-<runId>` and recorded the colons as deliberate:
+"portable to POSIX and to WSL's drvfs (tested) but not to a native Windows host …
+`RunDirs.stamp` is the single place to change if that day comes." The cost of that day was
+underestimated. `Path.resolve` throws `InvalidPathException` **before** `Reports.writeAll`
+enters its `try`, so on Windows a run wrote **nothing** — no `earl.ttl`, no `report.md`, no
+`run.json` — and picocli turned the escaping exception into exit 1. A run of 21 core tests
+that passed all 21 reported itself non-conformant and left no evidence of anything. CI is
+Linux, so nothing caught it; the repository's own development host is Windows.
+
+Two changes, and the second matters more than the first:
+- The stamp is ISO 8601 **basic** form, `2026-08-21T193247Z` — exactly the fallback D-0032
+  nominated. Fixed width, so lexical order is still chronological order; the date keeps its
+  hyphens because the name is meant to be read. It is not an XSD `dateTime` any more, and
+  nothing consumed it as one: `RunDirs.locate` finds a bundle by matching `-<runId>`, so the
+  bundles already written with colons are still found and nothing is renamed.
+- `RunDirs.resolve` catches `InvalidPathException` and falls back to the bare run id. A
+  naming preference must never again be able to destroy a run's results — the bundle is the
+  only durable record a run produces, and degrading to a worse name beats producing nothing.
+
+`RunDirsTest` covers the stamp's character set, truncation and UTC, lexical ordering, both
+fallbacks, `locate` against stamped and pre-stamp bundles, and that `writeAll` produces all
+seven files — all platform-independently, so this cannot return on one person's machine.
+Verified end to end on Windows: `clean verify` green across five modules (106 tests), and
+`touchstone run --target ref --module core` exits 0 with a complete bundle at
+`runs/2026-09-03T013153Z-b9e22538/`.
+
+### D-0039 — a run refuses to start when a declared requirement is not in the catalog
+Five `auth-oidc` manifests declared
+`…/req/lws10-core/authz-token-validation-verification`. No such requirement exists; the
+catalog entry is `authz-token-validation-checklist`. Nothing anywhere checked, and the
+failure was silent in three places at once: `earl.ttl` — the artifact intended for W3C
+implementation reports — carried a `touchstone:verifies` triple pointing at a requirement
+that does not exist; the coverage matrix never counted those five tests; and
+`RunTools.strongestLevel` degrades an uncatalogued IRI to `UNCLASSIFIED`, so a failing MUST
+can stop deciding conformance. A misspelling silently downgrades a verdict.
+
+The IRIs are fixed, and `core.catalog.RequirementRefs` now resolves every manifest's
+declared requirements against the loaded catalog **before** a run starts:
+- `touchstone run` prints each offending (manifest, IRI) pair and exits **2** — the code for
+  a misconfigured harness, not 1 for a non-conformant server, because the target was never
+  asked anything;
+- the MCP `start_run` and `run_one` tools decline with the same message;
+- `coverage` warns instead of failing: it is a report, not a gate;
+- an **empty** catalog yields no findings, since "no catalog configured" is a different
+  condition from "this IRI is not in the catalog" and must not masquerade as one.
+
+`RequirementRefsTest` checks the shipped manifests against the shipped catalog on every
+build, so the next typo fails in CI rather than in a conformance report. Coverage moved
+36 → 38 of 203 as a result: the corrected IRI now counts. This lands before the D-0037
+re-baseline deliberately — retiring catalog entries will invalidate more manifest IRIs
+(all five cited by `core/container-conneg` among them), and today those would have gone
+unnoticed.

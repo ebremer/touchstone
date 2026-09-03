@@ -26,7 +26,7 @@ public final class Reports {
     }
 
     public static Path writeAll(RunResult run, List<Requirement> catalog, Path runsDir) {
-        Path runDir = runsDir.resolve(RunDirs.dirName(run.startedAt(), run.runId()));
+        Path runDir = RunDirs.resolve(runsDir, run.startedAt(), run.runId());
         try {
             Files.createDirectories(runDir);
         } catch (IOException e) {
