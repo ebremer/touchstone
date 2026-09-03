@@ -7,7 +7,8 @@ suites now published on `/TR/` (3 and 21 August 2026).
 
 The repo's catalog baseline was the **22 June 2026** WD (D-0002); the spec moved on
 21 August. Everything in P1 followed from that; P0 and P2 are defects independent of it.
-**P0, P1 and P2 are done** (DECISIONS.md D-0038 to D-0045); P3 is open.
+**Every priority is done** (DECISIONS.md D-0038 to D-0046). What remains open is the
+notification suite, deferred on purpose (D-0041).
 The `check_drift.py` output quoted below is the state that prompted the work — re-running it
 today reports no drift.
 
@@ -315,7 +316,13 @@ extractor is reachable, so the Approved MUST D-0035 left uncovered now has a tes
 
 ## P3 — hygiene, dependencies, docs
 
-- [ ] **Dependency drift** (checked against `repo1.maven.org` `maven-metadata.xml`,
+**Done 2026-09-02 (D-0046).** Dependencies refreshed (Boot 4.1.1, Logback 1.6.3, Jena 6.2.0
+and eight patch bumps); the Action no longer interpolates a caller's input into the script
+that writes the SSRF boundary, and it tells a misconfigured workflow apart from a
+non-conformant server; the image runs as a non-root user, verified end to end at 24/24
+through a host-owned bind mount; the MCP server binds loopback.
+
+- [x] **Dependency drift** (checked against `repo1.maven.org` `maven-metadata.xml`,
       2026-09-02; stable releases only):
       Jena 6.1.0 → **6.2.0** · Spring Boot 4.0.7 → **4.1.1** · Spring AI 2.0.0 → **2.0.1** ·
       Logback 1.5.38 → **1.6.3** · BouncyCastle 1.85 → **1.85.2** · Jetty 12.1.11 →
@@ -325,20 +332,20 @@ extractor is reachable, so the Approved MUST D-0035 left uncovered now has a tes
       picocli 4.7.7, PDFBox 3.0.8, SLF4J 2.0.18, AssertJ 3.27.7 (4.0 still milestones),
       Titanium 1.7.0 (2.0 still milestones). Take the patch bumps freely; Boot 4.1 and
       Logback 1.6 are minor-line moves and deserve their own commit.
-- [ ] **Composite action interpolates an input straight into a shell heredoc.**
+- [x] **Composite action interpolates an input straight into a shell heredoc.**
       `.github/actions/lws-conformance/action.yml` writes `baseUrl: ${{ inputs.target-url }}`
       into `targets.yaml` inside an unquoted heredoc in a `run:` block — GitHub's documented
       script-injection shape. Pass it via `env:` and reference `$TARGET_URL`. `targets.yaml`
       is the SSRF boundary (§7.1); it should not be writable by string interpolation.
-- [ ] The action also treats **any** non-zero CLI exit as non-conformance, including the CLI's
+- [x] The action also treats **any** non-zero CLI exit as non-conformance, including the CLI's
       exit **2** for configuration errors (unknown target, missing registry). A misconfigured
       workflow reports a failing server. Distinguish them.
-- [ ] **MCP server ships with no authentication and Boot's default all-interfaces bind.**
+- [x] **MCP server ships with no authentication and Boot's default all-interfaces bind.**
       DESIGN.md §7.5 asks for a Spring Security OAuth2 resource server *if hosted*; nothing in
       `application.yml` or the docs says which posture is intended. At minimum document
       "loopback only unless fronted", or bind `server.address: 127.0.0.1` by default. This
       process can fire hostile traffic at pre-registered targets.
-- [ ] **Dockerfile runs as root** — no `USER`. Add a non-root user to the runtime stage.
+- [x] **Dockerfile runs as root** — no `USER`. Add a non-root user to the runtime stage.
 - [x] **Docs drift:** `manifests/README.md` says core has **12 tests** (there are **21**) and
       lists `auth-saml`/`auth-cid`/`auth-didkey` directories that do not exist;
       `catalog/README.md` still describes the core module as *WD 2026-06-22* and the auth

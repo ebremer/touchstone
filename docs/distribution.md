@@ -24,14 +24,27 @@ targets:
     adapter: env
 EOF
 
-docker run --rm -v "$PWD/work:/work" touchstone-harness \
+# The image runs as a non-root user; --user makes reports land owned by you rather than
+# by the uid baked into the image.
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/work:/work" touchstone-harness \
   run --target sut --module core \
       --targets /work/targets.yaml --report-dir /work/runs \
       --catalog catalog --manifests manifests
 ```
 
-Reports land in `work/runs/<runId>/` as `run.json`, `earl.ttl`, `junit.xml`, and
-`report.html`. The process exits non-zero when the run is non-conformant, so it gates CI.
+Reports land in `work/runs/<timestamp>-<runId>/` as `run.json`, `earl.ttl`, `junit.xml`,
+`report.html`, `report.json`, `report.md` and `report.pdf`.
+
+Exit codes distinguish the two ways a run ends badly, and CI should too:
+
+| Code | Meaning |
+|---|---|
+| 0 | the run completed and the target conformed |
+| 1 | the target is **non-conformant** — a test failed or errored |
+| 2 | the **harness** is misconfigured: unknown target, missing registry, or a manifest naming a requirement the catalog does not hold |
+
+Collapsing 1 and 2 tells a server implementer their server failed when the workflow was
+wrong; the bundled Action keeps them apart.
 
 Targets are always referenced by **id**; the URL only ever comes from the registry file
 you provide (DESIGN.md §7.1).

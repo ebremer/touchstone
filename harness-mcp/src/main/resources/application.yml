@@ -25,6 +25,14 @@ touchstone:
 
 server:
   port: 9090
+  # Loopback by default, deliberately. This process drives pre-registered targets with
+  # deliberately malformed and high-volume traffic and exposes an unauthenticated tool surface
+  # that starts runs; Spring Boot's default is every interface, so the shipped configuration
+  # would have put that on the network of whatever machine ran it. DESIGN.md 7.5 asks for a
+  # Spring Security OAuth2 resource server IF the endpoint is hosted — until that exists,
+  # binding to loopback is the honest posture, and an operator who means to expose it sets
+  # server.address explicitly and fronts it with something that authenticates. D-0046.
+  address: 127.0.0.1
   shutdown: graceful
   jetty:
     threads:

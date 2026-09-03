@@ -992,3 +992,54 @@ loads a manifest died with `ExceptionInInitializerError`, saying nothing about t
 `SchemaSyncTest` compared the two copies for equality but never asked whether either was
 valid JSON — two identical broken files passed. It now parses the schema, checks the `$id` is
 the version claimed, and exercises the `bind` pattern against real extractor strings.
+
+### D-0046 — dependency refresh, and the distribution hardened for people who are not us
+P3 of the 2026-09-02 review. Four unrelated things, all about the harness as something a
+third party runs rather than as something we run here.
+
+**Dependencies**, re-verified against `repo1.maven.org` metadata on 2026-09-02 and taken in
+two steps so a break would name itself. Patch and minor bumps first: Jena 6.1.0 → 6.2.0,
+Jetty 12.1.11 → 12.1.12, Jackson 2.22.1 → 2.22.2, JUnit 6.1.2 → 6.1.3, FreeMarker
+2.3.34 → 2.3.35, networknt json-schema-validator 3.0.6 → 3.0.7, oauth2-oidc-sdk
+11.38.1 → 11.38.2, BouncyCastle 1.85 → 1.85.2, Spring AI 2.0.0 → 2.0.1. Then the two
+minor-line moves, each verified on its own: Logback 1.5.38 → **1.6.3** and Spring Boot
+4.0.7 → **4.1.1**. Unchanged, and still correct: Nimbus JOSE+JWT 10.9.1, picocli 4.7.7,
+PDFBox 3.0.8, SLF4J 2.0.18 (2.1 is alpha), AssertJ 3.27.7 and Titanium 1.7.0 (both have
+only milestones above them). D-0044's enforcer rule was checked afterwards: one Jetty,
+12.1.12, in every module, and `tomcat-embed-el` still the only Tomcat-groupId jar.
+
+**The Action interpolated a caller's input into the script that writes the SSRF boundary.**
+`targets.yaml` is what makes a target addressable at all (DESIGN.md 7.1), and it was written
+by a heredoc with `${{ inputs.target-url }}` expanded into it — GitHub's documented
+script-injection shape, where a newline in the input appends further target entries or shell.
+Inputs now reach the step through `env:`, the heredoc is gone in favour of `printf`, and the
+URL is checked to be an absolute http(s) URL with no whitespace or quotes before it is
+written.
+
+**The Action reported a misconfigured workflow as a non-conformant server.** It failed the
+job on any non-zero exit, and the CLI already used 2 for "the harness cannot run" — unknown
+target, missing registry, and since D-0039 a manifest naming a requirement the catalog does
+not hold. A server implementer reading that saw their server blamed for their own workflow.
+Exit 2 now fails the job with a message saying which of the two it is, and the exit-code
+table is in `docs/distribution.md`.
+
+**The image no longer runs as root.** It needs read access to its own jar, catalog and
+manifests, and nothing else. The wrinkle is the bind mount: a fixed uid inside the container
+cannot write a workspace owned by the runner, so a non-root image alone would have broken the
+Phase 6 acceptance path. The image therefore ships a non-root default *and* the Action runs it
+with `--user "$(id -u):$(id -g)"`, which is also what the documented `docker run` example now
+does. `WORKDIR` deliberately stays `/opt/touchstone`, because the CLI's `--catalog` and
+`--manifests` defaults are relative and resolve against it.
+
+Verified end to end, not merely built: the image runs as uid 10001 by default, `coverage`
+works under an arbitrary `--user 1001:1001`, and a containerised `run` against a host-side
+reference server through `host.docker.internal` scored 24/24, exit 0, writing all seven report
+files into a host-owned bind mount owned afterwards by the invoking user.
+
+**The MCP server binds loopback by default.** Spring Boot's default is every interface, and
+this process drives pre-registered targets with deliberately malformed traffic behind an
+unauthenticated tool surface that can start runs. DESIGN.md 7.5 asks for a Spring Security
+OAuth2 resource server *if* the endpoint is hosted; until that exists, `server.address:
+127.0.0.1` is the honest default, and an operator who means to expose it sets the address
+explicitly and fronts it with something that authenticates. The stdio profile is unaffected —
+it starts no web server at all.

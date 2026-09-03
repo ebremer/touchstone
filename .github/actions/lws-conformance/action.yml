@@ -37,29 +37,58 @@ runs:
 
     - name: Register the target (id only — never a URL to the tools; DESIGN.md 7.1)
       shell: bash
+      # Inputs reach the shell through env, never through ${{ }} interpolation into the script.
+      # targets.yaml IS the SSRF/abuse boundary (DESIGN.md 7.1), and interpolating a caller-supplied
+      # string into the heredoc that writes it means a newline in target-url can append further
+      # target entries or shell. Quoting the heredoc delimiter stops the shell expanding the value,
+      # and the URL is validated before it is written.
+      env:
+        TARGET_URL: ${{ inputs.target-url }}
+        REPORT_PATH: ${{ inputs.report-path }}
       run: |
-        mkdir -p "${{ github.workspace }}/${{ inputs.report-path }}"
-        cat > "${{ github.workspace }}/${{ inputs.report-path }}/targets.yaml" <<EOF
-        targets:
-          sut:
-            baseUrl: ${{ inputs.target-url }}
-            adapter: env
-        EOF
+        set -euo pipefail
+        case "$TARGET_URL" in
+          http://*|https://*) ;;
+          *) echo "target-url must be an absolute http(s) URL: $TARGET_URL" >&2; exit 2 ;;
+        esac
+        if printf '%s' "$TARGET_URL" | grep -q '[[:space:]"]'; then
+          echo "target-url must not contain whitespace or quotes" >&2
+          exit 2
+        fi
+        mkdir -p "$GITHUB_WORKSPACE/$REPORT_PATH"
+        {
+          printf 'targets:\n  sut:\n    baseUrl: "%s"\n    adapter: env\n' "$TARGET_URL"
+        } > "$GITHUB_WORKSPACE/$REPORT_PATH/targets.yaml"
 
     - name: Run conformance
       id: run
       shell: bash
+      env:
+        REPORT_PATH: ${{ inputs.report-path }}
+        MODULE: ${{ inputs.module }}
+        FAIL_ON_NONCONFORMANCE: ${{ inputs.fail-on-nonconformance }}
       run: |
         set +e
-        docker run --rm --network host \
-          -v "${{ github.workspace }}/${{ inputs.report-path }}:/work" \
+        # The image runs as a non-root user; run it as the invoking one so reports written into
+        # the bind-mounted workspace are owned by whoever the runner is, not by a uid baked in.
+        docker run --rm --network host --user "$(id -u):$(id -g)" \
+          -v "$GITHUB_WORKSPACE/$REPORT_PATH:/work" \
           touchstone-harness:local \
-          run --target sut --module "${{ inputs.module }}" \
+          run --target sut --module "$MODULE" \
               --targets /work/targets.yaml --report-dir /work/runs \
               --catalog catalog --manifests manifests
         code=$?
-        echo "report-dir=${{ inputs.report-path }}/runs" >> "$GITHUB_OUTPUT"
-        if [ "${{ inputs.fail-on-nonconformance }}" = "true" ]; then
+        echo "report-dir=$REPORT_PATH/runs" >> "$GITHUB_OUTPUT"
+        # The CLI distinguishes the two ways a run can end badly: 1 is a non-conformant server,
+        # 2 is a misconfigured harness — an unknown target, a missing registry, a manifest naming
+        # a requirement the catalog lacks. Collapsing them told a server implementer their server
+        # had failed when the workflow was wrong, so 2 always fails the job and says so.
+        if [ "$code" -ge 2 ]; then
+          echo "::error::Touchstone could not run (exit $code): the harness is misconfigured," \
+               "not the server non-conformant. See the log above."
+          exit "$code"
+        fi
+        if [ "$FAIL_ON_NONCONFORMANCE" = "true" ]; then
           exit $code
         fi
         exit 0
