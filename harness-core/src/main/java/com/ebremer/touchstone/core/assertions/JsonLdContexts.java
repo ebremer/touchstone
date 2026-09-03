@@ -34,9 +34,27 @@ import org.apache.jena.sparql.util.Context;
  */
 final class JsonLdContexts {
 
-    /** Context IRI to the classpath resource holding it, copied verbatim from the pinned draft. */
+    /**
+     * Context IRI to the classpath resource holding it, each copied verbatim from its source.
+     *
+     * <p>{@code lws/v1} is the copy of the last draft that published the context inline
+     * (WD-lws10-core-20260622 12.1.1). The 21 August 2026 draft dropped that block: section 13
+     * now gives only the URL and an unfilled digest (w3c/lws-protocol#216), and the URL is still
+     * a 404, so there is nothing newer to copy. Terms the current data model added — {@code
+     * format}, which replaced {@code mediaType} — are therefore absent, and a container's
+     * {@code format} values expand to nothing. That is deliberate: reconstructing terms the
+     * specification has not published would make the harness compute verdicts from a mapping
+     * nobody normatively defined. {@code format} is asserted through JSON pointers instead, which
+     * read the response as it was sent.
+     *
+     * <p>{@code cid/v1} is the live W3C document (it resolves, unlike the LWS one) and is
+     * required from 21 August: a storage description is {@code application/lws+cid} whose
+     * {@code @context} is an array starting with the CID context, so without it every storage
+     * description parse would fail the offline loader below.
+     */
     private static final Map<String, String> BUNDLED = Map.of(
-            "https://www.w3.org/ns/lws/v1", "/touchstone/context/lws-v1.jsonld");
+            "https://www.w3.org/ns/lws/v1", "/touchstone/context/lws-v1.jsonld",
+            "https://www.w3.org/ns/cid/v1", "/touchstone/context/cid-v1.jsonld");
 
     private static final Context PARSER_CONTEXT = RIOT.getContext().copy()
             .set(TitaniumJsonLdOptions.JSONLD_OPTIONS,

@@ -20,7 +20,7 @@ declarative manifests (the no-Karate decision, §2).
 
 The twelve original `core/` manifests are LWS-adapted CRUD, containment, conditional-
 request, and content-negotiation scenarios of the kind the corpus covers, re-expressed
-against the WD-20260622 model (container listings + `Link rel="up"`, not `ldp:contains`
+against the WD-20260821 model (container listings + `Link rel="up"`, not `ldp:contains`
 — DECISIONS.md D-0012).
 
 `core/post-to-non-container-405.yaml` is a concrete, attributed port of the

@@ -23,7 +23,7 @@ from pathlib import Path
 
 MARKER = "## ================= Mass extraction (generated) ================="
 TR = "https://www.w3.org/TR/lws10-core/"
-DATED = "https://www.w3.org/TR/2026/WD-lws10-core-20260622/"
+DATED = "https://www.w3.org/TR/2026/WD-lws10-core-20260821/"
 MUST_KW = {"MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED"}
 SHOULD_KW = {"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED"}
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*$")

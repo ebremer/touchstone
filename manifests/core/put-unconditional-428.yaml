@@ -10,7 +10,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: note
       body: "original content"
     expect:
       status: 201

@@ -1,10 +1,15 @@
 # Requirements catalog — LWS 1.0 Authentication Suite: Self-signed Identity using did:key.
 #
-# Source: editor's draft (unofficial proposal; no dated /TR/ — DECISIONS.md D-0010, D-0018).
-#   editor's draft: https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/
-#   snapshot:       catalog/sources/ED-lws10-authn-ssi-did-key.html
-# A self-signed JWT whose subject is a did:key: URI; the verifier extracts the public key
-# from the identifier itself and checks the signature.
+# Source: "LWS 1.0 Authentication Suite: Self-signed Identity using did:key", W3C Working Draft 3 August 2026
+#   this-version: https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/
+#   snapshot:     catalog/sources/WD-lws10-authn-ssi-did-key-20260803.html
+# Hashes:         tools/extractor/clause_hash.py, rule per DECISIONS.md D-0008.
+#
+# Re-based 2026-09-02 from the editor's draft onto the published Recommendation-track
+# document (DECISIONS.md D-0042). D-0010 recorded these suites as unofficial proposals
+# with no dated /TR/ snapshot; all four now have one. Clause text is taken from the
+# rendered document rather than the ReSpec source, so a reader of get_requirement or a
+# report matrix sees the specification's own words instead of [[!REF]] macros.
 
 @prefix touchstone: <https://example.org/touchstone/vocab#> .
 @prefix req:     <https://example.org/touchstone/req/lws10-authn-ssi-did-key/> .
@@ -13,96 +18,96 @@
 
 req:alg-not-none
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The self-issued JWT must not use \"none\" as its signing algorithm." ;
     touchstone:clauseText """The JWT MUST NOT use "none" as the signing algorithm.""" ;
     touchstone:clauseHash "sha256-4fc05756ab5df196d274177f84f6792a89eaaff0f7dacdfa5013cd403e6543f1" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:sub-didkey-uri
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The sub claim carries the subject identifier and must be a did:key: URI." ;
     touchstone:clauseText """The JWT MUST use the sub (subject) claim for the LWS subject identifier. The subject identifier MUST use a did:key: URI.""" ;
     touchstone:clauseHash "sha256-c29dab656f3ffe27b4b4fb2baa1bb51429c90cedb9612f61267764dd5c5a7bc9" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:iss-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The iss claim carries the issuer identifier." ;
     touchstone:clauseText """The JWT MUST use the iss (issuer) claim for the LWS issuer identifier.""" ;
     touchstone:clauseHash "sha256-92e4e97dfa3f5dc9b572217b7df095957019d46b2cf39b93d2f7291008c5f499" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:client-id-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The client_id claim carries the client identifier." ;
     touchstone:clauseText """The JWT MUST use the client_id (client ID) claim for the LWS client identifier.""" ;
     touchstone:clauseHash "sha256-2a923206f64bb8aa8c7f7848d68b0c77cb9c04031aad26ec0b5662f220086570" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:sub-iss-client-same-uri
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "For self-issued credentials, sub, iss, and client_id are the same URI." ;
     touchstone:clauseText """The claims sub, iss, and client_id MUST all use the same URI value.""" ;
     touchstone:clauseHash "sha256-68c86d0193d3c0e446b9bddfdc4ec7118617b5c2c0d187cd0f3bad1adf2474fc" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:aud-includes-as
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "Any audience restriction uses aud, which must include the target authorization server." ;
     touchstone:clauseText """Any audience restriction in the ID Token MUST use the aud (audience) claim. The aud claim MUST include the target authorization server.""" ;
     touchstone:clauseHash "sha256-bdb14cfd5ad508275ac3ae72166aa5eb19010a6cc6fd224c6edfb2455ce46196" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:exp-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The JWT includes an exp (expiration) claim." ;
     touchstone:clauseText """The JWT MUST include an exp (expiration) claim, indicating the time the token expires.""" ;
     touchstone:clauseHash "sha256-0d8fee11b794b0166b0d708f5b82e85ed5ba9fab9cc61b49b6e1a3334d1a0363" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:iat-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization> ;
     touchstone:summary "The JWT includes an iat (issued at) claim." ;
     touchstone:clauseText """The JWT MUST include an iat (issued at) claim, indicating the time the token was issued.""" ;
     touchstone:clauseHash "sha256-734bec08d807719ceab2b94916c1a855228d5b8f0f1ea754b3381fc25558ee5e" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:validation-extract-key-verify-signature
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation> ;
     touchstone:summary "The verifier extracts the public key from the did:key identifier and verifies the JWT signature." ;
-    touchstone:clauseText """For subject identifiers that use the did:key method, a verifier will extract a public key from the identifier itself, as described in Section 3.1.3 of "The did:key Method" [[did-key]]. Using this public key, the signature of the JWT MUST be validated as described in [[!RFC7515]], Section 5.2.""" ;
-    touchstone:clauseHash "sha256-b5a8f6e1b24be8f197dc7372a66e7127d6e75204f4575bf5595613844ea66776" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
+    touchstone:clauseText """For subject identifiers that use the did:key method, a verifier will extract a public key from the identifier itself, as described in Section 3.1.3 of "The did:key Method" [did-key]. Using this public key, the signature of the JWT MUST be validated as described in [RFC7515], Section 5.2.""" ;
+    touchstone:clauseHash "sha256-93d2c79590c2e6ecbb02cf236c340ca1ede042bc365cd50d7f292241bc13f767" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:validation-all-claims
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation> ;
     touchstone:summary "The verifier validates all claims in the credential data model." ;
     touchstone:clauseText """A verifier MUST validate all claims described by the authentication credential data model.""" ;
     touchstone:clauseHash "sha256-249816befde9a9d933a0e656afcfcc5e2505290ce3389b9b6890cc60988dcc59" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:validation-exp-in-future
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation> ;
     touchstone:summary "The verifier ensures the current time precedes exp (small clock-skew leeway allowed)." ;
     touchstone:clauseText """A verifier MUST ensure that the current time is before the time represented by the exp claim. Implementers MAY provide for some small leeway to account for clock skew.""" ;
     touchstone:clauseHash "sha256-5184fb76f06061eedd0b40aadf5c3ed22f09376f8d2519f1059847a27d295d58" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
 
 req:token-type-jwt
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-did-key" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#token-type> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-ssi-did-key/#token-type> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-did-key/#token-type> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#token-type> ;
     touchstone:summary "A self-issued JWT credential uses the jwt token-type URI at the authorization server." ;
     touchstone:clauseText """A self-issued JSON Web Token used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:jwt URI when interacting with an authorization server.""" ;
     touchstone:clauseHash "sha256-0eb5743b243f4e280284e8b5da1e066e7e8442a1df1381d634c4134cd96368be" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .

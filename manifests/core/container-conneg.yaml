@@ -1,12 +1,16 @@
 schemaVersion: 1
 id: core/container-conneg
 title: Container representations negotiate lws+json, ld+json and json with an identical payload
+description: >-
+  Content negotiation moved in the 21 August 2026 draft: the four clauses that spelled out one
+  media type each collapsed into a single Media Type Equivalence clause in 12.1.1, which says the
+  three types are equivalent, the body is the same document, and only the Content-Type varies.
+  The `Vary: Accept` header is new alongside it — a cache that does not know the response depends
+  on Accept will hand a JSON-LD client the plain-JSON representation of the same container.
 requirements:
-  - https://example.org/touchstone/req/lws10-core/container-representation-conneg
-  - https://example.org/touchstone/req/lws10-core/conneg-identical-payload
-  - https://example.org/touchstone/req/lws10-core/conneg-lws-json-content-type
-  - https://example.org/touchstone/req/lws10-core/conneg-ld-json-content-type
-  - https://example.org/touchstone/req/lws10-core/conneg-json-content-type
+  - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
+  - https://example.org/touchstone/req/lws10-core/conneg-vary-accept
+  - https://example.org/touchstone/req/lws10-core/lws-json-media-type-container-representation
 steps:
   - name: lws+json is served and all three representations are graph-equivalent
     request:
@@ -18,6 +22,8 @@ steps:
       status: 200
       headers:
         Content-Type: { contains: application/lws+json }
+        # SHOULD, not MUST — but the whole point of negotiating is lost downstream without it.
+        Vary: { contains: Accept }
       connegEquivalent:
         accepts:
           - application/lws+json

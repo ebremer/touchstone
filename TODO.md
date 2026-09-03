@@ -5,8 +5,11 @@ Output of a full code + spec-conformance review, **2026-09-02**, against
 (`https://www.w3.org/TR/2026/WD-lws10-core-20260821/`) and the four authentication
 suites now published on `/TR/` (3 and 21 August 2026).
 
-The repo's catalog baseline is the **22 June 2026** WD (D-0002). The spec moved on
-21 August. Everything in P1 follows from that; P0 and P2 are defects independent of it.
+The repo's catalog baseline was the **22 June 2026** WD (D-0002); the spec moved on
+21 August. Everything in P1 followed from that; P0 and P2 are defects independent of it.
+**P0 and P1 are done** (commits below, DECISIONS.md D-0038 to D-0042); P2 and P3 are open.
+The `check_drift.py` output quoted below is the state that prompted the work — re-running it
+today reports no drift.
 
 How the spec findings were derived (reproducible):
 
@@ -78,28 +81,40 @@ full seven-file bundle under `runs/2026-09-03T013153Z-b9e22538/`.
 
 ## P1 — conform to the 21 August 2026 draft
 
-Re-baselining touches `Approved` (Gate-1) entries, so it needs Erich's sign-off before the
-catalog is rewritten — CLAUDE.md rule 4. Items below are ordered so the gated work comes
-first and the code follows it.
+**Done 2026-09-02 (D-0040, D-0041, D-0042)**, except where an item says otherwise below.
+The catalog is baselined on WD-lws10-core-20260821 and on the four published authentication
+suites: 232 requirements, `clause_hash.py --check` clean, `check_drift.py` reporting no drift
+and no dead anchor. `clean verify` is green across five modules; the core suite is 23
+manifests, all passing against the reference server.
 
-### 1. Re-baseline the core catalog  *(gated — needs review)*
+Two things are deliberately **not** done and are recorded as such: notification manifests and
+fixture support (D-0041), and the `link:<rel>` bind extractor that would let a discovery test
+follow the advertised storage URI instead of the registered one — still blocked on the frozen
+schema, and now blocking six requirements rather than one (see P2).
 
-- [ ] Archive `catalog/sources/WD-lws10-core-20260821.html` + `.clauses.json` beside the
+One judgement is flagged for review rather than assumed settled: the Gate-1 seed
+`container-representation-conneg` was replaced by `conneg-media-type-equivalence`, which
+**carries the Approved status over** because only the wording of the obligation changed
+(D-0040). Demoting it to Draft instead is a one-line change.
+
+### 1. Re-baseline the core catalog
+
+- [x] Archive `catalog/sources/WD-lws10-core-20260821.html` + `.clauses.json` beside the
       June snapshot, update the `catalog/lws10-core.ttl` header and every
       `touchstone:sourceDraft` to the new dated URL, re-run `clause_hash.py --update`.
-- [ ] **20 catalogued clauses no longer appear in the spec.** Deprecate or replace each.
+- [x] **20 catalogued clauses no longer appear in the spec.** Deprecate or replace each.
       Two are editorial (`conformance-client-class`: "A LWS Client" → "An LWS Client";
       `access-endpoints-jsonld-payloads`: cross-reference renumbered 10.4.1 → 11.4.1) —
       re-hash and move on. The other 18 are substantive and listed under items 2–5.
-- [ ] **50 normative blocks are uncatalogued**, 29 of them the new §10 Notifications
+- [x] **50 normative blocks are uncatalogued**, 29 of them the new §10 Notifications
       (item 6). Non-notification additions worth entries: the `StorageRoot` service
       requirement, `application/lws+cid` (×3 blocks), Media Type Equivalence (×2), and the
       two BCP 14 / client-conformance-class blocks (skip per D-0014's rule).
-- [ ] **5 requirements point at section anchors that 404 in the new draft**
+- [x] **5 requirements point at section anchors that 404 in the new draft**
       (`#content-negotiation` ×4, `#normative-json-ld-context` ×1). `report.md`'s
       per-requirement spec links are its stated reason for existing (D-0032) — a dead
       anchor turns "this MUST failed" back into something the reader cannot act on.
-- [ ] Add an anchor-liveness check to `check_drift.py` (every `touchstone:section` fragment
+- [x] Add an anchor-liveness check to `check_drift.py` (every `touchstone:section` fragment
       must exist as an `id=` in the fetched draft). Two-line addition; it would have caught
       this class on the first re-fetch.
 
@@ -108,66 +123,66 @@ first and the code follows it.
 The single largest behavioral change, and the harness has **no coverage of it at all**
 today (no manifest, no `RefLwsServer` implementation).
 
-- [ ] `rel="https://www.w3.org/ns/lws#storageDescription"` → **`rel="https://www.w3.org/ns/lws#storage"`**,
+- [x] `rel="https://www.w3.org/ns/lws#storageDescription"` → **`rel="https://www.w3.org/ns/lws#storage"`**,
       and the link target changed from *the storage description resource's URI* to **the
       canonical URI of the storage**. `storageDescription` occurs 0 times in the new draft.
       Affects `storage-description-link-header`, `link-storage-description-on-responses`,
       `create-401-storage-description-link`, and
       `harness-core/.../exec/LinkHeadersTest.java:23`.
-- [ ] Storage description media type `application/lws+json` → **`application/lws+cid`** (a
+- [x] Storage description media type `application/lws+json` → **`application/lws+cid`** (a
       specialization of a W3C Controlled Identifier document), and its `@context` **MUST be
       an array starting with `https://www.w3.org/ns/cid/v1` then
       `https://www.w3.org/ns/lws/v1`**. Affects `storage-description-lws-json`,
       `storage-description-representation`, `lws-media-type-required`.
-- [ ] `id` MUST now be **the canonical URI of the storage** (and the canonical URL of the
+- [x] `id` MUST now be **the canonical URI of the storage** (and the canonical URL of the
       CID document) — `storage-description-id-required`.
-- [ ] New MUST: the `service` set **MUST contain a `StorageRoot` service** whose
+- [x] New MUST: the `service` set **MUST contain a `StorageRoot` service** whose
       `serviceEndpoint` is the storage root container. Replaces the old
       `StorageDescription`-service clause (`storage-description-self-describing`).
-- [ ] Write the first `core/` manifests for discovery, and teach `RefLwsServer` to serve a
+- [x] Write the first `core/` manifests for discovery, and teach `RefLwsServer` to serve a
       storage description. Without a fixture the self-test loop cannot prove these tests
       distinguish anything.
 
 ### 3. Bundle `cid/v1`; the LWS context lost its in-spec source
 
-- [ ] **`JsonLdContexts.BUNDLED` holds only `lws/v1`**
+- [x] **`JsonLdContexts.BUNDLED` holds only `lws/v1`**
       (`harness-core/.../assertions/JsonLdContexts.java:38`). The moment a storage
       description is parsed, its `@context` array names `https://www.w3.org/ns/cid/v1` and
       the offline loader raises a hard `LOADING_REMOTE_CONTEXT_FAILED` — by design
       (D-0026), so the fix is to bundle it. `https://www.w3.org/ns/cid/v1` **resolves
       today** (200, `application/ld+json`, 3248 bytes), so copy it verbatim and record the
       sha256 the way `lws-v1.jsonld` is recorded.
-- [ ] **`https://www.w3.org/ns/lws/v1` is still a 404** (re-checked 2026-09-02), and §13 of
+- [x] **`https://www.w3.org/ns/lws/v1` is still a 404** (re-checked 2026-09-02), and §13 of
       the new draft no longer carries the context inline — it is now only a URL plus
       "TODO: include the JSON-LD context digest once the context document is finalized"
       (w3c/lws-protocol#216). The bundled `lws-v1.jsonld` therefore has **no normative
       source in the current draft**; it is a copy of a superseded one. Note this in the file
       header and in DECISIONS as an amendment to D-0026, and keep watching #216. Good
       candidate for WG feedback.
-- [ ] `Graphs.langFor` (`…/assertions/Graphs.java:65`) throws "no RDF reader for media type"
+- [x] `Graphs.langFor` (`…/assertions/Graphs.java:65`) throws "no RDF reader for media type"
       on **`application/lws+cid`**; add it (and `application/linkset+json`, which §9.1 makes
       a MUST) before writing the tests that need them.
 
 ### 4. `mediaType` → `format` in contained resource descriptions
 
-- [ ] The spec renamed it; `mediaType` occurs 0 times in the new draft. Three places: the
+- [x] The spec renamed it; `mediaType` occurs 0 times in the new draft. Three places: the
       catalogued clause (`contained-mediatype-for-dataresources`), the bundled context
       (`touchstone/context/lws-v1.jsonld` maps `mediaType` → `as:mediaType` and defines no
       `format` term — so a conforming server's `format` is **silently dropped during JSON-LD
       expansion** and any graph assertion on it sees nothing), and `RefLwsServer.java:568`.
-- [ ] Add a manifest asserting `format` is present for `DataResource` members. There is no
+- [x] Add a manifest asserting `format` is present for `DataResource` members. There is no
       test for this property in either spelling today.
 
 ### 5. Content negotiation moved and was rewritten; `Vary: Accept` is new
 
-- [ ] The four §"Content Negotiation" clauses are replaced by **one** clause in §12.1.1
+- [x] The four §"Content Negotiation" clauses are replaced by **one** clause in §12.1.1
       Media Type Equivalence: "Servers MUST honor a request for any of these media types and
       MUST set the Content-Type…". `manifests/core/container-conneg.yaml` cites **five
       requirement IRIs, all five of which die in the re-baseline** — it is the manifest most
       exposed to item 1, and the reason the P0 dangling-IRI check must land first.
-- [ ] New SHOULD: container responses **SHOULD carry `Vary: Accept`**. Untested;
+- [x] New SHOULD: container responses **SHOULD carry `Vary: Accept`**. Untested;
       `RefLwsServer` does not send it.
-- [ ] `container-model-pagination-jsonld` lost its normative content — "Containers MUST
+- [x] `container-model-pagination-jsonld` lost its normative content — "Containers MUST
       support pagination… Representations MUST use JSON-LD with a specific frame and
       normative context" became a pointer to §8.1 and §12. The pagination MUSTs still live
       in §12.1.2 and are catalogued there; retire the container-model entry rather than
@@ -175,7 +190,7 @@ today (no manifest, no `RefLwsServer` implementation).
 
 ### 6. Notifications — a whole new normative section, zero coverage
 
-- [ ] §10 adds **29 normative blocks** (plus 3 in Security/Privacy Considerations).
+- [x] §10 adds **29 normative blocks** (plus 3 in Security/Privacy Considerations).
       DESIGN.md §5.4 filed notifications under "future modules, drafts pending"; they are now
       in the core draft, so the core module is incomplete without them. Shape:
       - discovery: a storage that supports notifications MUST advertise a
@@ -190,18 +205,18 @@ today (no manifest, no `RefLwsServer` implementation).
         access is revoked;
       - envelope/activity data model: `type: "Notification"`, `storage`, `activity`,
         Activity Streams 2.0 activity objects, required activity types, optional batching.
-- [ ] Decide scope with Erich: catalog-only (like SAML, D-0024) or catalog + manifests +
-      `RefLwsServer` support. The authorization MUSTs are the ones worth a negative matrix —
+- [ ] **Deferred (D-0041):** catalogued only, as SAML is (D-0024). Manifests and reference-server
+      support still to do. The authorization MUSTs are the ones worth a negative matrix —
       they are where a plausible implementation leaks data.
 
 ### 7. Authentication suites are published; realign
 
-- [ ] All four suites now have dated `/TR/` versions (`lws10-authn-openid`, `-saml`,
+- [x] All four suites now have dated `/TR/` versions (`lws10-authn-openid`, `-saml`,
       `-ssi-did-key` on 3 Aug 2026; `-ssi-cid` on 21 Aug 2026). D-0010's premise
       ("unofficial-proposal editor's drafts, no dated /TR/") is obsolete. Point
       `touchstone:section` / `sourceDraft` at `https://www.w3.org/TR/lws10-authn-*/#…`, as
       the core module already does.
-- [ ] **Re-extract `clauseText` from the rendered `/TR/` HTML.** The auth catalogs were
+- [x] **Re-extract `clauseText` from the rendered `/TR/` HTML.** The auth catalogs were
       extracted from unrendered ReSpec *source*, so stored clause text contains raw macros —
       e.g. `…controlled identifier document [[!CID-1.0]] with an id value…` where the
       published spec reads `[CID-1.0]`. That text is what `get_requirement`, the
@@ -209,21 +224,21 @@ today (no manifest, no `RefLwsServer` implementation).
       `check_drift.py` report **6 false drifts** against the authoritative document (2 openid,
       1 saml, 2 ssi-cid, 1 ssi-did-key). Against the editor's drafts all four catalogs are
       clean, so this is a source-of-truth choice, not decay.
-- [ ] Also new: a `lws10-vocab` Group Note ("Linked Web Storage Vocabulary", 14 July 2026)
+- [x] Also new: a `lws10-vocab` Group Note ("Linked Web Storage Vocabulary", 14 July 2026)
       that the repo does not reference. It defines the `https://www.w3.org/ns/lws#` terms the
       harness asserts on (`#storage`, `#Container`, `#PreferLinkRelations`). Worth pinning as
       a source even though it carries no BCP 14 clauses.
-- [ ] The suites' only other change since the July snapshots is prose added to the
+- [x] The suites' only other change since the July snapshots is prose added to the
       informative Security/Privacy Considerations sections — no normative movement. Refresh
       the snapshots so the next drift check is clean.
 
 ### 8. `Slug` is gone from the specification
 
-- [ ] `Slug` occurs **0 times** in the 21 August draft (6 times in the June one). The clause
+- [x] `Slug` occurs **0 times** in the 21 August draft (6 times in the June one). The clause
       `create-slug-honored-if-no-conflict` is retired outright, and the sentence was removed
       from `create-server-managed-metadata-protected` and `uri-independent-of-hierarchy`
       ("client hints (e.g., the Slug header)" → "client hints").
-- [ ] The harness sends `Slug` in 13 core manifests and in `Containers.create`
+- [x] The harness sends `Slug` in 13 core manifests and in `Containers.create`
       (`harness-core/.../exec/Containers.java:23`), and `RefLwsServer` honours it. Nothing
       *breaks* — every manifest binds `header:Location` rather than assuming the name — but
       the harness should stop asserting a mechanism the spec dropped. Decide: keep sending it

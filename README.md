@@ -10,7 +10,9 @@ identity documents) so credential failure paths can be tested deterministically.
 Action** so a third-party LWS server gets a conformance report by adding one workflow
 file (`docs/distribution.md`) — verified end-to-end: the container runs the core suite
 against a live server and emits the EARL/HTML/JUnit report. The **requirements
-catalog** spans all five published spec modules (203 requirements, drift-hashed). The
+catalog** spans all five published spec modules (232 requirements, drift-hashed),
+baselined on the **21 August 2026** core Working Draft and the published authentication
+suites (DECISIONS.md D-0037/D-0040/D-0042). The
 **did:key and CID** authentication suites are real Ed25519 self-signed-credential
 fixtures with a negative matrix (valid verifies, every broken variant rejected); the
 **SAML** module is catalogued with the OpenSAML fixture as a documented seam
@@ -34,22 +36,10 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-fixtures` | reference LWS server (open/secured/broken), OIDC issuer, did:key/CID credentials |
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
 | `harness-mcp` | Spring AI MCP server over the core engine |
-| `catalog/` | requirements catalog (Turtle), 5 spec modules |
+| `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |
 | `manifests/` | declarative test manifests (`core`, `auth-oidc`) |
+| `tools/` | catalog extraction and spec-drift tooling |
 | `docs/` | manifest schema, distribution, harvest method |
-
-## Layout
-
-| Path | Purpose |
-|---|---|
-| `harness-core` | engine: catalog, manifests, executor, assertions, EARL/HTML reporting — no Spring |
-| `harness-fixtures` | embedded Jetty fixture servers: OIDC issuer, SAML IdP, CID/did:key signer, identity-doc host |
-| `harness-cli` | picocli front end |
-| `harness-mcp` | Spring Boot + Spring AI MCP server; thin adapter over the core engine |
-| `catalog/` | requirements catalog (Turtle), versioned per spec draft |
-| `manifests/` | declarative test manifests (YAML) |
-| `tools/` | catalog extraction/drift-check tooling |
-| `docs/` | schema proposals, notes |
 
 ## Build
 

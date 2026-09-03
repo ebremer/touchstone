@@ -14,7 +14,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: leaf
       body: "not a container"
     expect:
       status: 201

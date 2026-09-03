@@ -1,0 +1,906 @@
+{
+ "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications.",
+ "created": "2026-09-02",
+ "seeded": [
+  61,
+  63,
+  71,
+  75,
+  84,
+  85,
+  86,
+  92,
+  95,
+  96,
+  99,
+  101,
+  104,
+  105,
+  179
+ ],
+ "skip": {
+  "1": "BCP 14 boilerplate - defines keyword interpretation, not a conformance clause"
+ },
+ "entries": [
+  {
+   "i": 2,
+   "slug": "conformance-server-class",
+   "summary": "An LWS Server is an HTTP server that complies with all relevant MUST statements, specifically those in the Operations section."
+  },
+  {
+   "i": 3,
+   "slug": "conformance-client-class",
+   "summary": "An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section."
+  },
+  {
+   "i": 4,
+   "slug": "authn-credential-tamper-evident-claims",
+   "summary": "An authentication credential includes tamper-evident claims about a subject."
+  },
+  {
+   "i": 5,
+   "slug": "authn-subject-claim-uri",
+   "summary": "The subject claim is required and its value is a URI."
+  },
+  {
+   "i": 6,
+   "slug": "authn-issuer-claim-uri",
+   "summary": "The issuer claim is required and its value is a URI."
+  },
+  {
+   "i": 7,
+   "slug": "authn-client-claim",
+   "summary": "The client claim is required and should be a URI."
+  },
+  {
+   "i": 8,
+   "slug": "authn-audience-restriction-recommended",
+   "summary": "Audience restriction is recommended and its list should include an authorization server identifier."
+  },
+  {
+   "i": 9,
+   "slug": "authn-issuer-trust-out-of-band",
+   "summary": "Verifier-issuer trust may be established out of band; authentication suites define additional mechanisms."
+  },
+  {
+   "i": 10,
+   "slug": "authn-credential-signed",
+   "summary": "Authentication credentials are signed; asymmetric cryptography is recommended."
+  },
+  {
+   "i": 11,
+   "slug": "authn-suite-token-type-uri",
+   "summary": "Each authentication suite is associated with a token type URI, preferably from the IANA OAuth URI registry."
+  },
+  {
+   "i": 12,
+   "slug": "authz-oauth2-baseline",
+   "summary": "OAuth 2.0 is the baseline authorization framework; servers may support additional mechanisms."
+  },
+  {
+   "i": 13,
+   "slug": "authz-401-www-authenticate-challenge",
+   "summary": "A storage server generating a 401 sends a WWW-Authenticate header with at least one conforming challenge."
+  },
+  {
+   "i": 14,
+   "slug": "authz-challenge-as-uri-param",
+   "summary": "The as_uri challenge parameter is required and identifies the authorization server that issues access tokens."
+  },
+  {
+   "i": 15,
+   "slug": "authz-challenge-realm-param",
+   "summary": "The realm challenge parameter is required; clients verify the request URI is logically within the realm."
+  },
+  {
+   "i": 16,
+   "slug": "authz-challenge-extra-params",
+   "summary": "Challenges may include other headers and parameters."
+  },
+  {
+   "i": 17,
+   "slug": "authz-server-metadata-well-known",
+   "summary": "Authorization servers provide RFC 8414 metadata at /.well-known/lws-configuration."
+  },
+  {
+   "i": 18,
+   "slug": "authz-metadata-subject-token-types",
+   "summary": "Server metadata should advertise supported subject token types via subject_token_types_supported."
+  },
+  {
+   "i": 19,
+   "slug": "authz-token-exchange-grant",
+   "summary": "The token endpoint supports the RFC 8693 token-exchange grant type."
+  },
+  {
+   "i": 20,
+   "slug": "authz-token-exchange-resource-param",
+   "summary": "The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected."
+  },
+  {
+   "i": 21,
+   "slug": "authz-token-exchange-subject-token-param",
+   "summary": "The subject_token parameter is required and carries a valid subject token such as an authentication credential."
+  },
+  {
+   "i": 22,
+   "slug": "authz-validate-before-issuing",
+   "summary": "All presented tokens are validated before an access token is returned."
+  },
+  {
+   "i": 23,
+   "slug": "authz-token-response-rfc6749-rfc9068",
+   "summary": "Token responses conform to RFC 6749 section 5.1; access tokens conform to RFC 9068."
+  },
+  {
+   "i": 24,
+   "slug": "authz-access-token-sub-claim",
+   "summary": "The access token sub claim is a required URI identifying the acting agent."
+  },
+  {
+   "i": 25,
+   "slug": "authz-access-token-iss-claim",
+   "summary": "The access token iss claim is required and is the authorization server URI."
+  },
+  {
+   "i": 26,
+   "slug": "authz-access-token-client-id-claim",
+   "summary": "The access token client_id claim is a required URI identifying the client."
+  },
+  {
+   "i": 27,
+   "slug": "authz-access-token-aud-claim",
+   "summary": "The access token aud claim includes the resource-parameter URI (the storage realm)."
+  },
+  {
+   "i": 28,
+   "slug": "authz-access-token-exp-short-lived",
+   "summary": "The exp claim is required; short lifetimes are recommended (300 seconds or less)."
+  },
+  {
+   "i": 29,
+   "slug": "authz-access-token-iat-claim",
+   "summary": "The iat claim is required."
+  },
+  {
+   "i": 30,
+   "slug": "authz-access-token-jti-claim",
+   "summary": "The jti claim is required."
+  },
+  {
+   "i": 31,
+   "slug": "authz-token-error-rfc6749",
+   "summary": "Invalid or unauthorized token requests produce RFC 6749 section 5.2 error responses."
+  },
+  {
+   "i": 32,
+   "slug": "authz-bearer-presentation-rfc6750",
+   "summary": "Clients present access tokens via the Authorization header per RFC 6750."
+  },
+  {
+   "i": 33,
+   "slug": "authz-token-validation-checklist",
+   "summary": "Storage servers validate access tokens with the defined checks, rejecting the request on any failure."
+  },
+  {
+   "i": 34,
+   "slug": "authz-jwt-signature-jwks-rotation",
+   "summary": "JWT signatures are verified against the jwks_uri from server metadata; keys should be cached and key rotation is supported."
+  },
+  {
+   "i": 35,
+   "slug": "authz-invalid-token-401-error-param",
+   "summary": "Failed validation yields 401 with a WWW-Authenticate error parameter such as invalid_token."
+  },
+  {
+   "i": 36,
+   "slug": "authz-policy-denial-rejected",
+   "summary": "A valid token whose authorization policy disallows the operation is rejected."
+  },
+  {
+   "i": 37,
+   "slug": "storage-description-id-required",
+   "summary": "The storage description id is REQUIRED and MUST be the canonical URI of the storage, which is also the canonical URL of its controlled identifier document."
+  },
+  {
+   "i": 38,
+   "slug": "storage-description-type-storage",
+   "summary": "The storage description type equals or includes the string Storage (case-sensitive)."
+  },
+  {
+   "i": 39,
+   "slug": "storage-capability-id-optional",
+   "summary": "A capability object id, if present, is a URI."
+  },
+  {
+   "i": 40,
+   "slug": "storage-capability-type-required",
+   "summary": "A capability object type is a required string or set of strings."
+  },
+  {
+   "i": 41,
+   "slug": "storage-capability-property",
+   "summary": "The capability property, if present, is a set of capability maps; additional properties are allowed."
+  },
+  {
+   "i": 42,
+   "slug": "storage-service-id-optional",
+   "summary": "A service object id, if present, is a URI."
+  },
+  {
+   "i": 43,
+   "slug": "storage-service-type-required",
+   "summary": "A service object type is a required string or set of strings."
+  },
+  {
+   "i": 44,
+   "slug": "storage-service-endpoint-required",
+   "summary": "A service object serviceEndpoint is a required URI."
+  },
+  {
+   "i": 45,
+   "slug": "storage-service-property",
+   "summary": "The service property is a required set of service maps; additional properties are allowed."
+  },
+  {
+   "i": 46,
+   "slug": "storage-description-link-header",
+   "summary": "GET/HEAD responses on storage resources include a Link header whose target is the canonical storage URI, with rel=https://www.w3.org/ns/lws#storage."
+  },
+  {
+   "i": 47,
+   "slug": "storage-uri-returns-lws-cid-document",
+   "summary": "A request for the storage URI returns a storage description document with media type application/lws+cid unless content negotiation requires otherwise."
+  },
+  {
+   "i": 48,
+   "slug": "storage-description-storageroot-service",
+   "summary": "A storage description contains a StorageRoot service whose serviceEndpoint is the URI of the storage root container."
+  },
+  {
+   "i": 49,
+   "slug": "storage-description-lws-cid",
+   "summary": "A storage description is serializable as application/lws+cid, and its @context is an array starting with the CID and LWS context URIs."
+  },
+  {
+   "i": 50,
+   "slug": "container-model-members",
+   "summary": "A container holds references to its members, which may be data resources or further containers; storage may itself act as the root container."
+  },
+  {
+   "i": 51,
+   "slug": "containment-rel-up-get-head",
+   "summary": "Containment is expressed via a Link header rel=up on GET and HEAD responses of any non-root resource."
+  },
+  {
+   "i": 52,
+   "slug": "containment-integrity",
+   "summary": "The server maintains containment integrity at all times."
+  },
+  {
+   "i": 53,
+   "slug": "containment-create-atomic-items",
+   "summary": "Creating a resource atomically adds it to the parent container items list."
+  },
+  {
+   "i": 54,
+   "slug": "containment-delete-atomic-items",
+   "summary": "Deleting a resource atomically removes it from the parent items list; container deletion requires emptiness unless recursion is requested."
+  },
+  {
+   "i": 55,
+   "slug": "containment-no-orphans",
+   "summary": "Every non-root resource is reachable from the storage root through the containment hierarchy."
+  },
+  {
+   "i": 56,
+   "slug": "containment-no-cycles",
+   "summary": "A container never directly or indirectly contains itself."
+  },
+  {
+   "i": 57,
+   "slug": "uri-independent-of-hierarchy",
+   "summary": "Resource URIs are independent of containment position; servers may use client hints but clients must not assume URI structure reflects containment."
+  },
+  {
+   "i": 58,
+   "slug": "container-listing-authorization-visibility",
+   "summary": "A readable container lists all members the client can access and may include members the client cannot access."
+  },
+  {
+   "i": 59,
+   "slug": "container-representation-required-properties",
+   "summary": "A container representation includes the required property set defined by the Containers section."
+  },
+  {
+   "i": 60,
+   "slug": "container-totalitems-accuracy",
+   "summary": "totalItems is the disclosable contained-resource count; it should be accurate but may be approximate."
+  },
+  {
+   "i": 62,
+   "slug": "contained-description-required-members",
+   "summary": "Each items entry includes the required contained-resource description members."
+  },
+  {
+   "i": 64,
+   "slug": "contained-description-recommended-members",
+   "summary": "Contained-resource descriptions should include the recommended members."
+  },
+  {
+   "i": 65,
+   "slug": "contained-format-for-dataresources",
+   "summary": "A contained resource description carries format, the member's media type, which must be present for DataResources."
+  },
+  {
+   "i": 66,
+   "slug": "operations-core-four-atomic",
+   "summary": "Servers support the four core operations, handling each atomically and consistently; error responses inform without leaking sensitive detail."
+  },
+  {
+   "i": 67,
+   "slug": "linkset-standalone-rfc9264",
+   "summary": "Per-resource metadata links are available as a standalone linkset resource per RFC 9264."
+  },
+  {
+   "i": 68,
+   "slug": "linkset-media-type-json",
+   "summary": "Linkset resources are available as application/linkset+json."
+  },
+  {
+   "i": 69,
+   "slug": "linkset-server-managed-atomic",
+   "summary": "The linkset link targets a server-managed resource; linkset updates are atomic with the associated resource operations."
+  },
+  {
+   "i": 70,
+   "slug": "link-storage-on-responses",
+   "summary": "Relevant responses carry a Link header with rel=https://www.w3.org/ns/lws#storage."
+  },
+  {
+   "i": 72,
+   "slug": "prefer-link-relations-filtering",
+   "summary": "Clients may use Prefer with lws#PreferLinkRelations to include or omit specific relations."
+  },
+  {
+   "i": 73,
+   "slug": "metadata-capability-advertising",
+   "summary": "Core metadata may be client-modifiable; servers advertise their capabilities via standard HTTP headers."
+  },
+  {
+   "i": 74,
+   "slug": "linkset-allow-get-patch",
+   "summary": "Servers advertise GET and PATCH support on the linkset resource via the Allow header."
+  },
+  {
+   "i": 76,
+   "slug": "linkset-optional-methods-advertised",
+   "summary": "Optional PUT or alternative patch formats, when supported, appear in Allow and Accept-Patch."
+  },
+  {
+   "i": 77,
+   "slug": "client-no-assumed-methods-405-415",
+   "summary": "Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully."
+  },
+  {
+   "i": 78,
+   "slug": "linkset-concurrency-controls",
+   "summary": "Metadata is managed via the linkset resource URI; servers support concurrency controls for updates."
+  },
+  {
+   "i": 79,
+   "slug": "linkset-patch-merge-patch",
+   "summary": "PATCH with application/merge-patch+json is the primary metadata-management mechanism on the linkset."
+  },
+  {
+   "i": 80,
+   "slug": "linkset-put-405-if-unsupported",
+   "summary": "PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed."
+  },
+  {
+   "i": 81,
+   "slug": "linkset-restricted-links",
+   "summary": "Servers may restrict modification of specific links (such as up or items) to maintain integrity."
+  },
+  {
+   "i": 82,
+   "slug": "linkset-lifecycle-tied-to-resource",
+   "summary": "Deleting a resource automatically removes its associated linkset metadata."
+  },
+  {
+   "i": 83,
+   "slug": "create-server-managed-metadata-protected",
+   "summary": "On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden."
+  },
+  {
+   "i": 87,
+   "slug": "create-post-not-idempotent",
+   "summary": "POST is not idempotent; clients should avoid unintentional retries or use unique identifiers."
+  },
+  {
+   "i": 88,
+   "slug": "create-linkset-before-success",
+   "summary": "The linkset resource is created and populated with mandatory server-managed fields before creation success is returned."
+  },
+  {
+   "i": 89,
+   "slug": "create-401-storage-link",
+   "summary": "401 responses should include a Link header with rel=https://www.w3.org/ns/lws#storage so clients can discover the storage without hardcoded URIs."
+  },
+  {
+   "i": 90,
+   "slug": "read-container-listing-authz-filtered",
+   "summary": "A container GET returns a member listing that may be authorization-filtered, with core metadata per member."
+  },
+  {
+   "i": 91,
+   "slug": "read-type-distinction-metadata-links",
+   "summary": "Servers distinguish resource types via metadata; all read responses integrate Link headers rel=linkset, rel=up and rel=type, atomically with resource state."
+  },
+  {
+   "i": 93,
+   "slug": "read-container-listing-member-metadata",
+   "summary": "Container listings include member identifiers and types (required), media types for DataResources (required), and sizes and timestamps (recommended)."
+  },
+  {
+   "i": 94,
+   "slug": "read-container-etag-type-links",
+   "summary": "Container read responses include an ETag representing the listing version plus Link headers rel=type, rel=linkset and rel=up."
+  },
+  {
+   "i": 97,
+   "slug": "read-401-www-authenticate-discoverability",
+   "summary": "401 responses should carry WWW-Authenticate parameters that guide clients without hardcoded URIs."
+  },
+  {
+   "i": 98,
+   "slug": "update-content-vs-metadata-prefer-set-linkset",
+   "summary": "PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501)."
+  },
+  {
+   "i": 100,
+   "slug": "update-success-new-etag",
+   "summary": "Successful updates respond 200 or 204 and should include the new ETag."
+  },
+  {
+   "i": 102,
+   "slug": "linkset-if-match-412-428",
+   "summary": "Linkset writes use optimistic concurrency: ETag on reads, new ETag after writes, If-Match required (mismatch yields 412, absence yields 428)."
+  },
+  {
+   "i": 103,
+   "slug": "delete-if-match-optional",
+   "summary": "DELETE targets the resource URI; clients may include If-Match for concurrency checks."
+  },
+  {
+   "i": 106,
+   "slug": "delete-success-204-conditional",
+   "summary": "Successful DELETE responds 204 No Content; conditional requests should be supported."
+  },
+  {
+   "i": 107,
+   "slug": "delete-401-403-404-semantics",
+   "summary": "Unauthorized deletes yield 403 for a known identity with insufficient permission or 401 without valid authentication; 404 may hide existence."
+  },
+  {
+   "i": 108,
+   "slug": "status-201-etag-link-headers",
+   "summary": "201 responses carry Location, an ETag for concurrency, and server-managed Link headers."
+  },
+  {
+   "i": 109,
+   "slug": "status-204-410-deletions",
+   "summary": "204 indicates success without a body; servers may use 410 Gone for permanent deletions."
+  },
+  {
+   "i": 110,
+   "slug": "error-rfc9457-problem-details",
+   "summary": "Error responses should use the RFC 9457 problem-details format."
+  },
+  {
+   "i": 111,
+   "slug": "notifications-advertise-notificationservice",
+   "summary": "A storage supporting notifications advertises a NotificationService service object in its storage description."
+  },
+  {
+   "i": 112,
+   "slug": "notificationservice-endpoint-and-subscription-types",
+   "summary": "A NotificationService includes a serviceEndpoint for the subscription endpoint and a subscriptionType array of supported subscription types."
+  },
+  {
+   "i": 113,
+   "slug": "notificationservice-additional-properties",
+   "summary": "Additional properties may appear on the notification service object."
+  },
+  {
+   "i": 114,
+   "slug": "notification-envelope-type",
+   "summary": "A notification envelope carries a required type whose value is the string Notification."
+  },
+  {
+   "i": 115,
+   "slug": "notification-envelope-storage",
+   "summary": "A notification envelope carries a required storage property identifying the LWS storage it concerns."
+  },
+  {
+   "i": 116,
+   "slug": "notification-envelope-activity",
+   "summary": "A notification envelope carries a required activity property: one or more Activity Streams 2.0 objects describing what occurred."
+  },
+  {
+   "i": 117,
+   "slug": "notification-activity-as2-conformance",
+   "summary": "Each activity object conforms to the Activity Streams 2.0 data model and includes the required activity properties."
+  },
+  {
+   "i": 118,
+   "slug": "notification-activity-id",
+   "summary": "An activity object carries a required id uniquely identifying the activity."
+  },
+  {
+   "i": 119,
+   "slug": "notification-activity-type",
+   "summary": "An activity object carries a required type: an array holding at least one Activity Streams 2.0 activity type."
+  },
+  {
+   "i": 120,
+   "slug": "notification-activity-object-id",
+   "summary": "The activity object property carries a required id: the URI of the resource the notification is about."
+  },
+  {
+   "i": 121,
+   "slug": "notification-activity-object-type",
+   "summary": "The activity object property carries a required type array holding at least one resource type, such as Container or DataResource."
+  },
+  {
+   "i": 122,
+   "slug": "notification-activity-object",
+   "summary": "An activity carries a required object identifying the resource the notification is about, with its own required properties."
+  },
+  {
+   "i": 123,
+   "slug": "notification-activity-published",
+   "summary": "An activity carries a required published datetime, per RFC 3339, saying when it occurred."
+  },
+  {
+   "i": 124,
+   "slug": "notification-activity-optional-properties",
+   "summary": "The remaining activity properties are optional."
+  },
+  {
+   "i": 125,
+   "slug": "notification-activity-types-supported",
+   "summary": "A server supports the listed Activity Streams 2.0 activity types for signalling LWS resource changes."
+  },
+  {
+   "i": 126,
+   "slug": "notification-activity-types-additional",
+   "summary": "A server may support activity types beyond the ones this specification lists."
+  },
+  {
+   "i": 127,
+   "slug": "notification-batching",
+   "summary": "A server may batch several activities into one envelope by giving the activity property an array."
+  },
+  {
+   "i": 128,
+   "slug": "subscription-create-post-lws-json",
+   "summary": "A subscription is created by an authenticated POST to the NotificationService endpoint with an application/lws+json body."
+  },
+  {
+   "i": 129,
+   "slug": "subscription-request-required-fields",
+   "summary": "A subscription request contains the required subscription fields."
+  },
+  {
+   "i": 130,
+   "slug": "subscription-request-type",
+   "summary": "A subscription request carries a required type, one of the subscription types the NotificationService advertises."
+  },
+  {
+   "i": 131,
+   "slug": "subscription-request-topic",
+   "summary": "A subscription request carries a required topic: an array of URIs naming the resources in scope."
+  },
+  {
+   "i": 132,
+   "slug": "subscription-request-additional-fields",
+   "summary": "A subscription request may carry further fields required by its subscription type."
+  },
+  {
+   "i": 133,
+   "slug": "subscription-authorization-on-create",
+   "summary": "A server enforces resource authorization when a subscription is created, rejecting one whose topic includes resources the subscriber cannot read."
+  },
+  {
+   "i": 134,
+   "slug": "subscription-authorization-on-delivery",
+   "summary": "A server enforces authorization at delivery time and never delivers a notification for a resource the subscriber cannot read when the event occurs."
+  },
+  {
+   "i": 135,
+   "slug": "subscription-authorization-revoked",
+   "summary": "When access is revoked the server stops delivering for the affected resources, without terminating the whole subscription unless all access in the topic is lost."
+  },
+  {
+   "i": 136,
+   "slug": "subscription-response-lws-json",
+   "summary": "A successful subscription response conforms to application/lws+json and carries the required response fields."
+  },
+  {
+   "i": 137,
+   "slug": "subscription-response-type",
+   "summary": "A subscription response carries a required type equal to the subscription type from the request."
+  },
+  {
+   "i": 138,
+   "slug": "subscription-response-subscription-url",
+   "summary": "A subscription response carries a required subscription property: the URL representing the subscription."
+  },
+  {
+   "i": 139,
+   "slug": "notification-suite-subscription-type-identifier",
+   "summary": "Every notification suite is associated with a subscription type string, used in subscriptionType arrays and in subscription requests."
+  },
+  {
+   "i": 140,
+   "slug": "access-services-advertised",
+   "summary": "Advertised access endpoints use service objects typed AccessRequestService / AccessGrantService, with conformsTo listing supported access profiles."
+  },
+  {
+   "i": 141,
+   "slug": "access-extra-properties-allowed",
+   "summary": "Other properties may be present on access requests and access grants."
+  },
+  {
+   "i": 142,
+   "slug": "access-type-values",
+   "summary": "The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed."
+  },
+  {
+   "i": 143,
+   "slug": "access-type-required",
+   "summary": "The type property on access requests and grants is required."
+  },
+  {
+   "i": 144,
+   "slug": "access-storage-uri",
+   "summary": "The storage property value is a URI."
+  },
+  {
+   "i": 145,
+   "slug": "access-storage-required",
+   "summary": "The storage property is required."
+  },
+  {
+   "i": 146,
+   "slug": "access-inbox-uri",
+   "summary": "The inbox property value is a URI."
+  },
+  {
+   "i": 147,
+   "slug": "access-inbox-optional",
+   "summary": "The inbox property is optional."
+  },
+  {
+   "i": 148,
+   "slug": "access-access-collection",
+   "summary": "The access property is a collection of one or more objects."
+  },
+  {
+   "i": 149,
+   "slug": "access-access-required",
+   "summary": "The access property is required."
+  },
+  {
+   "i": 150,
+   "slug": "policy-type-access-policy",
+   "summary": "A policy type includes AccessPolicy; additional types are allowed."
+  },
+  {
+   "i": 151,
+   "slug": "policy-type-required",
+   "summary": "The policy type property is required."
+  },
+  {
+   "i": 152,
+   "slug": "policy-action-values",
+   "summary": "The action property is a collection of server-recognized operation strings; read, modify, create and delete are mandatory to support."
+  },
+  {
+   "i": 153,
+   "slug": "policy-action-required",
+   "summary": "The action property is required."
+  },
+  {
+   "i": 154,
+   "slug": "policy-assignee-uri-foaf-agent",
+   "summary": "The assignee is a URI; public access may be assigned via foaf:Agent."
+  },
+  {
+   "i": 155,
+   "slug": "policy-assignee-required",
+   "summary": "The assignee property is required."
+  },
+  {
+   "i": 156,
+   "slug": "policy-target-object",
+   "summary": "The target property is an object containing the defined properties."
+  },
+  {
+   "i": 157,
+   "slug": "policy-target-extra-types",
+   "summary": "Servers may support additional target type values."
+  },
+  {
+   "i": 158,
+   "slug": "policy-target-optional",
+   "summary": "The target property is optional."
+  },
+  {
+   "i": 159,
+   "slug": "policy-constraint-objects",
+   "summary": "The constraint property, if present, is a collection of constraint objects with the defined members."
+  },
+  {
+   "i": 160,
+   "slug": "policy-constraints-all-satisfied",
+   "summary": "When multiple constraint objects are present, all must be satisfied."
+  },
+  {
+   "i": 161,
+   "slug": "policy-constraint-left-operands",
+   "summary": "Servers advertising this profile support the defined leftOperand values."
+  },
+  {
+   "i": 162,
+   "slug": "policy-constraint-optional",
+   "summary": "The constraint property is optional."
+  },
+  {
+   "i": 163,
+   "slug": "policy-constraints-conjunction-semantics",
+   "summary": "All constraint objects must be satisfied for access to be permitted."
+  },
+  {
+   "i": 164,
+   "slug": "access-jsonld-context-lws-v1",
+   "summary": "Access request/grant JSON-LD documents include an @context ordered set containing https://www.w3.org/ns/lws/v1; extension contexts are allowed."
+  },
+  {
+   "i": 165,
+   "slug": "access-endpoints-are-lws-containers",
+   "summary": "Access request and grant endpoints are LWS containers conforming to this specification."
+  },
+  {
+   "i": 166,
+   "slug": "access-endpoints-get-post-delete",
+   "summary": "Access endpoints minimally support GET and POST; DELETE is recommended; other operations may be supported."
+  },
+  {
+   "i": 167,
+   "slug": "access-endpoints-jsonld-payloads",
+   "summary": "Access request and grant endpoints support the JSON-LD serialization for request and response payloads; other serializations are optional."
+  },
+  {
+   "i": 168,
+   "slug": "access-post-location-header",
+   "summary": "A successful POST to an access endpoint responds with a Location header for the new resource."
+  },
+  {
+   "i": 169,
+   "slug": "access-inbox-notifications",
+   "summary": "When an inbox property is present, the server should deliver notifications to that endpoint."
+  },
+  {
+   "i": 170,
+   "slug": "access-notification-data-model",
+   "summary": "Notification serialization conforms to the LWS notification data model."
+  },
+  {
+   "i": 171,
+   "slug": "access-notification-delivery",
+   "summary": "Inbox notifications conform to the LWS notification delivery requirements."
+  },
+  {
+   "i": 172,
+   "slug": "access-notification-events",
+   "summary": "Servers should send notifications for the defined access lifecycle events."
+  },
+  {
+   "i": 173,
+   "slug": "access-notify-request-created",
+   "summary": "The storage controller should be notified when a new access request is submitted."
+  },
+  {
+   "i": 174,
+   "slug": "access-notify-grant-created",
+   "summary": "The requesting agent should be notified at the access-request inbox when a grant is created."
+  },
+  {
+   "i": 175,
+   "slug": "access-notify-other-events",
+   "summary": "Servers may send notifications for other events."
+  },
+  {
+   "i": 176,
+   "slug": "lws-cid-media-type-storage-description",
+   "summary": "A storage description is serializable as application/lws+cid, a specialization of a W3C Controlled Identifier document extended with the LWS vocabulary."
+  },
+  {
+   "i": 177,
+   "slug": "lws-json-media-type-container-representation",
+   "summary": "A container representation supports the media type application/lws+json."
+  },
+  {
+   "i": 178,
+   "slug": "lws-profile-equivalence",
+   "summary": "application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json."
+  },
+  {
+   "i": 180,
+   "slug": "conneg-vary-accept",
+   "summary": "Container responses should carry Vary: Accept, since their Content-Type depends on the request Accept header."
+  },
+  {
+   "i": 181,
+   "slug": "pagination-over-threshold",
+   "summary": "Servers should paginate containers whose membership exceeds a server-determined threshold."
+  },
+  {
+   "i": 182,
+   "slug": "pagination-link-first",
+   "summary": "rel=first is present on paginated responses."
+  },
+  {
+   "i": 183,
+   "slug": "pagination-link-last",
+   "summary": "rel=last may be present on paginated responses."
+  },
+  {
+   "i": 184,
+   "slug": "pagination-link-next",
+   "summary": "rel=next is present when subsequent pages exist and omitted on the last page."
+  },
+  {
+   "i": 185,
+   "slug": "pagination-link-prev",
+   "summary": "rel=prev may be present with preceding pages and is omitted on the first page."
+  },
+  {
+   "i": 186,
+   "slug": "pagination-uris-opaque",
+   "summary": "Pagination URIs are opaque; clients use the URIs the server provides."
+  },
+  {
+   "i": 187,
+   "slug": "pagination-first-page-flow",
+   "summary": "The composite resource URI yields the first page; servers may support direct access to specific pages."
+  },
+  {
+   "i": 188,
+   "slug": "pagination-200-totalitems-all-pages",
+   "summary": "Paginated responses are 200 OK; totalItems should reflect the total across all pages."
+  },
+  {
+   "i": 189,
+   "slug": "security-notification-access-control",
+   "summary": "Access control on subscriptions and on notification delivery is consistent with access control on the underlying resources."
+  },
+  {
+   "i": 190,
+   "slug": "privacy-notification-authorized-resources-only",
+   "summary": "Subscribers should only receive notifications for resources they are authorized to access."
+  },
+  {
+   "i": 191,
+   "slug": "privacy-notification-actor-omitted",
+   "summary": "The actor property should be omitted by default; servers may make its inclusion configurable."
+  },
+  {
+   "i": 192,
+   "slug": "iana-ld-json-profile-equivalence",
+   "summary": "Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json."
+  }
+ ]
+}

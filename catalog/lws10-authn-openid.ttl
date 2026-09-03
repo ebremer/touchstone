@@ -1,10 +1,15 @@
 # Requirements catalog — LWS 1.0 Authentication Suite: OpenID Connect.
 #
-# Source: "LWS 1.0 Authentication Suite: OpenID Connect", editor's draft
-#   (an unofficial proposal; no dated /TR/ snapshot exists yet — DECISIONS.md D-0010, D-0018).
-#   editor's draft: https://w3c.github.io/lws-protocol/lws10-authn-openid/
-#   snapshot:       catalog/sources/ED-lws10-authn-openid.html
-# Hashes:           tools/extractor/clause_hash.py, rule per DECISIONS.md D-0008.
+# Source: "LWS 1.0 Authentication Suite: OpenID Connect", W3C Working Draft 3 August 2026
+#   this-version: https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+#   snapshot:     catalog/sources/WD-lws10-authn-openid-20260803.html
+# Hashes:         tools/extractor/clause_hash.py, rule per DECISIONS.md D-0008.
+#
+# Re-based 2026-09-02 from the editor's draft onto the published Recommendation-track
+# document (DECISIONS.md D-0042). D-0010 recorded these suites as unofficial proposals
+# with no dated /TR/ snapshot; all four now have one. Clause text is taken from the
+# rendered document rather than the ReSpec source, so a reader of get_requirement or a
+# report matrix sees the specification's own words instead of [[!REF]] macros.
 #
 # These are the ID-Token-as-subject-token rules. The storage-side negative matrix
 # (401 + WWW-Authenticate, access-token validation, key rotation) references the
@@ -19,8 +24,8 @@ req:id-token-alg-not-none
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization> ;
     touchstone:summary "The ID Token must not use \"none\" as its signing algorithm." ;
     touchstone:clauseText """The ID Token MUST NOT use "none" as the signing algorithm.""" ;
     touchstone:clauseHash "sha256-5c6abf8ea82a87834a05e5115dfb313a41984202050b8fcb2e5793baa4dbaf7a" ;
@@ -31,8 +36,8 @@ req:id-token-sub-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization> ;
     touchstone:summary "The ID Token uses the sub claim for the LWS subject identifier." ;
     touchstone:clauseText """The ID Token MUST use the sub (subject) claim for the LWS subject identifier.""" ;
     touchstone:clauseHash "sha256-288241eec06cfce062ebe2cf784797e3dc68bfdba92825a6efa0f9082d088bf2" ;
@@ -43,8 +48,8 @@ req:id-token-iss-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization> ;
     touchstone:summary "The ID Token uses the iss claim for the LWS issuer identifier." ;
     touchstone:clauseText """The ID Token MUST use the iss (issuer) claim for the LWS issuer identifier.""" ;
     touchstone:clauseHash "sha256-c798400562ada0629d1d13086fd9393110f1a7acd36088d331d13384a978d21e" ;
@@ -55,8 +60,8 @@ req:id-token-azp-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization> ;
     touchstone:summary "The ID Token uses the azp claim for the LWS client identifier." ;
     touchstone:clauseText """The ID Token MUST use the azp (authorized party) claim for the LWS client identifier.""" ;
     touchstone:clauseHash "sha256-d1382118d1e980bff3eea0cc509091891abd31fb9876919da5843aa3afa879d4" ;
@@ -67,8 +72,8 @@ req:id-token-aud-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#serialization> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization> ;
     touchstone:summary "Any audience restriction in the ID Token uses the aud claim." ;
     touchstone:clauseText """Any audience restriction in the ID Token MUST use the aud (audience) claim. The aud claim SHOULD include the client identifier and any additional target audience such as an authorization server.""" ;
     touchstone:clauseHash "sha256-4ce27efdd6aae6f2ca7213b47c7e2e72be21bca5e2a0d31af502e1ac1afe08d9" ;
@@ -79,11 +84,11 @@ req:validation-dereference-subject-cid
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#validation> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#validation> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation> ;
     touchstone:summary "Absent prior trust, the validator dereferences the sub claim to a controlled identifier document whose id equals the subject." ;
-    touchstone:clauseText """In the absence of a pre-existing trust relationship, the validator MUST dereference the sub (subject) claim in the authentication credential. The resulting resource MUST be formatted as a valid controlled identifier document [[!CID-1.0]] with an id value equal to the subject identifier.""" ;
-    touchstone:clauseHash "sha256-491c24e6cbfbfada2ab49fb8af6ddaccce2e113dd74858efdd0fb958a89b2c0a" ;
+    touchstone:clauseText """In the absence of a pre-existing trust relationship, the validator MUST dereference the sub (subject) claim in the authentication credential. The resulting resource MUST be formatted as a valid controlled identifier document [CID-1.0] with an id value equal to the subject identifier.""" ;
+    touchstone:clauseHash "sha256-9ad3857a5f7d12560883fb7494e3abe3c18783aa243e3ffb8b0fce833efd0d3e" ;
     touchstone:status touchstone:Draft ;
     dcterms:created "2026-07-16"^^xsd:date .
 
@@ -91,11 +96,11 @@ req:validation-locate-issuer-service-and-verify
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#validation> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#validation> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation> ;
     touchstone:summary "The verifier locates the issuer's OpenIdProvider service in the subject's CID document, runs OIDC Discovery to get the signing key, and validates the JWT per OIDC Core 3.1.3.7." ;
-    touchstone:clauseText """The verifier MUST use the subject's controlled identifier document to locate a service object whose serviceEndpoint value is equal to the value of the iss claim from the authentication credential, and whose type value is equal to https://www.w3.org/ns/lws#OpenIdProvider. The verifier MUST perform OpenID Connect Discovery to locate the public portion of the JSON Web Key (JWK) used to sign the authentication credential. The JWT MUST be validated as described by OpenID Connect Core Section 3.1.3.7 [[!OPENID-CONNECT-CORE]].""" ;
-    touchstone:clauseHash "sha256-aa7f41f512c2375a29ee526920c2d558815157f6d2db94b8726ca133ad2a423c" ;
+    touchstone:clauseText """The verifier MUST use the subject's controlled identifier document to locate a service object whose serviceEndpoint value is equal to the value of the iss claim from the authentication credential, and whose type value is equal to https://www.w3.org/ns/lws#OpenIdProvider. The verifier MUST perform OpenID Connect Discovery to locate the public portion of the JSON Web Key (JWK) used to sign the authentication credential. The JWT MUST be validated as described by OpenID Connect Core Section 3.1.3.7 [OPENID-CONNECT-CORE].""" ;
+    touchstone:clauseHash "sha256-873cb0ec4c1993f5979d2f057ea192578a239665c3fc2ba5bb2d389054a1e15c" ;
     touchstone:status touchstone:Draft ;
     dcterms:created "2026-07-16"^^xsd:date .
 
@@ -103,8 +108,8 @@ req:id-token-token-type-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-authn-openid" ;
-    touchstone:section <https://w3c.github.io/lws-protocol/lws10-authn-openid/#token-type> ;
-    touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-authn-openid/#token-type> ;
+    touchstone:section <https://www.w3.org/TR/lws10-authn-openid/#token-type> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#token-type> ;
     touchstone:summary "An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server." ;
     touchstone:clauseText """An ID Token used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:id_token URI when interacting with an authorization server.""" ;
     touchstone:clauseHash "sha256-5b9e983b5e9c43a445672c6e8019cf0e7e3ebf2640ba44753e5e3bee32f77530" ;

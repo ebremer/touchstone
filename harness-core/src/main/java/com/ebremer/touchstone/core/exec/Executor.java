@@ -66,6 +66,12 @@ public final class Executor {
 
         Map<String, String> vars = new HashMap<>();
         vars.put("run.root", ctx.runRoot().toString());
+        // The storage the target was registered as. Discovery tests need a URI that is the
+        // storage itself rather than a container inside it, and the registry is where a target
+        // says which storage it is - the same pre-registration that makes it addressable at all
+        // (DESIGN.md paragraph 7.1). It is not a substitute for what the server advertises: a
+        // discovery test still asserts the advertised relation on its own.
+        vars.put("target.baseUrl", ctx.target().baseUrl().toString());
         List<StepResult> steps = new ArrayList<>();
         Outcome outcome = Outcome.PASSED;
         try {

@@ -47,7 +47,7 @@
     },
     "template": {
       "type": "string",
-      "description": "String with ${...} placeholders. Variables: ${run.root} (per-run root container), ${test.container} (fresh container allocated per test), plus names bound by earlier steps' bind blocks."
+      "description": "String with ${...} placeholders. Variables: ${run.root} (per-run root container), ${test.container} (fresh container allocated per test), ${target.baseUrl} (the storage URI the target is registered as), plus names bound by earlier steps' bind blocks."
     },
     "step": {
       "type": "object",

@@ -10,7 +10,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: note
       bodyRef: bodies/note.txt
     expect:
       status: 201

@@ -12,7 +12,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: doomed
       body: "short-lived resource"
     expect:
       status: 201

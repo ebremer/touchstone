@@ -16,7 +16,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: doomed
       body: "not long for this world"
     expect:
       status: 201

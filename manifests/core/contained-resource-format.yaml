@@ -1,0 +1,78 @@
+schemaVersion: 1
+id: core/contained-resource-format
+title: A container listing gives each data resource member its media type as format
+description: >-
+  "format: The media type of the resource (e.g., 'text/plain', 'image/jpeg'). MUST be present for
+  DataResources." The 21 August 2026 draft renamed this property from mediaType, so a server that
+  tracked the earlier draft is now silently wrong in a way a client feels immediately: it is what
+  lets a listing be rendered, filtered or downloaded without fetching every member first. Each
+  container here holds exactly one member of a known type, so the assertion names a determinate
+  item instead of depending on listing order.
+
+  This is asserted through JSON pointers rather than as a graph: the specification stopped
+  publishing its JSON-LD context inline and the last published one has no term for format, so
+  format expands to nothing. Reading the response as it was sent is the only honest test until
+  the context document exists (DECISIONS.md D-0040).
+requirements:
+  - https://example.org/touchstone/req/lws10-core/contained-format-for-dataresources
+steps:
+  - name: create a data resource with a distinctive media type
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Content-Type: text/csv
+      body: "a,b\n1,2\n"
+    expect:
+      status: 201
+    bind:
+      created: "header:Location"
+
+  - name: the listing carries that media type as the member's format
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/items/0/id"
+          equals: "${created}"
+        - pointer: "/items/0/format"
+          matches: "^text/csv"
+
+  - name: a container member needs no format, and must not be given a spurious one
+    request:
+      method: POST
+      target: "${test.container}"
+      headers:
+        Link: '<https://www.w3.org/ns/lws#Container>; rel="type"'
+    expect:
+      status: 201
+    bind:
+      sub: "header:Location"
+
+  - name: the sub-container lists its own single member with a format
+    request:
+      method: POST
+      target: "${sub}"
+      headers:
+        Content-Type: application/json
+      body: '{"n":1}'
+    expect:
+      status: 201
+
+  - name: and reports it
+    request:
+      method: GET
+      target: "${sub}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      json:
+        - pointer: "/totalItems"
+          equals: 1
+        - pointer: "/items/0/format"
+          matches: "^application/json"

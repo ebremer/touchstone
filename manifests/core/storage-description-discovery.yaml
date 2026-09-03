@@ -1,0 +1,76 @@
+schemaVersion: 1
+id: core/storage-description-discovery
+title: A storage advertises itself and describes itself as a controlled identifier document
+description: >-
+  Discovery is how a client holding one resource URI finds the storage it belongs to, and the
+  21 August 2026 draft rewrote all of it: the relation became rel="https://www.w3.org/ns/lws#storage"
+  (it was rel="…lws#storageDescription"), its target became the canonical storage URI rather than the
+  description document's URI, and the description itself became application/lws+cid — a Controlled
+  Identifier document — whose @context array starts with the CID context and which must name a
+  StorageRoot service. The relation is asserted on an ordinary container, not only at the root,
+  because a client that lands anywhere has to be able to find its way out.
+
+  One assertion is missing and is not silently absent: that the URI the Link header advertises is
+  the same storage this test then fetches. Binding a link relation needs a `link:<rel>` bind
+  extractor, which the frozen manifest schema does not permit (DECISIONS.md D-0035, D-0041); the
+  test uses the storage URI the target is registered as instead, and checks that the document
+  found there names itself with that same URI.
+requirements:
+  - https://example.org/touchstone/req/lws10-core/storage-description-link-header
+  - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
+  - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
+  - https://example.org/touchstone/req/lws10-core/storage-description-lws-cid
+  - https://example.org/touchstone/req/lws10-core/storage-description-id-required
+  - https://example.org/touchstone/req/lws10-core/storage-description-storageroot-service
+  - https://example.org/touchstone/req/lws10-core/lws-cid-media-type-storage-description
+steps:
+  - name: an ordinary container points at the storage it belongs to
+    request:
+      method: GET
+      target: "${test.container}"
+      headers:
+        Accept: application/lws+json
+    expect:
+      status: 200
+      headers:
+        # RFC 8288 leaves the rel value quotable or bare, so both spellings pass.
+        Link:
+          matches: 'rel="?https://www\.w3\.org/ns/lws#storage"?'
+
+  - name: HEAD advertises it too, since a client may never fetch a body
+    request:
+      method: HEAD
+      target: "${test.container}"
+    expect:
+      status: 200
+      headers:
+        Link:
+          matches: 'rel="?https://www\.w3\.org/ns/lws#storage"?'
+
+  - name: the storage URI serves a controlled identifier document describing the storage
+    request:
+      method: GET
+      target: "${target.baseUrl}"
+    expect:
+      status: 200
+      headers:
+        Content-Type: { contains: application/lws+cid }
+      json:
+        # "The @context property MUST be an array starting with the URIs
+        # https://www.w3.org/ns/cid/v1 and https://www.w3.org/ns/lws/v1."
+        - pointer: "/@context/0"
+          equals: "https://www.w3.org/ns/cid/v1"
+        - pointer: "/@context/1"
+          equals: "https://www.w3.org/ns/lws/v1"
+        # "Its value MUST be the canonical URI of the storage."
+        - pointer: "/id"
+          equals: "${target.baseUrl}"
+        # "a string that equals Storage or a set of strings that contains an item equal to Storage"
+        - pointer: "/type"
+          matches: '(?s).*Storage.*'
+        # "MUST contain a StorageRoot service whose serviceEndpoint is the URI of the storage
+        # root container" — without it a client has the description and still cannot write.
+        - pointer: "/service/0/type"
+          matches: '(?s).*StorageRoot.*'
+        - pointer: "/service/0/serviceEndpoint"
+          exists: true

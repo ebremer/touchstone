@@ -15,7 +15,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: described
       body: "a resource with metadata"
     expect:
       status: 201
@@ -42,7 +41,6 @@ steps:
       method: POST
       target: "${test.container}"
       headers:
-        Slug: sub
         Link: '<https://www.w3.org/ns/lws#Container>; rel="type"'
     expect:
       status: 201

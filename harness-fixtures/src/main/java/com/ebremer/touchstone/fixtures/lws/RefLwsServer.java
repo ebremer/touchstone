@@ -27,12 +27,19 @@ import org.eclipse.jetty.util.Callback;
 
 /**
  * In-memory reference LWS server: the target for the conformance self-test loop
- * (DECISIONS.md D-0015). Implements the WD-20260622 happy paths — container model with
- * items/totalItems listings, lws+json/ld+json/json conneg, Link rel="up"/rel="type"
- * metadata, ETags with 304/412/428 conditional semantics, containment-consistent
- * create/delete, 409 on non-recursive delete of a non-empty container, Depth: infinity
- * recursion, JSON Merge Patch (RFC 7386) on data resources, single-range requests, and a
- * derived linkset per resource.
+ * (DECISIONS.md D-0015). Implements the WD-20260821 happy paths — container model with
+ * items/totalItems listings carrying each member's {@code format}, lws+json/ld+json/json
+ * conneg with {@code Vary: Accept}, a storage description served as
+ * {@code application/lws+cid} at the storage URI and advertised by
+ * {@code rel="https://www.w3.org/ns/lws#storage"}, Link rel="up"/rel="type" metadata,
+ * ETags with 304/412/428 conditional semantics, containment-consistent create/delete,
+ * 409 on non-recursive delete of a non-empty container, Depth: infinity recursion, JSON
+ * Merge Patch (RFC 7386) on data resources, single-range requests, and a derived linkset
+ * per resource.
+ *
+ * <p>Container representations name their context by IRI, as the draft's example and every
+ * real server do, rather than inlining it: inlining meant the self-test loop never
+ * exercised the path a real response takes (D-0026/D-0040).</p>
  *
  * <p>Three auth modes (DECISIONS.md D-0017): {@link AuthMode#OPEN} (no auth — the core
  * happy-path suite), {@link AuthMode#SECURED} (validates Bearer tokens against the OIDC
@@ -44,6 +51,12 @@ import org.eclipse.jetty.util.Callback;
 public final class RefLwsServer implements AutoCloseable {
 
     private static final String LWS_NS = "https://www.w3.org/ns/lws#";
+    private static final String LWS_CONTEXT = "https://www.w3.org/ns/lws/v1";
+    private static final String CID_CONTEXT = "https://www.w3.org/ns/cid/v1";
+    /** The storage description media type: a CID document extended with the LWS vocabulary. */
+    private static final String LWS_CID = "application/lws+cid";
+    /** The storage URI, which here is also the storage root container. */
+    private static final String STORAGE_PATH = "/";
     private static final Set<String> CONTAINER_MEDIA_TYPES =
             Set.of("application/lws+json", "application/ld+json", "application/json");
 
@@ -233,12 +246,30 @@ public final class RefLwsServer implements AutoCloseable {
             }
             byte[] body;
             String contentType;
-            if (node.container) {
+            if (STORAGE_PATH.equals(path)) {
+                // "Requests for the storage URI MUST return a document that conforms to the
+                // storage description resource data model with a media type of
+                // application/lws+cid, unless content negotiation requires a different format."
+                // So lws+cid is what the storage URI answers by default; its container
+                // representation stays available to a client that asks for one.
+                contentType = negotiateStorage(request.getHeaders().get("Accept"));
+                if (contentType == null) {
+                    status(response, callback, 406);
+                    return;
+                }
+                response.getHeaders().put(HttpHeader.VARY, "Accept");
+                body = LWS_CID.equals(contentType)
+                        ? storageDescription(request)
+                        : listing(request, path, node);
+            } else if (node.container) {
                 contentType = negotiate(request.getHeaders().get("Accept"));
                 if (contentType == null) {
                     status(response, callback, 406);
                     return;
                 }
+                // "Because the Content-Type of a container response depends on the request's
+                // Accept header, these responses SHOULD include a Vary: Accept header."
+                response.getHeaders().put(HttpHeader.VARY, "Accept");
                 body = listing(request, path, node);
             } else {
                 contentType = node.contentType;
@@ -546,10 +577,11 @@ public final class RefLwsServer implements AutoCloseable {
 
         private byte[] listing(Request request, String path, Node node) {
             ObjectNode root = mapper.createObjectNode();
-            ObjectNode context = root.putObject("@context");
-            context.put("@vocab", LWS_NS);
-            context.put("id", "@id");
-            context.put("type", "@type");
+            // The context is sent by IRI, as the draft's own example does and as a real server
+            // does. It used to be inlined here, which meant the self-test loop never exercised
+            // the remote-IRI path at all and a whole class of context bug stayed invisible for
+            // six phases (D-0026). harness-core resolves it from its bundled copy, offline.
+            root.put("@context", LWS_CONTEXT);
             root.put("id", absolute(request, path));
             root.put("type", "Container");
             List<String> children = new ArrayList<>(node.children);
@@ -565,9 +597,35 @@ public final class RefLwsServer implements AutoCloseable {
                 item.put("id", absolute(request, childPath));
                 item.put("type", child.container ? "Container" : "DataResource");
                 if (!child.container) {
-                    item.put("mediaType", child.contentType);
+                    // "format: The media type of the resource ... MUST be present for
+                    // DataResources." The 21 August 2026 draft renamed this from mediaType.
+                    item.put("format", child.contentType);
                 }
             }
+            try {
+                return mapper.writeValueAsBytes(root);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        /**
+         * The storage description: a Controlled Identifier document extended with the LWS
+         * vocabulary, naming the storage by its canonical URI and pointing at its root
+         * container through a StorageRoot service.
+         */
+        private byte[] storageDescription(Request request) {
+            String storage = absolute(request, STORAGE_PATH);
+            ObjectNode root = mapper.createObjectNode();
+            ArrayNode context = root.putArray("@context");
+            context.add(CID_CONTEXT);
+            context.add(LWS_CONTEXT);
+            root.put("id", storage);
+            root.put("type", "Storage");
+            ObjectNode service = root.putArray("service").addObject();
+            service.put("id", storage + "#storage-root");
+            service.put("type", "StorageRoot");
+            service.put("serviceEndpoint", storage);
             try {
                 return mapper.writeValueAsBytes(root);
             } catch (Exception e) {
@@ -579,6 +637,11 @@ public final class RefLwsServer implements AutoCloseable {
             if (!path.equals("/")) {
                 response.getHeaders().add("Link", "<" + absolute(request, parentOf(path)) + ">; rel=\"up\"");
             }
+            // "All responses to GET and HEAD requests targeting storage resources MUST include a
+            // Link header whose target is the canonical URI of the storage, including a relation
+            // (rel) parameter whose value equals https://www.w3.org/ns/lws#storage."
+            response.getHeaders().add("Link",
+                    "<" + absolute(request, STORAGE_PATH) + ">; rel=\"" + LWS_NS + "storage\"");
             response.getHeaders().add("Link", "<" + LWS_NS + (node.container ? "Container" : "DataResource")
                     + ">; rel=\"type\"");
             // The creation clause names rel="linkset" beside rel="up", and a client has no other
@@ -593,6 +656,19 @@ public final class RefLwsServer implements AutoCloseable {
         /** A resource's linkset lives beside it; the suffix is this fixture's convention, not the spec's. */
         private static String linksetOf(String path) {
             return path.endsWith("/") ? path.substring(0, path.length() - 1) + ".meta" : path + ".meta";
+        }
+
+        /**
+         * Conneg at the storage URI, where {@code application/lws+cid} is the default rather
+         * than one option among equals: a client that asks for nothing in particular gets the
+         * storage description, and one that asks for a container media type gets the root
+         * container's representation.
+         */
+        private String negotiateStorage(String accept) {
+            if (accept == null || accept.isBlank() || accept.contains("*/*") || accept.contains(LWS_CID)) {
+                return LWS_CID;
+            }
+            return negotiate(accept);
         }
 
         private String negotiate(String accept) {

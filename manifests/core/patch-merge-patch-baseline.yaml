@@ -15,7 +15,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: application/json
-        Slug: doc.json
       body: '{"title":"first","keep":true,"drop":"gone"}'
     expect:
       status: 201

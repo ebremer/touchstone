@@ -56,7 +56,7 @@ class TouchstoneMcpEndToEndTest {
                 schemaVersion: 1
                 id: core/passing
                 title: the run root is retrievable
-                requirements: [https://example.org/touchstone/req/lws10-core/container-representation-conneg]
+                requirements: [https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence]
                 steps:
                   - request: { method: GET, target: "${run.root}", headers: { Accept: application/lws+json } }
                     expect: { status: 200 }
@@ -115,8 +115,8 @@ class TouchstoneMcpEndToEndTest {
             assertThat(requirements.size()).isGreaterThan(100);
 
             JsonNode detail = call(client, "get_requirement",
-                    Map.of("iri", "https://example.org/touchstone/req/lws10-core/container-representation-conneg"));
-            assertThat(detail.get("clauseText").asText()).contains("content negotiation");
+                    Map.of("iri", "https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence"));
+            assertThat(detail.get("clauseText").asText()).contains("Content-Type response header");
 
             JsonNode tests = call(client, "list_tests", Map.of());
             assertThat(tests.size()).isEqualTo(2);

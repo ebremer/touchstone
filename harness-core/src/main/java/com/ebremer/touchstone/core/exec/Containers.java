@@ -7,7 +7,17 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
-/** Spec-standard container creation (POST + Link rel="type" lws#Container + Slug). */
+/**
+ * Container creation for provisioning: POST with {@code Link rel="type"} naming
+ * {@code lws#Container}, which is the only part the specification defines.
+ *
+ * <p>A {@code Slug} header goes along for the ride. The 21 August 2026 draft dropped Slug
+ * entirely — it says only that servers "MAY incorporate client hints" — so nothing here
+ * depends on it: the created URI is read from {@code Location}, as it always was. It is sent
+ * because a run root an operator can recognise in their own storage is worth having, and a
+ * server free to ignore an unknown header loses nothing by it. The manifests, which are
+ * conformance documents rather than operations, no longer send it at all.
+ */
 final class Containers {
 
     static final String CONTAINER_TYPE_LINK = "<https://www.w3.org/ns/lws#Container>; rel=\"type\"";

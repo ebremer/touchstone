@@ -746,3 +746,138 @@ build, so the next typo fails in CI rather than in a conformance report. Coverag
 re-baseline deliberately — retiring catalog entries will invalidate more manifest IRIs
 (all five cited by `core/container-conneg` among them), and today those would have gone
 unnoticed.
+
+### D-0040 — the core catalog is re-baselined on WD-lws10-core-20260821
+D-0037 recorded that the spec had moved and left the work for Erich, who authorised it.
+The catalog now derives from the 21 August 2026 Working Draft:
+`catalog/sources/WD-lws10-core-20260821.{html,clauses.json,curation.json}`. It holds
+**191 requirements** (was 162): 147 MUST, 22 SHOULD, 22 MAY.
+
+**How entries were carried across.** Each existing entry's stored `clauseText` was matched
+into the new extraction by containment — the same criterion `check_drift.py` uses, so an
+entry survives exactly when the drift alarm says it does. 142 of 162 matched one-to-one and
+kept their slug, hash and section; 20 did not. Of those 20, six kept their slug with the
+draft's new words (`conformance-client-class`, `storage-description-id-required`,
+`storage-description-link-header`, `uri-independent-of-hierarchy`,
+`create-server-managed-metadata-protected`, `access-endpoints-jsonld-payloads` — two of them
+purely editorial: "A LWS Client" became "An LWS Client", and a cross-reference renumbered
+from 10.4.1 to 11.4.1); thirteen were replaced by successors under new slugs; and one,
+`create-slug-honored-if-no-conflict`, has no successor because Slug is gone. 49 clauses are
+new, 29 of them the Notifications section (D-0041).
+
+Retired entries are **removed, not marked**. The catalog states what the current draft
+requires; keeping a clause the spec no longer contains would inflate the coverage
+denominator and let a test claim to verify something nobody requires. Provenance lives in
+the archived snapshot and in git.
+
+**One Approved seed was affected.** `container-representation-conneg` (Gate 1, 2026-07-16)
+stated content negotiation from the Operations section; the 21 August draft moved it into
+12.1.1 Media Type Equivalence and restated it — same three media types, same body, the
+Content-Type echoing the request. It is replaced by a hand-written seed
+`conneg-media-type-equivalence` that **carries the Approved status over**, on the reasoning
+that the obligation was reviewed and approved and only its wording changed. That is a
+judgement about an approved item and is flagged for Erich: demoting it to Draft instead is a
+one-line change. The other fourteen seeds matched unchanged.
+
+**What this changed outside the catalog.**
+- `core/container-conneg` cited five requirement IRIs, all five retired. It now cites the
+  single successor, plus the new `Vary: Accept` SHOULD and the container media-type clause.
+  The D-0039 gate is what made this visible rather than silent.
+- Two manifests are new: `core/storage-description-discovery` (seven requirements: the
+  `lws#storage` relation on GET and HEAD, the storage URI answering `application/lws+cid`,
+  and the description's `@context` array, `id`, `Storage` type and `StorageRoot` service) and
+  `core/contained-resource-format` (`format`, which replaced `mediaType`).
+- `Graphs.langFor` learned `application/lws+cid` and `application/linkset+json`; without the
+  first, every storage-description assertion would have failed as "no RDF reader".
+- `RefLwsServer` grew what those tests require: a storage description at the storage URI with
+  `application/lws+cid` as its default representation, the `lws#storage` link on every
+  response, `format` in place of `mediaType`, and `Vary: Accept` on container responses.
+- **The reference server now names its context by IRI** rather than inlining one. That was
+  the six-phase blind spot of D-0026: with an inline context the self-test loop never
+  exercised the path a real response takes. It does now, through the offline loader.
+- A `${target.baseUrl}` template variable was added, so a discovery test has a URI that is
+  the storage rather than a container inside it. This is not a schema change — `template` is
+  an unconstrained string and the variable list was always annotation — but both schema
+  copies document it.
+- `check_drift.py` now also fails when a `touchstone:section` anchor no longer resolves to an
+  id in the draft. Five entries pointed at `#content-negotiation` and
+  `#normative-json-ld-context`, which the new draft does not have; a report's spec links are
+  the part a reader is meant to follow, so a dead one is a silent regression.
+
+**The JSON-LD context is now orphaned, and `format` is not testable as a graph.** Section 13
+of the 21 August draft no longer carries the context inline — it gives the URL, still a 404,
+and the unfilled digest of w3c/lws-protocol#216 — so there is nothing newer to copy than the
+22 June block D-0026 bundled. That copy defines `mediaType`, not `format`, so a conforming
+server's `format` expands to nothing. The obvious repair, adding the term ourselves, is
+exactly what D-0026 refused: a verdict must not be computed from a mapping nobody published.
+Checked before deciding: the **Linked Web Storage Vocabulary** Group Note
+(<https://www.w3.org/TR/2026/NOTE-lws10-vocab-20260714/>, 14 July 2026) also defines
+`mediaType` (as `as:mediaType`) and lists it in the `lws/v1` term list, with a
+`StorageDescription` class and a `storageDescription` property — i.e. the vocabulary is one
+draft behind the protocol on precisely the terms that changed. So no published artefact
+defines `format`, `storage` or `StorageRoot` yet. `core/contained-resource-format` therefore
+asserts through JSON pointers, which read the response as it was sent, and
+`JsonLdContextsTest` pins the absence so it stays a decision rather than a surprise. Good WG
+feedback item, alongside #216.
+
+**`https://www.w3.org/ns/cid/v1` is now bundled too.** A storage description's `@context`
+must be an array starting with it, and unlike the LWS context it resolves (200,
+`application/ld+json`, 3248 bytes, sha256
+`ea216ecc1cb02cd39b693dba2250141e270ba0bf95890be107dd9a9e8e43de85`). Without it the offline
+loader — correctly — refuses every storage description.
+
+**Slug.** The 21 August draft contains the word nowhere (the June draft had six occurrences);
+what remains is "servers ... MAY incorporate client hints". Manifests are specification
+documents, so all nineteen stopped sending it. `Containers.create` still sends one, because a
+run root an operator can recognise in their own storage is worth having and a server is free
+to ignore an unknown header — provisioning is operations, not conformance. Nothing has ever
+depended on it: created URIs are read from `Location`.
+
+Verified: `clause_hash.py --check` passes on all 191; `check_drift.py` reports no drift and
+no dead anchor; `clean verify` is green across five modules; the 23-manifest core suite
+passes against the reference server.
+
+### D-0041 — Notifications: catalogued now, the fixture is a documented seam
+Section 10 of the 21 August draft is new and normative: 29 clauses, plus three more in the
+Security and Privacy Considerations. All are catalogued (`notification-*`, `subscription-*`,
+`notificationservice-*`, and the two considerations entries), so coverage counts them and
+`list_requirements` and the report matrix show them.
+
+No manifests and no reference-server support, for the reason D-0024 gave for SAML: a test the
+reference implementation cannot exercise proves nothing. Notifications need a subscription
+endpoint, a stored subscription, and a delivery transport before a test could distinguish a
+conforming server from one that answers 404 — and the interesting clauses are not the shapes
+but the three authorization MUSTs: a server must reject a subscription whose `topic` includes
+anything the subscriber cannot read, must never deliver a notification for a resource
+unreadable at event time, and must stop delivering when access is revoked. Those deserve a
+negative matrix built the way the OIDC one was (D-0017), not a happy-path shape check.
+
+Discovery is the one part that is nearly free — a `NotificationService` in the storage
+description — but notifications are a MAY, so the manifest would be capability-gated and
+would skip against the reference server, which is the same thing as untested.
+
+The seam is small and named: `RefLwsServer` already serves a storage description to advertise
+the service in, and the subscription protocol is ordinary authenticated POST with an
+`application/lws+json` body.
+
+### D-0042 — the authentication suites move onto their published documents
+D-0010 recorded the four suites as "unofficial proposal" editor's drafts with no dated `/TR/`
+snapshot. All four now have one: openid, saml and ssi-did-key as W3C Working Drafts of
+3 August 2026, ssi-cid of 21 August 2026. `touchstone:section` points at the latest-version
+`/TR/lws10-authn-*/` URL and `sourceDraft` at the dated one — the same split the core module
+uses — and the snapshots in `catalog/sources/` are the published documents.
+
+**Clause text is re-taken from the rendered document.** The July extraction read the ReSpec
+*source* page, so stored text carried unrendered macros: `…controlled identifier document
+[[!CID-1.0]] with an id value…` where the specification says `[CID-1.0]`. That text is what
+`get_requirement`, the `requirement://` resource and every report matrix put in front of a
+reader, and it made `check_drift.py` report six false drifts against the authoritative
+document while reporting none against the source page. Every clause matched after expanding
+the macros, so nothing normative changed — the suites' only movement since July is added
+prose in the informative Security and Privacy Considerations sections. All 41 hashes were
+recomputed.
+
+`catalog/sources/` now keeps exactly one snapshot per module, the draft that module is
+baselined on; the superseded June core snapshot and the four editor's drafts were removed
+rather than left alongside, since two snapshots would make it ambiguous which one a hash came
+from. Git holds them.

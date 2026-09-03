@@ -15,7 +15,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: guarded
       body: "original content"
     expect:
       status: 201

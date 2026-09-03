@@ -16,7 +16,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: ranged.txt
       body: "0123456789"
     expect:
       status: 201

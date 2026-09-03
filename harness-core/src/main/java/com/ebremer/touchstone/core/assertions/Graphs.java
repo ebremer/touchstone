@@ -66,7 +66,11 @@ final class Graphs {
         String mt = mediaType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
         return switch (mt) {
             case "text/turtle" -> Lang.TURTLE;
-            case "application/ld+json", "application/lws+json", "application/json" -> Lang.JSONLD;
+            // application/lws+cid is a storage description: a Controlled Identifier document
+            // extended with the LWS vocabulary, so JSON-LD. application/linkset+json is the
+            // linkset resource of RFC 9264, which the metadata section makes a MUST.
+            case "application/ld+json", "application/lws+json", "application/lws+cid",
+                 "application/linkset+json", "application/json" -> Lang.JSONLD;
             case "application/n-triples" -> Lang.NTRIPLES;
             case "application/rdf+xml" -> Lang.RDFXML;
             default -> throw new IllegalStateException("no RDF reader for media type " + mediaType);

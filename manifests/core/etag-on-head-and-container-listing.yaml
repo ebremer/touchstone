@@ -53,7 +53,6 @@ steps:
       target: "${test.container}"
       headers:
         Content-Type: text/plain
-        Slug: member
       body: "member content"
     expect:
       status: 201
