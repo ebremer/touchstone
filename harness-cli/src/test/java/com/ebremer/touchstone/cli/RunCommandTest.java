@@ -104,17 +104,30 @@ class RunCommandTest {
             cmd.setOut(new PrintWriter(out));
             cmd.setErr(new PrintWriter(out));
 
+            // --report-dir is given rather than defaulted. Without it the bundle went to `runs`
+            // relative to the working directory — harness-cli/ — so every test run left one
+            // behind for good, and 31 had accumulated before anyone looked.
+            Path reports = tmp.resolve("runs");
             int exit = cmd.execute("run",
                     "--target", "ref",
                     "--targets", targets.toString(),
                     "--manifests", manifests.toString(),
-                    "--module", "core");
+                    "--module", "core",
+                    "--report-dir", reports.toString());
 
             assertThat(exit).isEqualTo(1);
             assertThat(out.toString())
                     .contains("0 passed, 1 failed")
                     .contains("expected: [418]")
                     .contains("actual:   200");
+            // A run that fails still owes its evidence: the bundle is how anyone finds out what
+            // the server actually said. Nothing else covers the reporting path for a failed run.
+            try (var dirs = Files.list(reports)) {
+                Path runDir = dirs.findFirst().orElseThrow();
+                assertThat(runDir.resolve("run.json")).exists();
+                assertThat(runDir.resolve("earl.ttl")).exists();
+                assertThat(runDir.resolve("report.md")).exists();
+            }
         }
     }
 
