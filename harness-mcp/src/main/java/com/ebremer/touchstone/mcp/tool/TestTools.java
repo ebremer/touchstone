@@ -21,7 +21,9 @@ public class TestTools {
 
     @McpTool(name = "list_tests",
             description = "List test manifests as metadata, optionally filtered by the requirement IRI "
-                    + "they verify, spec module, or tag.")
+                    + "they verify, spec module, or tag.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public List<TestSummary> listTests(
             @McpToolParam(required = false, description = "requirement IRI the test must verify") String requirement,
             @McpToolParam(required = false, description = "spec module key") String module,

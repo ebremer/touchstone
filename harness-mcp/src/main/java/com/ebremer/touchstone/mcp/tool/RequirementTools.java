@@ -16,7 +16,11 @@ import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Service;
 
-/** Read-only tools over the requirements catalog (DESIGN.md paragraph 6). */
+/**
+ * Read-only tools over the requirements catalog (DESIGN.md paragraph 6). Each says so in its
+ * MCP annotations: read-only, idempotent, and closed-world, since the catalog is a local file,
+ * so a client need not ask before calling it (D-0049).
+ */
 @Service
 public class RequirementTools {
 
@@ -30,7 +34,9 @@ public class RequirementTools {
 
     @McpTool(name = "list_requirements",
             description = "List catalog requirements as metadata, optionally filtered by spec module "
-                    + "(e.g. lws10-core, lws10-authn-openid) and/or level (MUST, SHOULD, MAY).")
+                    + "(e.g. lws10-core, lws10-authn-openid) and/or level (MUST, SHOULD, MAY).",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public List<RequirementSummary> listRequirements(
             @McpToolParam(required = false, description = "spec module key") String module,
             @McpToolParam(required = false, description = "MUST, SHOULD, or MAY") String level) {
@@ -43,7 +49,9 @@ public class RequirementTools {
 
     @McpTool(name = "get_requirement",
             description = "Full detail for one requirement IRI, including the verbatim spec clause text "
-                    + "and the section link, so you can read why a test exists.")
+                    + "and the section link, so you can read why a test exists.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public RequirementDetail getRequirement(
             @McpToolParam(description = "requirement IRI from list_requirements") String iri) {
         Requirement r = catalog.find(iri).orElseThrow(
@@ -54,7 +62,9 @@ public class RequirementTools {
 
     @McpTool(name = "coverage",
             description = "Requirements-by-tests coverage matrix, per spec module and level, optionally "
-                    + "scoped to one module.")
+                    + "scoped to one module.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public CoverageReportDto coverage(
             @McpToolParam(required = false, description = "spec module key") String module) {
         List<Requirement> requirements = catalog.all().stream()

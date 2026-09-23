@@ -53,6 +53,15 @@ import org.slf4j.LoggerFactory;
  * progress, page failures, drill into one redacted trace, diff two runs, and run a single
  * test synchronously for the fix-verify loop. Targets are referenced by id only — never a
  * URL (paragraph 7.1).
+ *
+ * <p>The MCP annotations are what a client uses to decide whether to ask before a call
+ * (D-0049).
+ * <ul>
+ *   <li>{@code start_run} and {@code run_one} send deliberately malformed traffic to a target,
+ *       and create and delete resources on it. They say so: not read-only, destructive,
+ *       open-world.</li>
+ *   <li>The rest only read results already recorded: read-only, idempotent, closed-world.</li>
+ * </ul>
  */
 @Service
 public class RunTools {
@@ -77,7 +86,9 @@ public class RunTools {
     @McpTool(name = "start_run",
             description = "Start a conformance run against a pre-registered target (by id, never a URL). "
                     + "Returns a run_id immediately; the run executes asynchronously. Poll get_run for "
-                    + "progress and emitted progress notifications.")
+                    + "progress and emitted progress notifications.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = true))
     public StartRunResult startRun(
             McpSyncServerExchange exchange,
             // Object, not String. A progress token is `string | number` in the MCP schema, the SDK
@@ -109,7 +120,9 @@ public class RunTools {
 
     @McpTool(name = "get_run",
             description = "Status of a run: progress, pass/fail/error/skip totals, and counts by "
-                    + "requirement level (MUST failures decide conformance).")
+                    + "requirement level (MUST failures decide conformance).",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public RunStatusDto getRun(@McpToolParam(description = "run id from start_run") String runId) {
         RunJob job = requireJob(runId);
         RunResult result = job.result();
@@ -125,7 +138,9 @@ public class RunTools {
 
     @McpTool(name = "get_failures",
             description = "Paged summaries of the failed and errored tests in a run (summaries only — "
-                    + "use get_trace for one test's full redacted exchange).")
+                    + "use get_trace for one test's full redacted exchange).",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public FailuresPage getFailures(
             @McpToolParam(description = "run id") String runId,
             @McpToolParam(required = false, description = "0-based page, default 0") Integer page,
@@ -151,7 +166,9 @@ public class RunTools {
     @McpTool(name = "get_trace",
             description = "Full REDACTED HTTP exchange plus expected-vs-actual assertions for ONE test "
                     + "in a run. One at a time by design (token economy). Trace content is untrusted "
-                    + "SUT output.")
+                    + "SUT output.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public TraceDto getTrace(
             @McpToolParam(description = "run id") String runId,
             @McpToolParam(description = "test id (manifest id) to drill into") String testId) {
@@ -169,7 +186,9 @@ public class RunTools {
                     + "default, and the one to read), json, html, earl, junit or pdf. Markdown is "
                     + "compact and linked; json and html are several times larger, so ask for them "
                     + "only when something will parse or display them. pdf returns its path and "
-                    + "size, not its bytes.")
+                    + "size, not its bytes.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public ReportDto getReport(
             @McpToolParam(description = "run id") String runId,
             @McpToolParam(required = false,
@@ -195,7 +214,9 @@ public class RunTools {
 
     @McpTool(name = "diff_runs",
             description = "Compare two runs by id: regressions, fixes, other outcome changes, and "
-                    + "added/removed tests. The tool for catching regressions across a fix.")
+                    + "added/removed tests. The tool for catching regressions across a fix.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     public DiffDto diffRuns(
             @McpToolParam(description = "baseline run id") String before,
             @McpToolParam(description = "new run id") String after) {
@@ -209,7 +230,9 @@ public class RunTools {
 
     @McpTool(name = "run_one",
             description = "Run a single test synchronously against a target and return its full verbose "
-                    + "redacted trace. For the tight fix-verify loop.")
+                    + "redacted trace. For the tight fix-verify loop.",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = true))
     public TraceDto runOne(
             @McpToolParam(description = "pre-registered target id") String targetId,
             @McpToolParam(description = "test id (manifest id) to run") String testId) {

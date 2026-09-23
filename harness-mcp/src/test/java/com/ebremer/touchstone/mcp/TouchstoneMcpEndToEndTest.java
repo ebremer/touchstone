@@ -5,7 +5,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +24,8 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
+import io.modelcontextprotocol.spec.McpSchema.Tool;
+import io.modelcontextprotocol.spec.McpSchema.ToolAnnotations;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -93,6 +97,35 @@ class TouchstoneMcpEndToEndTest {
     static void stop() throws Exception {
         if (sut != null) {
             sut.close();
+        }
+    }
+
+    /**
+     * Clients decide from these hints whether to ask before a call (D-0049). Without them,
+     * every tool advertised the protocol's worst case: not read-only, destructive, open-world.
+     * The two tools that send traffic to a target keep that; the nine that only read the
+     * catalog, the manifests and recorded runs say so.
+     */
+    @Test
+    void toolsDeclareWhetherTheyChangeAnything() {
+        HttpClientStreamableHttpTransport transport = HttpClientStreamableHttpTransport
+                .builder("http://localhost:" + port)
+                .endpoint("/mcp")
+                .build();
+        try (McpSyncClient client = McpClient.sync(transport).requestTimeout(Duration.ofSeconds(30)).build()) {
+            client.initialize();
+            Map<String, ToolAnnotations> hints = client.listTools().tools().stream()
+                    .collect(Collectors.toMap(Tool::name, Tool::annotations));
+
+            assertThat(hints).hasSize(11);
+            Set<String> drivesTheTarget = Set.of("start_run", "run_one");
+            hints.forEach((tool, a) -> {
+                boolean readOnly = !drivesTheTarget.contains(tool);
+                assertThat(a.readOnlyHint()).as("%s readOnlyHint", tool).isEqualTo(readOnly);
+                assertThat(a.destructiveHint()).as("%s destructiveHint", tool).isEqualTo(!readOnly);
+                assertThat(a.idempotentHint()).as("%s idempotentHint", tool).isEqualTo(readOnly);
+                assertThat(a.openWorldHint()).as("%s openWorldHint", tool).isEqualTo(!readOnly);
+            });
         }
     }
 
