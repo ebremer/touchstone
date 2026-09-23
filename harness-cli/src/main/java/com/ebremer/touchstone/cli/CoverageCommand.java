@@ -80,9 +80,9 @@ final class CoverageCommand implements Callable<Integer> {
         PrintWriter out = spec.commandLine().getOut();
         out.printf("Requirements coverage: %d of %d covered by %d test(s)%n%n",
                 report.totalCovered(), report.totalRequirements(), testCount);
-        out.printf("%-16s %-8s %s%n", "module", "level", "covered/total");
+        out.printf("%-24s %-8s %s%n", "module", "level", "covered/total");
         for (CoverageReport.Row row : report.rows()) {
-            out.printf("%-16s %-8s %d/%d%n", row.specModule(), row.level(), row.covered(), row.total());
+            out.printf("%-24s %-8s %d/%d%n", row.specModule(), row.level(), row.covered(), row.total());
         }
         return 0;
     }

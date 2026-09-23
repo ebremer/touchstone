@@ -96,8 +96,14 @@ public final class Definitions {
         return out;
     }
 
-    /** The modules and manifest paths a selector may name, for error messages and tool listings. */
+    /**
+     * The manifests a selector may name, for error messages and tool listings: an
+     * authentication suite's {@code auth/oidc/manifest} is given as {@code auth/oidc}, which
+     * selects the same tests.
+     */
     public List<String> manifestPaths() {
-        return tests.stream().map(TestDefinition::manifestPath).distinct().toList();
+        return tests.stream().map(TestDefinition::manifestPath)
+                .map(p -> p.endsWith("/manifest") ? p.substring(0, p.length() - "/manifest".length()) : p)
+                .distinct().toList();
     }
 }

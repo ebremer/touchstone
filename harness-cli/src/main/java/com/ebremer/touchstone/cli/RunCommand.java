@@ -89,7 +89,14 @@ final class RunCommand implements Callable<Integer> {
             err.println("target registry not found: " + targetsFile);
             return TouchstoneCli.HARNESS_ERROR;
         }
-        TargetRegistry registry = TargetRegistry.load(targetsFile);
+        TargetRegistry registry;
+        try {
+            registry = TargetRegistry.load(targetsFile);
+        } catch (RuntimeException e) {
+            // A registry that does not parse is a broken workflow, not a finding: one line, exit 2.
+            err.println("cannot read the target registry: " + TouchstoneCli.describe(e));
+            return TouchstoneCli.HARNESS_ERROR;
+        }
         Target target = registry.find(targetId).orElse(null);
         if (target == null) {
             err.println("unknown target '" + targetId + "' (registered: " + registry.ids() + ")");

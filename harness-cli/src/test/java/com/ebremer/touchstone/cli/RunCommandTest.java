@@ -178,6 +178,19 @@ class RunCommandTest {
     }
 
     @Test
+    void aRegistryThatDoesNotParseIsAConfigurationError() throws Exception {
+        Path targets = tmp.resolve("targets.yaml");
+        Files.writeString(targets, "targets:\n  ref:\n    baseUrl: http://localhost:4711/\n'stray'\n    adapter: env\n");
+        StringWriter out = new StringWriter();
+
+        int exit = run(out, targets, Path.of("../definitions"), "core");
+
+        assertThat(exit).isEqualTo(2);
+        assertThat(out.toString()).contains("cannot read the target registry");
+        assertNoStackTraceAndNoReports(out);
+    }
+
+    @Test
     void anUnreachableTargetIsAConfigurationError() throws Exception {
         // The address of a server that has stopped: nothing listens there any more. Read it
         // before closing, since a stopped connector reports no port.
