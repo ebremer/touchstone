@@ -1206,3 +1206,25 @@ idempotent and closed-world. `start_run` and `run_one` send deliberately malform
 to a target, and create and delete resources on it, so they keep the cautious values, now
 set explicitly: not read-only, destructive, not idempotent, open-world. The end-to-end test
 checks all eleven as a client sees them.
+
+### D-0050 — `mvnw` is executable in git, so CI and the Action's image build can run it
+`mvnw` has been committed as mode `100644` since the Phase 0 scaffold (c3695dd). A Windows
+checkout never notices. A Linux one does: `./mvnw` exits 126, "Permission denied".
+
+**CI has never passed on GitHub.** D-0044 found that CI never ran on pushes to master. Once
+it did, all three runs failed at "Build and verify", the `./mvnw -B -ntp verify` step. The
+acceptance that D-0007 recorded as "local-green, remote pending" was never met remotely.
+
+**The GitHub Action could not build its image either.** An Ubuntu runner's checkout keeps
+the `644` mode, and `COPY` preserves it, so `RUN ./mvnw ... package` is refused. The step
+before it hides the first refusal behind `|| true`. D-0046's end-to-end check was real but
+ran on Windows, where Docker Desktop marks every file in the build context executable. A
+`docker build` fed a `git archive` tarball keeps git's modes, which reproduces the runner
+exactly: before this change it failed with `./mvnw: Permission denied`.
+
+The fix is the mode bit and nothing else. With it, both checks were verified on Linux:
+- the build: a clean `git archive` of merged master, on `eclipse-temurin:21-jdk`, ran
+  `./mvnw -B -ntp verify` green with all 129 tests, plus the CLI smoke test;
+- the Action's image: built from the same kind of tarball, then `--version` run in it.
+
+No other tracked file has a shebang. The Python tools run as `python <script>`.
