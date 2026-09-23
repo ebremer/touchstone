@@ -56,6 +56,55 @@ The CID suite has a 21 September WD with no normative drift.
   - move the positive 304 checks (`conditional-get-304`, and the 304 step of
     `etag-on-head-and-container-listing`) out of MUST.
 
+## 2026-09-23 — found while writing the documentation site
+
+Every command in `docs/` was run before it was documented. The commands below did not
+behave as the code or its comments claim. Where the site needs a workaround, it documents
+the workaround and names the defect; remove both once the defect is fixed.
+
+- [ ] **The MCP `stdio` profile starts no MCP server.** `application-stdio.yml` sets
+  `spring.ai.mcp.server.protocol: STDIO`. That is not a Spring AI 2.0 `ServerProtocol` (the
+  values are `SSE`, `STREAMABLE` and `STATELESS`), so `McpServerAutoConfiguration`'s
+  `NonStatelessServerCondition` fails. The process starts and never answers `initialize`.
+  Passing `--spring.ai.mcp.server.protocol=STREAMABLE` restores it: with no web server, the
+  only transport left is stdio, which was verified with `initialize` and a `coverage` call.
+  *Fix:* delete the line, and add a stdio smoke test; nothing tests this profile today.
+  *Docs:* `docs/mcp.md` ("Over stdio") and `docs/troubleshooting.md`.
+- [ ] **`SecuredRefScenarioMain`'s documented launch command runs the wrong class.**
+  `exec:java -Dexec.mainClass=…SecuredRefScenarioMain` starts `RefLwsServerMain`, because
+  the POM's `<mainClass>` overrides the user property. The file argument is then parsed as
+  a port, and the command fails with a `NumberFormatException`.
+  *Fix:* configure `<mainClass>${exec.mainClass}</mainClass>` with a default property in
+  `harness-fixtures/pom.xml`. *Docs:* `docs/auth.md` uses `exec:exec` with `%classpath`
+  meanwhile.
+- [ ] **Exit code 1 also means "the harness could not run".** An invalid manifest
+  (`InvalidManifestException`), an unreachable target, or a refused run-root creation
+  (`ProvisioningException`) escapes `RunCommand`, and picocli exits 1. That is the code for
+  a non-conformant server, so the GitHub Action blames the server for a misconfigured
+  workflow, which D-0046 set out to prevent. `diff` with an unreadable run also exits 1.
+  *Fix:* catch both exceptions in `RunCommand` and exit 2 with the message.
+  *Docs:* `docs/cli.md` ("Exit codes") and `docs/troubleshooting.md`.
+- [ ] **Three verdicts.**
+  - The reports count a failed or errored test as non-conformant only if it cites a MUST.
+  - `touchstone run` exits 1 on any failure.
+  - MCP `get_run` counts MUST failures and failures with unclassified requirements.
+
+  So a SHOULD-only failure gives a CONFORMANT report and exit code 1. Decide whether the
+  exit code should follow the report, perhaps behind a flag. *Docs:* `docs/reports.md`,
+  "How the verdict relates to exit codes and the MCP server".
+- [ ] **A failed assertion followed by a failed bind is recorded as `ERROR`.** For example,
+  a create that answers `200` with no `Location` is reported as `earl:cantTell`, not
+  `earl:failed`, because `Executor` checks the step's error before its assertions. Let
+  failed assertions decide the outcome.
+- [ ] **MCP tools carry no annotations.** Every tool advertises the protocol defaults:
+  `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`. That includes the
+  read-only `coverage`, `list_requirements` and `get_report`, so clients may ask for
+  approval on each call. Annotate them.
+- [ ] `tools/extractor/README.md` still names the retired `WD-lws10-core-20260622.clauses.json`.
+- [x] `docs/ci/example-conformance-workflow.yml` used the action at `@main`. The default
+  branch is `master`, so a server repository that copied it could not resolve the action.
+  Fixed.
+
 ---
 
 ## P0 — broken now; fix before anything else
