@@ -1,0 +1,374 @@
+# Linksets: per-resource metadata (LWS 1.0 core section 9.1, RFC 9264).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: linksets"
+comment: >-
+  A resource's metadata lives in a linkset resource that a client finds only through
+  rel="linkset"; no path convention is one a client may assume, so every test here
+  follows the relation the server advertises. Section 9.1 then fixes how the linkset
+  is served, advertised, edited and retired.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#getLinkset"
+    type: ValidationTest
+    name: getLinkset
+    label: The linkset a resource advertises is served as application/linkset+json with an ETag
+    comment: >-
+      lws-test-suite's version fetched /alice/notes/.meta directly; .meta appears in the
+      draft only in examples. Here the linkset of a data resource and of a container are
+      each reached through their rel="linkset" link, and each is a linkset document.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Get, Linkset, DataResource, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
+      - https://example.org/touchstone/req/lws10-core/linkset-media-type-json
+    mirrors: lws10/manifest.jsonld#getLinkset
+    supersedes: [core/linkset-discovery-and-patch-advertisement]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource with metadata
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: reading it names its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the linkset is served as a linkset document with an entity tag
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          contentType: application/linkset+json
+          otherHeaders:
+            - headerName: ETag
+              present: true
+          json:
+            - pointer: /linkset
+              jsonType: array
+      - label: the test container names its linkset too
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: containerLinkset
+      - label: and that linkset is served the same way
+        request:
+          method: GET
+          url: "${containerLinkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          contentType: application/linkset+json
+          json:
+            - pointer: /linkset
+              jsonType: array
+
+  - id: "#linkset-advertises-patch"
+    type: ValidationTest
+    name: linkset-advertises-patch
+    label: A linkset advertises GET and PATCH in Allow and JSON Merge Patch in Accept-Patch
+    comment: >-
+      A client that cannot learn whether a linkset takes PATCH, or in which format, has
+      to guess and handle the 405 or 415 it gets wrong. Both headers are MUSTs.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Get, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
+      - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-advertised
+    supersedes: [core/linkset-discovery-and-patch-advertisement]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource with metadata
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the linkset says how it may be edited
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Allow
+              matches: '(?i)^(?=.*\bGET\b)(?=.*\bPATCH\b)'
+            - headerName: Accept-Patch
+              matches: '(?i)application/merge-patch\+json'
+
+  - id: "#linkset-conditional-412"
+    type: NegativeTest
+    name: linkset-conditional-412
+    label: A linkset PATCH with a failing precondition is refused with 412
+    comment: >-
+      "When a server receives a conditional request for which the precondition fails, it
+      MUST reject the request with a 412 Precondition Failed status code."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Patch, Linkset, Conditional]
+    note: >-
+      Catalog entry linkset-if-match-412-428 carries the 21 August text (If-Match required,
+      428 when absent); the 21 September draft keeps only the 412 MUST. Not cited until
+      the catalog is re-baselined.
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource with metadata
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: a PATCH carrying a validator that never matched is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/merge-patch+json
+          ifMatch: '"touchstone-stale-etag"'
+          bodyJSON:
+            linkset:
+              - anchor: "${created}"
+                license:
+                  - href: https://creativecommons.org/licenses/by/4.0/
+        response:
+          statusCode: 412
+
+  - id: "#linkset-put-405-when-unsupported"
+    type: NegativeTest
+    name: linkset-put-405-when-unsupported
+    label: A linkset that does not advertise PUT refuses it with 405
+    comment: >-
+      PUT on a linkset is optional and advertised through Allow; "If the server does not
+      support PUT, it MUST reject the request with 405 Method Not Allowed". A linkset
+      whose Allow names PUT makes the test inapplicable.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Put, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
+      - https://example.org/touchstone/req/lws10-core/linkset-optional-methods-advertised
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource with metadata
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the linkset does not advertise PUT (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Allow
+              matches: '(?i)^(?!.*\bPUT\b)'
+      - label: a PUT is refused with 405 and the methods that are allowed
+        request:
+          method: PUT
+          url: "${linkset}"
+          contentType: application/linkset+json
+          ifMatch: current
+          bodyJSON:
+            linkset:
+              - anchor: "${created}"
+                license:
+                  - href: https://creativecommons.org/licenses/by/4.0/
+        response:
+          statusCode: 405
+          otherHeaders:
+            - headerName: Allow
+              present: true
+
+  - id: "#linkset-removed-with-resource"
+    type: ValidationTest
+    name: linkset-removed-with-resource
+    label: Deleting a resource removes its linkset
+    comment: >-
+      "Deleting a resource MUST result in the automatic removal of its associated linkset
+      resource metadata." A linkset outliving its resource would describe nothing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Delete, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource with metadata
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the linkset exists
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+      - label: delete the resource
+        request:
+          method: DELETE
+          url: "${created}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: its linkset is gone with it
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: [404, 410]
+
+  - id: "#linkset-patch-merge"
+    type: ValidationTest
+    name: linkset-patch-merge
+    label: A JSON Merge Patch adds a user-managed link to a linkset
+    comment: >-
+      Servers "MUST support PATCH using application/merge-patch+json" on linksets, but a
+      merge patch replaces the linkset array wholesale and servers "MAY restrict
+      modifications to specific links", so whether a given patch is accepted depends on
+      restrictions the draft leaves open. The happy path is therefore a SHOULD: patch in
+      a license link and read it back.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Patch, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-patch-merge-patch
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: a resource that will get a license
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: merge-patch a license link into it
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/merge-patch+json
+          ifMatch: current
+          bodyJSON:
+            linkset:
+              - anchor: "${created}"
+                license:
+                  - href: https://creativecommons.org/licenses/by/4.0/
+        response:
+          statusCode: [200, 204]
+      - label: the linkset now carries the license
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset
+              some:
+                - pointer: /license
+                  some:
+                    - pointer: /href
+                      equals: https://creativecommons.org/licenses/by/4.0/

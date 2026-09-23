@@ -1,0 +1,331 @@
+# Controlled-identifier authentication suite (not in lws-test-suite) (YAML-LD).
+"@context":
+  - ../../context.jsonld
+  - ../../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 Authentication Suite: Self-signed Identity using Controlled Identifiers"
+comment: >-
+  A self-signed JWT whose sub, iss and client_id are the URL of a controlled identifier
+  document the harness hosts; the header kid names the verification method in that
+  document. lws-test-suite has no tests for this suite.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
+entries:
+
+  - id: "#authn-cid-valid-credential"
+    type: ValidationTest
+    name: authn-cid-valid-credential
+    label: A valid self-issued credential is exchanged for an access token naming its subject
+    comment: >-
+      The verifier dereferences sub, selects the verification method the kid names, and
+      verifies the signature with it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/token-type-jwt
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/iss-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/client-id-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/aud-includes-as
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/exp-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/iat-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-dereference-sub-cid
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-all-claims
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-exp-in-future
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential for an access token
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            claims:
+              - pointer: /sub
+                equals: "${identity.cid.webid}"
+              - pointer: /aud
+                hasValue: "${as.realm}"
+
+  - id: "#authn-cid-unknown-kid"
+    type: NegativeTest
+    name: authn-cid-unknown-kid
+    label: A credential whose kid names no verification method is refused
+    comment: >-
+      "The verifier MUST use the kid (key id) value from the signed JWT header to
+      identify a verification method"; there is none to use.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-unknown-kid}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-bad-signature"
+    type: NegativeTest
+    name: authn-cid-bad-signature
+    label: A credential with a corrupted signature is refused
+    comment: >-
+      The signature MUST be validated with the selected verification method.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-bad-signature}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-expired"
+    type: NegativeTest
+    name: authn-cid-expired
+    label: An expired credential is refused
+    comment: >-
+      "A verifier MUST ensure that the current time is before the time represented by
+      the exp claim."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-exp-in-future
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-expired}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-alg-none"
+    type: NegativeTest
+    name: authn-cid-alg-none
+    label: An unsigned (alg none) credential is refused
+    comment: >-
+      "A verifier MUST reject any tokens using an alg header parameter that equals
+      'none'."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/alg-not-none
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-reject-alg-none
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-alg-none}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-claims-mismatch"
+    type: NegativeTest
+    name: authn-cid-claims-mismatch
+    label: A credential whose client_id differs from sub and iss is refused
+    comment: >-
+      "The claims sub, iss, and client_id MUST all use the same URI value."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-all-claims
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-claims-mismatch}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request

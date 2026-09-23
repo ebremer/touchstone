@@ -1,0 +1,432 @@
+# did:key authentication suite (YAML-LD).
+"@context":
+  - ../../context.jsonld
+  - ../../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 Authentication Suite: Self-signed Identity using did:key"
+comment: >-
+  A did:key credential is a self-signed JWT whose sub, iss and client_id are the same
+  did:key identifier; the verifier derives the public key from the identifier, so no
+  trust needs setting up. Every credential is presented with the jwt token type the
+  suite requires (lws-test-suite sent id_token). A negative test changes exactly one
+  thing about the credential, and RFC 8693 section 2.2.2 makes invalid_request the MUST
+  error for an invalid subject token.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/
+entries:
+
+  - id: "#authn-didkey-valid-credential"
+    type: ValidationTest
+    name: authn-didkey-valid-credential
+    label: A valid did:key credential is exchanged for an access token naming its subject
+    comment: >-
+      The access token's sub is the did:key identifier the credential asserted, and the
+      token verifies against the authorization server's keys.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#token-type
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/token-type-jwt
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/sub-didkey-uri
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/iss-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/client-id-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/sub-iss-client-same-uri
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/aud-includes-as
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/exp-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/iat-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-extract-key-verify-signature
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-exp-in-future
+    mirrors: lws10/auth/did_key/manifest.jsonld#authn-didkey-valid-credential
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the credential for an access token
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            claims:
+              - pointer: /sub
+                equals: "${identity.didkey.webid}"
+              - pointer: /aud
+                hasValue: "${as.realm}"
+
+  - id: "#authn-didkey-invalid-signature"
+    type: NegativeTest
+    name: authn-didkey-invalid-signature
+    label: A did:key credential with a corrupted signature is refused
+    comment: >-
+      The key comes from the identifier and the signature "MUST be validated as
+      described in [RFC7515]". lws-test-suite's version sent the id_token token type, so
+      a server could refuse it for the type rather than the signature.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-extract-key-verify-signature
+    mirrors: lws10/auth/did_key/manifest.jsonld#authn-didkey-invalid-signature
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-bad-signature}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-alg-none"
+    type: NegativeTest
+    name: authn-didkey-alg-none
+    label: An unsigned (alg none) did:key credential is refused
+    comment: >-
+      "The JWT MUST NOT use 'none' as the signing algorithm."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/alg-not-none
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-alg-none}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-expired"
+    type: NegativeTest
+    name: authn-didkey-expired
+    label: An expired did:key credential is refused
+    comment: >-
+      "A verifier MUST ensure that the current time is before the time represented by
+      the exp claim."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-exp-in-future
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-expired}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-claims-mismatch"
+    type: NegativeTest
+    name: authn-didkey-claims-mismatch
+    label: A did:key credential whose client_id differs from sub and iss is refused
+    comment: >-
+      "The claims sub, iss, and client_id MUST all use the same URI value."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/sub-iss-client-same-uri
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-claims-mismatch}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-audience-excludes-as"
+    type: NegativeTest
+    name: authn-didkey-audience-excludes-as
+    label: A did:key credential not addressed to this authorization server is refused
+    comment: >-
+      "The aud claim MUST include the target authorization server", and RFC 7519
+      requires a principal absent from a present aud to reject the token.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/aud-includes-as
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-audience-excludes-as}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-missing-exp"
+    type: NegativeTest
+    name: authn-didkey-missing-exp
+    label: A did:key credential without exp is refused
+    comment: >-
+      "The JWT MUST include an exp (expiration) claim", and the verifier validates all
+      claims.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/exp-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-missing-exp}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-didkey-missing-iat"
+    type: NegativeTest
+    name: authn-didkey-missing-iat
+    label: A did:key credential without iat is refused
+    comment: >-
+      "The JWT MUST include an iat (issued at) claim", and the verifier validates all
+      claims.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/iat-claim
+      - https://example.org/touchstone/req/lws10-authn-ssi-did-key/validation-all-claims
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-missing-iat}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request

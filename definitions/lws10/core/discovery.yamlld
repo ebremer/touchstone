@@ -1,0 +1,231 @@
+# Storage discovery (LWS 1.0 core sections 6 and 9.1).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: storage discovery"
+comment: >-
+  How a client holding any resource URI finds the storage it belongs to, and what the
+  storage description says about it. The 21 August 2026 draft replaced the
+  rel="storageDescription" link with rel="https://www.w3.org/ns/lws#storage" pointing at
+  the canonical storage URI, which itself serves the description as application/lws+cid.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#discovery-get-links-storageDescription"
+    type: ValidationTest
+    name: discovery-get-links-storageDescription
+    label: GET and HEAD of a container link to the storage it belongs to
+    comment: >-
+      A client that lands on any resource finds its storage through this relation, so it
+      must be on every GET and HEAD response. The name is lws-test-suite's; the relation it
+      asserts is the current draft's lws#storage, not the storageDescription relation the
+      name recalls.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Get, Head, Discovery, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-description-link-header
+      - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
+    mirrors: lws10/manifest.jsonld#discovery-get-links-storageDescription
+    supersedes: [core/storage-description-discovery]
+    steps:
+      - label: GET of the test container links to its storage
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              capture: storageLink
+      - label: HEAD carries the same link, since a client may never fetch a body
+        request:
+          method: HEAD
+          url: "${test.container}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storageLink}"
+
+  - id: "#discovery-link-storage-on-data-resource"
+    type: ValidationTest
+    name: discovery-link-storage-on-data-resource
+    label: GET and HEAD of a data resource link to the same storage as its container
+    comment: >-
+      The storage link is required on responses for all storage resources, not only
+      containers, and a data resource must name the same storage its container does.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Get, Head, Discovery, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-description-link-header
+      - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: storage link check
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: GET of the data resource links to the container's storage
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storage}"
+      - label: and so does HEAD
+        request:
+          method: HEAD
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storage}"
+
+  - id: "#discovery-storage-description"
+    type: ValidationTest
+    name: discovery-storage-description
+    label: The storage URI serves a controlled identifier document describing the storage
+    comment: >-
+      Follows the storage link rather than a path it assumed. The description is an
+      application/lws+cid document whose @context array starts with the CID and LWS
+      contexts, whose id is the storage URI, whose type includes Storage, and whose
+      services include a StorageRoot. Services are matched by content, not position.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-representation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-services
+    traits: [Get, Discovery, StorageDescription]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
+      - https://example.org/touchstone/req/lws10-core/storage-description-lws-cid
+      - https://example.org/touchstone/req/lws10-core/lws-cid-media-type-storage-description
+      - https://example.org/touchstone/req/lws10-core/storage-description-id-required
+      - https://example.org/touchstone/req/lws10-core/storage-description-type-storage
+      - https://example.org/touchstone/req/lws10-core/storage-service-property
+      - https://example.org/touchstone/req/lws10-core/storage-service-type-required
+      - https://example.org/touchstone/req/lws10-core/storage-service-endpoint-required
+      - https://example.org/touchstone/req/lws10-core/storage-description-storageroot-service
+      - https://example.org/touchstone/req/lws10-core/storage-capability-type-required
+    mirrors: lws10/manifest.jsonld#discovery-storage-description
+    supersedes: [core/storage-description-discovery]
+    steps:
+      - label: GET the storage the test container links to
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          contentType: application/lws+cid
+          json:
+            - pointer: /@context
+              jsonType: array
+            - pointer: /@context/0
+              equals: https://www.w3.org/ns/cid/v1
+            - pointer: /@context/1
+              equals: https://www.w3.org/ns/lws/v1
+            - pointer: /id
+              equalsIri: "${storage}"
+            - pointer: /type
+              hasValue: Storage
+            - pointer: /service
+              jsonType: array
+            - pointer: /service
+              every:
+                - pointer: /type
+                  exists: true
+                - pointer: /serviceEndpoint
+                  jsonType: string
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: StorageRoot
+            - pointer: /capability
+              optional: true
+              every:
+                - pointer: /type
+                  exists: true
+
+  - id: "#discovery-storage-description-default-media-type"
+    type: ValidationTest
+    name: discovery-storage-description-default-media-type
+    label: Without content negotiation the storage URI answers application/lws+cid
+    comment: >-
+      The media type is required unless content negotiation asks for another, so a
+      request that negotiates nothing must receive application/lws+cid.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0
+    traits: [Get, Discovery, StorageDescription]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
+    steps:
+      - label: GET the storage URI with no Accept header
+        request:
+          method: GET
+          url: "${storage}"
+        response:
+          statusCode: 200
+          contentType: application/lws+cid
+
+  - id: "#discovery-unauthorized-response-headers"
+    type: NegativeTest
+    name: discovery-unauthorized-response-headers
+    label: A 401 from a protected resource links to the storage
+    comment: >-
+      Lets a client that is refused learn where the storage description is without a
+      hard-coded path. The draft is inconsistent on the level: section 6.1.2 requires
+      the link on all GET and HEAD responses, while the section 9.2 notes say servers
+      SHOULD include it on 401 responses. This takes the weaker reading, so a server is
+      not failed for what may turn out to be optional; the 401 challenge itself is a MUST
+      and is tested by getContainer-private-unauthorized.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+    traits: [Get, Discovery, Private, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-401-storage-link
+    mirrors: lws10/manifest.jsonld#discovery-unauthorized-response-headers
+    note: >-
+      lws-test-suite's version also asserted the challenge (a MUST) and used
+      rel="storageDescription" with a /storage_1/metadata target; the challenge moved to
+      getContainer-private-unauthorized and the relation to lws#storage.
+    steps:
+      - label: an anonymous GET is refused and still names the storage
+        request:
+          method: GET
+          url: "${test.container}"
+        response:
+          statusCode: 401
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storage}"

@@ -1,0 +1,698 @@
+# Storage server authorization: challenges, token validation, policy denial
+# (LWS 1.0 core sections 5.2.1, 5.2.4, 9.4 and 9.5).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: storage server authorization"
+comment: >-
+  What a storage server does with the requests it must refuse. Every 401 carries a Bearer
+  challenge with as_uri and realm (section 5.2.1 requires a conforming challenge on any
+  401), every failed token validation also names an error, and a valid token without
+  permission is refused without being mistaken for no token at all. The challenge is
+  parsed per RFC 9110 section 11.6.1, so parameter order and quoting do not matter.
+  All tests need a target that enforces authentication.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#getContainer-private-unauthorized"
+    type: NegativeTest
+    name: getContainer-private-unauthorized
+    label: An anonymous request for a protected container is refused with 401 and a conforming challenge
+    comment: >-
+      The challenge is how a client discovers where to get a token: a Bearer challenge
+      (RFC 6750) whose as_uri names the authorization server and whose realm names the
+      protection scope, both absolute URIs. Also stands for lws-test-suite's
+      discovery-unauthorized-response-headers challenge and authn-oidc-server-metadata-discovery,
+      which asserted the same response.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.rfc-editor.org/rfc/rfc6750#section-3
+    traits: [Get, Container, Private, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+      - https://example.org/touchstone/req/lws10-core/authz-challenge-as-uri-param
+      - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
+    mirrors:
+      - lws10/manifest.jsonld#getContainer-private-unauthorized
+      - lws10/manifest.jsonld#discovery-unauthorized-response-headers
+      - lws10/auth/oidc/manifest.jsonld#authn-oidc-server-metadata-discovery
+    supersedes: [auth-oidc/anonymous-request-401-challenge]
+    steps:
+      - label: GET the test container without credentials
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: as_uri
+                matches: '^https?://'
+              - paramName: realm
+                matches: '^https?://'
+
+  - id: "#getContainer-authenticated-owner"
+    type: ValidationTest
+    name: getContainer-authenticated-owner
+    label: The owner's valid access token reads the protected container
+    comment: >-
+      The positive half of token validation: a token from the storage's own
+      authorization server, presented as a Bearer token, is accepted.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authn, Authz]
+    requires: [Authentication]
+    as: alice
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-bearer-presentation-rfc6750
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+    mirrors: lws10/manifest.jsonld#getContainer-authenticated-owner
+    supersedes: [auth-oidc/valid-token-access]
+    steps:
+      - label: GET the test container as its owner
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          otherHeaders:
+            - headerName: ETag
+              present: true
+
+  - id: "#createDataResource-unauthorized"
+    type: NegativeTest
+    name: createDataResource-unauthorized
+    label: An anonymous POST is refused with 401 and creates nothing
+    comment: >-
+      Refusal alone is not enough; the container must be unchanged afterwards.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Container, Private, Authn]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+    mirrors: lws10/manifest.jsonld#createDataResource-unauthorized
+    steps:
+      - label: POST without credentials
+        as: anonymous
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: some content
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+      - label: the container is still empty
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#updateDataResource-unauthorized"
+    type: NegativeTest
+    name: updateDataResource-unauthorized
+    label: An anonymous PUT is refused with 401 and changes nothing
+    comment: >-
+      The write methods are protected as much as GET is; lws-test-suite covered POST and
+      DELETE but not PUT.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Put, DataResource, Private, Authn]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+    steps:
+      - label: the owner creates a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: original content
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: PUT without credentials
+        as: anonymous
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: tampered content
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+      - label: the content is unchanged
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: '^original content$'
+
+  - id: "#deleteDataResource-unauthorized"
+    type: NegativeTest
+    name: deleteDataResource-unauthorized
+    label: An anonymous DELETE is refused with 401 and deletes nothing
+    comment: >-
+      Section 9.5 requires 401 when no valid authentication is provided.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Delete, DataResource, Private, Authn]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-401-403-404-semantics
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+    mirrors: lws10/manifest.jsonld#deleteDataResource-unauthorized
+    steps:
+      - label: the owner creates a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: not to be deleted
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: DELETE without credentials
+        as: anonymous
+        request:
+          method: DELETE
+          url: "${created}"
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+      - label: the resource survives
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+
+  - id: "#authz-non-owner-read-rejected"
+    type: NegativeTest
+    name: authz-non-owner-read-rejected
+    label: A valid token without read permission is refused, not challenged
+    comment: >-
+      "If the token is otherwise valid but an authorization policy does not allow the
+      requested operation, the storage server MUST reject the request." The expected
+      status is 403; 404 is accepted because the draft lets a server hide a resource's
+      existence. A 401 here would tell bob his valid token is not one.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: bob
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+    supersedes: [auth-oidc/non-owner-403]
+    steps:
+      - label: bob reads alice's container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: [403, 404]
+
+  - id: "#authz-non-owner-write-rejected"
+    type: NegativeTest
+    name: authz-non-owner-write-rejected
+    label: A valid token without write permission can neither replace nor create
+    comment: >-
+      Policy denial on the write paths, with the state checked afterwards.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Put, Post, DataResource, Private, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+    steps:
+      - label: alice creates a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: alice's content
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: bob's PUT is refused
+        as: bob
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: bob's content
+        response:
+          statusCode: [403, 404]
+      - label: bob's POST into alice's container is refused
+        as: bob
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: bob's new resource
+        response:
+          statusCode: [403, 404]
+      - label: alice's content is unchanged
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: "^alice's content$"
+      - label: and her container holds only her resource
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1
+
+  - id: "#authz-non-owner-delete-rejected"
+    type: NegativeTest
+    name: authz-non-owner-delete-rejected
+    label: A valid token without permission cannot delete, and gets 403
+    comment: >-
+      Section 9.5 names the status for this case: 403 for a known identity with
+      insufficient permission, or 404 where revealing existence is a risk.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Delete, DataResource, Private, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-401-403-404-semantics
+      - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+    steps:
+      - label: alice creates a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: not bob's to delete
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: bob's DELETE is refused
+        as: bob
+        request:
+          method: DELETE
+          url: "${created}"
+        response:
+          statusCode: [403, 404]
+      - label: the resource survives
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+
+  - id: "#authz-expired-token-rejected"
+    type: NegativeTest
+    name: authz-expired-token-rejected
+    label: An expired access token is refused with 401 and error invalid_token
+    comment: >-
+      Temporal validation: the current time must be before exp. RFC 6750 names
+      invalid_token for a token that is "expired, revoked, malformed, or invalid for other
+      reasons", which is the error every test in this group expects.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.rfc-editor.org/rfc/rfc6750#section-3.1
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-expired
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+      - https://example.org/touchstone/req/lws10-core/authz-invalid-token-401-error-param
+    mirrors: lws10/manifest.jsonld#authz-expired-token-rejected
+    supersedes: [auth-oidc/expired-token-401]
+    steps:
+      - label: GET with an expired token
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-bad-signature-rejected"
+    type: NegativeTest
+    name: authz-token-bad-signature-rejected
+    label: An access token with a corrupted signature is refused with 401 and invalid_token
+    comment: >-
+      The storage verifies the signature against the authorization server's keys from
+      jwks_uri; a token that fails verification is not a token.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-bad-signature
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
+      - https://example.org/touchstone/req/lws10-core/authz-invalid-token-401-error-param
+    supersedes: [auth-oidc/bad-signature-401]
+    steps:
+      - label: GET with a token whose signature does not verify
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-alg-none-rejected"
+    type: NegativeTest
+    name: authz-token-alg-none-rejected
+    label: An unsigned (alg none) access token is refused with 401 and invalid_token
+    comment: >-
+      Signature validation cannot succeed on a token that has no signature; accepting
+      one would let anyone mint access.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-alg-none
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+    supersedes: [auth-oidc/alg-none-401]
+    note: >-
+      The touchstone manifest also cited lws10-authn-openid id-token-alg-not-none, a rule
+      about ID Tokens presented to an authorization server; this token is an access token
+      presented to the storage, so only the core clauses apply.
+    steps:
+      - label: GET with an unsigned token
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-unknown-key-rejected"
+    type: NegativeTest
+    name: authz-token-unknown-key-rejected
+    label: An access token signed by a key the issuer never published is refused
+    comment: >-
+      The key must come from the authorization server's jwks_uri; a token naming any
+      other key is not verifiable.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-unknown-key
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+    supersedes: [auth-oidc/unknown-key-401]
+    steps:
+      - label: GET with a token signed by an unpublished key
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-wrong-audience-rejected"
+    type: NegativeTest
+    name: authz-token-wrong-audience-rejected
+    label: An access token minted for another storage is refused
+    comment: >-
+      aud must be a URI identifying this storage server; a token for another storage
+      must not open this one, however validly it is signed.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-wrong-audience
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
+    supersedes: [auth-oidc/wrong-audience-401]
+    note: >-
+      The touchstone manifest also cited lws10-authn-openid id-token-aud-claim, which
+      governs ID Tokens, not access tokens.
+    steps:
+      - label: GET with a token for another audience
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-wrong-issuer-rejected"
+    type: NegativeTest
+    name: authz-token-wrong-issuer-rejected
+    label: An access token from an untrusted issuer is refused
+    comment: >-
+      iss must match the expected authorization server.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-wrong-issuer
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-iss-claim
+    supersedes: [auth-oidc/wrong-issuer-401]
+    steps:
+      - label: GET with a token claiming another issuer
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-not-yet-valid-rejected"
+    type: NegativeTest
+    name: authz-token-not-yet-valid-rejected
+    label: An access token whose nbf lies in the future is refused
+    comment: >-
+      "Verify the current time is not before the nbf (not before) claim, if present."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-not-yet-valid
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+    steps:
+      - label: GET with a token that is not valid yet
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-issued-in-future-rejected"
+    type: NegativeTest
+    name: authz-token-issued-in-future-rejected
+    label: An access token whose iat lies in the future is refused
+    comment: >-
+      "Verify that the iat (issued at) claim is not in the future."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-issued-in-future
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+    steps:
+      - label: GET with a token issued an hour from now
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true
+
+  - id: "#authz-token-multiple-audiences-rejected"
+    type: NegativeTest
+    name: authz-token-multiple-audiences-rejected
+    label: An access token naming two audiences is refused
+    comment: >-
+      "Verify the aud claim contains exactly one value." A token valid for two storages
+      at once would let either one replay it at the other.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+    traits: [Get, Container, Private, Authz]
+    requires: [Authentication]
+    as: alice-multiple-audiences
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
+    steps:
+      - label: GET with a token for this storage and another one
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            scheme: Bearer
+            params:
+              - paramName: error
+                paramValue: invalid_token
+              - paramName: as_uri
+                present: true
+              - paramName: realm
+                present: true

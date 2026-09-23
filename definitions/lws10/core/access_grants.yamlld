@@ -1,0 +1,419 @@
+# Access requests and grants (LWS 1.0 core section 11).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: access requests and grants"
+comment: >-
+  Section 11 is optional: a storage MAY advertise AccessRequestService and
+  AccessGrantService endpoints. Where it does, a storage controller POSTs an AccessGrant
+  and the server "adjusts any underlying access policy". That is also the only
+  spec-defined way to give a resource the public or authenticated-agent access that
+  lws-test-suite modelled as prerequisites, so its public-read tests live here. When the
+  storage advertises no such service, ${service.*} is unresolvable and the test is
+  inapplicable; a grant step marked precondition covers servers that advertise the
+  service but refuse the grant shape (public access via foaf:Agent is a MAY).
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#access-grant-endpoint-is-container"
+    type: ValidationTest
+    name: access-grant-endpoint-is-container
+    label: The access grant endpoint is an LWS container
+    comment: >-
+      "The access request and access grant endpoints are LWS containers and MUST conform
+      to the rules defined in this specification."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-discovery
+    traits: [Get, AccessGrants, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-endpoints-are-lws-containers
+      - https://example.org/touchstone/req/lws10-core/access-services-advertised
+    steps:
+      - label: GET the advertised grant endpoint
+        request:
+          method: GET
+          url: "${service.AccessGrantService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+          json:
+            - pointer: /items
+              jsonType: array
+
+  - id: "#access-grant-create"
+    type: ValidationTest
+    name: access-grant-create
+    label: A storage controller creates an access grant with POST and reads it back
+    comment: >-
+      "A successful POST operation MUST respond with a Location header set to the URL of
+      the new resource", and the grant is then a readable AccessGrant scoped to the
+      storage.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+    traits: [Post, Get, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-post-location-header
+      - https://example.org/touchstone/req/lws10-core/access-endpoints-jsonld-payloads
+      - https://example.org/touchstone/req/lws10-core/access-type-values
+      - https://example.org/touchstone/req/lws10-core/access-storage-uri
+    steps:
+      - label: grant bob read access to the test container
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${test.container}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: the grant reads back as an AccessGrant for this storage
+        request:
+          method: GET
+          url: "${grant}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          json:
+            - pointer: /type
+              hasValue: AccessGrant
+            - pointer: /storage
+              equalsIri: "${storage}"
+            - pointer: /access
+              jsonType: array
+
+  - id: "#access-grant-revoke"
+    type: ValidationTest
+    name: access-grant-revoke
+    label: Deleting an access grant withdraws the access it gave
+    comment: >-
+      DELETE on a grant is RECOMMENDED, and revoking one obliges the server to adjust the
+      policy it put in place. Uses a public grant so the effect is visible to an
+      anonymous client.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-grant-endpoint
+    traits: [Post, Delete, Get, AccessGrants, Public]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-endpoints-get-post-delete
+    steps:
+      - label: make the test container public (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: http://xmlns.com/foaf/0.1/Agent
+                target:
+                  type: StorageResource
+                  value: ["${test.container}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: anyone can read it now
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+      - label: revoke the grant
+        request:
+          method: DELETE
+          url: "${grant}"
+        response:
+          statusCode: [200, 204]
+      - label: anonymous reads are refused again
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 401
+
+  - id: "#getContainer-public-read"
+    type: ValidationTest
+    name: getContainer-public-read
+    label: A container granted to the public can be read without credentials
+    comment: >-
+      lws-test-suite's getContainer read a container made public through a prerequisite
+      the protocol gives no way to set up. This is that behaviour through the one
+      mechanism the draft does define: an AccessGrant whose assignee is foaf:Agent.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, Container, Public, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-uri-foaf-agent
+    mirrors: lws10/manifest.jsonld#getContainer
+    steps:
+      - label: make the test container public (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: http://xmlns.com/foaf/0.1/Agent
+                target:
+                  type: StorageResource
+                  value: ["${test.container}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: an anonymous GET returns the listing
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          json:
+            - pointer: /type
+              hasValue: Container
+
+  - id: "#readDataResource-public-read"
+    type: ValidationTest
+    name: readDataResource-public-read
+    label: A data resource granted to the public can be read without credentials
+    comment: >-
+      The public-read half of lws-test-suite's readDataResource. The grant targets the
+      data resource itself, because the draft does not say whether a grant on a container
+      reaches what it contains.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, DataResource, Public, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-uri-foaf-agent
+    mirrors: lws10/manifest.jsonld#readDataResource
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: make it public (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: http://xmlns.com/foaf/0.1/Agent
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: an anonymous GET returns the content
+        as: anonymous
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+
+  - id: "#access-grant-authenticated-agent"
+    type: ValidationTest
+    name: access-grant-authenticated-agent
+    label: A read grant to one agent lets that agent read, and no more
+    comment: >-
+      The authenticated-agent case lws-test-suite named Role-Authenticated and never
+      used. bob gets read on one resource: he can read it, cannot replace it, and an
+      anonymous client still cannot read it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
+    traits: [Get, Put, DataResource, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-action-values
+      - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+    steps:
+      - label: alice creates a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: shared with bob, read-only
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: alice grants bob read access to it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: bob can read it
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: '^shared with bob, read-only$'
+      - label: bob cannot replace it
+        as: bob
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: bob was here
+        response:
+          statusCode: [403, 404]
+      - label: and it is still not public
+        as: anonymous
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 401
+
+  - id: "#access-request-create"
+    type: ValidationTest
+    name: access-request-create
+    label: An agent submits an access request with POST
+    comment: >-
+      "An agent creates an access request by submitting a POST request to the access
+      request endpoint", and a successful POST answers with Location. The storage
+      controller can then read the request.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
+    traits: [Post, Get, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-post-location-header
+      - https://example.org/touchstone/req/lws10-core/access-type-values
+    steps:
+      - label: bob asks for read access to the test container
+        as: bob
+        request:
+          method: POST
+          url: "${service.AccessRequestService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessRequest]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${test.container}"]
+        response:
+          statusCode: 201
+          location:
+            capture: accessRequest
+            cleanup: true
+      - label: the storage controller sees an AccessRequest
+        request:
+          method: GET
+          url: "${accessRequest}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /type
+              hasValue: AccessRequest

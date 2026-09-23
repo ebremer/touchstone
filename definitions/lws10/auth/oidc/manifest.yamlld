@@ -1,0 +1,332 @@
+# OpenID Connect authentication suite (YAML-LD).
+"@context":
+  - ../../context.jsonld
+  - ../../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 Authentication Suite: OpenID Connect"
+comment: >-
+  ID Tokens from the harness's own OpenID Provider, for a subject whose controlled
+  identifier document the harness also hosts. With no prior trust, the authorization
+  server must dereference sub, find the OpenIdProvider service equal to iss, and
+  discover the signing key, so the target must be able to reach the harness fixtures.
+  Tests that present ID Tokens to the storage itself do not belong here: the storage
+  validates access tokens, which core/storage_authorization.yamlld covers.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+entries:
+
+  - id: "#authn-oidc-valid-id-token"
+    type: ValidationTest
+    name: authn-oidc-valid-id-token
+    label: A valid ID Token is exchanged for an access token naming its subject
+    comment: >-
+      Exercises the whole trust path: sub is dereferenced, the OpenIdProvider service
+      matches iss, the key is discovered, and the access token's sub is the ID Token's
+      subject.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#token-type
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-token-type-uri
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-sub-claim
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-iss-claim
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-azp-claim
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-aud-claim
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-dereference-subject-cid
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-locate-issuer-service-and-verify
+    mirrors: lws10/auth/oidc/manifest.jsonld#authn-oidc-valid-id-token
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential for an access token
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            claims:
+              - pointer: /sub
+                equals: "${identity.oidc.webid}"
+              - pointer: /aud
+                hasValue: "${as.realm}"
+
+  - id: "#authn-oidc-expired-id-token"
+    type: NegativeTest
+    name: authn-oidc-expired-id-token
+    label: An expired ID Token is refused
+    comment: >-
+      The ID Token is validated per OpenID Connect Core section 3.1.3.7, which rejects
+      an expired token.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-locate-issuer-service-and-verify
+    mirrors: lws10/auth/oidc/manifest.jsonld#authn-oidc-expired-id-token
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc-expired}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-oidc-alg-none"
+    type: NegativeTest
+    name: authn-oidc-alg-none
+    label: An unsigned (alg none) ID Token is refused
+    comment: >-
+      "The ID Token MUST NOT use 'none' as the signing algorithm."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-alg-not-none
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc-alg-none}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-oidc-bad-signature"
+    type: NegativeTest
+    name: authn-oidc-bad-signature
+    label: An ID Token with a corrupted signature is refused
+    comment: >-
+      The signature must verify against the key found through OpenID Connect Discovery
+      of the listed provider.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-locate-issuer-service-and-verify
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc-bad-signature}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-oidc-untrusted-issuer"
+    type: NegativeTest
+    name: authn-oidc-untrusted-issuer
+    label: An ID Token from a provider the subject never named is refused
+    comment: >-
+      Validly signed by a second harness provider that publishes its keys but is absent
+      from the subject's controlled identifier document. Trust comes from that document,
+      not from a verifiable signature alone.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-dereference-subject-cid
+      - https://example.org/touchstone/req/lws10-authn-openid/validation-locate-issuer-service-and-verify
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc-untrusted-issuer}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-oidc-missing-azp"
+    type: NegativeTest
+    name: authn-oidc-missing-azp
+    label: An ID Token without azp is refused
+    comment: >-
+      "The ID Token MUST use the azp (authorized party) claim for the LWS client
+      identifier", and the client identifier is REQUIRED in every authentication
+      credential.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-azp-claim
+    steps:
+      - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:id_token
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.oidc-missing-azp}"
+            subject_token_type: urn:ietf:params:oauth:token-type:id_token
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request

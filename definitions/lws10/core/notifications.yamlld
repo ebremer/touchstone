@@ -1,0 +1,67 @@
+# Notifications (LWS 1.0 core section 10).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: notifications"
+comment: >-
+  A storage MAY support notifications. Only discovery is defined here. Subscription and
+  delivery need a subscription type's own fields (the notification suites that define
+  them are not yet published) and a delivery sink the target can reach; their
+  authorization MUSTs deserve a negative matrix of their own. See README.md, "Not yet
+  defined".
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#notification-service-advertised"
+    type: ValidationTest
+    name: notification-service-advertised
+    label: A storage that supports notifications advertises a well-formed NotificationService
+    comment: >-
+      Support is optional, so a description without a NotificationService makes the
+      test inapplicable. One that has it must give the service a serviceEndpoint and a
+      subscriptionType array of strings.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-discovery
+    traits: [Get, Discovery, Notifications, StorageDescription]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notifications-advertise-notificationservice
+      - https://example.org/touchstone/req/lws10-core/notificationservice-endpoint-and-subscription-types
+    steps:
+      - label: the storage advertises notifications (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+      - label: the service names its endpoint and subscription types
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /serviceEndpoint
+                  jsonType: string
+                - pointer: /subscriptionType
+                  jsonType: array
+                - pointer: /subscriptionType
+                  every:
+                    - pointer: ""
+                      jsonType: string

@@ -1,0 +1,640 @@
+# Data resources: create, read, update, delete (LWS 1.0 core section 9).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: data resources"
+comment: >-
+  The four operations on data resources. Every created URI is read from Location and
+  every linkset from rel="linkset"; nothing assumes a path. Writes that could meet a
+  server requiring conditional requests send If-Match (ifMatch current), because the
+  draft lets a server demand one.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#createDataResource"
+    type: ValidationTest
+    name: createDataResource
+    label: POST to a container creates a data resource with Location and the server-managed links
+    comment: >-
+      The 201 carries Location, rel="up" to the parent and rel="linkset" typed
+      application/linkset+json, and the new resource serves exactly the bytes that were
+      sent. lws-test-suite's version also required a Slug-derived Location, a
+      hard-coded .meta linkset URL and Content-Length 47 against a 43-byte body; the
+      draft defines no Slug, leaves URIs and linkset locations to the server, and lets
+      the 201 carry a minimal body.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Post, Get, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+      - https://example.org/touchstone/req/lws10-core/create-linkset-before-success
+      - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
+    mirrors: lws10/manifest.jsonld#createDataResource
+    supersedes: [core/create-advertises-linkset-link, core/link-up-on-resources]
+    steps:
+      - label: POST a text/plain body to the test container
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+        response:
+          statusCode: 201
+          location:
+            capture: created
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+            - rel: linkset
+              mediaType: application/linkset+json
+      - label: the created resource serves the bytes that were sent
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+
+  - id: "#createDataResource-type-link"
+    type: ValidationTest
+    name: createDataResource-type-link
+    label: The 201 for a new data resource states its type
+    comment: >-
+      Split from createDataResource: rel="type" on a 201 is a SHOULD.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+    steps:
+      - label: create a data resource and read its type from the 201
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: typed on creation
+        response:
+          statusCode: 201
+          location:
+            capture: created
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#DataResource
+
+  - id: "#create-in-missing-container-rejected"
+    type: NegativeTest
+    name: create-in-missing-container-rejected
+    label: POST to a container that does not exist is refused and creates nothing
+    comment: >-
+      The draft wants 404 "unless another status code is more appropriate", so the MUST
+      a test can hold a server to is that it refuses with a client error and has no side
+      effect. The specific 404 is create-in-missing-container-404.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
+    supersedes: [core/create-in-missing-container-404]
+    steps:
+      - label: POST beneath a container name that was never created
+        request:
+          method: POST
+          url: "${test.container}${uuid}/"
+          contentType: text/plain
+          body: lost letter
+        response:
+          statusCode: ["4xx"]
+      - label: the test container is still empty
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#create-in-missing-container-404"
+    type: NegativeTest
+    name: create-in-missing-container-404
+    label: POST to a container that does not exist yields 404
+    comment: >-
+      The status the draft names for this case.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
+    supersedes: [core/create-in-missing-container-404]
+    steps:
+      - label: POST beneath a container name that was never created
+        request:
+          method: POST
+          url: "${test.container}${uuid}/"
+          contentType: text/plain
+          body: lost letter
+        response:
+          statusCode: 404
+
+  - id: "#create-server-managed-links-protected"
+    type: ValidationTest
+    name: create-server-managed-links-protected
+    label: A client Link header cannot override the server-managed linkset link
+    comment: >-
+      Clients may supply user-managed metadata as Link headers on create, but server-
+      managed metadata "MUST NOT be overridden by client-provided links", and the
+      linkset link is server-managed. The forged target must appear neither on the 201
+      nor on a later read.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Post, Get, DataResource, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-server-managed-metadata-protected
+    steps:
+      - label: create a data resource while claiming a linkset of the client's choosing
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: metadata override attempt
+          linkHeaders:
+            - rel: linkset
+              href: https://linkset.invalid/forged
+        response:
+          statusCode: 201
+          location:
+            capture: created
+          linkHeaders:
+            - rel: linkset
+            - rel: linkset
+              href: https://linkset.invalid/forged
+              absent: true
+      - label: the resource still advertises its own linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+            - rel: linkset
+              href: https://linkset.invalid/forged
+              absent: true
+
+  - id: "#readDataResource"
+    type: ValidationTest
+    name: readDataResource
+    label: Reading a data resource returns its content, media type, ETag and the required links
+    comment: >-
+      A read returns the stored bytes with the stored media type, an ETag, the linkset,
+      up and type links, and the storage link. Read as the owner; the public-read variant
+      lws-test-suite also had is readDataResource-public-read.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+    traits: [Get, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
+      - https://example.org/touchstone/req/lws10-core/read-type-distinction-metadata-links
+      - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
+      - https://example.org/touchstone/req/lws10-core/link-up-on-non-root-resources
+      - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
+    mirrors: lws10/manifest.jsonld#readDataResource
+    supersedes: [core/data-resource-get, core/link-up-on-resources]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: read it back byte-exact with its metadata
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          contentType: text/plain
+          otherHeaders:
+            - headerName: ETag
+              present: true
+          linkHeaders:
+            - rel: linkset
+            - rel: up
+              href: "${test.container}"
+            - rel: type
+              href: https://www.w3.org/ns/lws#DataResource
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storage}"
+          bodyURL: ../fixtures/shoppinglist.txt
+
+  - id: "#data-resource-head-parity"
+    type: ValidationTest
+    name: data-resource-head-parity
+    label: HEAD of a data resource returns GET's headers without a body
+    comment: >-
+      Same headers as GET, the entity tag and the links included, and no content.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, Head, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/head-parity-with-get
+      - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
+    supersedes: [core/head-parity, core/etag-on-head-and-container-listing, core/link-up-on-resources]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: head parity check
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: GET it and keep its entity tag
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: etag
+      - label: HEAD reports the same tag, type and links, and no body
+        request:
+          method: HEAD
+          url: "${created}"
+        response:
+          statusCode: 200
+          contentType: text/plain
+          otherHeaders:
+            - headerName: ETag
+              headerValue: "${etag}"
+          linkHeaders:
+            - rel: linkset
+            - rel: up
+              href: "${test.container}"
+            - rel: type
+              href: https://www.w3.org/ns/lws#DataResource
+          bodyEmpty: true
+
+  - id: "#data-resource-range-request"
+    type: ValidationTest
+    name: data-resource-range-request
+    label: A data resource serves byte ranges with 206
+    comment: >-
+      "Servers MUST support range requests per [RFC7233]". A server that ignores Range
+      answers 200 with the whole entity, which is how a resumed download silently
+      restarts from zero.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
+    traits: [Get, DataResource, Range]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
+    supersedes: [core/data-resource-range-request]
+    steps:
+      - label: create a data resource with known bytes
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: "0123456789"
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: a byte range yields 206 with just those bytes
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: Range
+              headerValue: bytes=0-3
+        response:
+          statusCode: 206
+          otherHeaders:
+            - headerName: Content-Range
+              matches: '^bytes 0-3/10$'
+          bodyMatches: '^0123$'
+      - label: a suffix range yields the last bytes
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: Range
+              headerValue: bytes=-2
+        response:
+          statusCode: 206
+          bodyMatches: '^89$'
+
+  - id: "#data-resource-range-unsatisfiable"
+    type: NegativeTest
+    name: data-resource-range-unsatisfiable
+    label: A range beyond the end of a data resource is answered 416
+    comment: >-
+      RFC 9110 says a server SHOULD send 416 for an unsatisfiable range, so this is kept
+      apart from the MUST that ranges are served at all.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
+    traits: [Get, DataResource, Range]
+    supersedes: [core/data-resource-range-request]
+    steps:
+      - label: create a ten-byte data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: "0123456789"
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: ask for bytes that do not exist
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: Range
+              headerValue: bytes=100-200
+        response:
+          statusCode: 416
+
+  - id: "#data-resource-accept-ranges"
+    type: ValidationTest
+    name: data-resource-accept-ranges
+    label: A data resource advertises byte ranges with Accept-Ranges
+    comment: >-
+      RFC 9110 lets a range-capable server send Accept-Ranges: bytes; it does not require
+      it. Kept apart so its absence cannot fail the MUST.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.rfc-editor.org/rfc/rfc9110#section-14.3
+    traits: [Get, DataResource, Range]
+    supersedes: [core/data-resource-range-request]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: "0123456789"
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the full read names byte ranges
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Accept-Ranges
+              matches: '(?i)\bbytes\b'
+
+  - id: "#updateDataResource"
+    type: ValidationTest
+    name: updateDataResource
+    label: PUT replaces a data resource's content, answering 200 or 204
+    comment: >-
+      PUT replaces the content; the draft allows 200 with a representation or 204
+      without. The update is verified by reading the resource back, not by a Link header
+      on the PUT response, which the draft requires only on GET and HEAD. Sent with
+      If-Match because a server may require conditional writes.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Put, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/update-content-vs-metadata-prefer-set-linkset
+    mirrors: lws10/manifest.jsonld#updateDataResource
+    supersedes: [core/put-replace-with-if-match]
+    steps:
+      - label: create version one
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: replace it
+        request:
+          method: PUT
+          url: "${created}"
+          ifMatch: current
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist_v2.txt
+        response:
+          statusCode: [200, 204]
+      - label: the content is replaced exactly
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyURL: ../fixtures/shoppinglist_v2.txt
+
+  - id: "#patch-merge-patch-baseline"
+    type: ValidationTest
+    name: patch-merge-patch-baseline
+    label: PATCH applies JSON Merge Patch to a JSON data resource
+    comment: >-
+      JSON Merge Patch is the one patch format every server must understand. The patch
+      replaces one member, adds one and removes one by setting it to null, which is the
+      part of RFC 7386 a server can get wrong while looking correct.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Patch, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/patch-json-merge-patch-baseline
+    supersedes: [core/patch-merge-patch-baseline]
+    steps:
+      - label: create a JSON data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: application/json
+          bodyJSON:
+            title: first
+            keep: true
+            drop: gone
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: merge-patch it
+        request:
+          method: PATCH
+          url: "${created}"
+          ifMatch: current
+          contentType: application/merge-patch+json
+          bodyJSON:
+            title: second
+            added: 42
+            drop: null
+        response:
+          statusCode: [200, 204]
+      - label: the merge applied as RFC 7386 defines it
+        request:
+          method: GET
+          url: "${created}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /title
+              equals: second
+            - pointer: /added
+              equals: 42
+            - pointer: /keep
+              equals: true
+            - pointer: /drop
+              exists: false
+
+  - id: "#deleteDataResource"
+    type: ValidationTest
+    name: deleteDataResource
+    label: DELETE removes a data resource with 204 and takes it out of its container
+    comment: >-
+      "On success, the server MUST respond with 204 No Content"; lws-test-suite's
+      version expected 200. The resource must then be gone (404, or 410 which the draft
+      permits) and absent from its parent's items.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings
+    traits: [Delete, DataResource, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
+      - https://example.org/touchstone/req/lws10-core/containment-delete-atomic-items
+      - https://example.org/touchstone/req/lws10-core/status-204-410-deletions
+    mirrors: lws10/manifest.jsonld#deleteDataResource
+    supersedes: [core/delete-resource-updates-parent]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: short-lived resource
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: delete it
+        request:
+          method: DELETE
+          url: "${created}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: it is gone
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: [404, 410]
+      - label: and its container no longer lists it
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${created}"
+
+  - id: "#post-to-non-container-405"
+    type: NegativeTest
+    name: post-to-non-container-405
+    label: POST to a data resource is refused with 405 and an Allow header
+    comment: >-
+      POST creates resources in containers; the draft defines no POST on a data
+      resource, so refusing it with 405 is the expected behaviour rather than a stated
+      MUST. RFC 9110 does require Allow on any 405. Harvested from solid-contrib
+      specification-tests (protocol/writing-resource).
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6
+    traits: [Post, DataResource]
+    supersedes: [core/post-to-non-container-405]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: not a container
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: POST beneath it is refused
+        request:
+          method: POST
+          url: "${created}"
+          contentType: text/plain
+          body: should be refused
+        response:
+          statusCode: 405
+          otherHeaders:
+            - headerName: Allow
+              present: true
+      - label: nothing new appeared in the container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1

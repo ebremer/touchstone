@@ -1,0 +1,715 @@
+# Containers: representation, creation, containment, negotiation, deletion
+# (LWS 1.0 core sections 7, 8, 9 and 12).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: containers"
+comment: >-
+  Container reads and listings, container creation, containment integrity as members
+  come and go, media-type equivalence, HEAD parity and container deletion. Listings are
+  matched by content (`some`, `none`), never by position, because the draft does not
+  order items.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#getContainer"
+    type: ValidationTest
+    name: getContainer
+    label: Reading a container returns its listing with an ETag and the required links
+    comment: >-
+      Every read of a container carries an ETag and the linkset, up and type links, and
+      as a storage resource it names its storage. The body is a container
+      representation: its id, the type Container, totalItems and an items array. Read as
+      the owner; the public-read variant lws-test-suite also had is
+      getContainer-public-read.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/read-container-etag-type-links
+      - https://example.org/touchstone/req/lws10-core/read-type-distinction-metadata-links
+      - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
+      - https://example.org/touchstone/req/lws10-core/container-representation-required-properties
+      - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
+    mirrors: lws10/manifest.jsonld#getContainer
+    steps:
+      - label: GET the test container as its owner
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          otherHeaders:
+            - headerName: ETag
+              present: true
+          linkHeaders:
+            - rel: linkset
+            - rel: up
+              href: "${run.root}"
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+            - rel: https://www.w3.org/ns/lws#storage
+              href: "${storage}"
+          json:
+            - pointer: /id
+              equalsIri: "${test.container}"
+            - pointer: /type
+              hasValue: Container
+            - pointer: /totalItems
+              jsonType: number
+            - pointer: /items
+              jsonType: array
+
+  - id: "#createContainer"
+    type: ValidationTest
+    name: createContainer
+    label: POST with a Container type link creates an empty container
+    comment: >-
+      A container is created by POST to its parent with Link rel="type" naming
+      lws#Container. The 201 carries Location, the up link and a typed linkset link, and
+      the new container starts with an empty items array. No body and no Content-Type
+      are sent, as in the draft's own example; the name the server picks is read from
+      Location, never assumed.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties
+    traits: [Post, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-container-type-link
+      - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+      - https://example.org/touchstone/req/lws10-core/container-empty-items-array
+    mirrors: lws10/manifest.jsonld#createContainer
+    supersedes: [core/container-create-basic, core/create-advertises-linkset-link]
+    steps:
+      - label: create a sub-container
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+            - rel: linkset
+              mediaType: application/linkset+json
+      - label: the new container is a container and is empty
+        request:
+          method: GET
+          url: "${sub}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          json:
+            - pointer: /type
+              hasValue: Container
+            - pointer: /items
+              equals: []
+
+  - id: "#createContainer-type-link"
+    type: ValidationTest
+    name: createContainer-type-link
+    label: The 201 for a new container states its type
+    comment: >-
+      Split from createContainer because the draft makes rel="type" on a 201 a SHOULD
+      ("Additional links SHOULD include rel=type").
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+    steps:
+      - label: create a sub-container and read its type from the 201
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+
+  - id: "#getContainer-containmentIntegrity"
+    type: ValidationTest
+    name: getContainer-containmentIntegrity
+    label: A created resource appears in its container's listing with its required members
+    comment: >-
+      Creation must add the resource to the container's items atomically, and a reader
+      must see every member it can access. The entry carries the member's id, its type
+      and, for a data resource, its format. A fresh test container holds exactly this
+      one member, so the listing has exactly one item.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-membership-and-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties
+    traits: [Get, Post, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/containment-create-atomic-items
+      - https://example.org/touchstone/req/lws10-core/container-listing-authorization-visibility
+      - https://example.org/touchstone/req/lws10-core/contained-description-required-members
+      - https://example.org/touchstone/req/lws10-core/contained-format-for-dataresources
+      - https://example.org/touchstone/req/lws10-core/container-empty-items-array
+    mirrors: lws10/manifest.jsonld#getContainer-containmentIntegrity
+    supersedes: [core/container-containment-after-post]
+    steps:
+      - label: the fresh test container starts empty
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          bodyURL: ../fixtures/shoppinglist.txt
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the listing now holds exactly that resource, described
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${created}"
+                - pointer: /type
+                  hasValue: DataResource
+                - pointer: /format
+                  matches: '^text/plain'
+
+  - id: "#container-total-items-accurate"
+    type: ValidationTest
+    name: container-total-items-accurate
+    label: totalItems tracks the members as they are created and deleted
+    comment: >-
+      totalItems "SHOULD be accurate but MAY be approximate", so an exact count is a
+      SHOULD, kept apart from the MUST that the property exists.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Get, Post, Delete, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/container-totalitems-accuracy
+    steps:
+      - label: create a first member
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: first member
+        response:
+          statusCode: 201
+          location:
+            capture: first
+      - label: create a second member
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: second member
+        response:
+          statusCode: 201
+      - label: totalItems counts both
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /totalItems
+              equals: 2
+      - label: delete the first
+        request:
+          method: DELETE
+          url: "${first}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: totalItems counts one
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /totalItems
+              equals: 1
+
+  - id: "#contained-resource-type-values"
+    type: ValidationTest
+    name: contained-resource-type-values
+    label: Listings type each member as a Container or a DataResource
+    comment: >-
+      A listing is how a client decides what it may do with a member without fetching
+      it, and that rests on type. The value is the string or an array containing it, so
+      hasValue accepts both shapes.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description
+    traits: [Get, Post, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/contained-resource-type-values
+    supersedes: [core/contained-resource-type-values]
+    steps:
+      - label: create a sub-container
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+      - label: the parent lists it as a Container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${sub}"
+                - pointer: /type
+                  hasValue: Container
+      - label: put a data resource inside it
+        request:
+          method: POST
+          url: "${sub}"
+          contentType: text/plain
+          body: contained
+        response:
+          statusCode: 201
+          location:
+            capture: leaf
+      - label: the sub-container lists it as a DataResource
+        request:
+          method: GET
+          url: "${sub}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${leaf}"
+                - pointer: /type
+                  hasValue: DataResource
+
+  - id: "#contained-resource-format"
+    type: ValidationTest
+    name: contained-resource-format
+    label: Listings give each data resource member its media type as format
+    comment: >-
+      format "MUST be present for DataResources"; it replaced mediaType in the 21 August
+      2026 draft. Read through JSON pointers because no published JSON-LD context
+      defines format yet.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, Post, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/contained-format-for-dataresources
+      - https://example.org/touchstone/req/lws10-core/read-container-listing-member-metadata
+    supersedes: [core/contained-resource-format]
+    steps:
+      - label: create a data resource with a distinctive media type
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/csv
+          body: "a,b\n1,2\n"
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the listing carries that media type as the member's format
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${created}"
+                - pointer: /format
+                  matches: '^text/csv'
+
+  - id: "#contained-resource-size-modified"
+    type: ValidationTest
+    name: contained-resource-size-modified
+    label: Listings give a data resource member its size in bytes and a modified time
+    comment: >-
+      size and modified are recommended members of a contained resource description.
+      The body sent is ten bytes, so size is 10.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description
+    traits: [Get, Post, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/contained-description-recommended-members
+    steps:
+      - label: create a ten-byte data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: "0123456789"
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the member reports size 10 and an ISO 8601 modified time
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${created}"
+                - pointer: /size
+                  equals: 10
+                - pointer: /modified
+                  matches: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$'
+
+  - id: "#container-conneg"
+    type: ValidationTest
+    name: container-conneg
+    label: A container serves the same document as lws+json, ld+json and json
+    comment: >-
+      The three media types are equivalent: the body is the same document and only the
+      Content-Type varies, echoing what was asked for. connegEquivalent fetches the
+      container once per type and compares the bytes.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#media-type-equivalence
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0
+    traits: [Get, Container, Conneg]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
+      - https://example.org/touchstone/req/lws10-core/lws-json-media-type-container-representation
+    supersedes: [core/container-conneg]
+    steps:
+      - label: all three representations are one document
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          connegEquivalent:
+            accepts:
+              - application/lws+json
+              - application/ld+json
+              - application/json
+
+  - id: "#container-conneg-vary"
+    type: ValidationTest
+    name: container-conneg-vary
+    label: Container responses say that they vary by Accept
+    comment: >-
+      Without Vary: Accept a shared cache can hand a JSON-LD client the plain-JSON
+      response of the same container. A SHOULD, split from container-conneg.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#media-type-equivalence
+    traits: [Get, Container, Conneg]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conneg-vary-accept
+    supersedes: [core/container-conneg]
+    steps:
+      - label: GET the container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Vary
+              matches: '(?i)(^|[\s,])accept($|[\s,])'
+
+  - id: "#container-head-parity"
+    type: ValidationTest
+    name: container-head-parity
+    label: HEAD of a container returns GET's headers without a body
+    comment: >-
+      HEAD must be supported for containers and return the same headers as GET, the
+      entity tag included, so a client can check for change without the listing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, Head, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/head-parity-with-get
+    supersedes: [core/etag-on-head-and-container-listing]
+    steps:
+      - label: GET the container and keep its entity tag
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: etag
+      - label: HEAD reports the same tag, type and links, and no body
+        request:
+          method: HEAD
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          otherHeaders:
+            - headerName: ETag
+              headerValue: "${etag}"
+          linkHeaders:
+            - rel: linkset
+            - rel: up
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+          bodyEmpty: true
+
+  - id: "#delete-empty-container"
+    type: ValidationTest
+    name: delete-empty-container
+    label: Deleting an empty container returns 204 and removes it from its parent
+    comment: >-
+      A successful delete MUST answer 204 and must leave the parent's items without the
+      container. Sent with If-Match so a server that requires conditional writes is not
+      failed for it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+    traits: [Post, Delete, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
+      - https://example.org/touchstone/req/lws10-core/containment-delete-atomic-items
+    steps:
+      - label: create a sub-container
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+      - label: delete it
+        request:
+          method: DELETE
+          url: "${sub}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: it is gone
+        request:
+          method: GET
+          url: "${sub}"
+        response:
+          statusCode: [404, 410]
+      - label: and its parent no longer lists it
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${sub}"
+
+  - id: "#delete-non-empty-container-409"
+    type: NegativeTest
+    name: delete-non-empty-container-409
+    label: A non-recursive DELETE of a non-empty container is refused with 409 and deletes nothing
+    comment: >-
+      Deletion defaults to non-recursive, and a non-empty container "MUST" then be
+      refused with 409 Conflict. The container and its member must both survive.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+    traits: [Post, Delete, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
+    supersedes: [core/delete-non-empty-container-409]
+    steps:
+      - label: create a sub-container
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+      - label: put a member inside it
+        request:
+          method: POST
+          url: "${sub}"
+          contentType: text/plain
+          body: occupant
+        response:
+          statusCode: 201
+          location:
+            capture: occupant
+      - label: a plain DELETE of the non-empty container is refused
+        request:
+          method: DELETE
+          url: "${sub}"
+          ifMatch: current
+        response:
+          statusCode: 409
+      - label: the member survives
+        request:
+          method: GET
+          url: "${occupant}"
+        response:
+          statusCode: 200
+      - label: and so does the container
+        request:
+          method: GET
+          url: "${sub}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+
+  - id: "#delete-container-recursive"
+    type: ValidationTest
+    name: delete-container-recursive
+    label: Where supported, DELETE with Depth infinity removes a container and its contents
+    comment: >-
+      Recursive deletion is a MAY, requested with Depth: infinity. A server that does not
+      support it answers something other than 204, which makes the test inapplicable
+      rather than failed; one that answers 204 must then have removed everything.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Post, Delete, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
+    supersedes: [core/delete-non-empty-container-409]
+    steps:
+      - label: create a sub-container
+        request:
+          method: POST
+          url: "${test.container}"
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+        response:
+          statusCode: 201
+          location:
+            capture: sub
+      - label: put a member inside it
+        request:
+          method: POST
+          url: "${sub}"
+          contentType: text/plain
+          body: occupant
+        response:
+          statusCode: 201
+          location:
+            capture: occupant
+      - label: a recursive DELETE is accepted (otherwise the feature is absent)
+        precondition: true
+        request:
+          method: DELETE
+          url: "${sub}"
+          ifMatch: current
+          otherHeaders:
+            - headerName: Depth
+              headerValue: infinity
+        response:
+          statusCode: 204
+      - label: the container is gone
+        request:
+          method: GET
+          url: "${sub}"
+        response:
+          statusCode: [404, 410]
+      - label: and so is its member
+        request:
+          method: GET
+          url: "${occupant}"
+        response:
+          statusCode: [404, 410]

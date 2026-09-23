@@ -1,0 +1,366 @@
+# Conditional requests and entity tags (LWS 1.0 core section 9.3-9.5, RFC 9110 section 13).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: conditional requests and entity tags"
+comment: >-
+  The 21 September 2026 draft made support for conditional requests a SHOULD and dropped
+  both "ETags MUST be provided in all GET/HEAD responses" from that paragraph and the
+  requirement to answer an unconditional PUT with 428. What stays MUST here stays because
+  RFC 9110 makes it so for any server that does evaluate a precondition: a 304 only when
+  the validator matches, no write when If-Match fails, and a strong validator that
+  changes whenever the representation does.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#conditional-get-304"
+    type: ValidationTest
+    name: conditional-get-304
+    label: An unchanged data resource answers a conditional GET with 304
+    comment: >-
+      Lets a client revalidate without re-transferring the content.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.2
+    traits: [Get, DataResource, Conditional]
+    supersedes: [core/conditional-get-304]
+    note: >-
+      Catalog entry etag-on-get-head-conditional-304 is MUST in the 21 August baseline;
+      the 21 September draft made conditional-request support SHOULD. Not cited until the
+      catalog is re-baselined.
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: conditional request check
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: read it and keep the validator
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: etag
+      - label: revalidating with that validator yields 304 and no body
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-None-Match
+              headerValue: "${etag}"
+        response:
+          statusCode: 304
+          bodyEmpty: true
+
+  - id: "#conditional-get-container-304"
+    type: ValidationTest
+    name: conditional-get-container-304
+    label: An unchanged container listing answers a conditional GET with 304
+    comment: >-
+      The draft names the container listing alongside the resource: "If the resource or
+      container listing has not changed, respond with 304 Not Modified".
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+    traits: [Get, Container, Conditional]
+    supersedes: [core/etag-on-head-and-container-listing]
+    note: >-
+      Same catalog drift as conditional-get-304.
+    steps:
+      - label: read the listing and keep its validator
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: etag
+      - label: revalidating the listing yields 304
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+          otherHeaders:
+            - headerName: If-None-Match
+              headerValue: "${etag}"
+        response:
+          statusCode: 304
+          bodyEmpty: true
+
+  - id: "#conditional-get-stale-validator-200"
+    type: ValidationTest
+    name: conditional-get-stale-validator-200
+    label: A conditional GET yields 304 only when the validator still matches
+    comment: >-
+      The negative half of conditional GET. A server may decline to support conditional
+      requests and always answer 200, which passes; what it may not do is answer 304 to
+      a validator that does not match, which would starve clients of every update. RFC
+      9110 makes the evaluation a MUST for any server that performs it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.2
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2
+    traits: [Get, Put, DataResource, Conditional]
+    supersedes: [core/conditional-get-stale-validator-200]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: first revision
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: read it and keep the validator
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: etag
+      - label: a validator that never matched anything is not a 304
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-None-Match
+              headerValue: '"touchstone-never-a-real-etag"'
+        response:
+          statusCode: 200
+          bodyMatches: first revision
+      - label: change the resource, so the held validator goes stale
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: second revision
+          ifMatch: "${etag}"
+        response:
+          statusCode: [200, 204]
+      - label: the stale validator yields the new representation, not a 304
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-None-Match
+              headerValue: "${etag}"
+        response:
+          statusCode: 200
+          bodyMatches: second revision
+
+  - id: "#conditional-put-stale-if-match-412"
+    type: NegativeTest
+    name: conditional-put-stale-if-match-412
+    label: A PUT carrying a stale entity tag is refused with 412 and changes nothing
+    comment: >-
+      Optimistic concurrency. The update operation "is rejected if the resource has been
+      modified since it was last read", the HTTP binding answers 412, and RFC 9110 forbids
+      performing the method when If-Match fails. The final read is the real assertion: a
+      412 that wrote anyway is worse than no check at all.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.1
+    traits: [Put, DataResource, Conditional]
+    supersedes: [core/conditional-if-match-mismatch-412]
+    note: >-
+      The touchstone manifest cited put-unconditional-rejected-428, a clause the 21
+      September draft removed; it also accepted 409, which the current text no longer
+      mentions.
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: original content
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: read it and keep the validator that is about to go stale
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: stale
+      - label: a first conditional write succeeds
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: second content
+          ifMatch: "${stale}"
+        response:
+          statusCode: [200, 204]
+      - label: the same validator, now stale, is refused
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: third content, must not land
+          ifMatch: "${stale}"
+        response:
+          statusCode: 412
+      - label: the refused write left the resource untouched
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: '^second content$'
+
+  - id: "#update-changes-strong-etag"
+    type: ValidationTest
+    name: update-changes-strong-etag
+    label: A strong entity tag changes when the content changes
+    comment: >-
+      RFC 9110 defines a strong validator as one that changes whenever the representation
+      data does, and the draft requires ETags "as defined in [RFC9110]". A server using
+      weak tags is not bound by this, so a weak tag makes the test inapplicable.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-8.8.1
+    traits: [Get, Put, DataResource, Conditional]
+    supersedes: [core/put-replace-with-if-match]
+    steps:
+      - label: create a data resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: version one
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: its entity tag is strong (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              matches: '^"'
+              capture: before
+      - label: replace the content
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: version two
+          ifMatch: "${before}"
+        response:
+          statusCode: [200, 204]
+      - label: the entity tag is a different one
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              differsFrom: "${before}"
+
+  - id: "#delete-updates-parent-strong-etag"
+    type: ValidationTest
+    name: delete-updates-parent-strong-etag
+    label: A container's strong entity tag changes when a member is deleted
+    comment: >-
+      The listing's representation changes when a member leaves, so a strong tag must
+      change with it; a surviving tag tells every cache holding it that a stale listing
+      is current. The 21 September draft dropped the explicit "its ETag MUST be updated"
+      from the deletion paragraph, so this now rests on RFC 9110 and applies only to
+      strong tags.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-8.8.1
+    traits: [Get, Delete, Container, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/containment-delete-atomic-items
+    supersedes: [core/delete-updates-parent-etag]
+    note: >-
+      Catalog entry delete-updates-parent-listing-etag still carries the removed ETag
+      clause; it is not cited until the catalog is re-baselined.
+    steps:
+      - label: create a member
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: not long for this world
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the listing's entity tag is strong (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              matches: '^"'
+              capture: before
+      - label: delete the member
+        request:
+          method: DELETE
+          url: "${created}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: the listing has a new tag and no longer holds the member
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              differsFrom: "${before}"
+          json:
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${created}"

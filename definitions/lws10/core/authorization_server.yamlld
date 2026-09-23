@@ -1,0 +1,396 @@
+# Authorization server: metadata and token exchange (LWS 1.0 core sections 5.2.2-5.2.3).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: authorization server"
+comment: >-
+  Tests of the storage's authorization server, which the harness finds the way a client
+  does: an anonymous request to the test container yields a challenge whose as_uri is the
+  authorization server, whose metadata sits at the RFC 8414 well-known location for
+  lws-configuration, and whose token endpoint performs RFC 8693 token exchange. A
+  did:key credential is the vehicle wherever a valid subject token is needed, because it
+  needs no trust set up in advance; those tests apply only when the metadata lists did:key
+  among its subject identifier types.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#authz-server-metadata-well-known"
+    type: ValidationTest
+    name: authz-server-metadata-well-known
+    label: The authorization server publishes RFC 8414 metadata at lws-configuration
+    comment: >-
+      Discovered from the challenge rather than a host name assumed in advance. The
+      issuer must be the identifier the well-known URL was built from (RFC 8414 section
+      3.3), the token endpoint and jwks_uri must be named, and token exchange must be
+      among the grant types, since the RFC 8414 default excludes it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.rfc-editor.org/rfc/rfc8414#section-3
+    traits: [Get, Discovery, Authz, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-server-metadata-well-known
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-grant
+    mirrors: lws10/manifest.jsonld#authz-server-metadata-well-known
+    steps:
+      - label: GET the metadata derived from the challenge's as_uri
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /issuer
+              equals: "${as.uri}"
+            - pointer: /token_endpoint
+              jsonType: string
+            - pointer: /jwks_uri
+              jsonType: string
+            - pointer: /grant_types_supported
+              hasValue: urn:ietf:params:oauth:grant-type:token-exchange
+
+  - id: "#authz-metadata-subject-token-types"
+    type: ValidationTest
+    name: authz-metadata-subject-token-types
+    label: The metadata advertises the subject token types it accepts
+    comment: >-
+      "An authorization server SHOULD advertise the subject tokens that it supports."
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+    traits: [Get, Discovery, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-metadata-subject-token-types
+    steps:
+      - label: GET the metadata
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              jsonType: array
+
+  - id: "#authz-metadata-subject-identifier-types"
+    type: ValidationTest
+    name: authz-metadata-subject-identifier-types
+    label: The metadata advertises the subject identifier types it accepts
+    comment: >-
+      New in the 21 September 2026 draft; SHOULD be advertised, and defaults to ["https"]
+      when omitted.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+    traits: [Get, Discovery, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    note: Uncatalogued; the clause is newer than the catalog baseline.
+    steps:
+      - label: GET the metadata
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              jsonType: array
+
+  - id: "#authz-token-exchange-valid"
+    type: ValidationTest
+    name: authz-token-exchange-valid
+    label: Token exchange issues an RFC 9068 access token for the storage
+    comment: >-
+      The response must follow RFC 6749 section 5.1 and RFC 8693 (issued_token_type is
+      REQUIRED, Cache-Control no-store is a MUST), and the access token must be an RFC 9068
+      JWT, verifiable against the published keys, carrying iss, aud naming the storage,
+      sub naming the agent, client_id, exp, iat and jti. lws-test-suite compared the whole
+      response to a fixture holding a placeholder token and no issued_token_type.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.rfc-editor.org/rfc/rfc6749#section-5.1
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.1
+      - https://www.rfc-editor.org/rfc/rfc9068#section-2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-grant
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-resource-param
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-subject-token-param
+      - https://example.org/touchstone/req/lws10-core/authz-validate-before-issuing
+      - https://example.org/touchstone/req/lws10-core/authz-token-response-rfc6749-rfc9068
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-iss-claim
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-sub-claim
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-client-id-claim
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-exp-short-lived
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-iat-claim
+      - https://example.org/touchstone/req/lws10-core/authz-access-token-jti-claim
+    mirrors: lws10/manifest.jsonld#authz-token-exchange-valid
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange a did:key credential for an access token to the storage
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 200
+          contentType: application/json
+          otherHeaders:
+            - headerName: Cache-Control
+              matches: '(?i)\bno-store\b'
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+            - pointer: /token_type
+              matches: '(?i)^bearer$'
+            - pointer: /issued_token_type
+              jsonType: string
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            header:
+              - pointer: /typ
+                matches: '(?i)^(application/)?at\+jwt$'
+            claims:
+              - pointer: /iss
+                equals: "${as.issuer}"
+              - pointer: /aud
+                hasValue: "${as.realm}"
+              - pointer: /sub
+                equals: "${identity.didkey.webid}"
+              - pointer: /client_id
+                jsonType: string
+              - pointer: /exp
+                jsonType: number
+              - pointer: /iat
+                jsonType: number
+              - pointer: /jti
+                jsonType: string
+
+  - id: "#authz-token-exchange-invalid-resource"
+    type: NegativeTest
+    name: authz-token-exchange-invalid-resource
+    label: Token exchange for an unknown storage is refused with an OAuth error
+    comment: >-
+      "The authorization server MUST reject any request in which the resource parameter
+      identifies an unknown or untrusted storage." RFC 8693 section 2.2.2 says
+      invalid_target SHOULD be used for exactly this; the draft's example shows
+      invalid_request. Either is accepted.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-resource-param
+      - https://example.org/touchstone/req/lws10-core/authz-token-error-rfc6749
+    mirrors: lws10/manifest.jsonld#authz-token-exchange-invalid-resource
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+      - label: ask for a token to a storage the server has never heard of
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: https://unknown-storage.invalid/
+            subject_token: "${credential.didkey}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              matches: '^(invalid_target|invalid_request)$'
+
+  - id: "#authz-token-exchange-missing-resource"
+    type: NegativeTest
+    name: authz-token-exchange-missing-resource
+    label: Token exchange without a resource parameter is refused with invalid_request
+    comment: >-
+      The resource parameter is REQUIRED; RFC 6749 names invalid_request for a missing
+      required parameter.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
+    traits: [Post, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-resource-param
+      - https://example.org/touchstone/req/lws10-core/authz-token-error-rfc6749
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+      - label: exchange a valid credential without naming a resource
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            subject_token: "${credential.didkey}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authz-token-exchange-missing-subject-token"
+    type: NegativeTest
+    name: authz-token-exchange-missing-subject-token
+    label: Token exchange without a subject token is refused with invalid_request
+    comment: >-
+      The subject_token parameter is REQUIRED. Suite-independent, so it lives here
+      rather than in the did:key manifest where lws-test-suite put it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
+    traits: [Post, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-subject-token-param
+      - https://example.org/touchstone/req/lws10-core/authz-token-error-rfc6749
+    mirrors: lws10/auth/did_key/manifest.jsonld#authn-didkey-missing-credential
+    steps:
+      - label: exchange nothing
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authz-issued-token-accepted-by-storage"
+    type: ValidationTest
+    name: authz-issued-token-accepted-by-storage
+    label: The storage accepts an access token its authorization server issued
+    comment: >-
+      Closes the loop between the two servers: a token fresh from the storage's own
+      authorization server must pass the storage's validation. The did:key agent owns
+      nothing, so the storage may still deny access (403, or 404 to hide existence);
+      what it must not do is answer 401, which would call a valid token invalid.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+    traits: [Post, Get, TokenExchange, Authz]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
+      - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+      - label: obtain an access token for the storage
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 200
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+      - label: present it to the storage
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+          otherHeaders:
+            - headerName: Authorization
+              headerValue: "Bearer ${accessToken}"
+        response:
+          statusCode: [200, 403, 404]

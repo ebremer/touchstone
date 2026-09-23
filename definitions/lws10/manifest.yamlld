@@ -1,0 +1,36 @@
+# Root manifest for the LWS 1.0 test definitions (YAML-LD).
+#
+# Mirrors lws-test-suite's lws10/manifest.jsonld: a manifest whose `include` pulls in
+# the module manifests. Paths and test names are kept stable so that exporting to
+# JSON-LD (README.md, "Export") is a file-for-file syntax conversion.
+"@context":
+  - ./context.jsonld
+  - ./touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: LWS 1.0 conformance test definitions
+comment: >-
+  Tests for the Linked Web Storage Protocol 1.0 and its four authentication suites,
+  authored in YAML-LD for Touchstone and intended for contribution to lws-test-suite as
+  JSON-LD. Each included manifest covers one area of the specification.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
+include:
+  - core/discovery.yamlld
+  - core/containers.yamlld
+  - core/data_resources.yamlld
+  - core/conditional_requests.yamlld
+  - core/linksets.yamlld
+  - core/storage_authorization.yamlld
+  - core/authorization_server.yamlld
+  - core/access_grants.yamlld
+  - core/notifications.yamlld
+  - auth/did_key/manifest.yamlld
+  - auth/oidc/manifest.yamlld
+  - auth/cid/manifest.yamlld
+  - auth/saml/manifest.yamlld
+entries: []

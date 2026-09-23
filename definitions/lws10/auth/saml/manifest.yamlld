@@ -1,0 +1,168 @@
+# SAML 2.0 authentication suite (YAML-LD).
+"@context":
+  - ../../context.jsonld
+  - ../../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 Authentication Suite: SAML 2.0"
+comment: >-
+  Assertions from the harness identity provider, presented base64url-encoded with the
+  saml2 token type. The suite leaves trust to out-of-band configuration, so these tests
+  apply only to a target whose authorization server already trusts the harness IdP.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
+entries:
+
+  - id: "#authn-saml-valid-assertion"
+    type: ValidationTest
+    name: authn-saml-valid-assertion
+    label: A valid SAML assertion is exchanged for an access token naming its subject
+    comment: >-
+      NameID is the LWS subject, Issuer the issuer, the SubjectConfirmationData
+      Recipient the client, and the signature verifies under the configured trust.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#token-type
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, SamlTrust]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-saml/token-type-saml2
+      - https://example.org/touchstone/req/lws10-authn-saml/nameid-subject
+      - https://example.org/touchstone/req/lws10-authn-saml/issuer-assertion
+      - https://example.org/touchstone/req/lws10-authn-saml/recipient-client-id
+      - https://example.org/touchstone/req/lws10-authn-saml/signed-and-required-assertions
+      - https://example.org/touchstone/req/lws10-authn-saml/audience-restriction
+      - https://example.org/touchstone/req/lws10-authn-saml/validation-signature
+    mirrors: lws10/auth/saml/manifest.jsonld#authn-saml-valid-assertion
+    steps:
+      - label: the authorization server takes SAML 2.0 assertions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:saml2
+      - label: exchange the credential for an access token
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.saml}"
+            subject_token_type: urn:ietf:params:oauth:token-type:saml2
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            claims:
+              - pointer: /sub
+                equals: "${identity.saml.webid}"
+              - pointer: /aud
+                hasValue: "${as.realm}"
+
+  - id: "#authn-saml-invalid-signature"
+    type: NegativeTest
+    name: authn-saml-invalid-signature
+    label: A SAML assertion altered after signing is refused
+    comment: >-
+      The signature MUST be validated as SAML Core section 5 describes.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, SamlTrust]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-saml/validation-signature
+    mirrors: lws10/auth/saml/manifest.jsonld#authn-saml-invalid-signature
+    steps:
+      - label: the authorization server takes SAML 2.0 assertions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:saml2
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.saml-bad-signature}"
+            subject_token_type: urn:ietf:params:oauth:token-type:saml2
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-saml-unsigned"
+    type: NegativeTest
+    name: authn-saml-unsigned
+    label: An unsigned SAML assertion is refused
+    comment: >-
+      "SAML tokens used as authentication credentials MUST be signed."
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, SamlTrust]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-saml/signed-and-required-assertions
+    steps:
+      - label: the authorization server takes SAML 2.0 assertions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:saml2
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.saml-unsigned}"
+            subject_token_type: urn:ietf:params:oauth:token-type:saml2
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
