@@ -126,7 +126,9 @@ conformance (D-0040). If creation fails, the run stops with exit code 2; no test
    - In a step marked `precondition: true`, the outcome is *inapplicable*, citing the
      step label.
    - In any other step, the outcome is *failed*, citing the step, the expectation, and
-     the expected and actual values.
+     the expected and actual values. This holds even when the same response also leaves a
+     capture unmade: a refused create has no Location, and the failed expectation is the
+     finding (D-0049).
 4. If every step passes, the outcome is *passed*.
 5. **Cleanup** runs whatever the outcome (section 10).
 

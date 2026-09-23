@@ -351,13 +351,15 @@ public class RunTools {
 
     private static String failureReason(TestResult test) {
         for (StepResult step : test.steps()) {
-            if (step.error() != null) {
-                return step.error();
-            }
+            // A failed assertion is the reason even when the step also has an error: it decided
+            // the outcome, and the error is usually its consequence (D-0049).
             for (AssertionResult a : step.assertions()) {
                 if (!a.passed()) {
                     return a.description() + " (expected " + a.expected() + ", got " + a.actual() + ")";
                 }
+            }
+            if (step.error() != null) {
+                return step.error();
             }
         }
         return test.skipReason() != null ? test.skipReason() : "unknown";

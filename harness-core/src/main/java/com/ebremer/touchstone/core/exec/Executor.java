@@ -87,12 +87,16 @@ public final class Executor {
                 }
                 StepOutcome so = runStep(manifest, step, vars, ctx);
                 steps.add(so.result());
-                if (so.result().error() != null) {
-                    outcome = Outcome.ERROR;
-                    break;
-                }
+                // A failed assertion decides, even when the step also has an error. The bind
+                // after a failed assertion usually fails because of it (a refused create has
+                // no Location), and letting that error decide recorded a server that answered
+                // wrongly as "the harness could not tell" (D-0049).
                 if (so.result().failed()) {
                     outcome = Outcome.FAILED;
+                    break;
+                }
+                if (so.result().error() != null) {
+                    outcome = Outcome.ERROR;
                     break;
                 }
             }

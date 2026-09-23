@@ -25,15 +25,17 @@ public final class Results {
                 sb.append(" '").append(step.name()).append('\'');
             }
             sb.append(':');
-            if (step.error() != null) {
-                sb.append("\n    error: ").append(step.error());
-            }
+            // Failed assertions first: when a step has both, the assertion is what decided the
+            // test, and the error is what it cost the steps after it (D-0049).
             for (AssertionResult a : step.assertions()) {
                 if (!a.passed()) {
                     sb.append("\n    FAILED ").append(a.description())
                             .append("\n      expected: ").append(a.expected())
                             .append("\n      actual:   ").append(a.actual());
                 }
+            }
+            if (step.error() != null) {
+                sb.append("\n    error: ").append(step.error());
             }
             if (step.trace() != null) {
                 sb.append("\n    exchange: ").append(step.trace().method()).append(' ')
