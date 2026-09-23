@@ -71,7 +71,7 @@ const controls = {
   'data resource without contentType': [dataPre, t => { delete t.prereqs.hierarchy[0].contentType; }],
   'container with a body': [pre, t => { t.prereqs.hierarchy = [{ container: 'box', body: 'x' }]; }],
   'absent entry with a grant': [pre, t => { t.prereqs.hierarchy = [{ container: 'box', absent: true, authorization: { read: ['anonymous'] } }]; }],
-  'grant with a Solid mode (write)': [pre, t => { t.prereqs.hierarchy = [{ container: 'box', authorization: { write: ['bob'] } }]; }],
+  'grant with an action the draft does not define (write)': [pre, t => { t.prereqs.hierarchy = [{ container: 'box', authorization: { write: ['bob'] } }]; }],
   'empty authorization': [pre, t => { t.prereqs.hierarchy = [{ container: 'box', authorization: {} }]; }],
   'challenge without wwwAuthenticate': [chal, t => { delete t.response.authenticationChallenge.wwwAuthenticate; }],
   'challenge with the 0.1.0 scheme key': [chal, t => { const c = t.response.authenticationChallenge; c.scheme = c.wwwAuthenticate; delete c.wwwAuthenticate; }],

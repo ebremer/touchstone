@@ -547,8 +547,7 @@ entries:
     comment: >-
       POST creates resources in containers; the draft defines no POST on a data
       resource, so refusing it with 405 is the expected behaviour rather than a stated
-      MUST. RFC 9110 does require Allow on any 405. Harvested from solid-contrib
-      specification-tests (protocol/writing-resource).
+      MUST. RFC 9110 does require Allow on any 405.
     status: Proposed
     level: SHOULD
     source:

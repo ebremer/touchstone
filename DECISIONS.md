@@ -1450,3 +1450,25 @@ the manifest loader and executor, and the graph and SHACL assertion engine.
   bytes carry the same graph.
 - **The gate moves.** Gate 2 (D-0013) froze the manifest schema before test #1. Its
   successor is D-0053, which froze format 0.2.0 before the engine.
+
+### D-0056 — Touchstone is W3C LWS only: the Solid references are gone
+Erich's direction: no Solid mentions; Touchstone is purely a W3C LWS harness.
+
+- **DESIGN.md** no longer lists the Solid Protocol among its inputs, or the Solid test
+  harness and test corpus as prior art. Its prior art is the LWS test group's own suite,
+  which Touchstone mirrors (D-0047). The self-test loop is described as it is built:
+  against a reference LWS server and its broken twins (D-0054), not a Solid server. The
+  no-DSL decision stands as it was, without the Solid framing.
+- **`docs/harvest.md`**, the page on porting Solid tests, is removed, so D-0025's method
+  page no longer exists. The test that was ported that way,
+  `core/data_resources#post-to-non-container-405`, stands on the LWS draft and RFC 9110,
+  and its comment says only that.
+- **Comparisons with lws-test-suite** say what its access modes are, not where they come
+  from: `write`, `append` and `control` are not actions the LWS draft defines, which is the
+  point (COMPARISON.md, `docs/definitions.md`, a negative-control label).
+
+**Left as they are:** earlier entries of this log that mention Solid (D-0006, D-0015,
+D-0025, D-0030, D-0051) record what was true when they were decided, and the copies of the
+W3C drafts in `catalog/sources/` are verbatim: the core draft itself says it draws on the
+Solid Protocol, and the catalog's clause hashes depend on the text as published. The frozen
+format files never mentioned Solid, so format 0.2.0 is unchanged.

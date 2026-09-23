@@ -129,7 +129,7 @@ lws-test-suite's current files:
 | lws-test-suite today | The merged format |
 |---|---|
 | 21 of 27 tests name example hosts such as `storage.example`, and 13 share the path `/alice/notes/` | Every server-chosen URL is a variable; each test has its own container; the checks reject example hosts |
-| Access modes `write`, `append` and `control` are Solid's, not LWS's; `Role-Authenticated` cannot be expressed in the draft | The draft's four actions; grants to identities, carried out through the access grant service |
+| Access modes `write`, `append` and `control`, which the LWS draft does not define; `Role-Authenticated` cannot be expressed in the draft | The draft's four actions; grants to identities, carried out through the access grant service |
 | No rules for comparing content types, links, bodies or challenges | Every comparison defined, with challenges parsed per RFC 9110 |
 | One request per test, so no test can check a delete took effect | One request when that suffices, `steps` for flows |
 | 7 tests carry credential placeholders like `<expired-token>` | Named identities whose valid and broken credentials the harness makes |

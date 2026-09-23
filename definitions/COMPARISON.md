@@ -160,8 +160,8 @@ that no test creates.
 ### 2. Its prerequisites can be carried out
 
 - **Theirs:**
-  - The access keys are Solid WAC modes: `read`, `write`, `append` and `control`. The LWS
-    draft defines four actions: `read`, `modify`, `create` and `delete` (WD section 11.3.2).
+  - The access keys are `read`, `write`, `append` and `control`. The LWS draft defines
+    four actions: `read`, `modify`, `create` and `delete` (WD section 11.3.2).
     The tests grant `write` 18 times, an action no LWS server recognises.
   - The roles are `Role-Owner`, `Role-Public` and `Role-Authenticated`. The draft has no
     assignee meaning "any authenticated agent" (section 11.3.3 requires a URI), and no test

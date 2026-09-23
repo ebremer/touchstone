@@ -19,14 +19,12 @@ Spec landscape as of mid-2026 — all early-stage and moving; design for spec-ve
 - **LWS Protocol 1.0** (First Public Working Draft, March 2026): https://www.w3.org/TR/lws10-core/ — editor's draft at https://w3c.github.io/lws-protocol/lws10-core/ ; repo https://github.com/w3c/lws-protocol
 - **LWS 1.0 Authentication Suites** (four FPWDs, April 2026): OpenID Connect, SAML 2.0, Self-signed Identity using Controlled Identifiers (CID), and did:key. Find current drafts via the WG publications page and the lws-protocol repo.
 - **LWS Use Cases** Group Note (requirements list): https://www.w3.org/TR/lws-ucs/
-- **Solid Protocol 0.11** — the WG's input document; much LWS behavior descends from it.
 - Key spec concepts to model: *LWS resource*, *container* (enumerates a collection; Containers section), *data resource* (Operations section), *containment* (container manages resource lifecycle), *storage root*. Known testable clauses already in the draft: Last-Modified MUST be generated on GET/HEAD; PATCH insertion formulae MUST NOT contain blank nodes; failed credential validation MUST return 401 with a WWW-Authenticate challenge.
 
-Prior art — **harvest, don't fork**:
-- Solid Conformance Test Harness (CTH): https://github.com/solid-contrib/conformance-test-harness (Java/Quarkus + KarateDSL). Study its RDF test descriptions linked to spec requirement annotations, EARL + coverage reporting, alice/bob two-account config model, and its `SolidClient` / `SolidResource` / `SolidContainer` / `AccessDatasetBuilder` helper design — that helper shape is right for Touchstone too.
-- Test corpus: https://github.com/solid-contrib/specification-tests — many scenarios adapt to LWS since it descends from Solid 0.11. Port scenario *content*, not the Karate execution model.
+Prior art — **mirror, don't fork**:
+- The LWS test group's suite: https://github.com/lws-contrib/lws-test-suite — JSON-LD test manifests meant to become the authoritative LWS test suite. Touchstone mirrors and extends it in YAML-LD, and will contribute back as JSON-LD (DECISIONS.md D-0047).
 
-**Decision already made (do not relitigate): no Karate.** Rationale: Touchstone's assertions are graph isomorphism, SHACL shapes, and header semantics — none expressible in Karate's matchers, so Karate would be a thin Gherkin veneer over Java helpers, costing debuggability and type safety. Instead: declarative manifests + JUnit 5 dynamic tests (§5).
+**Decision already made (do not relitigate): tests are data, run by a Java engine — no Karate or other BDD DSL.** Rationale: Touchstone's assertions are graph isomorphism, SHACL shapes, and header semantics — none expressible in a DSL's generic matchers, so a DSL would be a thin Gherkin veneer over Java helpers, costing debuggability and type safety. Instead: declarative test definitions + JUnit 5 dynamic tests (§5).
 
 ## 3. Repository layout (Gradle or Maven multi-module; prefer Maven)
 
@@ -98,7 +96,7 @@ Assertion vocabulary the executor must support: status, header presence/value/re
 
 ### 5.3 Executor and isolation
 - Every run allocates a unique root container `/touchstone-run-{uuid}/` on the SUT; every test creates its own sub-resources. **No ordering dependencies between tests, ever.** Parallel by default.
-- Provisioning (accounts/storage) is out of spec scope ⇒ pluggable per-implementation **provisioning adapters**. Minimum config: two identities, **alice** and **bob** (two is the floor for access-control tests later), supplied via config/env like the CTH does.
+- Provisioning (accounts/storage) is out of spec scope ⇒ pluggable per-implementation **provisioning adapters**. Minimum config: two identities, **alice** and **bob** (two is the floor for access-control tests later), supplied via config/env.
 - Timeouts everywhere; retries OFF by default (a flaky SUT is a finding, not noise).
 
 ### 5.4 Coverage areas (module roadmap)
@@ -158,7 +156,7 @@ server:
 
 ## 8. Engineering conventions
 
-- Test the harness itself: unit tests for the assertion engine (graph isomorphism edge cases, header parsing), plus an integration loop against a reference LWS/Solid server via Testcontainers (Community Solid Server is a reasonable stand-in until LWS implementations exist — confirm current best option online).
+- Test the harness itself: unit tests for the assertion engine (graph isomorphism edge cases, header parsing), plus an integration loop against a reference LWS server, and against deliberately broken twins that the negative tests must catch.
 - Version the suite in lockstep with spec drafts (git tags per Working Draft; `clauseHash` drift check fails the build with a "spec moved" report, not silent staleness).
 - Structured logging; every SUT interaction logged with run/test/assertion IDs.
 - Conventional commits; keep a `DECISIONS.md` recording deviations from this brief with rationale.
@@ -177,7 +175,7 @@ server:
 
 **Phase 5 — MCP server.** harness-mcp per §6: Jetty swap verified (no Tomcat on the classpath), streamable HTTP, full tool surface, async runs with progress notifications, redaction filter, stdio profile. *Done when: an MCP client can start a run, watch progress, page failures, and pull a redacted trace end-to-end.*
 
-**Phase 6 — Distribution + remaining suites.** Dockerfile + GitHub Action; `auth-saml` (OpenSAML), `auth-cid`, `auth-didkey` fixtures and manifests; harvest/port applicable scenarios from solid-contrib/specification-tests into manifest form. *Done when: a third-party server repo can add one workflow file and get a conformance report on every push.*
+**Phase 6 — Distribution + remaining suites.** Dockerfile + GitHub Action; `auth-saml` (OpenSAML), `auth-cid`, `auth-didkey` fixtures and manifests. *Done when: a third-party server repo can add one workflow file and get a conformance report on every push.*
 
 ## 10. Verify online before pinning (things that move fast)
 
@@ -188,7 +186,7 @@ server:
 
 ## 11. First actions in this session
 
-1. Fetch and skim: LWS core draft, one auth-suite draft, the CTH README, specification-tests README.
+1. Fetch and skim: LWS core draft, one auth-suite draft, the LWS test group's lws-test-suite.
 2. Scaffold Phase 0 and commit.
 3. Draft the catalog vocabulary + 15 seed requirements from the core draft's Operations and Containers sections; open them for my review before mass extraction.
 4. Propose the frozen manifest JSON Schema (informed by §5.2) before writing test #1.

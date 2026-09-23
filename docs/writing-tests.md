@@ -1,7 +1,6 @@
 ---
 title: Writing tests
 nav_order: 9
-has_children: true
 description: "How to write a Touchstone test definition in YAML-LD: structure, prerequisites, variables, expectations, identities and the review rules."
 ---
 
@@ -308,4 +307,3 @@ committed directly.
   format 0.2.0
 - [`definitions/COVERAGE.md`]({% include src.html path="definitions/COVERAGE.md" %}): every
   test, and what it replaced
-- [Porting Solid tests](harvest.md): how scenarios from the Solid test corpus became tests
