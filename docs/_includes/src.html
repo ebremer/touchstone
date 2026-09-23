@@ -1,0 +1,12 @@
+{%- comment -%}
+  A link to a file or directory in the repository, on the branch this site is built from.
+  Parameters: path (repository-relative), and kind="tree" for a directory.
+
+  GitHub Pages reports the branch through the Pages API. Without API access (a local
+  build), jekyll-github-metadata guesses "gh-pages", a branch this site never lives on,
+  so that guess falls back to HEAD: the repository's default branch.
+{%- endcomment -%}
+{%- assign src_branch = site.github.source.branch | default: "HEAD" -%}
+{%- if src_branch == "gh-pages" -%}{%- assign src_branch = "HEAD" -%}{%- endif -%}
+{%- assign src_kind = include.kind | default: "blob" -%}
+https://github.com/{{ site.repository }}/{{ src_kind }}/{{ src_branch }}/{{- include.path -}}

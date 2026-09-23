@@ -1,0 +1,18 @@
+# Local preview of the documentation site, with the gems GitHub Pages itself uses.
+# GitHub Pages ignores this file; it builds with its own copy of the github-pages gem.
+#
+# With Ruby 3.3 (the version GitHub Pages runs):
+#   cd docs
+#   bundle install
+#   bundle exec jekyll serve
+#
+# Or with Docker, from the repository root:
+#   docker run --rm -it -p 4000:4000 -v "$PWD/docs:/site" -w /site ruby:3.3 \
+#     sh -c "bundle install && bundle exec jekyll serve --host 0.0.0.0"
+#
+# Then open http://localhost:4000/touchstone/.
+
+source "https://rubygems.org"
+
+gem "github-pages", "= 232", group: :jekyll_plugins
+gem "webrick", "~> 1.9"

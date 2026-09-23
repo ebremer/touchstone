@@ -1,0 +1,92 @@
+# Touchstone documentation site, published with GitHub Pages from this docs/ folder.
+#
+# GitHub Pages builds it with the github-pages gem (Jekyll 3.10) and pulls the theme,
+# just-the-docs, as a remote theme pinned to a release tag. `url` and `baseurl` are left
+# unset on purpose: jekyll-github-metadata fills them in from the Pages settings, so the
+# site works under github.io/touchstone/ and under a custom domain alike. For a local
+# preview, see the comment at the top of the Gemfile.
+
+title: Touchstone
+description: >-
+  Conformance test harness for the W3C Linked Web Storage (LWS) protocol family.
+repository: ebremer/touchstone
+
+remote_theme: just-the-docs/just-the-docs@v0.12.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-github-metadata
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+
+# Default (.html) URLs rather than "pretty" ones, so a page sits in the same directory as
+# its source file and a relative link to a file beside it, such as
+# ci/example-conformance-workflow.yml, works both here and when browsing on GitHub.
+
+liquid:
+  error_mode: strict
+
+# Markdown files without front matter are rendered as pages; don't also publish their source.
+optional_front_matter:
+  remove_originals: true
+
+# Pages without front matter still get the theme's layout. The three documents that
+# predate this site keep no front matter of their own, so they read cleanly on GitHub;
+# their place in the navigation is set here instead.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+  - scope:
+      path: "distribution.md"
+    values:
+      title: Distribution
+      nav_order: 7
+  - scope:
+      path: "manifest-schema/RATIONALE.md"
+    values:
+      title: Schema rationale
+      parent: Writing tests
+      nav_order: 1
+  - scope:
+      path: "harvest.md"
+    values:
+      title: Porting Solid tests
+      parent: Writing tests
+      nav_order: 2
+
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 3
+  tokenizer_separator: /[\s/]+/
+
+heading_anchors: true
+enable_copy_code_button: true
+back_to_top: true
+back_to_top_text: "Back to top"
+
+aux_links:
+  "Touchstone on GitHub":
+    - "https://github.com/ebremer/touchstone"
+aux_links_new_tab: true
+
+nav_external_links:
+  - title: LWS Protocol 1.0 (W3C)
+    url: https://www.w3.org/TR/lws10-core/
+  - title: lws-test-suite
+    url: https://github.com/lws-contrib/lws-test-suite
+
+mermaid:
+  version: "11.17.2"
+
+callouts:
+  note:
+    title: Note
+    color: blue
+  important:
+    title: Important
+    color: purple
+  warning:
+    title: Warning
+    color: red
