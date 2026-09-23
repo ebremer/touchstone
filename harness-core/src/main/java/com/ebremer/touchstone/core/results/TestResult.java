@@ -2,16 +2,29 @@ package com.ebremer.touchstone.core.results;
 
 import java.util.List;
 
-/** Result of one manifest execution, keyed to the requirements it verifies. */
+import com.fasterxml.jackson.annotation.JsonAlias;
+
+/**
+ * Result of one test, keyed to the requirements it verifies.
+ *
+ * @param testId the test's identity, {@code <manifest path>#<name>} (EXECUTION.md section 2)
+ * @param level  MUST, SHOULD or MAY: the test's one level, which decides whether its failure
+ *               bears on conformance (EXECUTION.md section 9). Null in records written before
+ *               tests had levels; those count as MUST.
+ * @param reason why the test was inapplicable or could not tell; null when it passed or failed
+ */
 public record TestResult(
-        String manifestId,
+        @JsonAlias("manifestId") String testId,
+        String label,
+        String level,
         List<String> requirements,
         Outcome outcome,
         List<StepResult> steps,
         long durationMillis,
-        String skipReason) {
+        @JsonAlias("skipReason") String reason) {
 
-    public static TestResult skipped(String manifestId, List<String> requirements, String reason) {
-        return new TestResult(manifestId, requirements, Outcome.SKIPPED, List.of(), 0, reason);
+    /** True when a failure of this test decides conformance. */
+    public boolean decidesConformance() {
+        return level == null || "MUST".equals(level);
     }
 }

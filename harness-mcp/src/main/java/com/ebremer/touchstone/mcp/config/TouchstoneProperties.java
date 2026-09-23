@@ -13,13 +13,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "touchstone")
 public record TouchstoneProperties(
         Path catalog,
-        Path manifests,
+        Path definitions,
         Path targets,
         Path runs) {
 
     public TouchstoneProperties {
         catalog = catalog != null ? catalog : Path.of("catalog");
-        manifests = manifests != null ? manifests : Path.of("manifests");
+        definitions = definitions != null ? definitions : Path.of("definitions");
         targets = targets != null ? targets : Path.of("targets.yaml");
         runs = runs != null ? runs : Path.of("runs");
     }

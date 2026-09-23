@@ -27,6 +27,8 @@
     <!-- Versions verified against repo1.maven.org metadata on 2026-09-02 (D-0003, refreshed D-0046). -->
     <jena.version>6.2.0</jena.version>
     <titanium-json-ld.version>1.7.0</titanium-json-ld.version>
+    <!-- YAML 1.2 Core Schema for the YAML-LD definitions (EXECUTION.md 2.1); checked 2026-09-23 (D-0054). -->
+    <snakeyaml-engine.version>3.1.1</snakeyaml-engine.version>
     <jackson.version>2.22.2</jackson.version>
     <jetty.version>12.1.12</jetty.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
@@ -104,6 +106,11 @@
         <groupId>com.apicatalog</groupId>
         <artifactId>titanium-json-ld</artifactId>
         <version>${titanium-json-ld.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.snakeyaml</groupId>
+        <artifactId>snakeyaml-engine</artifactId>
+        <version>${snakeyaml-engine.version}</version>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>

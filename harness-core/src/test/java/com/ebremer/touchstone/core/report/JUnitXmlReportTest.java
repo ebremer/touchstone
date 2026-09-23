@@ -21,10 +21,10 @@ class JUnitXmlReportTest {
     @Test
     void rendersWellFormedSuiteWithCounts() throws Exception {
         RunResult run = run(
-                test("core/pass", Outcome.PASSED, REQ_A),
-                test("core/fail", Outcome.FAILED, REQ_A),
-                test("core/error", Outcome.ERROR, REQ_A),
-                test("core/skip", Outcome.SKIPPED, REQ_A));
+                test("core/x#pass", Outcome.PASSED, REQ_A),
+                test("core/x#fail", Outcome.FAILED, REQ_A),
+                test("core/x#error", Outcome.CANT_TELL, REQ_A),
+                test("core/x#skip", Outcome.INAPPLICABLE, REQ_A));
         String xml = JUnitXmlReport.render(run);
 
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -45,7 +45,7 @@ class JUnitXmlReportTest {
     @Test
     void escapesMarkupInDetails() throws Exception {
         RunResult run = run(new com.ebremer.touchstone.core.results.TestResult(
-                "core/markup", java.util.List.of(REQ_A), Outcome.SKIPPED, java.util.List.of(), 1,
+                "core/x#markup", "label", "MUST", java.util.List.of(REQ_A), Outcome.INAPPLICABLE, java.util.List.of(), 1,
                 "reason with <angle> & \"quotes\""));
         String xml = JUnitXmlReport.render(run);
 

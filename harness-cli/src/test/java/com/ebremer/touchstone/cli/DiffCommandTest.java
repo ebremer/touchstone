@@ -21,7 +21,7 @@ class DiffCommandTest {
     Path tmp;
 
     private static TestResult test(String id, Outcome outcome) {
-        return new TestResult(id, List.of("https://example.org/touchstone/req/lws10-core/x"),
+        return new TestResult(id, "a test", "MUST", List.of("https://example.org/touchstone/req/lws10-core/x"),
                 outcome, List.of(), 5, null);
     }
 
@@ -43,9 +43,9 @@ class DiffCommandTest {
         assertThat(exit).isEqualTo(1);
         assertThat(out.toString())
                 .contains("regressions:")
-                .contains("core/one: PASSED -> FAILED")
+                .contains("core/one: passed -> failed")
                 .contains("fixes:")
-                .contains("core/two: FAILED -> PASSED");
+                .contains("core/two: failed -> passed");
     }
 
     @Test

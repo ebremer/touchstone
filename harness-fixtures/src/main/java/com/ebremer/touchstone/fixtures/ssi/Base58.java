@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /** Base58 (Bitcoin alphabet) — the multibase {@code z} encoding used by did:key and CID. */
-final class Base58 {
+public final class Base58 {
 
     private static final String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     private static final BigInteger BASE = BigInteger.valueOf(58);
@@ -12,7 +12,7 @@ final class Base58 {
     private Base58() {
     }
 
-    static String encode(byte[] input) {
+    public static String encode(byte[] input) {
         if (input.length == 0) {
             return "";
         }
@@ -33,7 +33,7 @@ final class Base58 {
         return sb.reverse().toString();
     }
 
-    static byte[] decode(String input) {
+    public static byte[] decode(String input) {
         if (input.isEmpty()) {
             return new byte[0];
         }

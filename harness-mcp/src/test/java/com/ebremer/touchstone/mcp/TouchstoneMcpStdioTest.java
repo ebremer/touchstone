@@ -49,7 +49,7 @@ class TouchstoneMcpStdioTest {
                 TouchstoneMcpApplication.class.getName(),
                 "--spring.profiles.active=stdio",
                 "--touchstone.catalog=" + Path.of("..", "catalog").toAbsolutePath(),
-                "--touchstone.manifests=" + Path.of("..", "manifests").toAbsolutePath(),
+                "--touchstone.definitions=" + Path.of("..", "definitions").toAbsolutePath(),
                 "--touchstone.targets=" + Path.of("..", "targets.yaml").toAbsolutePath(),
                 "--touchstone.runs=" + work.resolve("runs"),
                 // The profile logs to a file in the working directory; keep it out of the module.

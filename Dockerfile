@@ -1,6 +1,6 @@
 # Touchstone conformance harness image.
 # Multi-stage: build the CLI from source with the Maven wrapper, then ship a slim JRE
-# runtime carrying the shaded jar plus the catalog and manifests, so a third-party server
+# runtime carrying the shaded jar plus the catalog and the test definitions, so a third-party server
 # implementer can run a conformance report with one `docker run`.
 
 # ---- build ----
@@ -29,12 +29,12 @@ LABEL org.opencontainers.image.title="Touchstone" \
       org.opencontainers.image.source="https://github.com/ebremer/touchstone"
 COPY --from=build /src/harness-cli/target/touchstone.jar touchstone.jar
 COPY catalog/ catalog/
-COPY manifests/ manifests/
+COPY definitions/ definitions/
 # The harness is deliberately an HTTP cannon (DESIGN.md 7.1) and third parties run this image in
 # their own CI, so it does not run as root. It needs nothing but read access to its own jar,
-# catalog and manifests, all of which are world-readable.
+# catalog and definitions, all of which are world-readable.
 #
-# WORKDIR stays /opt/touchstone: the CLI's --catalog and --manifests defaults are relative and
+# WORKDIR stays /opt/touchstone: the CLI's --catalog and --definitions defaults are relative and
 # resolve against it. Reports go to a mounted /work, given as an absolute path.
 #
 # A caller bind-mounting a host directory should also pass `docker run --user "$(id -u):$(id -g)"`

@@ -21,9 +21,13 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
 /**
- * FreeMarker HTML coverage + results report (DESIGN.md paragraph 5.5): a
- * per-requirement matrix with MUST/SHOULD/MAY rollups, where every test links to
- * the requirements it verifies and every requirement links to its spec section.
+ * FreeMarker HTML coverage + results report (DESIGN.md section 5.5): a per-requirement matrix
+ * with MUST/SHOULD/MAY rollups, where every test links to the requirements it verifies and
+ * every requirement links to its spec section.
+ *
+ * <p>{@link #model} is the one computation of what a run found, and the JSON, Markdown and PDF
+ * reports render it too. Its verdict is EXECUTION.md section 9's: each test has one level, and
+ * only a MUST test that failed or could not tell makes the target non-conformant.
  */
 public final class HtmlReport {
 
@@ -53,39 +57,30 @@ public final class HtmlReport {
     static Map<String, Object> model(RunResult run, List<Requirement> catalog) {
         Map<String, List<Map<String, Object>>> testsByRequirement = new HashMap<>();
         List<Map<String, Object>> tests = new ArrayList<>();
-        long mustFailures = 0;
         Map<String, Requirement> catalogIndex = new HashMap<>();
         catalog.forEach(r -> catalogIndex.put(r.iri(), r));
 
         for (TestResult test : run.results()) {
             Map<String, Object> t = new LinkedHashMap<>();
-            String anchor = test.manifestId().replace('/', '-');
-            t.put("id", test.manifestId());
-            t.put("anchor", anchor);
-            t.put("outcome", test.outcome().name());
+            t.put("id", test.testId());
+            t.put("anchor", test.testId().replace('/', '-').replace('#', '-'));
+            t.put("label", test.label() == null ? "" : test.label());
+            t.put("level", test.level() == null ? "" : test.level());
+            t.put("outcome", test.outcome().earl());
             t.put("durationMillis", test.durationMillis());
             List<Map<String, Object>> reqRefs = new ArrayList<>();
-            boolean must = false;
             for (String iri : test.requirements()) {
                 Map<String, Object> ref = new LinkedHashMap<>();
                 ref.put("iri", iri);
                 ref.put("slug", slug(iri));
                 reqRefs.add(ref);
-                Requirement req = catalogIndex.get(iri);
-                if (req != null && "MUST".equals(req.level())) {
-                    must = true;
-                }
                 testsByRequirement.computeIfAbsent(iri, k -> new ArrayList<>()).add(t);
             }
             t.put("requirements", reqRefs);
-            boolean bad = test.outcome() == Outcome.FAILED || test.outcome() == Outcome.ERROR;
-            t.put("detail", bad || test.outcome() == Outcome.SKIPPED ? Results.describe(test) : "");
-            if (bad && must) {
-                mustFailures++;
-            }
+            t.put("reason", test.reason() == null ? "" : test.reason());
+            t.put("detail", test.outcome() == Outcome.PASSED ? "" : Results.describe(test));
             tests.add(t);
         }
-        tests.sort((a, b) -> ((String) a.get("id")).compareTo((String) b.get("id")));
 
         List<Map<String, Object>> requirements = new ArrayList<>();
         Map<String, long[]> levelStats = new TreeMap<>((a, b) -> Integer.compare(levelRank(a), levelRank(b)));
@@ -128,12 +123,17 @@ public final class HtmlReport {
         runInfo.put("targetId", run.targetId());
         runInfo.put("targetBaseUrl", run.targetBaseUrl());
         runInfo.put("startedAt", run.startedAt());
+        runInfo.put("tests", run.results().size());
         runInfo.put("passed", run.count(Outcome.PASSED));
         runInfo.put("failed", run.count(Outcome.FAILED));
-        runInfo.put("errors", run.count(Outcome.ERROR));
-        runInfo.put("skipped", run.count(Outcome.SKIPPED));
-        runInfo.put("mustFailures", mustFailures);
-        runInfo.put("conformant", mustFailures == 0);
+        runInfo.put("cantTell", run.count(Outcome.CANT_TELL));
+        runInfo.put("inapplicable", run.count(Outcome.INAPPLICABLE));
+        runInfo.put("mustFailures", run.mustFailures().size());
+        runInfo.put("advisoryFailures", run.results().stream()
+                .filter(r -> !r.decidesConformance() && r.outcome() == Outcome.FAILED).count());
+        runInfo.put("mustInapplicable", run.results().stream()
+                .filter(r -> r.decidesConformance() && r.outcome() == Outcome.INAPPLICABLE).count());
+        runInfo.put("conformant", run.conformant());
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("run", runInfo);
@@ -143,6 +143,10 @@ public final class HtmlReport {
         return model;
     }
 
+    /**
+     * A requirement's row: FAIL if a test citing it failed or could not tell, PASS if one
+     * passed, INAPPLICABLE if every test citing it was, UNCOVERED if none cites it.
+     */
     private static String requirementResult(List<Map<String, Object>> linkedTests) {
         if (linkedTests.isEmpty()) {
             return "UNCOVERED";
@@ -150,14 +154,14 @@ public final class HtmlReport {
         boolean anyPassed = false;
         for (Map<String, Object> t : linkedTests) {
             String outcome = (String) t.get("outcome");
-            if ("FAILED".equals(outcome) || "ERROR".equals(outcome)) {
+            if (Outcome.FAILED.earl().equals(outcome) || Outcome.CANT_TELL.earl().equals(outcome)) {
                 return "FAIL";
             }
-            if ("PASSED".equals(outcome)) {
+            if (Outcome.PASSED.earl().equals(outcome)) {
                 anyPassed = true;
             }
         }
-        return anyPassed ? "PASS" : "SKIPPED";
+        return anyPassed ? "PASS" : "INAPPLICABLE";
     }
 
     private static int levelRank(String level) {

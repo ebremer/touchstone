@@ -2,41 +2,44 @@ package com.ebremer.touchstone.mcp.tool;
 
 import java.util.List;
 
-import com.ebremer.touchstone.core.manifest.Manifest;
+import com.ebremer.touchstone.core.definitions.TestDefinition;
+import com.ebremer.touchstone.mcp.definitions.TestDefinitions;
 import com.ebremer.touchstone.mcp.dto.Dtos.TestSummary;
-import com.ebremer.touchstone.mcp.manifest.Manifests;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Service;
 
-/** Read-only tool over the test manifests — metadata only (DESIGN.md paragraph 6). */
+/** Read-only tool over the YAML-LD test definitions: metadata only (DESIGN.md section 6). */
 @Service
 public class TestTools {
 
-    private final Manifests manifests;
+    private final TestDefinitions definitions;
 
-    public TestTools(Manifests manifests) {
-        this.manifests = manifests;
+    public TestTools(TestDefinitions definitions) {
+        this.definitions = definitions;
     }
 
     @McpTool(name = "list_tests",
-            description = "List test manifests as metadata, optionally filtered by the requirement IRI "
-                    + "they verify, spec module, or tag.",
+            description = "List the test definitions as metadata, optionally filtered by the requirement IRI "
+                    + "they verify, a selector (a module such as core or auth, a manifest such as "
+                    + "core/containers, or a test id), their level (MUST, SHOULD, MAY), or a trait.",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     public List<TestSummary> listTests(
             @McpToolParam(required = false, description = "requirement IRI the test must verify") String requirement,
-            @McpToolParam(required = false, description = "spec module key") String module,
-            @McpToolParam(required = false, description = "tag the test must carry") String tag) {
-        return manifests.all().stream()
-                .filter(m -> requirement == null || requirement.isBlank() || m.requirements().contains(requirement))
-                .filter(m -> module == null || module.isBlank() || m.module().equals(module))
-                .filter(m -> tag == null || tag.isBlank() || m.tags().contains(tag))
+            @McpToolParam(required = false, description = "module, manifest path or test id") String module,
+            @McpToolParam(required = false, description = "MUST, SHOULD or MAY") String level,
+            @McpToolParam(required = false, description = "trait the test must carry, such as Container") String trait) {
+        return definitions.select(module).stream()
+                .filter(t -> requirement == null || requirement.isBlank() || t.requirements().contains(requirement))
+                .filter(t -> level == null || level.isBlank() || t.level().equalsIgnoreCase(level))
+                .filter(t -> trait == null || trait.isBlank() || t.traits().contains(trait))
                 .map(TestTools::summary)
                 .toList();
     }
 
-    private static TestSummary summary(Manifest m) {
-        return new TestSummary(m.id(), m.title(), m.module(), m.requirements(), m.capabilities(), m.tags());
+    private static TestSummary summary(TestDefinition t) {
+        return new TestSummary(t.id(), t.label(), t.level(), t.type(), t.manifestPath(), t.requirements(),
+                t.requires(), t.traits());
     }
 }

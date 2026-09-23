@@ -11,14 +11,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 import com.ebremer.touchstone.core.catalog.Requirement;
-import com.ebremer.touchstone.core.exec.Harness;
+import com.ebremer.touchstone.core.definitions.TestDefinition;
+import com.ebremer.touchstone.core.engine.Engine;
 import com.ebremer.touchstone.core.exec.Target;
-import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.report.Reports;
 import com.ebremer.touchstone.core.report.RunDirs;
 import com.ebremer.touchstone.core.report.RunRecords;
 import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.mcp.config.TouchstoneProperties;
+import com.ebremer.touchstone.mcp.definitions.TestDefinitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,25 +44,29 @@ public final class RunStore {
 
     private final TouchstoneProperties props;
     private final List<Requirement> catalog;
+    private final TestDefinitions definitions;
     private final ExecutorService executor;
     private final ConcurrentMap<String, RunJob> jobs = new ConcurrentHashMap<>();
 
-    public RunStore(TouchstoneProperties props, List<Requirement> catalog, ExecutorService executor) {
+    public RunStore(TouchstoneProperties props, List<Requirement> catalog, TestDefinitions definitions,
+                    ExecutorService executor) {
         this.props = props;
         this.catalog = catalog;
+        this.definitions = definitions;
         this.executor = executor;
     }
 
     /** Submits an async run and returns its id immediately. */
-    public String startAsync(Target target, String module, List<Manifest> manifests, ProgressSink sink) {
+    public String startAsync(Target target, String selector, List<TestDefinition> tests, ProgressSink sink) {
         String runId = UUID.randomUUID().toString().substring(0, 8);
         String startedAt = Instant.now().toString();
-        RunJob job = new RunJob(runId, target.id(), module, startedAt, manifests.size());
+        RunJob job = new RunJob(runId, target.id(), selector, startedAt, tests.size());
         jobs.put(runId, job);
 
         executor.submit(() -> {
             try {
-                RunResult result = Harness.run(target, manifests, runId, startedAt, (id, outcome, completed, total) -> {
+                RunResult result = Engine.run(target, definitions.definitions(), tests, runId, startedAt,
+                        (id, outcome, completed, total) -> {
                     job.progress(completed);
                     try {
                         sink.onProgress(completed, total);
@@ -85,7 +90,7 @@ public final class RunStore {
         if (job != null) {
             return Optional.of(job);
         }
-        return loadPersisted(runId).map(result -> RunJob.completed(result, moduleOf(result)));
+        return loadPersisted(runId).map(result -> RunJob.completed(result, selectorOf(result)));
     }
 
     /**
@@ -115,7 +120,15 @@ public final class RunStore {
         }
     }
 
-    private static String moduleOf(RunResult result) {
-        return result.results().isEmpty() ? "?" : result.results().getFirst().manifestId().split("/", 2)[0];
+    /** For a run loaded from disk: the manifest its tests share, else the module, else all. */
+    private static String selectorOf(RunResult result) {
+        List<String> manifests = result.results().stream()
+                .map(r -> r.testId().contains("#") ? r.testId().substring(0, r.testId().indexOf('#')) : r.testId())
+                .distinct().toList();
+        if (manifests.size() == 1) {
+            return manifests.getFirst();
+        }
+        List<String> modules = manifests.stream().map(m -> m.split("/", 2)[0]).distinct().toList();
+        return modules.size() == 1 ? modules.getFirst() : "all";
     }
 }

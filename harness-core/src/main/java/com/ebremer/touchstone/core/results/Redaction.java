@@ -78,12 +78,50 @@ public final class Redaction {
         return redacted.equals(uri.toString()) ? uri : URI.create(redacted);
     }
 
-    /** A body with credential-bearing JSON members and form fields blanked, then truncated. */
+    /**
+     * A compact JWS or JWE: a base64url JSON header (which always starts {@code eyJ}), then two
+     * or more dot-separated base64url parts, the last possibly empty (an unsecured JWT). Access
+     * tokens, ID Tokens and self-issued credentials all have this shape, whatever they are
+     * called, so shape is the second net under the names.
+     */
+    private static final Pattern JWT = Pattern.compile("eyJ[A-Za-z0-9_-]{2,}(?:\\.[A-Za-z0-9_-]*){2,4}");
+
+    /**
+     * A check on a credential-bearing member: its description names the member by JSON pointer,
+     * as in {@code json /access_token}. Only a pointer segment counts: {@code code} is a
+     * credential name in OAuth, and "status code" is not a check on one.
+     */
+    private static final Pattern CREDENTIAL_CHECK = Pattern.compile(
+            "(?i)/(?:" + CREDENTIAL_NAMES + ")(?![A-Za-z0-9_])");
+
+    /** A body with credential-bearing JSON members, form fields and JWTs blanked, then truncated. */
     public static String redactBody(String body) {
         if (body == null || body.isEmpty()) {
             return body;
         }
-        return truncate(replace(PARAM, replace(JSON_MEMBER, body)));
+        return truncate(redactJwts(replace(PARAM, replace(JSON_MEMBER, body))));
+    }
+
+    /**
+     * An expectation's expected or actual value, as it goes into a result. A check on a
+     * credential-bearing member (the description names one, as in {@code json /access_token})
+     * records the fact of the value, never the value; anywhere else a JWT is blanked by shape.
+     * Without this the value a check examined went into run.json and every trace verbatim, and
+     * a token exchange test examines a live access token.
+     */
+    public static String redactValue(String description, String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        if (description != null && CREDENTIAL_CHECK.matcher(description).find()
+                && !value.equals("absent") && !value.equals("nothing")) {
+            return REDACTED;
+        }
+        return redactJwts(value);
+    }
+
+    private static String redactJwts(String text) {
+        return JWT.matcher(text).replaceAll(Matcher.quoteReplacement(REDACTED));
     }
 
     public static String truncate(String body) {

@@ -21,10 +21,10 @@ class EarlReportTest {
     @Test
     void emitsOneAssertionPerTestWithMappedOutcomes() {
         RunResult run = run(
-                test("core/pass", Outcome.PASSED, REQ_A),
-                test("core/fail", Outcome.FAILED, REQ_A),
-                test("core/error", Outcome.ERROR, REQ_A),
-                test("core/skip", Outcome.SKIPPED, REQ_A));
+                test("core/x#pass", Outcome.PASSED, REQ_A),
+                test("core/x#fail", Outcome.FAILED, REQ_A),
+                test("core/x#error", Outcome.CANT_TELL, REQ_A),
+                test("core/x#skip", Outcome.INAPPLICABLE, REQ_A));
         Model m = EarlReport.model(run);
 
         Resource assertion = m.createResource(EARL + "Assertion");
@@ -35,7 +35,7 @@ class EarlReportTest {
 
         // test cases carry their requirement links and minted IRIs
         Property verifies = m.createProperty(Touchstone.VOCAB_NS, "verifies");
-        Resource testCase = m.createResource(Touchstone.TEST_NS + "core/pass");
+        Resource testCase = m.createResource(Touchstone.TEST_NS + "lws10/core/x#pass");
         assertThat(m.contains(testCase, verifies, m.createResource(REQ_A))).isTrue();
 
         // subject is the target storage

@@ -71,6 +71,6 @@ final class DiffCommand implements Callable<Integer> {
             return;
         }
         out.println(title + ":");
-        transitions.forEach(t -> out.printf("  %s: %s -> %s%n", t.manifestId(), t.before(), t.after()));
+        transitions.forEach(t -> out.printf("  %s: %s -> %s%n", t.testId(), t.before().earl(), t.after().earl()));
     }
 }

@@ -14,8 +14,9 @@
   .meta { color: #555; }
   .badge { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 0.6rem; font-size: 0.8rem; font-weight: 600; text-decoration: none; }
   .badge.passed, .row-pass td:last-child { background: #e2f4e5; color: #14601f; }
-  .badge.failed, .badge.error, .row-fail td:last-child { background: #fbe1e1; color: #8f1616; }
-  .badge.skipped, .row-skipped td:last-child { background: #fdf3d8; color: #7a5b0d; }
+  .badge.failed, .badge.canttell, .row-fail td:last-child { background: #fbe1e1; color: #8f1616; }
+  .badge.inapplicable, .badge.untested, .row-inapplicable td:last-child { background: #fdf3d8; color: #7a5b0d; }
+  .level { font-size: 0.75rem; color: #555; border: 1px solid #ccc; border-radius: 0.3rem; padding: 0 0.3rem; }
   .row-uncovered td:last-child { background: #ededed; color: #666; }
   .verdict { font-weight: 700; padding: 0.5rem 0.8rem; border-radius: 0.4rem; display: inline-block; }
   .verdict.ok { background: #e2f4e5; color: #14601f; }
@@ -30,10 +31,12 @@
 <h1>Touchstone conformance report</h1>
 <p class="meta">target <b>${run.targetId}</b> (${run.targetBaseUrl}) &middot; run ${run.runId} &middot; ${run.startedAt}</p>
 <p class="verdict ${run.conformant?string('ok','bad')}">
-  <#if run.conformant>No MUST-level failures<#else>NON-CONFORMANT &mdash; ${run.mustFailures} MUST-level failure(s)</#if>
+  <#if run.conformant>CONFORMANT &mdash; no MUST test failed or ended cantTell<#else>NON-CONFORMANT &mdash; ${run.mustFailures} MUST test(s) failed or ended cantTell</#if>
 </p>
-<p>${run.passed} passed &middot; ${run.failed} failed &middot; ${run.errors} errors &middot; ${run.skipped} skipped
-   <small>(verdict per DESIGN.md &sect;5.1: MUST failures decide conformance; SHOULD/MAY are advisory)</small></p>
+<p>${run.tests} tests: ${run.passed} passed &middot; ${run.failed} failed &middot; ${run.cantTell} cantTell &middot; ${run.inapplicable} inapplicable
+   <small>(verdict per definitions/EXECUTION.md &sect;9: each test has one level; only MUST tests decide
+   conformance, and SHOULD and MAY failures are advisory<#if run.advisoryFailures gt 0>, of which this run has ${run.advisoryFailures}</#if>.
+   <#if run.mustInapplicable gt 0>${run.mustInapplicable} MUST test(s) were inapplicable: coverage this run did not have, not evidence either way.</#if>)</small></p>
 
 <h2>Coverage by level</h2>
 <table>
@@ -65,10 +68,11 @@
 <h2>Test results</h2>
 <#list tests as t>
 <div class="test" id="t-${t.anchor}">
-  <h3><span class="badge ${t.outcome?lower_case}">${t.outcome}</span> ${t.id} <small>${t.durationMillis} ms</small></h3>
-  <p>verifies:
+  <h3><span class="badge ${t.outcome?lower_case}">${t.outcome}</span> <#if t.level?has_content><span class="level">${t.level}</span> </#if>${t.id} <small>${t.durationMillis} ms</small></h3>
+  <#if t.label?has_content><p>${t.label}</p></#if>
+  <#if t.requirements?has_content><p>verifies:
     <#list t.requirements as r><a href="#r-${r.slug}">${r.slug}</a><#sep>, </#list>
-  </p>
+  </p></#if>
   <#if t.detail?has_content><pre>${t.detail}</pre></#if>
 </div>
 </#list>

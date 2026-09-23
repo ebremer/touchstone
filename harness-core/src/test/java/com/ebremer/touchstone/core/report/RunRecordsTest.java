@@ -29,7 +29,7 @@ class RunRecordsTest {
                 "hello", 201,
                 Map.of("Location", List.of("http://sut/c/note")), "");
         TestResult test = new TestResult(
-                "core/example", List.of("https://example.org/touchstone/req/lws10-core/x"),
+                "core/example#test", "an example", "MUST", List.of("https://example.org/touchstone/req/lws10-core/x"),
                 Outcome.FAILED,
                 List.of(new StepResult("create", trace,
                         List.of(AssertionResult.failed("status", "[200]", "201")), null)),

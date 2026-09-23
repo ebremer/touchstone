@@ -38,24 +38,28 @@ public class McpPrompts {
                 List.of(new PromptMessage(Role.USER, new TextContent(text))));
     }
 
-    @McpPrompt(name = "draft_test", description = "Draft a test manifest for one requirement (human-gated).")
+    @McpPrompt(name = "draft_test", description = "Draft a YAML-LD test definition for one requirement (human-gated).")
     public GetPromptResult draftTest(
             @McpArg(name = "requirement_iri", description = "the requirement to cover", required = true) String iri) {
         Requirement r = catalog.find(iri).orElse(null);
         String clause = r == null ? "(requirement not found — call list_requirements)"
                 : "[" + r.level() + "] " + r.summary() + "\nclause: " + r.clauseText() + "\nsection: " + r.section();
         String text = """
-                Draft a Touchstone test manifest that verifies this requirement:
+                Draft a Touchstone test definition that verifies this requirement:
                 %s
 
                 Rules:
-                - Emit YAML conforming to the frozen manifest schema v1 (schemaVersion: 1).
-                - id must be <module>/<slug>; list the requirement IRI under requirements.
-                - Use only assertions the executor supports (status, headers, json pointers, graph \
-                contains/isomorphism/SHACL, conneg equivalence).
-                - This is a DRAFT for human review: it must go through schema validation, a dry-run \
-                against the reference server, and a pull request. Never commit it directly — the \
-                requirements mapping is the crown jewels (DESIGN.md 7.4).""".formatted(clause);
+                - Emit one entry for a definitions/lws10 manifest, in YAML-LD format 0.2.0 (frozen): \
+                definitions/schema/definitions.schema.json is its syntax and definitions/EXECUTION.md \
+                what every key means. list_tests shows existing definitions to follow.
+                - id is "#" + name; give exactly one level (MUST, SHOULD or MAY) and a dated source; \
+                list the requirement IRI under requirements.
+                - One exchange is written as request and response; a flow as steps. Declare the \
+                resources the test needs but does not examine in prereqs.
+                - Use ${...} variables, never fixed hosts: no example host passes the lint.
+                - This is a DRAFT for human review: it must pass tools/definitions/check.py, run \
+                green against the reference deployment, and arrive as a pull request. Never commit it \
+                directly: the requirements mapping is the crown jewels (DESIGN.md 7.4).""".formatted(clause);
         return new GetPromptResult("Draft a test for " + iri,
                 List.of(new PromptMessage(Role.USER, new TextContent(text))));
     }

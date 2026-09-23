@@ -1,6 +1,6 @@
 package com.ebremer.touchstone.core.results;
 
-/** Human-readable rendering of results for the CLI and JUnit failure messages. */
+/** Human-readable rendering of results for the CLI, the reports and JUnit failure messages. */
 public final class Results {
 
     private Results() {
@@ -8,19 +8,20 @@ public final class Results {
 
     public static String describe(TestResult result) {
         StringBuilder sb = new StringBuilder();
-        sb.append(result.manifestId()).append(" - ").append(result.outcome())
-                .append(" (").append(result.durationMillis()).append(" ms)");
-        if (result.skipReason() != null) {
-            sb.append("\n  skipped: ").append(result.skipReason());
+        sb.append(result.testId()).append(" - ").append(result.outcome().earl());
+        if (result.level() != null) {
+            sb.append(" [").append(result.level()).append(']');
         }
-        int i = 0;
+        sb.append(" (").append(result.durationMillis()).append(" ms)");
+        if (result.reason() != null) {
+            sb.append("\n  ").append(result.outcome().earl()).append(": ").append(result.reason());
+        }
         for (StepResult step : result.steps()) {
-            i++;
             boolean interesting = step.error() != null || step.failed();
             if (!interesting) {
                 continue;
             }
-            sb.append("\n  step ").append(i);
+            sb.append("\n  step");
             if (step.name() != null) {
                 sb.append(" '").append(step.name()).append('\'');
             }

@@ -10,11 +10,24 @@ inputs:
     description: Base URL of the running LWS server to test (the system under test).
     required: true
   module:
-    description: Test module to run (core, auth-oidc, ...).
+    description: >-
+      What to run: all, a module (core, auth), a manifest (core/containers, auth/oidc) or one
+      test id.
     required: false
-    default: core
+    default: all
+  capabilities:
+    description: >-
+      Comma-separated capabilities the target declares (definitions/EXECUTION.md section 5):
+      Authentication, HarnessIssuedTokens, ReachableFixtures, SamlTrust. Tests that need one
+      the target does not declare are reported inapplicable. With Authentication, set
+      TOUCHSTONE_TOKEN_ALICE and TOUCHSTONE_TOKEN_BOB (and TOUCHSTONE_WEBID_ALICE and
+      TOUCHSTONE_WEBID_BOB) in the step's env; they reach the harness and nothing else.
+    required: false
+    default: ""
   fail-on-nonconformance:
-    description: Fail the job when the run is non-conformant (any failure or error).
+    description: >-
+      Fail the job when the run is not conformant: a MUST test failed or ended cantTell.
+      SHOULD and MAY failures are advisory and never fail the job.
     required: false
     default: "true"
   report-path:
@@ -44,6 +57,7 @@ runs:
       # and the URL is validated before it is written.
       env:
         TARGET_URL: ${{ inputs.target-url }}
+        CAPABILITIES: ${{ inputs.capabilities }}
         REPORT_PATH: ${{ inputs.report-path }}
       run: |
         set -euo pipefail
@@ -55,9 +69,18 @@ runs:
           echo "target-url must not contain whitespace or quotes" >&2
           exit 2
         fi
+        # Only the four capability names the definitions define reach the registry.
+        caps=""
+        for c in $(printf '%s' "$CAPABILITIES" | tr ',' ' '); do
+          case "$c" in
+            Authentication|HarnessIssuedTokens|ReachableFixtures|SamlTrust) caps="${caps:+$caps, }$c" ;;
+            *) echo "unknown capability: $c (Authentication, HarnessIssuedTokens, ReachableFixtures, SamlTrust)" >&2; exit 2 ;;
+          esac
+        done
         mkdir -p "$GITHUB_WORKSPACE/$REPORT_PATH"
         {
-          printf 'targets:\n  sut:\n    baseUrl: "%s"\n    adapter: env\n' "$TARGET_URL"
+          printf 'targets:\n  sut:\n    baseUrl: "%s"\n    adapter: env\n    capabilities: [%s]\n' \
+            "$TARGET_URL" "$caps"
         } > "$GITHUB_WORKSPACE/$REPORT_PATH/targets.yaml"
 
     - name: Run conformance
@@ -71,18 +94,22 @@ runs:
         set +e
         # The image runs as a non-root user; run it as the invoking one so reports written into
         # the bind-mounted workspace are owned by whoever the runner is, not by a uid baked in.
+        # Credentials come from the step's environment, by name, and only when set: `-e NAME`
+        # without a value passes the runner's variable through and never prints it.
         docker run --rm --network host --user "$(id -u):$(id -g)" \
+          -e TOUCHSTONE_TOKEN_ALICE -e TOUCHSTONE_TOKEN_BOB \
+          -e TOUCHSTONE_WEBID_ALICE -e TOUCHSTONE_WEBID_BOB \
           -v "$GITHUB_WORKSPACE/$REPORT_PATH:/work" \
           touchstone-harness:local \
           run --target sut --module "$MODULE" \
               --targets /work/targets.yaml --report-dir /work/runs \
-              --catalog catalog --manifests manifests
+              --catalog catalog --definitions definitions
         code=$?
         echo "report-dir=$REPORT_PATH/runs" >> "$GITHUB_OUTPUT"
         # The CLI distinguishes the two ways a run can end badly. 1 is a verdict: the server was
-        # tested and did not conform. 2 means no verdict: an unknown target, a missing registry,
-        # an invalid manifest, a requirement the catalog lacks, or a server that could not be
-        # reached or would not create the run root (D-0048). Collapsing them told a server
+        # tested and a MUST test failed or ended cantTell. 2 means no verdict: an unknown target, a
+        # missing registry, invalid definitions, a requirement the catalog lacks, or a server that
+        # could not be reached or would not create the run root (D-0048). Collapsing them told a server
         # implementer their server had failed when the workflow was wrong, so 2 always fails the
         # job and says so.
         if [ "$code" -ge 2 ]; then

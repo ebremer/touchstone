@@ -19,7 +19,7 @@ spring:
 # Harness locations (DESIGN.md paragraph 7.1: targets are pre-registered here, never passed to tools).
 touchstone:
   catalog: catalog
-  manifests: manifests
+  definitions: definitions
   targets: targets.yaml
   runs: runs
 

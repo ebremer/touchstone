@@ -23,7 +23,7 @@ public record RunDiff(
         List<String> removed,
         long unchanged) {
 
-    public record Transition(String manifestId, Outcome before, Outcome after) {
+    public record Transition(String testId, Outcome before, Outcome after) {
     }
 
     public static RunDiff compare(RunResult before, RunResult after) {
@@ -44,9 +44,9 @@ public record RunDiff(
                 added.add(entry.getKey());
             } else if (b == a) {
                 unchanged++;
-            } else if (b == Outcome.PASSED && (a == Outcome.FAILED || a == Outcome.ERROR)) {
+            } else if (b == Outcome.PASSED && (a == Outcome.FAILED || a == Outcome.CANT_TELL)) {
                 regressions.add(new Transition(entry.getKey(), b, a));
-            } else if ((b == Outcome.FAILED || b == Outcome.ERROR) && a == Outcome.PASSED) {
+            } else if ((b == Outcome.FAILED || b == Outcome.CANT_TELL) && a == Outcome.PASSED) {
                 fixes.add(new Transition(entry.getKey(), b, a));
             } else {
                 otherChanges.add(new Transition(entry.getKey(), b, a));
@@ -69,7 +69,7 @@ public record RunDiff(
     private static Map<String, Outcome> index(RunResult run) {
         Map<String, Outcome> map = new LinkedHashMap<>();
         for (TestResult r : run.results()) {
-            map.put(r.manifestId(), r.outcome());
+            map.put(r.testId(), r.outcome());
         }
         return map;
     }

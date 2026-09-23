@@ -85,8 +85,8 @@ public final class PdfReport {
         c.text("Results", c.bold, 12f);
         c.gap(4f);
         float[] cols = {110f, 70f, 110f, 70f};
-        c.row(cols, new String[]{"passed", str(run, "passed"), "errors", str(run, "errors")}, false);
-        c.row(cols, new String[]{"failed", str(run, "failed"), "skipped", str(run, "skipped")}, false);
+        c.row(cols, new String[]{"passed", str(run, "passed"), "cantTell", str(run, "cantTell")}, false);
+        c.row(cols, new String[]{"failed", str(run, "failed"), "inapplicable", str(run, "inapplicable")}, false);
         c.gap(14f);
     }
 
@@ -115,9 +115,10 @@ public final class PdfReport {
         c.text("Tests", c.bold, 12f);
         c.gap(4f);
         float[] cols = {300f, 90f, 90f};
-        c.row(cols, new String[]{"test", "outcome", "duration"}, true);
+        c.row(cols, new String[]{"test", "level / outcome", "duration"}, true);
         for (Map<String, Object> t : tests) {
-            c.row(cols, new String[]{str(t, "id"), str(t, "outcome"), str(t, "durationMillis") + " ms"}, false);
+            c.row(cols, new String[]{str(t, "id"), str(t, "level") + " " + str(t, "outcome"),
+                    str(t, "durationMillis") + " ms"}, false);
             String detail = str(t, "detail");
             if (!detail.isBlank()) {
                 // The reason a test did not pass is the whole point of printing it.

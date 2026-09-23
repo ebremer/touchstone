@@ -42,8 +42,11 @@ public final class MarkdownReport {
         boolean conformant = Boolean.TRUE.equals(run.get("conformant"));
 
         out.write("# Touchstone conformance report\n\n");
-        out.write("**" + (conformant ? "CONFORMANT" : "NOT CONFORMANT") + "** — conformance is decided by "
-                + "MUST-level failures; this run has " + str(run, "mustFailures") + ".\n\n");
+        out.write("**" + (conformant ? "CONFORMANT" : "NOT CONFORMANT") + "**: only MUST tests decide conformance"
+                + " (definitions/EXECUTION.md section 9), and " + str(run, "mustFailures")
+                + " failed or ended cantTell. SHOULD and MAY failures are advisory: " + str(run, "advisoryFailures")
+                + ". Inapplicable MUST tests are coverage this run did not have: " + str(run, "mustInapplicable")
+                + ".\n\n");
 
         out.write("| | |\n|---|---|\n");
         out.write(kv("target", str(run, "targetId")));
@@ -53,9 +56,9 @@ public final class MarkdownReport {
         out.write("\n");
 
         out.write("## Results\n\n");
-        out.write("| passed | failed | errors | skipped |\n|---:|---:|---:|---:|\n");
+        out.write("| passed | failed | cantTell | inapplicable |\n|---:|---:|---:|---:|\n");
         out.write("| " + str(run, "passed") + " | " + str(run, "failed") + " | "
-                + str(run, "errors") + " | " + str(run, "skipped") + " |\n\n");
+                + str(run, "cantTell") + " | " + str(run, "inapplicable") + " |\n\n");
 
         List<Map<String, Object>> levels = (List<Map<String, Object>>) model.get("levels");
         if (levels != null && !levels.isEmpty()) {
@@ -71,10 +74,10 @@ public final class MarkdownReport {
         List<Map<String, Object>> tests = (List<Map<String, Object>>) model.get("tests");
         if (tests != null && !tests.isEmpty()) {
             out.write("## Tests\n\n");
-            out.write("| test | outcome | duration |\n|---|---|---:|\n");
+            out.write("| test | level | outcome | duration |\n|---|---|---|---:|\n");
             for (Map<String, Object> t : tests) {
-                out.write("| `" + esc(str(t, "id")) + "` | " + esc(str(t, "outcome")) + " | "
-                        + str(t, "durationMillis") + " ms |\n");
+                out.write("| `" + esc(str(t, "id")) + "` | " + esc(str(t, "level")) + " | " + esc(str(t, "outcome"))
+                        + " | " + str(t, "durationMillis") + " ms |\n");
             }
             out.write("\n");
 

@@ -57,12 +57,22 @@ public final class TokenValidator {
 
     /** @return the validated subject (sub claim) */
     public String validate(String bearerToken) {
+        JWTClaimsSet claims;
         try {
-            JWTClaimsSet claims = processor.process(bearerToken, null);
-            return claims.getSubject();
+            claims = processor.process(bearerToken, null);
         } catch (Exception e) {
             throw new InvalidTokenException(e.getMessage() == null ? e.toString() : e.getMessage());
         }
+        // Nimbus accepts a token whose aud merely contains the realm, and does not look at iat.
+        // An access token is for this storage alone, and one issued in the future was not issued.
+        if (claims.getAudience().size() != 1) {
+            throw new InvalidTokenException("aud must name this storage alone");
+        }
+        if (claims.getIssueTime() != null
+                && claims.getIssueTime().toInstant().isAfter(java.time.Instant.now().plusSeconds(60))) {
+            throw new InvalidTokenException("iat lies in the future");
+        }
+        return claims.getSubject();
     }
 
     public String realm() {

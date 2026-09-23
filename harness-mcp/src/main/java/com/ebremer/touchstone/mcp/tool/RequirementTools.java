@@ -5,13 +5,13 @@ import java.util.Set;
 
 import com.ebremer.touchstone.core.catalog.Requirement;
 import com.ebremer.touchstone.core.coverage.CoverageReport;
-import com.ebremer.touchstone.core.manifest.Manifest;
+import com.ebremer.touchstone.core.definitions.TestDefinition;
 import com.ebremer.touchstone.mcp.config.Catalog;
 import com.ebremer.touchstone.mcp.dto.Dtos.CoverageCell;
 import com.ebremer.touchstone.mcp.dto.Dtos.CoverageReportDto;
 import com.ebremer.touchstone.mcp.dto.Dtos.RequirementDetail;
 import com.ebremer.touchstone.mcp.dto.Dtos.RequirementSummary;
-import com.ebremer.touchstone.mcp.manifest.Manifests;
+import com.ebremer.touchstone.mcp.definitions.TestDefinitions;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Service;
@@ -25,11 +25,11 @@ import org.springframework.stereotype.Service;
 public class RequirementTools {
 
     private final Catalog catalog;
-    private final Manifests manifests;
+    private final TestDefinitions definitions;
 
-    public RequirementTools(Catalog catalog, Manifests manifests) {
+    public RequirementTools(Catalog catalog, TestDefinitions definitions) {
         this.catalog = catalog;
-        this.manifests = manifests;
+        this.definitions = definitions;
     }
 
     @McpTool(name = "list_requirements",
@@ -70,8 +70,8 @@ public class RequirementTools {
         List<Requirement> requirements = catalog.all().stream()
                 .filter(r -> module == null || module.isBlank() || module.equals(r.specModule()))
                 .toList();
-        Set<String> covered = manifests.all().stream()
-                .map(Manifest::requirements)
+        Set<String> covered = definitions.all().stream()
+                .map(TestDefinition::requirements)
                 .flatMap(List::stream)
                 .collect(java.util.stream.Collectors.toSet());
         CoverageReport report = CoverageReport.compute(requirements, covered);

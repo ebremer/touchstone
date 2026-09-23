@@ -17,8 +17,12 @@ final class ReportTestData {
     }
 
     static TestResult test(String id, Outcome outcome, String... requirements) {
-        return new TestResult(id, List.of(requirements), outcome, List.of(), 42,
-                outcome == Outcome.SKIPPED ? "target lacks capabilities [x]" : null);
+        return test(id, "MUST", outcome, requirements);
+    }
+
+    static TestResult test(String id, String level, Outcome outcome, String... requirements) {
+        return new TestResult(id, "label of " + id, level, List.of(requirements), outcome, List.of(), 42,
+                outcome == Outcome.INAPPLICABLE ? "the target does not declare Authentication" : null);
     }
 
     static RunResult run(TestResult... tests) {

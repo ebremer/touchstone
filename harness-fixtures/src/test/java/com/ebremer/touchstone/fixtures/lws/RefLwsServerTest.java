@@ -58,10 +58,11 @@ class RefLwsServerTest {
         assertThat(read.body()).isEqualTo("v1");
         String etag = read.headers().firstValue("ETag").orElseThrow();
 
-        // unconditional PUT -> 428; wrong If-Match -> 412; right one -> 204
-        assertThat(put(resource, "v2", null).statusCode()).isEqualTo(428);
+        // wrong If-Match -> 412; right one -> 204; unconditional -> 204, since the 21 September
+        // 2026 draft dropped the MUST that answered it with 428
         assertThat(put(resource, "v2", "\"wrong\"").statusCode()).isEqualTo(412);
         assertThat(put(resource, "v2", etag).statusCode()).isEqualTo(204);
+        assertThat(put(resource, "v2", null).statusCode()).isEqualTo(204);
 
         // conditional GET with the container's etag -> 304
         HttpResponse<String> listing = http.send(HttpRequest.newBuilder(container).build(),

@@ -12,18 +12,15 @@
 
   <artifactId>harness-core</artifactId>
   <name>Touchstone :: Core Engine</name>
-  <description>Catalog, manifests, executor, assertions, and reporting. Must stay usable without Spring (DESIGN.md paragraph 3).</description>
+  <description>Catalog, the YAML-LD definitions loader, the engine that runs them, and reporting. Must stay usable without Spring (DESIGN.md section 3).</description>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.jena</groupId>
       <artifactId>jena-arq</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.apache.jena</groupId>
-      <artifactId>jena-shacl</artifactId>
-    </dependency>
-    <!-- Direct: the offline JSON-LD document loader (JsonLdContexts) uses the Titanium API,
+    <!-- Direct: the definitions loader expands every document in safe mode, and the conneg
+         check parses responses with an offline document loader, both through the Titanium API,
          which jena-arq would otherwise supply only transitively (D-0026). -->
     <dependency>
       <groupId>com.apicatalog</groupId>
@@ -41,6 +38,20 @@
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
     </dependency>
+    <!-- The YAML-LD definitions are YAML 1.2 Core Schema documents. jackson-dataformat-yaml
+         (SnakeYAML 1.x) reads YAML 1.1, where yes/on are booleans and 2026-09-21 is a date
+         (EXECUTION.md 2.1), so the definitions loader uses snakeyaml-engine. -->
+    <dependency>
+      <groupId>org.snakeyaml</groupId>
+      <artifactId>snakeyaml-engine</artifactId>
+    </dependency>
+    <!-- The engine mints and checks JWTs itself: harness-issued access tokens and their
+         faults, did:key, CID and OpenID subject credentials, and the jwt expectation
+         (EXECUTION.md sections 5 and 7.9). -->
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
@@ -53,7 +64,7 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
     </dependency>
-    <!-- Compile-scope by design: the manifest-to-DynamicTest factory is public API (DESIGN.md paragraph 4). -->
+    <!-- Compile-scope by design: the run-to-DynamicTest factory is public API (DESIGN.md section 4). -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>

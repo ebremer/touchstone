@@ -17,11 +17,11 @@ class RunDiffTest {
                 test("core/stays-green", Outcome.PASSED, REQ_A),
                 test("core/regresses", Outcome.PASSED, REQ_A),
                 test("core/gets-fixed", Outcome.FAILED, REQ_A),
-                test("core/goes-weird", Outcome.SKIPPED, REQ_A),
+                test("core/goes-weird", Outcome.INAPPLICABLE, REQ_A),
                 test("core/disappears", Outcome.PASSED, REQ_A));
         RunResult after = run(
                 test("core/stays-green", Outcome.PASSED, REQ_A),
-                test("core/regresses", Outcome.ERROR, REQ_A),
+                test("core/regresses", Outcome.CANT_TELL, REQ_A),
                 test("core/gets-fixed", Outcome.PASSED, REQ_A),
                 test("core/goes-weird", Outcome.PASSED, REQ_A),
                 test("core/brand-new", Outcome.PASSED, REQ_A));
@@ -29,11 +29,11 @@ class RunDiffTest {
         RunDiff diff = RunDiff.compare(before, after);
 
         assertThat(diff.regressions()).containsExactly(
-                new RunDiff.Transition("core/regresses", Outcome.PASSED, Outcome.ERROR));
+                new RunDiff.Transition("core/regresses", Outcome.PASSED, Outcome.CANT_TELL));
         assertThat(diff.fixes()).containsExactly(
                 new RunDiff.Transition("core/gets-fixed", Outcome.FAILED, Outcome.PASSED));
         assertThat(diff.otherChanges()).containsExactly(
-                new RunDiff.Transition("core/goes-weird", Outcome.SKIPPED, Outcome.PASSED));
+                new RunDiff.Transition("core/goes-weird", Outcome.INAPPLICABLE, Outcome.PASSED));
         assertThat(diff.added()).containsExactly("core/brand-new");
         assertThat(diff.removed()).containsExactly("core/disappears");
         assertThat(diff.unchanged()).isEqualTo(1);

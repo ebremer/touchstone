@@ -19,7 +19,7 @@ public final class TouchstoneCli implements Callable<Integer> {
      * The exit code for "the harness produced no verdict". Causes include:
      * <ul>
      *   <li>a missing registry, or an unknown target;</li>
-     *   <li>an empty module, or a manifest that is invalid or cites an uncatalogued requirement;</li>
+     *   <li>a selector that matches no test, or definitions that are invalid or cite an uncatalogued requirement;</li>
      *   <li>a target that could not be provisioned;</li>
      *   <li>a run record that cannot be read;</li>
      *   <li>any exception nothing anticipated.</li>

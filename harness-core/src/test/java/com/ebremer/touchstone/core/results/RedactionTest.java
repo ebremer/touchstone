@@ -111,4 +111,29 @@ class RedactionTest {
         assertThat(Redaction.redactBody(null)).isNull();
         assertThat(Redaction.redactBody("")).isEmpty();
     }
+
+    private static final String JWT = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.c2lnbmF0dXJl";
+
+    @Test
+    void aCheckOnACredentialRecordsThatItHeldNotTheCredential() {
+        // A token exchange test checks the access_token it was issued; the value it examined
+        // went into run.json verbatim until results were redacted as traces are.
+        AssertionResult captured = AssertionResult.ok("json /access_token captured as accessToken", "a value",
+                "\"" + JWT + "\"");
+        assertThat(captured.actual()).isEqualTo(Redaction.REDACTED);
+        AssertionResult typed = AssertionResult.ok("json /access_token jsonType", "a JSON string", "\"opaque\"");
+        assertThat(typed.actual()).isEqualTo(Redaction.REDACTED);
+        // A member whose name merely contains a credential name is not one.
+        AssertionResult tokenType = AssertionResult.ok("json /token_type matches", "matches /bearer/", "\"Bearer\"");
+        assertThat(tokenType.actual()).isEqualTo("\"Bearer\"");
+    }
+
+    @Test
+    void aJwtIsBlankedWhateverItIsCalled() {
+        assertThat(Redaction.redactValue("body", "prefix " + JWT + " suffix")).isEqualTo("prefix [REDACTED] suffix");
+        assertThat(Redaction.redactValue("body", "unsecured eyJhbGciOiJub25lIn0.eyJzdWIiOiJhIn0."))
+                .isEqualTo("unsecured [REDACTED]");
+        assertThat(Redaction.redactBody("{\"credential\":\"" + JWT + "\"}")).doesNotContain("eyJ");
+        assertThat(Redaction.redactValue("status code", "200")).isEqualTo("200");
+    }
 }

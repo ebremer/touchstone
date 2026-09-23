@@ -33,8 +33,8 @@ class HtmlReportTest {
     @Test
     void matrixLinksTestsToRequirementsToSpecSections() throws Exception {
         RunResult run = run(
-                test("core/pass", Outcome.PASSED, REQ_A, REQ_B),
-                test("core/fail", Outcome.FAILED, REQ_A));
+                test("core/x#pass", Outcome.PASSED, REQ_A, REQ_B),
+                test("core/x#fail", Outcome.FAILED, REQ_A));
         Path file = tmp.resolve("report.html");
         HtmlReport.write(run, CATALOG, file);
         String html = Files.readString(file);
@@ -44,7 +44,7 @@ class HtmlReportTest {
         // requirement rows anchor, tests link to them
         assertThat(html).contains("id=\"r-alpha-must\"").contains("href=\"#r-alpha-must\"");
         // test sections anchor, matrix links to them
-        assertThat(html).contains("id=\"t-core-pass\"").contains("href=\"#t-core-pass\"");
+        assertThat(html).contains("id=\"t-core-x-pass\"").contains("href=\"#t-core-x-pass\"");
         // uncovered requirement is visible as such
         assertThat(html).contains("UNCOVERED");
         // a MUST failure flips the verdict
@@ -53,13 +53,26 @@ class HtmlReportTest {
 
     @Test
     void conformantWhenOnlyAdvisoryLevelsFail() throws Exception {
+        // The verdict follows each test's own level (EXECUTION.md section 9): a failed SHOULD
+        // test is advisory, and an inapplicable MUST test is missing coverage, not a failure.
         RunResult run = run(
-                test("core/pass", Outcome.PASSED, REQ_A),
-                test("core/should-fail", Outcome.FAILED, REQ_B));
+                test("core/x#pass", Outcome.PASSED, REQ_A),
+                test("core/x#should-fail", "SHOULD", Outcome.FAILED, REQ_B),
+                test("core/x#must-inapplicable", Outcome.INAPPLICABLE, REQ_A));
         Path file = tmp.resolve("advisory.html");
         HtmlReport.write(run, CATALOG, file);
         String html = Files.readString(file);
 
-        assertThat(html).contains("No MUST-level failures");
+        assertThat(run.conformant()).isTrue();
+        assertThat(html).contains("CONFORMANT &mdash; no MUST test failed").contains("of which this run has 1")
+                .contains("1 MUST test(s) were inapplicable");
+    }
+
+    @Test
+    void aMustTestThatCannotTellIsNotConformant() {
+        RunResult run = run(test("core/x#pass", Outcome.PASSED, REQ_A),
+                test("core/x#unsure", Outcome.CANT_TELL, REQ_A));
+        assertThat(run.conformant()).isFalse();
+        assertThat(run.mustFailures()).extracting(r -> r.testId()).containsExactly("core/x#unsure");
     }
 }

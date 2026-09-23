@@ -3,7 +3,7 @@ package com.ebremer.touchstone.mcp.config;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.ebremer.touchstone.mcp.manifest.Manifests;
+import com.ebremer.touchstone.mcp.definitions.TestDefinitions;
 import com.ebremer.touchstone.mcp.run.RunStore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -25,8 +25,8 @@ public class HarnessConfig {
     }
 
     @Bean
-    Manifests manifests(TouchstoneProperties props) {
-        return new Manifests(props);
+    TestDefinitions testDefinitions(TouchstoneProperties props, Catalog catalog) {
+        return new TestDefinitions(props, catalog);
     }
 
     /** Async runs execute here (DESIGN.md paragraph 6: virtual-thread executor). */
@@ -36,7 +36,8 @@ public class HarnessConfig {
     }
 
     @Bean
-    RunStore runStore(TouchstoneProperties props, Catalog catalog, ExecutorService runExecutor) {
-        return new RunStore(props, catalog.all(), runExecutor);
+    RunStore runStore(TouchstoneProperties props, Catalog catalog, TestDefinitions definitions,
+                      ExecutorService runExecutor) {
+        return new RunStore(props, catalog.all(), definitions, runExecutor);
     }
 }

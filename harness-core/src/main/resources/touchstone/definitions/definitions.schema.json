@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/touchstone/schema/definitions/0-2-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.2.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "oneOf": [
+    {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/identityRegistry"}
+  ],
+  "$defs": {
+    "template": {
+      "type": "string",
+      "description": "A string with ${...} expressions (EXECUTION.md section 3). Every ${ must open a well-formed expression.",
+      "pattern": "^(?:[^$]|\\$(?!\\{)|\\$\\{[A-Za-z][A-Za-z0-9_.+-]*\\})*$"
+    },
+    "context": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "(^|/)(context|touchstone)\\.jsonld$"},
+      "contains": {"type": "string", "pattern": "(^|/)context\\.jsonld$"}
+    },
+    "datedSpec": {
+      "type": "string",
+      "pattern": "^https://www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}/$"
+    },
+    "identityName": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "capture": {"type": "string", "pattern": "^[a-z][A-Za-z0-9]*$"},
+    "trait": {
+      "enum": ["Get", "Head", "Post", "Put", "Patch", "Delete", "Container", "DataResource", "Linkset",
+               "StorageDescription", "Discovery", "Authn", "Authz", "Public", "Private", "Conditional",
+               "Conneg", "Range", "TokenExchange", "AccessGrants", "Notifications"]
+    },
+    "capability": {"enum": ["Authentication", "HarnessIssuedTokens", "ReachableFixtures", "SamlTrust"]},
+    "mirrorRef": {"type": "string", "pattern": "^lws10/([a-z_]+/)*manifest\\.jsonld#[A-Za-z][A-Za-z0-9-]*$"},
+    "status": {
+      "oneOf": [
+        {"type": "integer", "minimum": 100, "maximum": 599},
+        {"type": "string", "pattern": "^[1-5]xx$"}
+      ]
+    },
+
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@context", "id", "type", "label", "specification", "entries"],
+      "properties": {
+        "@context": {"$ref": "#/$defs/context"},
+        "id": {"const": "#manifest"},
+        "type": {"const": "Manifest"},
+        "label": {"type": "string", "minLength": 1},
+        "comment": {"type": "string"},
+        "specification": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/datedSpec"}},
+        "include": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z_/]+\\.yamlld$"}},
+        "entries": {"type": "array", "items": {"$ref": "#/$defs/test"}}
+      }
+    },
+
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "label", "status", "level", "source", "traits"],
+      "anyOf": [
+        {"required": ["steps"], "properties": {"steps": true}},
+        {"required": ["request"], "properties": {"request": true}}
+      ],
+      "dependentRequired": {"request": ["response"], "response": ["request"]},
+      "dependentSchemas": {"steps": {"properties": {"request": false, "response": false}}},
+      "properties": {
+        "id": {"type": "string", "pattern": "^#[A-Za-z][A-Za-z0-9-]*$"},
+        "type": {"enum": ["ValidationTest", "NegativeTest"]},
+        "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]*$"},
+        "label": {"type": "string", "minLength": 1},
+        "comment": {"type": "string"},
+        "status": {"enum": ["Proposed", "Approved", "Rejected"]},
+        "level": {"enum": ["MUST", "SHOULD", "MAY"]},
+        "source": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^https://(www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}/#[A-Za-z0-9-]+|www\\.rfc-editor\\.org/rfc/rfc[0-9]+#section-[0-9.]+)$"
+          }
+        },
+        "traits": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/trait"}},
+        "requires": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/capability"}},
+        "as": {"$ref": "#/$defs/identityName"},
+        "requirements": {
+          "description": "touchstone only: catalog requirement IRIs (dropped on export)",
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^https://example\\.org/touchstone/req/lws10-[a-z-]+/[a-z0-9-]+$"}
+        },
+        "mirrors": {
+          "description": "touchstone only: the lws-test-suite test(s) this definition stands for (dropped on export)",
+          "oneOf": [
+            {"$ref": "#/$defs/mirrorRef"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/mirrorRef"}}
+          ]
+        },
+        "supersedes": {
+          "description": "touchstone only: manifests/ ids this definition replaces (dropped on export)",
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^(core|auth-oidc)/[a-z0-9-]+$"}
+        },
+        "note": {"description": "touchstone only: internal remark (dropped on export)", "type": "string"},
+        "prereqs": {"$ref": "#/$defs/prereqs"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"}},
+        "request": {"$ref": "#/$defs/request", "description": "short form: the test's one request"},
+        "response": {"$ref": "#/$defs/response", "description": "short form: the expectations on its response"}
+      }
+    },
+
+    "prereqs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hierarchy"],
+      "properties": {
+        "hierarchy": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/prereqResource"}}
+      }
+    },
+
+    "prereqResource": {
+      "description": "A resource the engine creates as alice before the test (EXECUTION.md section 4.3). Exactly one of container or dataResource, which names the variable bound to the URI the server assigns.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "container": {"$ref": "#/$defs/capture"},
+        "dataResource": {"$ref": "#/$defs/capture"},
+        "in": {"$ref": "#/$defs/capture"},
+        "contentType": {"type": "string"},
+        "body": {"$ref": "#/$defs/template"},
+        "bodyURL": {"type": "string", "pattern": "^(\\.\\./)*fixtures/[A-Za-z0-9_.-]+$"},
+        "bodyJSON": {},
+        "authorization": {"$ref": "#/$defs/resourceAuthorization"},
+        "absent": {"const": true}
+      },
+      "oneOf": [
+        {"required": ["container"], "properties": {"container": true, "dataResource": false}},
+        {"required": ["dataResource"], "properties": {"dataResource": true, "container": false}}
+      ],
+      "dependentSchemas": {
+        "container": {"properties": {"contentType": false, "body": false, "bodyURL": false, "bodyJSON": false}},
+        "absent": {"properties": {"authorization": false, "contentType": false, "body": false, "bodyURL": false, "bodyJSON": false}},
+        "body": {"properties": {"bodyURL": false, "bodyJSON": false}},
+        "bodyURL": {"properties": {"body": false, "bodyJSON": false}},
+        "bodyJSON": {"properties": {"body": false, "bodyURL": false}}
+      },
+      "if": {"required": ["dataResource"], "properties": {"dataResource": true, "absent": false}},
+      "then": {
+        "required": ["contentType"],
+        "properties": {"contentType": true},
+        "anyOf": [
+          {"required": ["body"], "properties": {"body": true}},
+          {"required": ["bodyURL"], "properties": {"bodyURL": true}},
+          {"required": ["bodyJSON"], "properties": {"bodyJSON": true}}
+        ]
+      }
+    },
+
+    "resourceAuthorization": {
+      "description": "Access to grant, by LWS action (WD section 11.3.2), to identities; anonymous means the public (foaf:Agent). alice, the creator, needs no grant.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "read": {"$ref": "#/$defs/assignees"},
+        "modify": {"$ref": "#/$defs/assignees"},
+        "create": {"$ref": "#/$defs/assignees"},
+        "delete": {"$ref": "#/$defs/assignees"}
+      }
+    },
+    "assignees": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identityName"}},
+
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "request", "response"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "as": {"$ref": "#/$defs/identityName"},
+        "precondition": {"const": true},
+        "request": {"$ref": "#/$defs/request"},
+        "response": {"$ref": "#/$defs/response"}
+      }
+    },
+
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "url"],
+      "properties": {
+        "method": {"enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]},
+        "url": {"$ref": "#/$defs/template"},
+        "accept": {"type": "string"},
+        "contentType": {"type": "string"},
+        "ifMatch": {"$ref": "#/$defs/template"},
+        "linkHeaders": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["rel", "href"],
+            "properties": {
+              "rel": {"type": "string"},
+              "href": {"$ref": "#/$defs/template"},
+              "mediaType": {"type": "string"}
+            }
+          }
+        },
+        "otherHeaders": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["headerName", "headerValue"],
+            "properties": {
+              "headerName": {"type": "string", "pattern": "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$"},
+              "headerValue": {"$ref": "#/$defs/template"}
+            }
+          }
+        },
+        "body": {"$ref": "#/$defs/template"},
+        "bodyURL": {"type": "string", "pattern": "^(\\.\\./)*fixtures/[A-Za-z0-9_.-]+$"},
+        "bodyJSON": {},
+        "bodyForm": {"type": "object", "additionalProperties": {"$ref": "#/$defs/template"}}
+      },
+      "dependentSchemas": {
+        "body":     {"properties": {"bodyURL": false, "bodyJSON": false, "bodyForm": false}},
+        "bodyURL":  {"properties": {"body": false, "bodyJSON": false, "bodyForm": false}},
+        "bodyJSON": {"properties": {"body": false, "bodyURL": false, "bodyForm": false}},
+        "bodyForm": {"properties": {"body": false, "bodyURL": false, "bodyJSON": false}}
+      }
+    },
+
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statusCode"],
+      "properties": {
+        "statusCode": {
+          "oneOf": [
+            {"$ref": "#/$defs/status"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/status"}}
+          ]
+        },
+        "contentType": {"type": "string", "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"},
+        "location": {
+          "type": "object", "additionalProperties": false, "required": ["capture"],
+          "properties": {"capture": {"$ref": "#/$defs/capture"}, "cleanup": {"const": true}}
+        },
+        "linkHeaders": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/linkExpectation"}},
+        "otherHeaders": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/headerExpectation"}},
+        "authenticationChallenge": {
+          "type": "object", "additionalProperties": false, "required": ["wwwAuthenticate"],
+          "properties": {
+            "wwwAuthenticate": {"type": "string"},
+            "asUri": {"$ref": "#/$defs/paramShorthand"},
+            "realm": {"$ref": "#/$defs/paramShorthand"},
+            "params": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/paramExpectation"}}
+          }
+        },
+        "bodyEmpty": {"const": true},
+        "bodyMatches": {"type": "string"},
+        "bodyURL": {"type": "string", "pattern": "^(\\.\\./)*fixtures/[A-Za-z0-9_.-]+$"},
+        "json": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}},
+        "jwt": {
+          "type": "object", "additionalProperties": false, "required": ["token"],
+          "properties": {
+            "token": {"$ref": "#/$defs/template"},
+            "jwks": {"$ref": "#/$defs/template"},
+            "header": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}},
+            "claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}}
+          }
+        },
+        "connegEquivalent": {
+          "type": "object", "additionalProperties": false, "required": ["accepts"],
+          "properties": {"accepts": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string"}}}
+        }
+      }
+    },
+
+    "linkExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rel"],
+      "properties": {
+        "rel": {"type": "string"},
+        "href": {"$ref": "#/$defs/template"},
+        "mediaType": {"type": "string"},
+        "absent": {"const": true},
+        "capture": {"$ref": "#/$defs/capture"}
+      },
+      "dependentSchemas": {"absent": {"properties": {"capture": false}}}
+    },
+
+    "headerExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headerName"],
+      "minProperties": 2,
+      "properties": {
+        "headerName": {"type": "string", "pattern": "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$"},
+        "headerValue": {"$ref": "#/$defs/template"},
+        "present": {"type": "boolean"},
+        "differsFrom": {"$ref": "#/$defs/template"},
+        "matches": {"type": "string"},
+        "capture": {"$ref": "#/$defs/capture"}
+      }
+    },
+
+    "paramShorthand": {
+      "description": "asUri or realm: a template the auth-param must equal exactly, or an expectation on it.",
+      "oneOf": [
+        {"$ref": "#/$defs/template"},
+        {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {"present": {"type": "boolean"}, "matches": {"type": "string"}, "capture": {"$ref": "#/$defs/capture"}}
+        }
+      ]
+    },
+    "paramExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paramName"],
+      "minProperties": 2,
+      "properties": {
+        "paramName": {"type": "string"},
+        "paramValue": {"$ref": "#/$defs/template"},
+        "present": {"type": "boolean"},
+        "matches": {"type": "string"},
+        "capture": {"$ref": "#/$defs/capture"}
+      }
+    },
+
+    "jsonExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pointer"],
+      "properties": {
+        "pointer": {"type": "string", "pattern": "^(/([^~/]|~[01])*)*$"},
+        "optional": {"const": true},
+        "equals": {},
+        "equalsIri": {"$ref": "#/$defs/template"},
+        "matches": {"type": "string"},
+        "hasValue": {},
+        "exists": {"type": "boolean"},
+        "count": {"type": "integer", "minimum": 0},
+        "jsonType": {"enum": ["string", "number", "boolean", "null", "array", "object"]},
+        "some": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}},
+        "every": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}},
+        "none": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/jsonExpectation"}},
+        "capture": {"$ref": "#/$defs/capture"}
+      },
+      "minProperties": 2
+    },
+
+    "identityRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@context", "id", "type", "label", "identities"],
+      "properties": {
+        "@context": {"$ref": "#/$defs/context"},
+        "id": {"const": "#identities"},
+        "type": {"const": "IdentityRegistry"},
+        "label": {"type": "string"},
+        "comment": {"type": "string"},
+        "identities": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/identity"}}
+      }
+    },
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "label", "kind"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^#[a-z][a-z0-9-]*$"},
+        "type": {"const": "Identity"},
+        "label": {"type": "string"},
+        "comment": {"type": "string"},
+        "kind": {"enum": ["NoCredential", "StorageAccessToken", "SubjectCredential"]},
+        "basis": {"$ref": "#/$defs/identityName"},
+        "fault": {
+          "enum": ["SignatureCorrupted", "AlgNone", "UnknownKeyId", "Expired", "NotYetValid", "IssuedInFuture",
+                   "WrongAudience", "MultipleAudiences", "WrongIssuer", "AudienceExcludesAuthorizationServer",
+                   "ClientIdMismatch", "MissingExpiration", "MissingIssuedAt", "MissingAuthorizedParty",
+                   "UntrustedIssuer", "Unsigned"]
+        },
+        "requires": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/capability"}},
+        "suite": {"type": "string", "pattern": "^https://www\\.w3\\.org/TR/lws10-authn-[a-z-]+/$"},
+        "tokenType": {"type": "string", "pattern": "^urn:ietf:params:oauth:token-type:[a-z0-9_]+$"},
+        "algorithm": {"type": "string"},
+        "webid": {"$ref": "#/$defs/template"},
+        "credentialHeader": {"type": "object"},
+        "credentialClaims": {"type": "object"},
+        "identityDocument": {"type": "object"},
+        "samlAssertion": {"type": "object"}
+      },
+      "dependentRequired": {"basis": ["fault"], "fault": ["basis"]},
+      "if": {"properties": {"kind": {"const": "SubjectCredential"}, "basis": false}, "required": ["kind"]},
+      "then": {"properties": {"suite": true, "tokenType": true, "algorithm": true}, "required": ["suite", "tokenType", "algorithm"]}
+    }
+  }
+}

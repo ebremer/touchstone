@@ -8,8 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
+import com.ebremer.touchstone.fixtures.ReferenceScenario;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.client.McpClient;
@@ -36,15 +37,16 @@ import org.springframework.test.context.DynamicPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Phase 5 acceptance (DESIGN.md paragraph 9): a real MCP client can start a run, watch
- * progress, page failures, and pull a redacted trace end-to-end — here over streamable
- * HTTP against the booted Spring Boot server, targeting the in-memory reference LWS server.
+ * Phase 5 acceptance (DESIGN.md section 9): a real MCP client can start a run, watch progress,
+ * page failures, and pull a redacted trace end-to-end, here over streamable HTTP against the
+ * booted Spring Boot server, targeting the secured reference deployment. The definitions are a
+ * copy of the real ones with one test broken on purpose, so there is a failure to page and trace.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TouchstoneMcpEndToEndTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static RefLwsServer sut;
+    private static ReferenceScenario sut;
     private static Path work;
 
     @LocalServerPort
@@ -52,43 +54,27 @@ class TouchstoneMcpEndToEndTest {
 
     @DynamicPropertySource
     static void harnessLocations(DynamicPropertyRegistry registry) throws Exception {
-        sut = RefLwsServer.start(0);
+        sut = ReferenceScenario.start(ReferenceScenario.Kind.SECURED);
         work = Files.createTempDirectory("mcp-e2e");
-        Path manifests = work.resolve("manifests").resolve("core");
-        Files.createDirectories(manifests);
-        Files.writeString(manifests.resolve("passing.yaml"), """
-                schemaVersion: 1
-                id: core/passing
-                title: the run root is retrievable
-                requirements: [https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence]
-                steps:
-                  - request: { method: GET, target: "${run.root}", headers: { Accept: application/lws+json } }
-                    expect: { status: 200 }
-                """);
-        // Carries an Authorization header (as: alice) that the trace must redact, and expects the
-        // wrong status so it fails — exercising get_failures and get_trace.
-        Files.writeString(manifests.resolve("failing.yaml"), """
-                schemaVersion: 1
-                id: core/failing
-                title: deliberately expects the wrong status
-                requirements: [https://example.org/touchstone/req/lws10-core/head-parity-with-get]
-                as: alice
-                steps:
-                  - request: { method: GET, target: "${run.root}", headers: { Accept: application/lws+json } }
-                    expect: { status: 418 }
-                """);
+        Path definitions = copy(Path.of("..", "definitions"), work.resolve("definitions"));
+        // getContainer runs as alice, so it carries an Authorization header the trace must
+        // redact; expecting the wrong status makes it fail, for get_failures and get_trace.
+        Path containers = definitions.resolve("lws10/core/containers.yamlld");
+        String text = Files.readString(containers);
+        String from = "      statusCode: 200\n      contentType: application/lws+json\n      otherHeaders:\n"
+                + "        - headerName: ETag";
+        assertThat(text).contains(from);
+        Files.writeString(containers, text.replaceFirst(java.util.regex.Pattern.quote(from),
+                from.replace("statusCode: 200", "statusCode: 418")));
+        StringBuilder yaml = new StringBuilder("targets:\n  ref:\n    baseUrl: " + sut.storageBaseUri()
+                + "\n    adapter: env\n    capabilities: [" + String.join(", ", sut.capabilities())
+                + "]\n    properties:\n");
+        sut.properties().forEach((k, v) -> yaml.append("      ").append(k).append(": '").append(v).append("'\n"));
         Path targets = work.resolve("targets.yaml");
-        Files.writeString(targets, """
-                targets:
-                  ref:
-                    baseUrl: %s
-                    adapter: env
-                    properties:
-                      token.alice: "secret-bearer-token-value"
-                """.formatted(sut.baseUri()));
+        Files.writeString(targets, yaml.toString());
 
         registry.add("touchstone.catalog", () -> Path.of("..", "catalog").toString());
-        registry.add("touchstone.manifests", () -> work.resolve("manifests").toString());
+        registry.add("touchstone.definitions", definitions::toString);
         registry.add("touchstone.targets", targets::toString);
         registry.add("touchstone.runs", () -> work.resolve("runs").toString());
     }
@@ -100,11 +86,25 @@ class TouchstoneMcpEndToEndTest {
         }
     }
 
+    private static Path copy(Path source, Path target) throws java.io.IOException {
+        try (Stream<Path> files = Files.walk(source)) {
+            for (Path p : files.toList()) {
+                Path dest = target.resolve(source.relativize(p).toString());
+                if (Files.isDirectory(p)) {
+                    Files.createDirectories(dest);
+                } else {
+                    Files.copy(p, dest);
+                }
+            }
+        }
+        return target;
+    }
+
     /**
      * Clients decide from these hints whether to ask before a call (D-0049). Without them,
      * every tool advertised the protocol's worst case: not read-only, destructive, open-world.
      * The two tools that send traffic to a target keep that; the nine that only read the
-     * catalog, the manifests and recorded runs say so.
+     * catalog, the definitions and recorded runs say so.
      */
     @Test
     void toolsDeclareWhetherTheyChangeAnything() {
@@ -152,17 +152,20 @@ class TouchstoneMcpEndToEndTest {
             assertThat(detail.get("clauseText").asText()).contains("Content-Type response header");
 
             JsonNode tests = call(client, "list_tests", Map.of());
-            assertThat(tests.size()).isEqualTo(2);
+            assertThat(tests.size()).isEqualTo(101);
+            JsonNode containerTests = call(client, "list_tests", Map.of("module", "core/containers", "level", "MUST"));
+            assertThat(containerTests.size()).isEqualTo(9);
+            assertThat(containerTests.get(0).get("id").asText()).isEqualTo("core/containers#getContainer");
 
             // start an async run with a progress token, then watch it to completion
             CallToolResult started = client.callTool(new CallToolRequest("start_run",
-                    Map.of("targetId", "ref", "module", "core"),
+                    Map.of("targetId", "ref", "module", "core/containers"),
                     Map.of("progressToken", "run-progress")));
             String runId = structured(started).get("runId").asText();
             assertThat(runId).isNotBlank();
 
             JsonNode run = null;
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 400; i++) {
                 run = call(client, "get_run", Map.of("runId", runId));
                 if ("COMPLETE".equals(run.get("status").asText())) {
                     break;
@@ -171,11 +174,13 @@ class TouchstoneMcpEndToEndTest {
             }
             assertThat(run).isNotNull();
             assertThat(run.get("status").asText()).isEqualTo("COMPLETE");
-            assertThat(run.get("completed").asInt()).isEqualTo(2);
-            assertThat(run.get("total").asInt()).isEqualTo(2);
-            assertThat(run.get("passed").asInt()).isEqualTo(1);
+            assertThat(run.get("completed").asInt()).isEqualTo(14);
+            assertThat(run.get("total").asInt()).isEqualTo(14);
+            assertThat(run.get("passed").asInt()).isEqualTo(13);
             assertThat(run.get("failed").asInt()).isEqualTo(1);
             assertThat(run.get("conformant").asBoolean()).isFalse();
+            assertThat(run.get("byLevel").get(0).get("level").asText()).isEqualTo("MUST");
+            assertThat(run.get("byLevel").get(0).get("failed").asInt()).isEqualTo(1);
 
             // progress notifications streamed during execution
             for (int i = 0; i < 40 && progress.isEmpty(); i++) {
@@ -187,19 +192,22 @@ class TouchstoneMcpEndToEndTest {
             // page the failures — summaries only
             JsonNode failures = call(client, "get_failures", Map.of("runId", runId));
             assertThat(failures.get("totalFailures").asInt()).isEqualTo(1);
-            assertThat(failures.get("failures").get(0).get("testId").asText()).isEqualTo("core/failing");
+            assertThat(failures.get("failures").get(0).get("testId").asText())
+                    .isEqualTo("core/containers#getContainer");
+            assertThat(failures.get("failures").get(0).get("level").asText()).isEqualTo("MUST");
 
             // pull the one redacted trace: the Authorization header must be stripped
-            JsonNode trace = call(client, "get_trace", Map.of("runId", runId, "testId", "core/failing"));
+            JsonNode trace = call(client, "get_trace", Map.of("runId", runId, "testId", "getContainer"));
             assertThat(trace.get("untrustedNote").asText()).contains("untrusted");
+            assertThat(trace.get("outcome").asText()).isEqualTo("failed");
             JsonNode requestHeaders = trace.get("steps").get(0).get("exchange").get("requestHeaders");
             assertThat(requestHeaders.get("Authorization").get(0).asText()).isEqualTo("[REDACTED]");
-            assertThat(trace.toString()).doesNotContain("secret-bearer-token-value");
+            assertThat(trace.toString()).doesNotContain("Bearer ey");
 
             // diff against a second run — identical outcomes, no regressions
             String runId2 = structured(client.callTool(new CallToolRequest("start_run",
-                    Map.of("targetId", "ref", "module", "core"), Map.of()))).get("runId").asText();
-            for (int i = 0; i < 100; i++) {
+                    Map.of("targetId", "ref", "module", "core/containers"), Map.of()))).get("runId").asText();
+            for (int i = 0; i < 400; i++) {
                 if ("COMPLETE".equals(call(client, "get_run", Map.of("runId", runId2)).get("status").asText())) {
                     break;
                 }
@@ -207,7 +215,7 @@ class TouchstoneMcpEndToEndTest {
             }
             JsonNode diff = call(client, "diff_runs", Map.of("before", runId, "after", runId2));
             assertThat(diff.get("hasRegressions").asBoolean()).isFalse();
-            assertThat(diff.get("unchanged").asInt()).isEqualTo(2);
+            assertThat(diff.get("unchanged").asInt()).isEqualTo(14);
 
             // the EARL report is available as an MCP resource
             ReadResourceResult earl = client.readResource(new ReadResourceRequest("report://" + runId + "/earl"));

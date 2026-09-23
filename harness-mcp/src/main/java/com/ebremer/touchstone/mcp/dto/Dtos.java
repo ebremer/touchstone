@@ -21,9 +21,10 @@ public final class Dtos {
             String summary, String clauseText) {
     }
 
+    /** A test's metadata: {@code requires} names the capabilities a target must declare for it to apply. */
     public record TestSummary(
-            String id, String title, String module, List<String> requirements,
-            List<String> capabilities, List<String> tags) {
+            String id, String label, String level, String type, String manifest, List<String> requirements,
+            List<String> requires, List<String> traits) {
     }
 
     public record CoverageCell(String module, String level, long covered, long total) {
@@ -32,20 +33,25 @@ public final class Dtos {
     public record CoverageReportDto(long covered, long total, List<CoverageCell> byLevel) {
     }
 
-    public record StartRunResult(String runId, String status, String target, String module, int total) {
+    public record StartRunResult(String runId, String status, String target, String selector, int total) {
     }
 
-    public record LevelCounts(String level, long passed, long failed, long errored, long skipped) {
+    public record LevelCounts(String level, long passed, long failed, long cantTell, long inapplicable) {
     }
 
+    /**
+     * A run's status. {@code conformant} is the verdict of definitions/EXECUTION.md section 9:
+     * no MUST test failed or ended cantTell.
+     */
     public record RunStatusDto(
-            String runId, String target, String module, String status, String startedAt,
+            String runId, String target, String selector, String status, String startedAt,
             int completed, int total,
-            long passed, long failed, long errors, long skipped,
+            long passed, long failed, long cantTell, long inapplicable,
             boolean conformant, List<LevelCounts> byLevel) {
     }
 
-    public record FailureSummary(String testId, List<String> requirements, int failingStep, String reason) {
+    public record FailureSummary(String testId, String level, String outcome, List<String> requirements,
+                                 int failingStep, String reason) {
     }
 
     public record FailuresPage(

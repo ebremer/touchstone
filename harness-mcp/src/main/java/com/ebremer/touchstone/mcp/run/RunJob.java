@@ -11,7 +11,7 @@ public final class RunJob {
 
     private final String runId;
     private final String targetId;
-    private final String module;
+    private final String selector;
     private final String startedAt;
     private final int total;
 
@@ -20,17 +20,17 @@ public final class RunJob {
     private volatile RunResult result;
     private volatile String error;
 
-    public RunJob(String runId, String targetId, String module, String startedAt, int total) {
+    public RunJob(String runId, String targetId, String selector, String startedAt, int total) {
         this.runId = runId;
         this.targetId = targetId;
-        this.module = module;
+        this.selector = selector;
         this.startedAt = startedAt;
         this.total = total;
     }
 
     /** Wraps an already-finished run loaded from disk. */
-    public static RunJob completed(RunResult result, String module) {
-        RunJob job = new RunJob(result.runId(), result.targetId(), module, result.startedAt(), result.results().size());
+    public static RunJob completed(RunResult result, String selector) {
+        RunJob job = new RunJob(result.runId(), result.targetId(), selector, result.startedAt(), result.results().size());
         job.completed = result.results().size();
         job.result = result;
         job.status = RunStatus.COMPLETE;
@@ -45,8 +45,9 @@ public final class RunJob {
         return targetId;
     }
 
-    public String module() {
-        return module;
+    /** What the run selected: all, a module, a manifest or a test. */
+    public String selector() {
+        return selector;
     }
 
     public String startedAt() {

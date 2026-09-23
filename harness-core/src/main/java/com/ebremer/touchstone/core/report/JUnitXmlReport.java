@@ -10,7 +10,12 @@ import com.ebremer.touchstone.core.results.Results;
 import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.core.results.TestResult;
 
-/** JUnit XML for CI (DESIGN.md paragraph 5.5). */
+/**
+ * JUnit XML for CI (DESIGN.md section 5.5). A test case's class is its manifest
+ * ({@code core/containers}) and its name the test's name. cantTell is a JUnit error,
+ * inapplicable a skip, and a failure of a SHOULD or MAY test a failure too, so CI shows it;
+ * the conformance verdict, which only MUST tests decide, is in the report.
+ */
 public final class JUnitXmlReport {
 
     private JUnitXmlReport() {
@@ -26,8 +31,8 @@ public final class JUnitXmlReport {
 
     static String render(RunResult run) {
         long failures = run.count(Outcome.FAILED);
-        long errors = run.count(Outcome.ERROR);
-        long skipped = run.count(Outcome.SKIPPED);
+        long errors = run.count(Outcome.CANT_TELL);
+        long skipped = run.count(Outcome.INAPPLICABLE) + run.count(Outcome.UNTESTED);
         double total = run.results().stream().mapToLong(TestResult::durationMillis).sum() / 1000.0;
 
         StringBuilder xml = new StringBuilder();
@@ -39,25 +44,33 @@ public final class JUnitXmlReport {
                 .append("\" time=\"").append(String.format(java.util.Locale.ROOT, "%.3f", total))
                 .append("\" timestamp=\"").append(escape(run.startedAt())).append("\">\n");
         for (TestResult test : run.results()) {
-            String module = test.manifestId().substring(0, Math.max(test.manifestId().indexOf('/'), 0));
-            xml.append("  <testcase classname=\"").append(escape(module.isEmpty() ? "touchstone" : module))
-                    .append("\" name=\"").append(escape(test.manifestId()))
+            String id = test.testId();
+            int hash = id.indexOf('#');
+            String classname = hash < 0 ? "touchstone" : id.substring(0, hash);
+            String name = hash < 0 ? id : id.substring(hash + 1);
+            xml.append("  <testcase classname=\"").append(escape(classname))
+                    .append("\" name=\"").append(escape(name))
                     .append("\" time=\"")
                     .append(String.format(java.util.Locale.ROOT, "%.3f", test.durationMillis() / 1000.0))
                     .append("\"");
             switch (test.outcome()) {
                 case PASSED -> xml.append("/>\n");
-                case FAILED -> xml.append(">\n    <failure message=\"assertion failed\">")
+                case FAILED -> xml.append(">\n    <failure message=\"").append(escape(level(test)))
+                        .append(" expectation failed\">")
                         .append(escape(Results.describe(test))).append("</failure>\n  </testcase>\n");
-                case ERROR -> xml.append(">\n    <error message=\"harness error\">")
+                case CANT_TELL -> xml.append(">\n    <error message=\"cantTell\">")
                         .append(escape(Results.describe(test))).append("</error>\n  </testcase>\n");
-                case SKIPPED -> xml.append(">\n    <skipped message=\"")
-                        .append(escape(test.skipReason() == null ? "skipped" : test.skipReason()))
+                case INAPPLICABLE, UNTESTED -> xml.append(">\n    <skipped message=\"")
+                        .append(escape(test.reason() == null ? test.outcome().earl() : test.reason()))
                         .append("\"/>\n  </testcase>\n");
             }
         }
         xml.append("</testsuite>\n");
         return xml.toString();
+    }
+
+    private static String level(TestResult test) {
+        return test.level() == null ? "MUST" : test.level();
     }
 
     private static String escape(String text) {

@@ -6,8 +6,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-import com.ebremer.touchstone.fixtures.oidc.AccessTokens;
-import com.ebremer.touchstone.fixtures.oidc.OidcIssuer;
+import com.ebremer.touchstone.fixtures.as.AccessTokens;
+import com.ebremer.touchstone.fixtures.as.RefAuthorizationServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SecuredRefLwsServerTest {
 
-    private static OidcIssuer issuer;
+    private static RefAuthorizationServer issuer;
     private static RefLwsServer storage;
     private static AccessTokens tokens;
     private static HttpClient http;
@@ -28,8 +28,8 @@ class SecuredRefLwsServerTest {
 
     @BeforeAll
     static void start() throws Exception {
-        issuer = OidcIssuer.start(0);
-        storage = RefLwsServer.startSecured(0, issuer);
+        issuer = RefAuthorizationServer.start(0);
+        storage = RefLwsServer.startSecured(0, issuer, "alice");
         tokens = new AccessTokens(issuer, storage.baseUri().toString());
         http = HttpClient.newHttpClient();
         // alice creates a container she owns
@@ -82,8 +82,8 @@ class SecuredRefLwsServerTest {
 
     @Test
     void keyRotatedMidSessionInvalidatesPreviouslyValidToken() throws Exception {
-        try (OidcIssuer rotating = OidcIssuer.start(0);
-             RefLwsServer secured = RefLwsServer.startSecured(0, rotating)) {
+        try (RefAuthorizationServer rotating = RefAuthorizationServer.start(0);
+             RefLwsServer secured = RefLwsServer.startSecured(0, rotating, "alice")) {
             AccessTokens issued = new AccessTokens(rotating, secured.baseUri().toString());
             String token = issued.valid("alice");
             // alice creates her space with the token, proving it is valid now

@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.ebremer.touchstone.core.Touchstone;
-import com.ebremer.touchstone.core.results.Outcome;
+import com.ebremer.touchstone.core.definitions.Definitions;
 import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.core.results.TestResult;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
@@ -72,14 +72,19 @@ public final class EarlReport {
                 .addProperty(title, "target '" + run.targetId() + "'");
 
         for (TestResult test : run.results()) {
-            Resource testCase = m.createResource(Touchstone.TEST_NS + test.manifestId())
+            // The test's IRI as its JSON-LD expansion gives it: the same for the YAML-LD source
+            // and the JSON-LD export (EXECUTION.md section 9).
+            Resource testCase = m.createResource(Definitions.BASE + test.testId())
                     .addProperty(RDF.type, m.createResource(EARL + "TestCase"));
+            if (test.label() != null) {
+                testCase.addProperty(title, test.label());
+            }
             for (String requirement : test.requirements()) {
                 testCase.addProperty(verifies, m.createResource(requirement));
             }
             Resource result = m.createResource()
                     .addProperty(RDF.type, m.createResource(EARL + "TestResult"))
-                    .addProperty(outcomeP, m.createResource(EARL + outcome(test.outcome())))
+                    .addProperty(outcomeP, m.createResource(EARL + test.outcome().earl()))
                     .addProperty(date, m.createTypedLiteral(run.startedAt(), XSDDatatype.XSDdateTime));
             m.createResource()
                     .addProperty(RDF.type, m.createResource(EARL + "Assertion"))
@@ -90,16 +95,5 @@ public final class EarlReport {
                     .addProperty(resultP, result);
         }
         return m;
-    }
-
-    static String outcome(Outcome outcome) {
-        return switch (outcome) {
-            case PASSED -> "passed";
-            case FAILED -> "failed";
-            // The harness could not tell — transport error, unresolved variable, ...
-            case ERROR -> "cantTell";
-            // Skips are capability-gated: the feature does not apply to this target.
-            case SKIPPED -> "inapplicable";
-        };
     }
 }
