@@ -1,6 +1,12 @@
 # Stdio profile for local agent attachment (DESIGN.md paragraph 6).
 # Protocol framing lives on stdout, so NOTHING else may write there: no web server,
 # no banner, and all logging goes to a file.
+#
+# No `protocol` here. It names the HTTP transport (SSE, STREAMABLE or STATELESS), and this
+# profile once set it to STDIO, which is none of them: Spring AI's server auto-configuration
+# then matched nothing, and the process started and exited without answering (D-0048). The
+# STREAMABLE inherited from application.yml enables the server, and with no web server
+# running, stdio is the only transport it can use. TouchstoneMcpStdioTest proves it.
 spring:
   main:
     web-application-type: none
@@ -9,7 +15,6 @@ spring:
     mcp:
       server:
         stdio: true
-        protocol: STDIO
 
 logging:
   pattern:
