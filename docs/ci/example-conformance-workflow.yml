@@ -30,7 +30,7 @@ jobs:
           done
 
       - name: Run LWS conformance
-        uses: ebremer/touchstone/.github/actions/lws-conformance@main
+        uses: ebremer/touchstone/.github/actions/lws-conformance@master
         with:
           target-url: http://localhost:3000/
           module: core
