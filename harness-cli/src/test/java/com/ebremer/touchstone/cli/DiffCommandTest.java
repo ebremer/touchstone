@@ -64,4 +64,24 @@ class DiffCommandTest {
         assertThat(exit).isZero();
         assertThat(out.toString()).contains("no regressions").contains("1 unchanged");
     }
+
+    @Test
+    void aRunThatCannotBeReadIsAHarnessErrorNotARegression() {
+        RunResult run = new RunResult("ref", "http://sut/", "aaa", "2026-07-16T20:00:00Z",
+                List.of(test("core/one", Outcome.PASSED)));
+        RunRecords.save(run, tmp.resolve("a").resolve("run.json"));
+
+        StringWriter out = new StringWriter();
+        CommandLine cmd = new CommandLine(new TouchstoneCli());
+        cmd.setOut(new PrintWriter(out));
+        cmd.setErr(new PrintWriter(out));
+
+        int exit = cmd.execute("diff", tmp.resolve("a").toString(), tmp.resolve("missing").toString());
+
+        // 2, not 1: exit 1 means "regressions", and nothing was compared.
+        assertThat(exit).isEqualTo(2);
+        assertThat(out.toString())
+                .contains("cannot read run record")
+                .as("a stack trace").doesNotContain("\tat ");
+    }
 }

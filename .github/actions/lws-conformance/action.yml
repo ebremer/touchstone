@@ -79,13 +79,15 @@ runs:
               --catalog catalog --manifests manifests
         code=$?
         echo "report-dir=$REPORT_PATH/runs" >> "$GITHUB_OUTPUT"
-        # The CLI distinguishes the two ways a run can end badly: 1 is a non-conformant server,
-        # 2 is a misconfigured harness — an unknown target, a missing registry, a manifest naming
-        # a requirement the catalog lacks. Collapsing them told a server implementer their server
-        # had failed when the workflow was wrong, so 2 always fails the job and says so.
+        # The CLI distinguishes the two ways a run can end badly. 1 is a verdict: the server was
+        # tested and did not conform. 2 means no verdict: an unknown target, a missing registry,
+        # an invalid manifest, a requirement the catalog lacks, or a server that could not be
+        # reached or would not create the run root (D-0048). Collapsing them told a server
+        # implementer their server had failed when the workflow was wrong, so 2 always fails the
+        # job and says so.
         if [ "$code" -ge 2 ]; then
-          echo "::error::Touchstone could not run (exit $code): the harness is misconfigured," \
-               "not the server non-conformant. See the log above."
+          echo "::error::Touchstone produced no verdict (exit $code): the workflow is misconfigured" \
+               "or the server could not be reached. This is not a conformance failure. See the log above."
           exit "$code"
         fi
         if [ "$FAIL_ON_NONCONFORMANCE" = "true" ]; then

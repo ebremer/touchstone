@@ -48,4 +48,21 @@ class CoverageCommandTest {
                 .containsPattern("MUST\\s+0/1")
                 .containsPattern("SHOULD\\s+0/1");
     }
+
+    @Test
+    void anUnexpectedFailureExitsTwoNotOne() throws Exception {
+        // Nothing anticipates a catalog that does not parse, so this reaches picocli as an
+        // exception. The exit code must still say "the harness could not run" (2), because 1
+        // is kept for a verdict (D-0048).
+        Files.writeString(tmp.resolve("broken.ttl"), "this is not Turtle .");
+
+        StringWriter out = new StringWriter();
+        CommandLine cmd = new CommandLine(new TouchstoneCli());
+        cmd.setOut(new PrintWriter(out));
+        cmd.setErr(new PrintWriter(out));
+
+        int exit = cmd.execute("coverage", "--catalog", tmp.toString());
+
+        assertThat(exit).isEqualTo(2);
+    }
 }

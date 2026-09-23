@@ -12,6 +12,7 @@ import com.ebremer.touchstone.core.catalog.CatalogRepository;
 import com.ebremer.touchstone.core.catalog.Requirement;
 import com.ebremer.touchstone.core.catalog.RequirementRefs;
 import com.ebremer.touchstone.core.coverage.CoverageReport;
+import com.ebremer.touchstone.core.manifest.InvalidManifestException;
 import com.ebremer.touchstone.core.manifest.Manifest;
 import com.ebremer.touchstone.core.manifest.ManifestLoader;
 import picocli.CommandLine.Command;
@@ -22,7 +23,12 @@ import picocli.CommandLine.Spec;
 @Command(
         name = "coverage",
         mixinStandardHelpOptions = true,
-        description = "Requirements-by-tests coverage matrix per spec module and level.")
+        exitCodeOnExecutionException = TouchstoneCli.HARNESS_ERROR,
+        description = "Requirements-by-tests coverage matrix per spec module and level.",
+        exitCodeListHeading = "%nExit codes:%n",
+        exitCodeList = {
+                "0:the matrix was printed",
+                "2:the catalog or the manifests could not be read"})
 final class CoverageCommand implements Callable<Integer> {
 
     @Option(
@@ -44,14 +50,20 @@ final class CoverageCommand implements Callable<Integer> {
     public Integer call() {
         if (!Files.isDirectory(catalogDir)) {
             spec.commandLine().getErr().println("catalog directory not found: " + catalogDir);
-            return 2;
+            return TouchstoneCli.HARNESS_ERROR;
         }
         List<Requirement> requirements = CatalogRepository.load(catalogDir);
 
         Set<String> covered = new HashSet<>();
         int manifestCount = 0;
         if (Files.isDirectory(manifestsDir)) {
-            List<Manifest> manifests = ManifestLoader.loadDirectory(manifestsDir);
+            List<Manifest> manifests;
+            try {
+                manifests = ManifestLoader.loadDirectory(manifestsDir);
+            } catch (InvalidManifestException e) {
+                spec.commandLine().getErr().println(e.getMessage());
+                return TouchstoneCli.HARNESS_ERROR;
+            }
             manifestCount = manifests.size();
             manifests.forEach(m -> covered.addAll(m.requirements()));
             // A requirement IRI that resolves to nothing covers nothing, so it silently

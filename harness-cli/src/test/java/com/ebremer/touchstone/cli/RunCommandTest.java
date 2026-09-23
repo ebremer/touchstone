@@ -2,10 +2,12 @@ package com.ebremer.touchstone.cli;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
+import com.ebremer.touchstone.fixtures.oidc.OidcIssuer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -173,14 +175,103 @@ class RunCommandTest {
         }
     }
 
+    // Exit code 1 is a verdict: the server was tested and did not conform. Each case below
+    // stops before any test runs, so none of them may exit 1. Otherwise CI would blame the
+    // server for a broken workflow (D-0046, D-0048). They say why on one line, not in a stack
+    // trace.
+
+    @Test
+    void aManifestTheSchemaRejectsIsAConfigurationError() throws Exception {
+        try (RefLwsServer server = RefLwsServer.start(0)) {
+            Path manifests = tmp.resolve("manifests");
+            Files.createDirectories(manifests.resolve("core"));
+            Files.writeString(manifests.resolve("core").resolve("misspelt.yaml"), """
+                    schemaVersion: 1
+                    id: core/misspelt
+                    title: a misspelt key the schema must reject
+                    requirements: [https://example.org/touchstone/req/lws10-core/head-parity-with-get]
+                    steps:
+                      - request: { method: GET, target: "${test.container}" }
+                        expekt: { status: 200 }
+                    """);
+            StringWriter out = new StringWriter();
+
+            int exit = run(out, targetsFile(server), manifests);
+
+            assertThat(exit).isEqualTo(2);
+            assertThat(out.toString()).contains("violates schema").contains("expekt");
+            assertNoStackTraceAndNoReports(out);
+        }
+    }
+
+    @Test
+    void anUnreachableTargetIsAConfigurationError() throws Exception {
+        // The address of a server that has stopped: nothing listens there any more. Read it
+        // before closing, since a stopped connector reports no port.
+        URI gone;
+        try (RefLwsServer stopped = RefLwsServer.start(0)) {
+            gone = stopped.baseUri();
+        }
+        Path targets = targetsFile(gone);
+        StringWriter out = new StringWriter();
+
+        int exit = run(out, targets, Path.of("../manifests"));
+
+        assertThat(exit).isEqualTo(2);
+        assertThat(out.toString())
+                .contains("cannot run against target 'ref'")
+                .contains("cannot create container");
+        assertNoStackTraceAndNoReports(out);
+    }
+
+    @Test
+    void aTargetThatRefusesTheRunRootIsAConfigurationError() throws Exception {
+        // The commonest real case: a protected storage, and no identity configured to write to it.
+        try (OidcIssuer issuer = OidcIssuer.start(0);
+             RefLwsServer server = RefLwsServer.startSecured(0, issuer)) {
+            StringWriter out = new StringWriter();
+
+            int exit = run(out, targetsFile(server), Path.of("../manifests"));
+
+            assertThat(exit).isEqualTo(2);
+            assertThat(out.toString())
+                    .contains("cannot run against target 'ref'")
+                    .contains("returned 401 (expected 201)");
+            assertNoStackTraceAndNoReports(out);
+        }
+    }
+
+    private int run(StringWriter out, Path targets, Path manifests) {
+        CommandLine cmd = new CommandLine(new TouchstoneCli());
+        cmd.setOut(new PrintWriter(out));
+        cmd.setErr(new PrintWriter(out));
+        return cmd.execute("run",
+                "--target", "ref",
+                "--targets", targets.toString(),
+                "--manifests", manifests.toString(),
+                "--module", "core",
+                "--catalog", "../catalog",
+                "--report-dir", tmp.resolve("runs").toString());
+    }
+
+    private void assertNoStackTraceAndNoReports(StringWriter out) {
+        // A stack frame prints as a tab and "at ", whatever ANSI styling picocli wraps it in.
+        assertThat(out.toString()).as("a stack trace").doesNotContain("\tat ");
+        assertThat(tmp.resolve("runs")).doesNotExist();
+    }
+
     private Path targetsFile(RefLwsServer server) throws Exception {
+        return targetsFile(server.baseUri());
+    }
+
+    private Path targetsFile(URI baseUrl) throws Exception {
         Path targets = tmp.resolve("targets.yaml");
         Files.writeString(targets, """
                 targets:
                   ref:
                     baseUrl: %s
                     adapter: env
-                """.formatted(server.baseUri()));
+                """.formatted(baseUrl));
         return targets;
     }
 }
