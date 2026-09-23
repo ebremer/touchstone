@@ -1,0 +1,387 @@
+# Abstract identities for the LWS 1.0 test definitions (YAML-LD).
+#
+# Tests never carry credentials. They name an identity -- `as: alice` for the
+# Authorization header of a request, `${credential.didkey}` for a subject token in a
+# token-exchange body -- and the harness resolves the name against this registry.
+# EXECUTION.md section 5 is the contract for how each kind is produced.
+"@context":
+  - ./context.jsonld
+  - ./touchstone.jsonld
+id: "#identities"
+type: IdentityRegistry
+label: Identities used by the LWS 1.0 test definitions
+comment: >-
+  Three kinds. NoCredential sends nothing. StorageAccessToken identities act on the
+  storage server through `as:` and send `Authorization: Bearer <access token>`.
+  SubjectCredential identities never appear in `as:`; their credential is the
+  subject_token a test presents at the authorization server's token endpoint. A fault
+  identity is its basis identity with exactly one defect (the fault terms are defined
+  in vocab.yamlld), so a failing test names a single cause.
+identities:
+
+  # ---------------------------------------------------------------- storage identities
+
+  - id: "#anonymous"
+    type: Identity
+    label: No credentials
+    kind: NoCredential
+    comment: Requests carry no Authorization header.
+
+  - id: "#alice"
+    type: Identity
+    label: Storage owner
+    kind: StorageAccessToken
+    comment: >-
+      The agent that controls the target's storage. The harness provisions ${run.root}
+      and every ${test.container} as alice, and a step without `as:` runs as alice. Her
+      access token comes from the target configuration, in order of preference: minted
+      by the harness when the target declares HarnessIssuedTokens; obtained by exchanging
+      a configured subject credential at the storage's authorization server; or a static
+      bearer token from TOUCHSTONE_TOKEN_ALICE. On a target that does not enforce
+      authentication alice sends no Authorization header. ${identity.alice.webid} is the
+      agent IRI named in the target configuration.
+
+  - id: "#bob"
+    type: Identity
+    label: Another authenticated agent
+    kind: StorageAccessToken
+    comment: >-
+      An agent the storage authenticates but that holds no permission on alice's
+      resources unless a test grants one. Credential sources as for alice, with
+      TOUCHSTONE_TOKEN_BOB as the static fallback. ${identity.bob.webid} comes from the
+      target configuration.
+
+  # ------------------------------------------- access-token faults (storage validation)
+  #
+  # Derivable from a real token (no signing key needed): SignatureCorrupted, AlgNone,
+  # UnknownKeyId. Everything else is an otherwise-valid token and needs the harness to
+  # hold the authorization server's signing key (HarnessIssuedTokens); a real server's
+  # AS will not sign a broken token on request.
+
+  - id: "#alice-expired"
+    type: Identity
+    label: alice with an expired access token
+    kind: StorageAccessToken
+    basis: alice
+    fault: Expired
+    comment: >-
+      Minted when HarnessIssuedTokens is declared. Otherwise derived by holding a real
+      alice token until its exp has passed plus 60 s of clock skew, when that exp is no
+      more than 600 s away; if neither is possible the identity is unavailable and tests
+      using it are inapplicable.
+
+  - id: "#alice-bad-signature"
+    type: Identity
+    label: alice's access token with a corrupted signature
+    kind: StorageAccessToken
+    basis: alice
+    fault: SignatureCorrupted
+
+  - id: "#alice-alg-none"
+    type: Identity
+    label: alice's access token re-encoded unsigned (alg none)
+    kind: StorageAccessToken
+    basis: alice
+    fault: AlgNone
+
+  - id: "#alice-unknown-key"
+    type: Identity
+    label: alice's access token re-signed by a key the storage cannot know
+    kind: StorageAccessToken
+    basis: alice
+    fault: UnknownKeyId
+
+  - id: "#alice-wrong-audience"
+    type: Identity
+    label: alice's access token minted for a different storage
+    kind: StorageAccessToken
+    basis: alice
+    fault: WrongAudience
+    requires: [HarnessIssuedTokens]
+
+  - id: "#alice-wrong-issuer"
+    type: Identity
+    label: alice's access token claiming an untrusted issuer
+    kind: StorageAccessToken
+    basis: alice
+    fault: WrongIssuer
+    requires: [HarnessIssuedTokens]
+
+  - id: "#alice-not-yet-valid"
+    type: Identity
+    label: alice's access token whose nbf lies an hour ahead
+    kind: StorageAccessToken
+    basis: alice
+    fault: NotYetValid
+    requires: [HarnessIssuedTokens]
+
+  - id: "#alice-issued-in-future"
+    type: Identity
+    label: alice's access token whose iat lies an hour ahead
+    kind: StorageAccessToken
+    basis: alice
+    fault: IssuedInFuture
+    requires: [HarnessIssuedTokens]
+
+  - id: "#alice-multiple-audiences"
+    type: Identity
+    label: alice's access token naming two audiences
+    kind: StorageAccessToken
+    basis: alice
+    fault: MultipleAudiences
+    requires: [HarnessIssuedTokens]
+
+  # ----------------------------------------------------- did:key subject credentials
+
+  - id: "#didkey"
+    type: Identity
+    label: Self-issued did:key credential
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-did-key/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    comment: >-
+      A P-256 key pair generated fresh for each run. ${identity.didkey.webid} is its
+      did:key identifier (multicodec p256-pub, compressed point, base58btc: did:key:zDn...),
+      and ${self.webid} inside the templates below is the same value. Needs no trust set
+      up in advance: the verifier derives the public key from the identifier itself.
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+
+  - id: "#didkey-bad-signature"
+    type: Identity
+    label: did:key credential with a corrupted signature
+    kind: SubjectCredential
+    basis: didkey
+    fault: SignatureCorrupted
+
+  - id: "#didkey-alg-none"
+    type: Identity
+    label: did:key credential re-encoded unsigned (alg none)
+    kind: SubjectCredential
+    basis: didkey
+    fault: AlgNone
+
+  - id: "#didkey-expired"
+    type: Identity
+    label: did:key credential that expired an hour ago
+    kind: SubjectCredential
+    basis: didkey
+    fault: Expired
+
+  - id: "#didkey-claims-mismatch"
+    type: Identity
+    label: did:key credential whose client_id differs from sub and iss
+    kind: SubjectCredential
+    basis: didkey
+    fault: ClientIdMismatch
+
+  - id: "#didkey-audience-excludes-as"
+    type: Identity
+    label: did:key credential whose aud does not include the authorization server
+    kind: SubjectCredential
+    basis: didkey
+    fault: AudienceExcludesAuthorizationServer
+
+  - id: "#didkey-missing-exp"
+    type: Identity
+    label: did:key credential without an exp claim
+    kind: SubjectCredential
+    basis: didkey
+    fault: MissingExpiration
+
+  - id: "#didkey-missing-iat"
+    type: Identity
+    label: did:key credential without an iat claim
+    kind: SubjectCredential
+    basis: didkey
+    fault: MissingIssuedAt
+
+  # ---------------------------------------------------- OpenID Connect ID Tokens
+
+  - id: "#oidc"
+    type: Identity
+    label: ID Token from the harness OpenID Provider
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-openid/
+    tokenType: urn:ietf:params:oauth:token-type:id_token
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/oidc"
+    comment: >-
+      The harness runs an OpenID Provider at ${fixtures.baseUrl}op (OpenID Connect
+      Discovery at ${fixtures.baseUrl}op/.well-known/openid-configuration, JWKS at the
+      jwks_uri it names) and hosts the subject's controlled identifier document at
+      ${identity.oidc.webid}. A verifier with no prior trust in that OP must dereference
+      sub, find the OpenIdProvider service equal to iss, and discover the signing key
+      (OIDC suite section 5). The target must be able to reach ${fixtures.baseUrl}.
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${fixtures.baseUrl}op"
+      azp: "${fixtures.baseUrl}clients/touchstone"
+      aud: ["${fixtures.baseUrl}clients/touchstone", "${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      service:
+        - type: https://www.w3.org/ns/lws#OpenIdProvider
+          serviceEndpoint: "${fixtures.baseUrl}op"
+
+  - id: "#oidc-expired"
+    type: Identity
+    label: ID Token that expired an hour ago
+    kind: SubjectCredential
+    basis: oidc
+    fault: Expired
+
+  - id: "#oidc-alg-none"
+    type: Identity
+    label: ID Token re-encoded unsigned (alg none)
+    kind: SubjectCredential
+    basis: oidc
+    fault: AlgNone
+
+  - id: "#oidc-bad-signature"
+    type: Identity
+    label: ID Token with a corrupted signature
+    kind: SubjectCredential
+    basis: oidc
+    fault: SignatureCorrupted
+
+  - id: "#oidc-untrusted-issuer"
+    type: Identity
+    label: ID Token from an OpenID Provider the subject never named
+    kind: SubjectCredential
+    basis: oidc
+    fault: UntrustedIssuer
+
+  - id: "#oidc-missing-azp"
+    type: Identity
+    label: ID Token without the azp (client identifier) claim
+    kind: SubjectCredential
+    basis: oidc
+    fault: MissingAuthorizedParty
+
+  # ------------------------------------ self-issued controlled-identifier credentials
+
+  - id: "#cid"
+    type: Identity
+    label: Self-issued credential for a harness-hosted controlled identifier
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid"
+    comment: >-
+      A P-256 key pair generated fresh for each run, published as a JsonWebKey
+      verification method in the controlled identifier document the harness hosts at
+      ${identity.cid.webid}. The JWT header kid names that method (CID suite section 5,
+      CID 1.0 section 3.3). The target must be able to reach ${fixtures.baseUrl}.
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      authentication:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${self.webid}"
+          publicKeyJwk: "${self.publicJwk}"
+
+  - id: "#cid-unknown-kid"
+    type: Identity
+    label: Self-issued credential whose kid names no verification method
+    kind: SubjectCredential
+    basis: cid
+    fault: UnknownKeyId
+
+  - id: "#cid-bad-signature"
+    type: Identity
+    label: Self-issued credential with a corrupted signature
+    kind: SubjectCredential
+    basis: cid
+    fault: SignatureCorrupted
+
+  - id: "#cid-expired"
+    type: Identity
+    label: Self-issued credential that expired an hour ago
+    kind: SubjectCredential
+    basis: cid
+    fault: Expired
+
+  - id: "#cid-alg-none"
+    type: Identity
+    label: Self-issued credential re-encoded unsigned (alg none)
+    kind: SubjectCredential
+    basis: cid
+    fault: AlgNone
+
+  - id: "#cid-claims-mismatch"
+    type: Identity
+    label: Self-issued credential whose client_id differs from sub and iss
+    kind: SubjectCredential
+    basis: cid
+    fault: ClientIdMismatch
+
+  # ------------------------------------------------------------- SAML 2.0 assertions
+
+  - id: "#saml"
+    type: Identity
+    label: SAML 2.0 assertion from the harness identity provider
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-saml/
+    tokenType: urn:ietf:params:oauth:token-type:saml2
+    algorithm: http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+    requires: [SamlTrust]
+    webid: "${fixtures.baseUrl}agents/saml"
+    comment: >-
+      A signed saml:Assertion from the harness IdP (entity ${fixtures.baseUrl}idp),
+      presented base64url-encoded as RFC 8693 section 3 requires. The SAML suite leaves
+      trust to out-of-band configuration, so the target must already trust the harness
+      IdP's signing certificate (SamlTrust). Instants are xsd:dateTime in UTC.
+    samlAssertion:
+      issuer: "${fixtures.baseUrl}idp"
+      nameId: "${self.webid}"
+      nameIdFormat: urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+      recipient: "${fixtures.baseUrl}clients/touchstone"
+      audience: ["${fixtures.baseUrl}clients/touchstone", "${as.issuer}"]
+      notBefore: "${now}"
+      notOnOrAfter: "${now+300}"
+
+  - id: "#saml-bad-signature"
+    type: Identity
+    label: SAML assertion altered after signing
+    kind: SubjectCredential
+    basis: saml
+    fault: SignatureCorrupted
+
+  - id: "#saml-unsigned"
+    type: Identity
+    label: SAML assertion without a signature
+    kind: SubjectCredential
+    basis: saml
+    fault: Unsigned

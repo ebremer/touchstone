@@ -1,0 +1,1040 @@
+# The LWS test vocabulary: every lwst: class, property and individual used by the
+# definitions, with its meaning. EXECUTION.md is the operational contract; this is the
+# RDF view of the same terms, and the document the lwst: namespace should serve.
+"@context":
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  owl: http://www.w3.org/2002/07/owl#
+  xsd: http://www.w3.org/2001/XMLSchema#
+  dcterms: http://purl.org/dc/terms/
+  mf: http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#
+  lwst: https://www.w3.org/ns/lws-tests/v1#
+  id: "@id"
+  type: "@type"
+  label: rdfs:label
+  comment: rdfs:comment
+  subClassOf: {"@id": rdfs:subClassOf, "@type": "@id"}
+  domain: {"@id": rdfs:domain, "@type": "@id"}
+  range: {"@id": rdfs:range, "@type": "@id"}
+  isDefinedBy: {"@id": rdfs:isDefinedBy, "@type": "@id"}
+"@graph":
+  - id: https://www.w3.org/ns/lws-tests/v1
+    type: owl:Ontology
+    label: LWS test vocabulary
+    comment: >-
+      Terms for declarative conformance tests of the Linked Web Storage Protocol 1.0 and its
+      authentication suites. Test manifests use the W3C test-manifest vocabulary (mf:) for
+      manifests and entries and the RDF test vocabulary (rdft:) for approval status. The
+      namespace is the one lws-test-suite uses; it is not yet published by W3C.
+  - id: lwst:ValidationTest
+    type: rdfs:Class
+    subClassOf: mf:ManifestEntry
+    label: "Validation test"
+    comment: >-
+      A test whose steps exercise behaviour the specification requires and assert the
+      responses a conforming server gives.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:NegativeTest
+    type: rdfs:Class
+    subClassOf: mf:ManifestEntry
+    label: "Negative test"
+    comment: >-
+      A test whose point is a refusal: at least one step expects a 4xx response, and the
+      test also checks that the refused request had no effect.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Step
+    type: rdfs:Class
+    label: "Step"
+    comment: >-
+      One HTTP exchange of a test: a request, the expectations on its response, and the
+      variables it captures. Steps run in order; a test fails at its first failing step.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Request
+    type: rdfs:Class
+    label: "Request"
+    comment: >-
+      What the harness sends in a step.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ResponseExpectation
+    type: rdfs:Class
+    label: "Response expectation"
+    comment: >-
+      What the harness checks in the response to a step's request. Every expectation
+      present must hold.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:LinkExpectation
+    type: rdfs:Class
+    label: "Link expectation"
+    comment: >-
+      A condition on the Link header field (RFC 8288) of a response, or a Link value to
+      send in a request.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:HeaderExpectation
+    type: rdfs:Class
+    label: "Header expectation"
+    comment: >-
+      A condition on one header field of a response, or a header to send in a request.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ChallengeExpectation
+    type: rdfs:Class
+    label: "Challenge expectation"
+    comment: >-
+      A condition on the WWW-Authenticate header field, parsed into challenges per RFC
+      9110 section 11.6.1.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ParameterExpectation
+    type: rdfs:Class
+    label: "Parameter expectation"
+    comment: >-
+      A condition on one auth-param of a challenge. Parameter names compare case-
+      insensitively.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:JsonExpectation
+    type: rdfs:Class
+    label: "JSON expectation"
+    comment: >-
+      A condition on the value a JSON Pointer (RFC 6901) selects in a JSON response body,
+      a JWT header or a JWT claims set.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:JwtExpectation
+    type: rdfs:Class
+    label: "JWT expectation"
+    comment: >-
+      Conditions on a JWT captured earlier: its signature verifies against a JWKS and its
+      header and claims satisfy JSON expectations.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:LocationExpectation
+    type: rdfs:Class
+    label: "Location expectation"
+    comment: >-
+      The response carries a Location header; its value, resolved against the request URL,
+      is captured.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ConnegExpectation
+    type: rdfs:Class
+    label: "Content-negotiation expectation"
+    comment: >-
+      Refetching the same URL once per listed media type yields responses with byte-
+      identical bodies whose Content-Type echoes the type requested.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:IdentityRegistry
+    type: rdfs:Class
+    label: "Identity registry"
+    comment: >-
+      The document listing every identity tests may name.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Identity
+    type: rdfs:Class
+    label: "Identity"
+    comment: >-
+      An abstract agent and the credential the harness produces for it. Tests name
+      identities, never credentials.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Level
+    type: rdfs:Class
+    label: "Requirement level"
+    comment: >-
+      The BCP 14 strength of what a test asserts. A test has exactly one level.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Trait
+    type: rdfs:Class
+    label: "Trait"
+    comment: >-
+      A facet of what a test exercises, used to select and group tests.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Capability
+    type: rdfs:Class
+    label: "Capability"
+    comment: >-
+      Something the harness or the target deployment must provide that the server under
+      test cannot reveal about itself. A test requiring a capability the target lacks is
+      inapplicable.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:IdentityKind
+    type: rdfs:Class
+    label: "Identity kind"
+    comment: >-
+      How an identity's credential is used.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Fault
+    type: rdfs:Class
+    label: "Credential fault"
+    comment: >-
+      The single defect that distinguishes a fault identity from its basis identity.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MUST
+    type: lwst:Level
+    label: "MUST"
+    comment: >-
+      Failing the test means the server does not conform.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:SHOULD
+    type: lwst:Level
+    label: "SHOULD"
+    comment: >-
+      Failing the test is reported as advisory; it does not decide conformance.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MAY
+    type: lwst:Level
+    label: "MAY"
+    comment: >-
+      An optional behaviour; failing the test is reported as advisory.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Get
+    type: lwst:Trait
+    label: "GET"
+    comment: >-
+      Uses the GET method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Head
+    type: lwst:Trait
+    label: "HEAD"
+    comment: >-
+      Uses the HEAD method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Post
+    type: lwst:Trait
+    label: "POST"
+    comment: >-
+      Uses the POST method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Put
+    type: lwst:Trait
+    label: "PUT"
+    comment: >-
+      Uses the PUT method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Patch
+    type: lwst:Trait
+    label: "PATCH"
+    comment: >-
+      Uses the PATCH method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Delete
+    type: lwst:Trait
+    label: "DELETE"
+    comment: >-
+      Uses the DELETE method.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Container
+    type: lwst:Trait
+    label: "Container"
+    comment: >-
+      Exercises containers.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:DataResource
+    type: lwst:Trait
+    label: "Data resource"
+    comment: >-
+      Exercises data resources.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Linkset
+    type: lwst:Trait
+    label: "Linkset"
+    comment: >-
+      Exercises linkset resources.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:StorageDescription
+    type: lwst:Trait
+    label: "Storage description"
+    comment: >-
+      Exercises the storage description resource.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Discovery
+    type: lwst:Trait
+    label: "Discovery"
+    comment: >-
+      Exercises discovery through links, challenges or metadata.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Authn
+    type: lwst:Trait
+    label: "Authentication"
+    comment: >-
+      Exercises authentication.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Authz
+    type: lwst:Trait
+    label: "Authorization"
+    comment: >-
+      Exercises authorization decisions.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Public
+    type: lwst:Trait
+    label: "Public"
+    comment: >-
+      Exercises resources readable without credentials.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Private
+    type: lwst:Trait
+    label: "Private"
+    comment: >-
+      Exercises resources that require credentials.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Conditional
+    type: lwst:Trait
+    label: "Conditional requests"
+    comment: >-
+      Exercises entity tags and preconditions.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Conneg
+    type: lwst:Trait
+    label: "Content negotiation"
+    comment: >-
+      Exercises content negotiation.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Range
+    type: lwst:Trait
+    label: "Range requests"
+    comment: >-
+      Exercises byte-range requests.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:TokenExchange
+    type: lwst:Trait
+    label: "Token exchange"
+    comment: >-
+      Exercises the authorization server's RFC 8693 token exchange.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:AccessGrants
+    type: lwst:Trait
+    label: "Access requests and grants"
+    comment: >-
+      Exercises access requests and grants.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Notifications
+    type: lwst:Trait
+    label: "Notifications"
+    comment: >-
+      Exercises notifications.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Authentication
+    type: lwst:Capability
+    label: "Authentication enforced"
+    comment: >-
+      The target storage enforces authentication on the run root: an anonymous request is
+      challenged, and alice and bob are distinct authenticated agents.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:HarnessIssuedTokens
+    type: lwst:Capability
+    label: "Harness-issued access tokens"
+    comment: >-
+      The storage trusts an authorization server whose signing key the harness holds, so
+      the harness can mint otherwise-valid access tokens with one chosen defect.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ReachableFixtures
+    type: lwst:Capability
+    label: "Reachable fixtures"
+    comment: >-
+      The target can reach the harness fixture host at ${fixtures.baseUrl} (identity
+      documents, OpenID Provider, JWKS).
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:SamlTrust
+    type: lwst:Capability
+    label: "SAML trust"
+    comment: >-
+      The target's authorization server trusts the harness SAML identity provider's
+      signing certificate.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:NoCredential
+    type: lwst:IdentityKind
+    label: "No credential"
+    comment: >-
+      Requests carry no Authorization header.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:StorageAccessToken
+    type: lwst:IdentityKind
+    label: "Storage access token"
+    comment: >-
+      Requests made as this identity carry Authorization: Bearer with an access token for
+      the storage.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:SubjectCredential
+    type: lwst:IdentityKind
+    label: "Subject credential"
+    comment: >-
+      The identity's credential is a subject_token presented at the token endpoint; it is
+      never sent as a storage access token.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:SignatureCorrupted
+    type: lwst:Fault
+    label: "Signature corrupted"
+    comment: >-
+      The signature no longer verifies: the last byte of a JWS signature is flipped, or a
+      signed SAML element is altered after signing. Header and claims are unchanged.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:AlgNone
+    type: lwst:Fault
+    label: "Unsigned (alg none)"
+    comment: >-
+      The JWS header alg is "none" and the signature part is empty. Claims are unchanged.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:UnknownKeyId
+    type: lwst:Fault
+    label: "Unknown key"
+    comment: >-
+      Signed by a key the verifier cannot find: a fresh key whose kid is "touchstone-
+      unknown-kid", which appears in no published JWKS or controlled identifier document.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Expired
+    type: lwst:Fault
+    label: "Expired"
+    comment: >-
+      iat is now minus 3900 s and exp is now minus 3600 s (SAML: NotOnOrAfter an hour
+      past); validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:NotYetValid
+    type: lwst:Fault
+    label: "Not yet valid"
+    comment: >-
+      nbf is now plus 3600 s; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:IssuedInFuture
+    type: lwst:Fault
+    label: "Issued in the future"
+    comment: >-
+      iat is now plus 3600 s and exp now plus 3900 s; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:WrongAudience
+    type: lwst:Fault
+    label: "Wrong audience"
+    comment: >-
+      aud is ["https://not-this-storage.invalid/"]; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MultipleAudiences
+    type: lwst:Fault
+    label: "Multiple audiences"
+    comment: >-
+      aud is [the storage realm, "https://another-storage.invalid/"]; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:WrongIssuer
+    type: lwst:Fault
+    label: "Wrong issuer"
+    comment: >-
+      iss is "https://untrusted-issuer.invalid/"; signed by the key the storage trusts.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:AudienceExcludesAuthorizationServer
+    type: lwst:Fault
+    label: "Audience excludes the authorization server"
+    comment: >-
+      aud is ["https://not-the-authorization-server.invalid/"]; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ClientIdMismatch
+    type: lwst:Fault
+    label: "client_id mismatch"
+    comment: >-
+      client_id is "https://other-client.invalid/" while sub and iss are unchanged;
+      validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MissingExpiration
+    type: lwst:Fault
+    label: "Missing exp"
+    comment: >-
+      The exp claim is removed; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MissingIssuedAt
+    type: lwst:Fault
+    label: "Missing iat"
+    comment: >-
+      The iat claim is removed; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:MissingAuthorizedParty
+    type: lwst:Fault
+    label: "Missing azp"
+    comment: >-
+      The azp claim is removed; validly signed.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:UntrustedIssuer
+    type: lwst:Fault
+    label: "Untrusted OpenID Provider"
+    comment: >-
+      Issued and validly signed by a second harness OpenID Provider at
+      ${fixtures.baseUrl}rogue-op, which publishes discovery and JWKS but is not named in
+      the subject's controlled identifier document.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Unsigned
+    type: lwst:Fault
+    label: "Unsigned assertion"
+    comment: >-
+      The SAML assertion carries no ds:Signature.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:specification
+    type: rdf:Property
+    label: "specification"
+    comment: >-
+      A dated specification snapshot the manifest's tests were checked against.
+    domain: mf:Manifest
+    range: rdfs:Resource
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:identities
+    type: rdf:Property
+    label: "identities"
+    comment: >-
+      An identity in the registry.
+    domain: lwst:IdentityRegistry
+    range: lwst:Identity
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:level
+    type: rdf:Property
+    label: "level"
+    comment: >-
+      The test's requirement level.
+    domain: mf:ManifestEntry
+    range: lwst:Level
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:traits
+    type: rdf:Property
+    label: "traits"
+    comment: >-
+      A facet the test exercises.
+    domain: mf:ManifestEntry
+    range: lwst:Trait
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:requires
+    type: rdf:Property
+    label: "requires"
+    comment: >-
+      A capability the test (or identity) needs; absent on the target, the test is
+      inapplicable.
+    range: lwst:Capability
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:as
+    type: rdf:Property
+    label: "as"
+    comment: >-
+      Name of the identity whose credential authorizes the step's request (on a test, the
+      default for its steps). Unset means alice.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:steps
+    type: rdf:Property
+    label: "steps"
+    comment: >-
+      The test's ordered steps.
+    domain: mf:ManifestEntry
+    range: lwst:Step
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:precondition
+    type: rdf:Property
+    label: "precondition"
+    comment: >-
+      When true, a failing expectation in this step makes the test inapplicable instead of
+      failed, and no later step runs.
+    domain: lwst:Step
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:request
+    type: rdf:Property
+    label: "request"
+    comment: >-
+      The request a step sends.
+    domain: lwst:Step
+    range: lwst:Request
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:response
+    type: rdf:Property
+    label: "response"
+    comment: >-
+      The expectations on the step's response.
+    domain: lwst:Step
+    range: lwst:ResponseExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:method
+    type: rdf:Property
+    label: "method"
+    comment: >-
+      The HTTP method, in upper case.
+    domain: lwst:Request
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:url
+    type: rdf:Property
+    label: "url"
+    comment: >-
+      Template for the target URL; a relative reference is resolved against
+      ${target.baseUrl}.
+    domain: lwst:Request
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:contentType
+    type: rdf:Property
+    label: "contentType"
+    comment: >-
+      On a request, the Content-Type to send. On a response, the media type expected:
+      type/subtype compared case-insensitively, parameters ignored.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:accept
+    type: rdf:Property
+    label: "accept"
+    comment: >-
+      The Accept header value to send.
+    domain: lwst:Request
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ifMatch
+    type: rdf:Property
+    label: "ifMatch"
+    comment: >-
+      If-Match value to send, a template; the literal current means HEAD the URL first, as
+      the same identity, and send the ETag it returns (no If-Match if it returns none).
+    domain: lwst:Request
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:linkHeaders
+    type: rdf:Property
+    label: "linkHeaders"
+    comment: >-
+      A Link value to send, or a condition on the response's Link values.
+    range: lwst:LinkExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:rel
+    type: rdf:Property
+    label: "rel"
+    comment: >-
+      A link relation type: a registered name compared case-insensitively, or an extension
+      relation URI compared exactly.
+    domain: lwst:LinkExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:href
+    type: rdf:Property
+    label: "href"
+    comment: >-
+      Template for a link target, compared after resolving both sides against the request
+      URL.
+    domain: lwst:LinkExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:mediaType
+    type: rdf:Property
+    label: "mediaType"
+    comment: >-
+      The expected (or sent) type target attribute of a link.
+    domain: lwst:LinkExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:otherHeaders
+    type: rdf:Property
+    label: "otherHeaders"
+    comment: >-
+      A header to send, or a condition on one response header.
+    range: lwst:HeaderExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:headerName
+    type: rdf:Property
+    label: "headerName"
+    comment: >-
+      The header field name, compared case-insensitively.
+    domain: lwst:HeaderExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:headerValue
+    type: rdf:Property
+    label: "headerValue"
+    comment: >-
+      Template for the value to send, or the exact expected value of some field line.
+    domain: lwst:HeaderExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:differsFrom
+    type: rdf:Property
+    label: "differsFrom"
+    comment: >-
+      Template; the header must be present and no field line may equal this value.
+    domain: lwst:HeaderExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:body
+    type: rdf:Property
+    label: "body"
+    comment: >-
+      Template for a request body sent as UTF-8 text.
+    domain: lwst:Request
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:bodyURL
+    type: rdf:Property
+    label: "bodyURL"
+    comment: >-
+      A fixture file, relative to the definition document: the bytes to send, or the bytes
+      the response body must equal exactly.
+    range: rdfs:Resource
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:bodyJSON
+    type: rdf:Property
+    label: "bodyJSON"
+    comment: >-
+      A JSON value sent as the request body; string members are templates. Content-Type
+      defaults to application/json.
+    domain: lwst:Request
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:bodyForm
+    type: rdf:Property
+    label: "bodyForm"
+    comment: >-
+      A JSON object of string templates sent as application/x-www-form-urlencoded; members
+      appear in document order.
+    domain: lwst:Request
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:statusCode
+    type: rdf:Property
+    label: "statusCode"
+    comment: >-
+      An acceptable status: an integer, or a class string such as "4xx". Several values
+      mean any of them.
+    domain: lwst:ResponseExpectation
+    range: rdfs:Literal
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:location
+    type: rdf:Property
+    label: "location"
+    comment: >-
+      The response must carry Location.
+    domain: lwst:ResponseExpectation
+    range: lwst:LocationExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:authenticationChallenge
+    type: rdf:Property
+    label: "authenticationChallenge"
+    comment: >-
+      Some challenge in WWW-Authenticate must satisfy this expectation.
+    domain: lwst:ResponseExpectation
+    range: lwst:ChallengeExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:scheme
+    type: rdf:Property
+    label: "scheme"
+    comment: >-
+      The challenge's auth-scheme, compared case-insensitively.
+    domain: lwst:ChallengeExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:params
+    type: rdf:Property
+    label: "params"
+    comment: >-
+      A condition on one of the challenge's auth-params.
+    domain: lwst:ChallengeExpectation
+    range: lwst:ParameterExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:paramName
+    type: rdf:Property
+    label: "paramName"
+    comment: >-
+      The auth-param name.
+    domain: lwst:ParameterExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:paramValue
+    type: rdf:Property
+    label: "paramValue"
+    comment: >-
+      Template for the exact expected auth-param value, after unquoting.
+    domain: lwst:ParameterExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:bodyEmpty
+    type: rdf:Property
+    label: "bodyEmpty"
+    comment: >-
+      When true, the response has no content.
+    domain: lwst:ResponseExpectation
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:bodyMatches
+    type: rdf:Property
+    label: "bodyMatches"
+    comment: >-
+      A regular expression (portable dialect) that must find a match in the body decoded
+      as UTF-8.
+    domain: lwst:ResponseExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:json
+    type: rdf:Property
+    label: "json"
+    comment: >-
+      A condition on the body parsed as JSON.
+    domain: lwst:ResponseExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:pointer
+    type: rdf:Property
+    label: "pointer"
+    comment: >-
+      An RFC 6901 JSON Pointer; the empty pointer selects the whole value.
+    domain: lwst:JsonExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:optional
+    type: rdf:Property
+    label: "optional"
+    comment: >-
+      When true, the expectation holds vacuously if the pointer selects nothing.
+    domain: lwst:JsonExpectation
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:some
+    type: rdf:Property
+    label: "some"
+    comment: >-
+      The selected value is an array with at least one element satisfying every nested
+      expectation (pointers relative to the element).
+    domain: lwst:JsonExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:every
+    type: rdf:Property
+    label: "every"
+    comment: >-
+      The selected value is an array whose every element satisfies every nested
+      expectation.
+    domain: lwst:JsonExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:none
+    type: rdf:Property
+    label: "none"
+    comment: >-
+      The selected value is an array with no element satisfying all of the nested
+      expectations.
+    domain: lwst:JsonExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:jwt
+    type: rdf:Property
+    label: "jwt"
+    comment: >-
+      Conditions on a compact-serialized JWT.
+    domain: lwst:ResponseExpectation
+    range: lwst:JwtExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:token
+    type: rdf:Property
+    label: "token"
+    comment: >-
+      Template yielding the JWT to check, usually a variable captured in the same step.
+    domain: lwst:JwtExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:jwks
+    type: rdf:Property
+    label: "jwks"
+    comment: >-
+      Template yielding a JWKS URL; the JWT's signature must verify with the key its kid
+      names there.
+    domain: lwst:JwtExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:header
+    type: rdf:Property
+    label: "header"
+    comment: >-
+      A condition on the decoded JWT header.
+    domain: lwst:JwtExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:claims
+    type: rdf:Property
+    label: "claims"
+    comment: >-
+      A condition on the decoded JWT claims set.
+    domain: lwst:JwtExpectation
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:connegEquivalent
+    type: rdf:Property
+    label: "connegEquivalent"
+    comment: >-
+      The step's URL serves one document under several media types.
+    domain: lwst:ResponseExpectation
+    range: lwst:ConnegExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:accepts
+    type: rdf:Property
+    label: "accepts"
+    comment: >-
+      The media types to request, in order.
+    domain: lwst:ConnegExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:present
+    type: rdf:Property
+    label: "present"
+    comment: >-
+      When true, the header or auth-param is present; when false, it is absent.
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:absent
+    type: rdf:Property
+    label: "absent"
+    comment: >-
+      When true, no Link value satisfies the other conditions of this expectation (a
+      header's absence is present: false).
+    domain: lwst:LinkExpectation
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:equals
+    type: rdf:Property
+    label: "equals"
+    comment: >-
+      The selected JSON value equals this one (deep equality; strings are templates).
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:equalsIri
+    type: rdf:Property
+    label: "equalsIri"
+    comment: >-
+      Template for an absolute IRI; the selected string, resolved against the request URL,
+      equals it.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:matches
+    type: rdf:Property
+    label: "matches"
+    comment: >-
+      A regular expression in the portable dialect of EXECUTION.md (unanchored search; a
+      leading (?i) makes it case-insensitive). On a header, some field line or the
+      combined value matches; on JSON, a string value matches, any other value is matched
+      as its compact JSON text.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:hasValue
+    type: rdf:Property
+    label: "hasValue"
+    comment: >-
+      The selected value equals this one, or is an array containing an element equal to it
+      (strings are templates).
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:exists
+    type: rdf:Property
+    label: "exists"
+    comment: >-
+      When true, the pointer selects a value; when false, it selects nothing.
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:count
+    type: rdf:Property
+    label: "count"
+    comment: >-
+      The selected array has this many elements (an object, this many members).
+    range: xsd:integer
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:jsonType
+    type: rdf:Property
+    label: "jsonType"
+    comment: >-
+      The selected value's JSON type: string, number, boolean, null, array or object.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:capture
+    type: rdf:Property
+    label: "capture"
+    comment: >-
+      Binds a variable, for later steps, to the value this expectation located: a Link
+      target (absolute), a header value, an auth-param value, the Location (absolute), or
+      a JSON value.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:cleanup
+    type: rdf:Property
+    label: "cleanup"
+    comment: >-
+      When true, the captured Location is deleted, as the same identity, when the test
+      ends.
+    domain: lwst:LocationExpectation
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:kind
+    type: rdf:Property
+    label: "kind"
+    comment: >-
+      The identity's kind.
+    domain: lwst:Identity
+    range: lwst:IdentityKind
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:suite
+    type: rdf:Property
+    label: "suite"
+    comment: >-
+      The authentication suite specification the credential follows.
+    domain: lwst:Identity
+    range: rdfs:Resource
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:tokenType
+    type: rdf:Property
+    label: "tokenType"
+    comment: >-
+      The RFC 8693 token type URI the credential is presented with.
+    domain: lwst:Identity
+    range: rdfs:Resource
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:algorithm
+    type: rdf:Property
+    label: "algorithm"
+    comment: >-
+      The signature algorithm the credential is signed with (a JOSE alg, or an XML-DSig
+      algorithm URI for SAML).
+    domain: lwst:Identity
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:webid
+    type: rdf:Property
+    label: "webid"
+    comment: >-
+      Template for the agent IRI of a harness-hosted identity; ${identity.<name>.webid}
+      resolves to it.
+    domain: lwst:Identity
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:basis
+    type: rdf:Property
+    label: "basis"
+    comment: >-
+      The identity a fault identity is derived from.
+    domain: lwst:Identity
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:fault
+    type: rdf:Property
+    label: "fault"
+    comment: >-
+      The single defect of a fault identity.
+    domain: lwst:Identity
+    range: lwst:Fault
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:credentialHeader
+    type: rdf:Property
+    label: "credentialHeader"
+    comment: >-
+      Template for the JOSE header of a JWT credential.
+    domain: lwst:Identity
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:credentialClaims
+    type: rdf:Property
+    label: "credentialClaims"
+    comment: >-
+      Template for the claims set of a JWT credential.
+    domain: lwst:Identity
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:identityDocument
+    type: rdf:Property
+    label: "identityDocument"
+    comment: >-
+      Template for the controlled identifier document the harness serves at the identity's
+      webid.
+    domain: lwst:Identity
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:samlAssertion
+    type: rdf:Property
+    label: "samlAssertion"
+    comment: >-
+      The fields of the SAML assertion the harness IdP issues for the identity.
+    domain: lwst:Identity
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1

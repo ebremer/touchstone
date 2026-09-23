@@ -1,0 +1,11 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "touchstone": "https://example.org/touchstone/vocab#",
+
+    "requirements": {"@id": "touchstone:verifies", "@type": "@id", "@container": "@set"},
+    "mirrors":      {"@id": "touchstone:mirrors", "@container": "@set"},
+    "supersedes":   {"@id": "touchstone:supersedes", "@container": "@set"},
+    "note":         {"@id": "touchstone:note"}
+  }
+}
