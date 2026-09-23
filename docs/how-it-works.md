@@ -155,8 +155,8 @@ one.
 | Outcome | Meaning | EARL outcome |
 |---|---|---|
 | `PASSED` | Every step ran and every assertion held. | `earl:passed` |
-| `FAILED` | An assertion did not hold. This is a finding about the server. | `earl:failed` |
-| `ERROR` | The harness could not finish the test. Causes include a transport error, an unresolved variable, a header missing where a step binds it, or a missing credential. | `earl:cantTell` |
+| `FAILED` | An assertion did not hold. This is a finding about the server. It decides the outcome even when the same step then cannot bind a value it was meant to capture: a refused create has no `Location`, and the refusal is the finding. | `earl:failed` |
+| `ERROR` | The harness could not finish the test, and no assertion had failed. Causes include a transport error, an unresolved variable, a missing credential, or a response that met every expectation of its step but lacked a value a later step needs. | `earl:cantTell` |
 | `SKIPPED` | The target does not declare a capability the test requires. | `earl:inapplicable` |
 
 [Reports and verdicts](reports.md) explains how outcomes become a conformance verdict.

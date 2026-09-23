@@ -8,8 +8,10 @@ requirements never enter the catalog unreviewed.
 
 - `extract_clauses.py <spec.html> <out.json>` — parses a ReSpec-rendered W3C
   draft and emits one JSON entry per text block that carries `rfc2119` keyword
-  markup (section id stack, heading, keywords, normalized text). Output for the
-  current baseline lives at `catalog/sources/WD-lws10-core-20260622.clauses.json`.
+  markup (section id stack, heading, keywords, normalized text). Its output for
+  each baselined draft sits beside that draft's snapshot, as
+  `catalog/sources/<draft>.clauses.json`; `catalog/sources/README.md` lists the
+  current ones.
 - `emit_candidates.py <clauses.json> <curation.json> <catalog.ttl>` — turns the
   extraction plus the human curation file (slug + summary per block; the review
   record) into generated catalog entries. Every block must be seeded, skipped, or

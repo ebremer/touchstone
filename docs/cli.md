@@ -65,28 +65,31 @@ reference server with no `defaultIdentity` configured, so every request went out
 anonymously and was refused:
 
 ```text
-[FAILED] core/create-in-missing-container-404 (32 ms)
-    core/create-in-missing-container-404 - FAILED (32 ms)
+[FAILED] core/create-in-missing-container-404 (39 ms)
+    core/create-in-missing-container-404 - FAILED (39 ms)
       step 1 'POST into a container that does not exist':
         FAILED status
           expected: [404]
           actual:   401
-        exchange: POST http://localhost:49298/touchstone-run-58211573/t7-create-in-missing-container-404/does-not-exist/ -> 401
-[ERROR ] core/put-replace-with-if-match (27 ms)
-    core/put-replace-with-if-match - ERROR (27 ms)
+        exchange: POST http://localhost:62708/touchstone-run-6c92b98b/t10-create-in-missing-container-404/does-not-exist/ -> 401
+[FAILED] core/put-replace-with-if-match (31 ms)
+    core/put-replace-with-if-match - FAILED (31 ms)
       step 1 'create version one':
-        error: bind 'created': response has no header Location
         FAILED status
           expected: [201]
           actual:   401
-        exchange: POST http://localhost:49298/touchstone-run-58211573/t22-put-replace-with-if-match/ -> 401
+        error: bind 'created': response has no header Location
+        exchange: POST http://localhost:62708/touchstone-run-6c92b98b/t22-put-replace-with-if-match/ -> 401
 ...
-0 passed, 3 failed, 21 errors, 0 skipped  (target secured-ref, run 58211573)
-reports: runs/2026-09-23T162540Z-58211573 (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)
+0 passed, 24 failed, 0 errors, 0 skipped  (target secured-ref, run 6c92b98b)
+reports: runs/2026-09-23T172825Z-6c92b98b (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)
 ```
 
-The second test is an `ERROR` rather than a `FAILED`. Its step could not bind the
-`Location` header that later steps need, so the harness could not finish the test.
+The second test's step failed its status check and then could not bind the `Location`
+header that later steps need. The failed check decides the outcome, so the test is
+`FAILED`. The bind error is still listed, after the failed check. A test ends in `ERROR`
+only when the harness could not finish it although the server met every expectation so
+far. See [Outcomes](how-it-works.md#outcomes).
 
 ## `touchstone coverage`
 
@@ -126,13 +129,13 @@ The output below comes from comparing the run above with a rerun that set
 `defaultIdentity`:
 
 ```text
-diff 58211573 (2026-09-23T16:25:40.165666900Z) -> b9868d06 (2026-09-23T16:26:15.952515600Z)
+diff 6c92b98b (2026-09-23T17:28:25.620376700Z) -> 27c3a664 (2026-09-23T17:28:40.588427500Z)
 no regressions
 fixes:
-  core/conditional-get-304: ERROR -> PASSED
-  core/conditional-get-stale-validator-200: ERROR -> PASSED
+  core/conditional-get-304: FAILED -> PASSED
+  core/conditional-get-stale-validator-200: FAILED -> PASSED
   ...
-  core/storage-description-discovery: ERROR -> PASSED
+  core/storage-description-discovery: FAILED -> PASSED
 no other outcome changes
 0 unchanged
 ```

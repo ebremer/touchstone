@@ -45,11 +45,15 @@ be an ID Token for the agent's WebID, and it expires quickly. See
 
 ## A test is `ERROR` rather than `FAILED`
 
-`ERROR` means the harness could not finish the test. Common causes:
+`ERROR` means the harness could not finish the test although no assertion had failed.
+When a step fails an assertion, the test is `FAILED`, even if the step then also cannot
+bind a value. Common causes of `ERROR`:
 
-- `bind 'x': response has no header Location` (or no matching `Link`): an earlier
-  request did not produce the value later steps need, usually because that request was
-  itself refused. Look at the status assertion in the same step.
+- `bind 'x': response has no header Location` (or no matching `Link`): the response met
+  every expectation the step declared, but lacked a value later steps need. If the
+  specification requires that value, add an expectation for it, for example
+  `Location: { present: true }`. A server that omits it then fails the test instead of
+  stalling it.
 - `unresolved template variable ${x}`: the manifest uses a variable that no earlier step
   binds.
 - `transport error: ...`: the connection failed or timed out. The default timeout is 15

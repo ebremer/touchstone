@@ -1172,3 +1172,37 @@ overrides. Verified both ways:
 
 `docs/` drops the workarounds it carried for the last two, and its exit-code tables describe
 the new contract. The other findings from the same pass remain open in TODO.md.
+
+### D-0049 — a failed assertion decides a test's outcome, and the MCP tools say what they touch
+Two more findings from the documentation pass (D-0048).
+
+**A failed assertion now outranks the error it causes.** A step can fail an assertion and
+then fail to bind a value, and the second failure usually follows from the first: a create
+refused with 401 has no `Location` to capture. `Executor` checked the step's error first,
+so such a test was an `ERROR`. EARL recorded that as `cantTell` ("the harness could not
+tell"), for a server that had answered, and answered wrongly. Against a secured server with
+no identity configured, the core suite reported 21 of its 24 tests that way.
+
+The failed assertion is the finding, so it now decides: `FAILED`, `earl:failed`. The bind
+error stays on the step's record, and `Results.describe` and MCP `get_failures` now lead with
+the assertion that decided. `ERROR` keeps its meaning for everything else, including a bind
+error after every assertion in the step held. In that case the server met what the step
+asked of it, and the harness cannot go on. A manifest that depends on a value the
+specification requires should assert it (`Location: { present: true }`), so its absence
+fails the test.
+
+This changes per-test outcomes, not the conformance verdict. `FAILED` and `ERROR` count the
+same way against conformance, in the reports, the exit code and `get_run`, so no run
+changes between conformant and not. What changes is what the record says about the server:
+`failed` rather than `cantTell` in EARL, a failure rather than an error in the JUnit XML,
+and the counts in the summary. `definitions/EXECUTION.md` states the same rule for the
+engine to come. `StepOutcomeTest` covers both halves.
+
+**The MCP tools declare their hints.** Spring AI emits every tool's annotations, and with
+none set, each tool advertised the protocol's worst case: not read-only, destructive,
+open-world. Clients that honour the hints would ask before `coverage` or `get_report`. The
+nine tools that read only the catalog, the manifests and recorded runs are now read-only,
+idempotent and closed-world. `start_run` and `run_one` send deliberately malformed traffic
+to a target, and create and delete resources on it, so they keep the cautious values, now
+set explicitly: not read-only, destructive, not idempotent, open-world. The end-to-end test
+checks all eleven as a client sees them.

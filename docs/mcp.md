@@ -109,6 +109,13 @@ Tools that take a target accept only a registered **id**. Runs are kept in memor
 persisted under `runs/`, so `get_run`, `get_report` and `diff_runs` also work on runs
 from before a restart.
 
+Every tool carries MCP annotations that tell a client whether to ask before calling it:
+- **`start_run` and `run_one`** are marked not read-only, destructive and open-world.
+  They send deliberately malformed traffic to a server, and create and delete resources
+  on it.
+- **The other nine** are marked read-only, idempotent and closed-world. They only read
+  the catalog, the manifests and recorded runs.
+
 ### Prompts
 
 | Prompt | Argument | Purpose |

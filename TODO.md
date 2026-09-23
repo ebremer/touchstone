@@ -101,15 +101,24 @@ site's workarounds for them are gone.
   So a SHOULD-only failure gives a CONFORMANT report and exit code 1. Decide whether the
   exit code should follow the report, perhaps behind a flag. *Docs:* `docs/reports.md`,
   "How the verdict relates to exit codes and the MCP server".
-- [ ] **A failed assertion followed by a failed bind is recorded as `ERROR`.** For example,
-  a create that answers `200` with no `Location` is reported as `earl:cantTell`, not
-  `earl:failed`, because `Executor` checks the step's error before its assertions. Let
-  failed assertions decide the outcome.
-- [ ] **MCP tools carry no annotations.** Every tool advertises the protocol defaults:
-  `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`. That includes the
-  read-only `coverage`, `list_requirements` and `get_report`, so clients may ask for
-  approval on each call. Annotate them.
-- [ ] `tools/extractor/README.md` still names the retired `WD-lws10-core-20260622.clauses.json`.
+- [x] **A failed assertion followed by a failed bind is recorded as `ERROR`.** For example,
+  a create that answers `200` with no `Location` was reported as `earl:cantTell`, not
+  `earl:failed`, because `Executor` checked the step's error before its assertions.
+  → **Fixed (D-0049).** A failed assertion now decides, and the bind error stays on the
+  record after it. `Results.describe` and MCP `get_failures` lead with the assertion too.
+  `StepOutcomeTest` covers both cases: a failed assertion with a failed bind is `FAILED`,
+  and a bind error after every assertion held is still `ERROR`. The core suite against a
+  secured server with no identity now reports 24 `FAILED`, where it reported 3 `FAILED`
+  and 21 `ERROR`.
+- [x] **MCP tools carry no annotations.** Every tool advertised the protocol defaults:
+  `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`. That included the
+  read-only `coverage`, `list_requirements` and `get_report`, so clients might ask for
+  approval on each call.
+  → **Fixed (D-0049).** The nine query tools are read-only, idempotent and closed-world.
+  `start_run` and `run_one` are explicitly not read-only, destructive and open-world. The
+  end-to-end test checks all eleven over MCP.
+- [x] `tools/extractor/README.md` named the retired `WD-lws10-core-20260622.clauses.json`.
+  → **Fixed.** It now gives the naming pattern and points to `catalog/sources/README.md`.
 - [x] `docs/ci/example-conformance-workflow.yml` used the action at `@main`. The default
   branch is `master`, so a server repository that copied it could not resolve the action.
   Fixed.
