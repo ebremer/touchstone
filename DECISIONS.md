@@ -1228,3 +1228,54 @@ The fix is the mode bit and nothing else. With it, both checks were verified on 
 - the Action's image: built from the same kind of tarball, then `--version` run in it.
 
 No other tracked file has a shebang. The Python tools run as `python <script>`.
+
+### D-0051 — definitions format 0.2.0 merges lws-test-suite's design (proposed)
+Erich asked for a single YAML-LD design that combines Touchstone's format with
+lws-test-suite's. 0.2.0 is that merge. It is proposed, not frozen, and lives on a branch
+until the freeze review (DESIGN.md 7.4, as in D-0047).
+
+**Taken from lws-test-suite:**
+- **One request, one response.** A test that is one exchange carries `request` and
+  `response` directly. This is pure shorthand for a single step.
+- **Declared prerequisites.** `prereqs.hierarchy` with `authorization`: the state a test
+  needs is declared and the engine establishes it, so a test's steps are only the exchanges
+  it examines.
+- **Its challenge terms.** `wwwAuthenticate`, `asUri` and `realm` replace `scheme` and two
+  entries of `params`.
+
+**Corrected in what was taken:**
+- **Resources are named, not placed.** A prerequisite is `container: notes` or
+  `dataResource: list`, bound to the URI the server assigns (WD section 9.2). Fixed paths
+  are gone.
+- **Access uses the draft's model.** The four actions are those of section 11.3.2, not the
+  Solid modes `write`, `append` and `control`. Assignees are identities: `anonymous` means
+  `foaf:Agent`. `Role-Authenticated` has no representation in the draft, since section
+  11.3.3 requires a URI.
+- **Challenge values are expectations.** Values such as `https://authorization.example`
+  can never match a live server.
+
+**Three defaults were chosen, because the decision was delegated.** Each is open at the
+freeze review.
+1. Access the storage's grant service cannot set up goes through the provisioning adapter.
+   If neither can, the test is inapplicable.
+2. The short form is pure shorthand.
+3. Literal values are allowed, but the lint rejects RFC 2606 and RFC 6761 example hosts in
+   executable values.
+
+**Prerequisite failures are setup failures, not findings.** A failed create is *cantTell*,
+and a grant the target cannot make is *inapplicable* (EXECUTION.md section 4.3). A test
+whose traits include `Post` therefore keeps its create as a step, because there creation is
+the finding.
+
+**The migration was mechanical and proven.**
+- **Scope:** 30 tests took the short form, 25 declare prerequisites, and 13 use the
+  challenge shorthand.
+- **Equivalence:** every test, desugared back into 0.1.0 steps under the 0.2.0 rules, equals
+  its master text. The exception is `getContainer-public-read`, rewritten by hand to declare
+  a public container as lws-test-suite's `getContainer` does.
+- **Checks:** all six pass, with 16 documents and 5,933 triples. 20 schema negative controls
+  are rejected, and the new lint rules fired on injected violations. COVERAGE.md regenerates
+  unchanged, and the JSON-LD export trial is identical for 16 of 16 documents.
+
+`definitions/COMPARISON.md` argues the merged design's superiority from measurements of
+lws-test-suite's files at b8cb134. `docs/definitions.md` summarises it.
