@@ -51,7 +51,9 @@ The CID suite has a 21 September WD with no normative drift.
   - identities, and the fixture host for did:key, CID, OIDC and SAML.
 - [ ] **Teach `RefLwsServer` what the new definitions exercise,** so the self-test loop covers
   them: token exchange with did:key, access grants, the lws#storage link on 401.
-- [ ] **CI: the six definition checks.** See `definitions/README.md`, "Validating".
+- [x] **CI: the six definition checks.** See `definitions/README.md`, "Validating".
+  → **Done (D-0052).** `tools/definitions/check.py` runs them, and the export trial, in the
+  CI job `definitions`, against a pinned lws-test-suite checkout.
 - [ ] **CI: a scheduled `check_drift.py` against the live `/TR/` URLs.** The 21 September drift
   went unnoticed because CI only runs `mvnw verify`.
 - [ ] **Re-baseline the core catalog onto WD-lws10-core-20260921 and the CID catalog onto its

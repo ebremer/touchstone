@@ -1279,3 +1279,43 @@ the finding.
 
 `definitions/COMPARISON.md` argues the merged design's superiority from measurements of
 lws-test-suite's files at b8cb134. `docs/definitions.md` summarises it.
+
+### D-0052 — the definitions checks live in tools/definitions and run in CI
+The six checks of `definitions/README.md` and the JSON-LD export trial had run only from a
+working directory outside the repository. So had the generators for `vocab.yamlld` and
+`COVERAGE.md`. A generated file whose generator is not in the repository cannot be
+maintained, and "CI should run" was a promise, not a fact.
+
+**What moved.** They now live in `tools/definitions/`:
+- the scripts: `validate_ld.js`, `portable_yaml.py`, `validate_schema.js`,
+  `lint_definitions.py`, `gen_vocab.py`, `gen_coverage.py` and `export_dryrun.js`;
+- a single entry point, `check.py`, and `fetch_anchors.py`.
+
+The scripts find everything relative to the repository, and write intermediate output to a
+git-ignored `build/`. Each generator has a `--check` mode, so CI fails when a generated file
+is stale. The one-time scripts stayed out: the 0.2.0 migration, its equivalence proof, and
+the generator that first wrote the authentication suites. D-0051 records their results.
+
+**Anchors are data with a regenerator.** The lint checks every `source` anchor against the
+section and heading ids of its dated snapshot, recorded in `anchors.json`.
+`fetch_anchors.py` rebuilds that file from w3.org for every snapshot the definitions cite.
+Snapshots are immutable, so it is refreshed only when a new one is cited.
+
+**lws-test-suite is pinned.** The `mirrors` check and `COVERAGE.md` read that repository's
+files. The CI job `definitions` therefore checks it out at
+b8cb134fd2a4d18e8f4272532cf3715c95180dba, the commit `definitions/COMPARISON.md` was measured
+on, and moving the pin means re-measuring. Its authentication manifests sit behind links a
+checkout may not create, so the scripts fall back to their physical path. Locally, a
+sibling checkout is found automatically; without one, the lint skips `mirrors` and says so.
+
+**Versions**, checked against the registries on 2026-09-23:
+- Node: `ajv` 8.20.0, `ajv-formats` 3.0.1, `jsonld` 9.0.0 and `yaml` 2.9.1, with a
+  `package-lock.json`;
+- Python: PyYAML 6.0.3 and rdflib 7.6.0;
+- CI: Node 24 (the current LTS), Python 3.12, and `setup-node@v7` and `setup-python@v7`.
+
+**`jsonld` 9 needed one change.** Its canonicalizer, `rdf-canonize` 5, caps deep comparisons
+at n^maxWorkFactor, with a default of 1, as a guard against hostile input. The export trial
+exceeded the cap on documents with repeated step structures. These are the repository's
+own files, so the trial passes `maxWorkFactor: 2`. A negative control confirmed the trial
+still reports a corrupted export, and reports only that document.
