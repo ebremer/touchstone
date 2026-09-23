@@ -1043,3 +1043,72 @@ OAuth2 resource server *if* the endpoint is hosted; until that exists, `server.a
 127.0.0.1` is the honest default, and an operator who means to expose it sets the address
 explicitly and fronts it with something that authenticates. The stdio profile is unaffected —
 it starts no web server at all.
+
+## 2026-09-23
+
+### D-0047 — YAML-LD definitions mirror lws-test-suite, extend it, and flow back as JSON-LD
+The premise of D-0006 and D-0013 changed. D-0006 recorded lws-test-suite as w3c/lws-protocol
+PR #145's strawman, and D-0013 chose "build independently, stay format-aligned". The LWS test
+group now means to make that suite authoritative, standardized on JSON-LD test manifests.
+Erich's direction: Touchstone authors its tests in YAML-LD, mirrors lws-test-suite and goes
+further, and will later convert to JSON-LD and contribute them. It does not contribute yet. The
+engine for the new format is to be generated from the definitions.
+
+**What landed** is `definitions/`, with an `lws10/` tree laid out like lws-test-suite's so that
+export is file-for-file:
+- 101 tests: 84 MUST, 15 SHOULD, 2 MAY;
+- a JSON-LD context proposed as the successor to lws-test-suite's, and a touchstone-only
+  context (catalog links, traceability) that export drops;
+- an RDFS vocabulary for every `lwst:` term, and an identity registry;
+- a JSON Schema at proposal `0-1-0`;
+- `EXECUTION.md`, the contract the generated engine must meet.
+
+All 27 lws-test-suite tests have a counterpart, and 32 of the 33 `manifests/` are superseded;
+`definitions/COVERAGE.md` maps both. They follow the W3C YAML-LD draft: YAML 1.2 Core Schema,
+which rules out SnakeYAML 1.x and jackson-dataformat-yaml for the engine. They are also written
+so that a YAML 1.1 reading is identical.
+
+**Against lws-test-suite, the counterparts correct:**
+- DELETE expects 204, the draft's MUST;
+- PUT accepts 200 or 204;
+- `rel="…lws#storage"` and `application/lws+cid` for discovery;
+- the did:key suite's `jwt` token type;
+- discovered URLs in place of `.meta`, `Slug`-derived Locations, `/alice/description` and
+  `/token`;
+- identities in place of credentials embedded in tests.
+
+**Against `manifests/`, they fix what the 2026-09-23 review found:**
+- *SHOULD checks decided conformance.* A SHOULD or MAY check inside a MUST test did so, because
+  `HtmlReport` fails every requirement a failing test cites. This affected `Vary` in
+  container-conneg, `Accept-Ranges`/416 in the range test, and recursive delete (a MAY) in the
+  409 test. Each is now its own test at its own level.
+- *Order-dependent assertions.* Listing items were asserted at `/items/0`, the storage
+  description required StorageRoot at `/service/0`, and the challenge regex required `as_uri`
+  before `realm`. Matching is now by content, and challenges are parsed per RFC 9110.
+- *Nominal OIDC coverage.* The storage-side token tests cited `lws10-authn-openid` ID-token
+  clauses while sending RFC 9068 access tokens, so the "2 of 8" OIDC coverage was nominal. They
+  now cite the core clauses only; the OIDC suite has its own authorization-server tests.
+- *Unused variants.* `notYetValid()` and `missingSubject()` existed in `AccessTokens` but no test
+  used them, whatever D-0017 said. Definitions now exist for not-yet-valid, iat-in-future and
+  multiple-audience tokens.
+
+**The spec moved again.** The core WD of 21 September 2026 supersedes the 21 August baseline.
+`check_drift.py` reports 14 changed clauses, most of them editorial. The substantive changes:
+- the 428-on-unconditional-PUT MUST is gone ("Clients SHOULD use conditional requests");
+- conditional-request support dropped from MUST to SHOULD;
+- the MUST that a container's ETag change after a member is deleted is gone;
+- the SHOULD for a new ETag after a PUT is gone.
+
+`manifests/core/put-unconditional-428` therefore fails conforming servers; the definitions retire
+it. The CID suite also has a 21 September WD, with no normative drift. The catalog is **not**
+re-baselined here: that rewrites Approved entries, so it waits for review, as in D-0037. The
+definitions cite none of the seven affected entries.
+
+**What did not change.** `manifests/`, schema `1-1-0` and `touchstone run` are untouched.
+Superseding `manifests/` is proposed, not decided; it follows once a generated engine runs
+`definitions/` green against the reference server.
+
+**Gate.** Format 0.1.0 (context, vocabulary, schema, EXECUTION.md) is Proposed. Freezing it is a
+review gate, the analogue of Gate 2 (D-0013), and engine generation should start from the frozen
+format. This lands on the branch `feat/yaml-ld-definitions` rather than master (DESIGN.md 7.4, as
+in D-0035).

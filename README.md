@@ -38,6 +38,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-mcp` | Spring AI MCP server over the core engine |
 | `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |
 | `manifests/` | declarative test manifests (`core`, `auth-oidc`) |
+| `definitions/` | YAML-LD test definitions (proposed): mirror and extend lws-test-suite, contributed back as JSON-LD; the engine for them is to be generated (DECISIONS.md D-0047) |
 | `tools/` | catalog extraction and spec-drift tooling |
 | `docs/` | manifest schema, distribution, harvest method |
 

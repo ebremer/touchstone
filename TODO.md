@@ -9,8 +9,9 @@ The repo's catalog baseline was the **22 June 2026** WD (D-0002); the spec moved
 21 August. Everything in P1 followed from that; P0 and P2 are defects independent of it.
 **Every priority is done** (DECISIONS.md D-0038 to D-0046). What remains open is the
 notification suite, deferred on purpose (D-0041).
-The `check_drift.py` output quoted below is the state that prompted the work — re-running it
-today reports no drift.
+The `check_drift.py` output quoted below is the state that prompted the work. Re-run
+against the 21 August draft, it reports no drift; against the 21 September draft it
+reports 14 changed clauses (next section).
 
 How the spec findings were derived (reproducible):
 
@@ -22,6 +23,38 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 #   info: 50 uncatalogued normative block(s)
 #   DRIFT: 20 catalog clause(s) no longer present in the spec
 ```
+
+---
+
+## 2026-09-23 — the spec moved again; YAML-LD definitions (D-0047)
+
+`check_drift.py` against `https://www.w3.org/TR/2026/WD-lws10-core-20260921/` reports 14
+changed clauses. Four change what `manifests/` asserts (details in D-0047):
+- 428 on an unconditional PUT is no longer required;
+- conditional requests went from MUST to SHOULD;
+- the parent-ETag MUST on delete is gone;
+- the new-ETag SHOULD after PUT is gone.
+
+The CID suite has a 21 September WD with no normative drift.
+
+- [ ] **Review and freeze the definitions format 0.1.0.** This covers `definitions/lws10/context.jsonld`,
+  `vocab.yamlld`, `schema/definitions.schema.json` and `EXECUTION.md`. It is a gate, like Gate 2.
+- [ ] **Generate the YAML-LD engine from `definitions/EXECUTION.md`.** It needs:
+  - a YAML 1.2 Core Schema parser;
+  - templates and derived variables;
+  - RFC 8288 and RFC 9110 challenge parsing;
+  - identities, and the fixture host for did:key, CID, OIDC and SAML.
+- [ ] **Teach `RefLwsServer` what the new definitions exercise,** so the self-test loop covers
+  them: token exchange with did:key, access grants, the lws#storage link on 401.
+- [ ] **CI: the six definition checks.** See `definitions/README.md`, "Validating".
+- [ ] **CI: a scheduled `check_drift.py` against the live `/TR/` URLs.** The 21 September drift
+  went unnoticed because CI only runs `mvnw verify`.
+- [ ] **Re-baseline the core catalog onto WD-lws10-core-20260921 and the CID catalog onto its
+  21 September WD.** This rewrites Approved entries, so it waits for review (as D-0037).
+- [ ] **Until the engine replaces them, stop `manifests/` failing conforming servers:**
+  - retire `core/put-unconditional-428`;
+  - move the positive 304 checks (`conditional-get-304`, and the 304 step of
+    `etag-on-head-and-container-listing`) out of MUST.
 
 ---
 
