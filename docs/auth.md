@@ -58,14 +58,14 @@ minted tokens for every identity above. Build once (`./mvnw -q install -DskipTes
 start the scenario from the repository root:
 
 ```sh
-./mvnw -q -pl harness-fixtures exec:exec -Dexec.executable=java \
-  "-Dexec.args=-cp %classpath com.ebremer.touchstone.fixtures.SecuredRefScenarioMain ../targets-secured.yaml"
+./mvnw -q -pl harness-fixtures exec:java \
+  -Dexec.mainClass=com.ebremer.touchstone.fixtures.SecuredRefScenarioMain \
+  -Dexec.args=targets-secured.yaml
 ```
 
-The `exec:exec` goal runs in the `harness-fixtures` directory, which is why the path
-starts with `../`. The command writes `targets-secured.yaml` to the repository root.
-Git ignores that file. The scenario prints the issuer and server addresses and keeps
-running. In a second terminal, run:
+The command writes `targets-secured.yaml` to the repository root. Git ignores that file.
+The scenario prints the issuer and server addresses and keeps running. In a second
+terminal, run:
 
 ```sh
 touchstone run --target secured-ref --module auth-oidc --targets targets-secured.yaml
@@ -84,11 +84,6 @@ Restart the scenario to get fresh ones.
 The same target also runs the core suite, but only once the suite acts as the owner.
 Add `defaultIdentity: alice` under the target's `properties`; without it, every core
 request is anonymous and is refused.
-
-{: .note }
-`SecuredRefScenarioMain`'s own Javadoc suggests `exec:java -Dexec.mainClass=...`. That
-does not work: the module's POM fixes `exec:java` to the plain reference server, which
-then tries to parse the file name as a port number. Use the `exec:exec` form above.
 
 ### Against a third-party server
 

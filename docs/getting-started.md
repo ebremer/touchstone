@@ -86,8 +86,9 @@ When a test does not pass, the lines under it show the failing step, each assert
 expected and actual values, and the HTTP exchange.
 
 The exit code is `0` when every test passed or was skipped, and `1` when any failed or
-errored. It is `2` when the harness is misconfigured, for example when the target id is
-unknown. The [command-line reference](cli.md#exit-codes) has the details.
+errored. It is `2` when there is no verdict, for example when the target id is unknown or
+the server cannot be reached. The [command-line reference](cli.md#exit-codes) has the
+details.
 
 ## Read the reports
 

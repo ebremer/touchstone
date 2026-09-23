@@ -41,7 +41,7 @@ Exit codes distinguish the two ways a run ends badly, and CI should too:
 |---|---|
 | 0 | the run completed and the target conformed |
 | 1 | the target is **non-conformant** — a test failed or errored |
-| 2 | the **harness** is misconfigured: unknown target, missing registry, or a manifest naming a requirement the catalog does not hold |
+| 2 | **no verdict**. The harness is misconfigured (unknown target, missing registry, a manifest that fails the schema or names a requirement the catalog does not hold), or the server could not be reached or would not create the run root. The reason is on standard error, and no report is written. |
 
 Collapsing 1 and 2 tells a server implementer their server failed when the workflow was
 wrong; the bundled Action keeps them apart.

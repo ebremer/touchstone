@@ -12,25 +12,21 @@ description: "Common errors, what they mean, and what to do about them."
 
 ## The run refuses to start (exit code 2)
 
+Exit code `2` means there is no verdict: nothing about the server was concluded, and no
+report bundle was written. The reason is printed on standard error.
+
 | Message | Cause and fix |
 |---|---|
 | `target registry not found: targets.yaml` | The CLI resolves paths against the working directory. Run it from the repository root, or pass `--targets <file>`. |
 | `unknown target 'x' (registered: [...])` | The id is not in the registry. Add the server to `targets.yaml`; see [Targets and credentials](targets.md). |
 | `no manifests for module 'x' under manifests` | The module name is the name of a directory under `manifests/`, such as `core` or `auth-oidc`. |
+| `manifest ... violates schema v1:` | The next lines name the property. Misspelt keys are the usual cause, because the schema allows no extra properties. |
 | A list of manifests with requirement IRIs, then `Fix the manifest, or add the requirement to catalog.` | A manifest cites a requirement that is not in the catalog. Fix the IRI; the typo is usually in the slug. |
+| `cannot run against target 'x': cannot create container 'touchstone-run-...' under ...`, then `caused by: java.net.ConnectException` | Nothing is listening at `baseUrl`. Check that the server is running, and that the URL, including the trailing slash, is right. |
+| `cannot run against target 'x': container creation under ... returned 401 (expected 201)` | The run root is created as the provisioning identity, which defaults to `anonymous`. Set `defaultIdentity`, or `provisioner`, on the target, and supply its token. |
+| `cannot run against target 'x': no credential configured for identity 'y' ...` | The provisioning identity has no token. Set `TOUCHSTONE_TOKEN_Y`, or the property `token.y`; the message names both. When a step's identity has no token instead, that test ends in `ERROR` with the same message. |
 
-## The run stops with a stack trace (exit code 1)
-
-| First line | Cause and fix |
-|---|---|
-| `InvalidManifestException: manifest ... violates schema v1:` | The next lines name the property. Misspelt keys are the usual cause, because the schema allows no extra properties. |
-| `ProvisioningException: cannot create container 'touchstone-run-...' under ...` | The server is unreachable at `baseUrl`. Check that it is running, and that the URL, including the trailing slash, is right. |
-| `ProvisioningException: container creation under ... returned 401 (expected 201)` | The run root is created as the provisioning identity, which defaults to `anonymous`. Set `defaultIdentity`, or `provisioner`, on the target, and supply its token. |
-| `ProvisioningException: no credential configured for identity 'x' ...` | The provisioning identity has no token. Set `TOUCHSTONE_TOKEN_X`, or the property `token.x`; the message names both. When a step's identity has no token instead, that test ends in `ERROR` with the same message. |
-
-These cases exit with `1`, the same code as a non-conforming server. If CI needs to tell
-the two apart, check whether a report bundle was written: a run that stops with a stack
-trace writes none.
+A stack trace with exit code `2` is a harness bug. Please report it.
 
 ## Every test fails or errors with 401
 
@@ -78,19 +74,12 @@ that references any other remote context cannot be parsed, and the assertion fai
 a message listing the bundled contexts. This is deliberate; see
 [Security model](security.md#3-responses-from-the-server-under-test-are-untrusted).
 
-## The MCP server started over stdio but answers nothing
+## An MCP client gets no answer over stdio
 
-Add `--spring.ai.mcp.server.protocol=STREAMABLE` to its arguments. The shipped `stdio`
-profile sets a protocol value that Spring AI 2.0 does not recognise, and that disables
-the MCP server entirely. See [MCP server](mcp.md#over-stdio).
-
-## `exec:java` runs the wrong main class
-
-`./mvnw -pl harness-fixtures exec:java` always starts the plain reference server,
-whatever `-Dexec.mainClass` says, because the module's POM fixes the main class. A
-`NumberFormatException` for your argument is the symptom. For other launchers, use
-`exec:exec`, as shown for the
-[secured reference scenario](auth.md#run-it-yourself).
+Everything the server writes to standard output must be a protocol message, so its logs
+go to `touchstone-mcp.log` in the working directory, not to the terminal. Look there
+first. Give the server absolute `--touchstone.*` paths too: the client, not you, chooses
+its working directory. See [MCP server](mcp.md#over-stdio).
 
 ## A change to the code does not seem to take effect
 

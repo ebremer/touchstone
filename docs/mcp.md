@@ -72,7 +72,6 @@ directory:
       "args": [
         "-jar", "/path/to/touchstone/harness-mcp/target/harness-mcp-0.1.0-SNAPSHOT.jar",
         "--spring.profiles.active=stdio",
-        "--spring.ai.mcp.server.protocol=STREAMABLE",
         "--touchstone.catalog=/path/to/touchstone/catalog",
         "--touchstone.manifests=/path/to/touchstone/manifests",
         "--touchstone.targets=/path/to/touchstone/targets.yaml",
@@ -83,16 +82,10 @@ directory:
 }
 ```
 
-{: .important }
-Keep `--spring.ai.mcp.server.protocol=STREAMABLE` in the stdio arguments. The shipped
-`stdio` profile sets `protocol: STDIO`, which Spring AI 2.0 does not recognise. Without
-the override, Spring AI switches the MCP server off: the process starts and then answers
-nothing. The override turns it back on, and with no web server running, stdio is the only
-transport it can use.
-
 In the `stdio` profile, nothing but protocol messages goes to standard output. Logs go
-to `touchstone-mcp.log` in the working directory. One harmless Logback line on standard
-error at startup reports an empty console pattern.
+to `touchstone-mcp.log` in the working directory; add `--logging.file.name=<file>` to put
+them somewhere else. One harmless Logback line on standard error at startup reports an
+empty console pattern.
 
 ## Tools
 

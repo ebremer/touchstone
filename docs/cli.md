@@ -137,27 +137,42 @@ no other outcome changes
 0 unchanged
 ```
 
-`diff` exits with `1` when there is at least one regression, so a CI job can gate on it.
+`diff` exits with `1` when there is at least one regression, so a CI job can gate on it,
+and with `2` when it cannot read one of the runs.
 
 ## Exit codes
 
+Exit code `1` is always a verdict about the server under test. Exit code `2` always means
+there is no verdict. A CI job can therefore tell "the server does not conform" apart from
+"the job is broken" by the exit code alone. Each command's `--help` lists its codes.
+
 | Code | `run` | `coverage` | `diff` |
 |---|---|---|---|
-| `0` | Every test passed or was skipped. | Printed. | No regressions. |
-| `1` | At least one test failed or errored. Also used when the run stops with an exception; see below. | | At least one regression, or a run could not be read. |
-| `2` | The harness is misconfigured: the registry is missing, the target id is unknown, the module has no manifests, or a manifest cites a requirement the catalog does not hold. | The catalog directory is missing. | |
+| `0` | Every test passed or was skipped. | The matrix was printed. | No regressions. |
+| `1` | At least one test failed or errored. | | At least one regression. |
+| `2` | No verdict. Either the harness is misconfigured, or the run could not start on the target; see below. | The catalog or the manifests could not be read. | A run could not be read. |
 
-`run` also exits with `1`, and prints a stack trace, when it stops before producing
-results. Two cases cause this:
+For `run`, the harness is misconfigured when:
+- the registry is missing, or the target id is unknown;
+- the module has no manifests;
+- a manifest fails schema validation;
+- a manifest cites a requirement the catalog does not hold.
 
-- **A manifest fails schema validation.** The message names the file and the offending
-  property.
-- **Provisioning fails.** The server is unreachable, or it refused to create the run root,
-  typically with `401` because no identity with write access was configured.
+The run could not start on the target when the server is unreachable, or when it refused
+to create the run root.
 
-A CI job that needs to tell "the server does not conform" apart from "the job is
-misconfigured" should check that a report bundle was written. See
-[Troubleshooting](troubleshooting.md).
+In every case that exits with `2`, the reason is printed on standard error and no report
+bundle is written:
+
+```text
+$ touchstone run --target ref --module core
+cannot run against target 'ref': cannot create container 'touchstone-run-d3f45e93' under http://localhost:4711/
+  caused by: java.net.ConnectException
+  caused by: java.nio.channels.ClosedChannelException
+```
+
+An exception that nothing anticipated also exits with `2`, with a stack trace. Such an
+exception is a harness bug, not a verdict about the server.
 
 The exit code of `run` counts every failure, whatever its requirement level. The
 conformance verdict in the reports counts only failures of MUST-level requirements, so a

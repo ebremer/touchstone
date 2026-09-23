@@ -1112,3 +1112,63 @@ Superseding `manifests/` is proposed, not decided; it follows once a generated e
 review gate, the analogue of Gate 2 (D-0013), and engine generation should start from the frozen
 format. This lands on the branch `feat/yaml-ld-definitions` rather than master (DESIGN.md 7.4, as
 in D-0035).
+
+### D-0048 — exit code 2 means "no verdict", the stdio profile answers, and `-Dexec.mainClass` chooses the launcher
+Writing the documentation site meant running every command before documenting it. That
+turned up three defects the build does not catch.
+
+**The CLI exited 1 when it had no verdict.** D-0046 split the exit codes: 1 for a
+non-conformant server, 2 for a misconfigured harness. The split covered the checks
+`RunCommand` makes itself: registry, target, module and catalog. It did not cover what
+escapes as an exception:
+- a manifest the schema rejects (`InvalidManifestException`);
+- a target that is unreachable, or that refuses to create the run root
+  (`ProvisioningException`);
+- in `diff`, a run record that cannot be read.
+
+picocli exits 1 for an escaped exception, so each of these reported a broken workflow as a
+non-conformant server. That is the confusion D-0046 set out to end, and it includes the
+commonest real misconfiguration: no identity with write access, so the run root gets a 401.
+
+`TouchstoneCli.HARNESS_ERROR` now states the contract in one place. Exit code 1 is a verdict:
+a non-conformant run, or a diff with regressions. Exit code 2 is no verdict.
+- `run` catches the two exceptions and prints the reason and its causes, without a stack
+  trace.
+- `diff` does the same for an unreadable run, and `coverage` for an invalid manifest.
+- Every command declares `exitCodeOnExecutionException = 2`. An exception nobody
+  anticipated, such as a catalog that does not parse, therefore cannot exit with the
+  verdict's code. It keeps its stack trace, since it is a bug.
+- `--help` lists each command's exit codes, and the Action's error message covers the new
+  cases.
+
+Five tests cover it: an invalid manifest, an unreachable target, a secured target refusing
+the run root, an unreadable run, and an unparseable catalog. Each exits 2, and each exited 1
+before.
+
+This widens what 2 means for an external server. A server that is down, or that cannot create
+a container, now yields "no verdict" rather than "non-conformant". That is the accurate
+reading: no test ran, and no report exists to support a verdict.
+
+**The stdio profile started no MCP server.** `application-stdio.yml` set
+`spring.ai.mcp.server.protocol: STDIO`. Spring AI 2.0's `ServerProtocol` has only `SSE`,
+`STREAMABLE` and `STATELESS`, and `McpServerAutoConfiguration` requires one of the first
+two, so it matched nothing. The process started, logged that it had, found no transport to
+serve, and exited. Nothing tested the profile.
+
+The line is gone, so the protocol is the `STREAMABLE` inherited from `application.yml`. With
+no web server, stdio is the only transport. `TouchstoneMcpStdioTest` runs the profile as a
+separate process, as a client would. It requires the first line on stdout to be the reply to
+`initialize`, which also guards the rule that nothing else may write there, and then calls a
+tool. It failed before the fix.
+
+**`-Dexec.mainClass` could not choose a launcher.** `harness-fixtures/pom.xml` set the exec
+plugin's `<mainClass>` directly, and configuration in the POM beats a user property. So
+`SecuredRefScenarioMain`'s own documented command started `RefLwsServerMain`, which parsed
+the file argument as a port. The main class is now the `exec.mainClass` property, which `-D`
+overrides. Verified both ways:
+- the documented command writes `targets-secured.yaml`, and `auth-oidc` passes 9/9 against
+  it;
+- plain `exec:java -Dexec.args=4711` still starts the reference server.
+
+`docs/` drops the workarounds it carried for the last two, and its exit-code tables describe
+the new contract. The other findings from the same pass remain open in TODO.md.

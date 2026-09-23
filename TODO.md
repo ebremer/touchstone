@@ -59,31 +59,40 @@ The CID suite has a 21 September WD with no normative drift.
 ## 2026-09-23 — found while writing the documentation site
 
 Every command in `docs/` was run before it was documented. The commands below did not
-behave as the code or its comments claim. Where the site needs a workaround, it documents
-the workaround and names the defect; remove both once the defect is fixed.
+behave as the code or its comments claim. The first three are fixed (D-0048), and the
+site's workarounds for them are gone.
 
-- [ ] **The MCP `stdio` profile starts no MCP server.** `application-stdio.yml` sets
+- [x] **The MCP `stdio` profile starts no MCP server.** `application-stdio.yml` set
   `spring.ai.mcp.server.protocol: STDIO`. That is not a Spring AI 2.0 `ServerProtocol` (the
   values are `SSE`, `STREAMABLE` and `STATELESS`), so `McpServerAutoConfiguration`'s
-  `NonStatelessServerCondition` fails. The process starts and never answers `initialize`.
-  Passing `--spring.ai.mcp.server.protocol=STREAMABLE` restores it: with no web server, the
-  only transport left is stdio, which was verified with `initialize` and a `coverage` call.
-  *Fix:* delete the line, and add a stdio smoke test; nothing tests this profile today.
-  *Docs:* `docs/mcp.md` ("Over stdio") and `docs/troubleshooting.md`.
-- [ ] **`SecuredRefScenarioMain`'s documented launch command runs the wrong class.**
-  `exec:java -Dexec.mainClass=…SecuredRefScenarioMain` starts `RefLwsServerMain`, because
-  the POM's `<mainClass>` overrides the user property. The file argument is then parsed as
-  a port, and the command fails with a `NumberFormatException`.
-  *Fix:* configure `<mainClass>${exec.mainClass}</mainClass>` with a default property in
-  `harness-fixtures/pom.xml`. *Docs:* `docs/auth.md` uses `exec:exec` with `%classpath`
-  meanwhile.
-- [ ] **Exit code 1 also means "the harness could not run".** An invalid manifest
+  `NonStatelessServerCondition` failed. The process started, found no transport to serve,
+  and exited without answering `initialize`.
+  → **Fixed.** The line is gone, so the profile inherits `STREAMABLE`; with no web server,
+  stdio is the only transport. `TouchstoneMcpStdioTest` runs the profile as a separate
+  process, and checks that the first line on stdout is the reply to `initialize` and that
+  a tool call works. It failed before the fix.
+- [x] **`SecuredRefScenarioMain`'s documented launch command runs the wrong class.**
+  `exec:java -Dexec.mainClass=…SecuredRefScenarioMain` started `RefLwsServerMain`, because
+  the POM's `<mainClass>` overrode the user property. The file argument was then parsed as
+  a port, and the command failed with a `NumberFormatException`.
+  → **Fixed.** `exec.mainClass` is now a POM property, which `-D` overrides. The Javadoc
+  command was verified: it writes `targets-secured.yaml`, and `auth-oidc` passes 9/9
+  against it. Plain `exec:java` still starts the reference server.
+- [x] **Exit code 1 also means "the harness could not run".** An invalid manifest
   (`InvalidManifestException`), an unreachable target, or a refused run-root creation
-  (`ProvisioningException`) escapes `RunCommand`, and picocli exits 1. That is the code for
-  a non-conformant server, so the GitHub Action blames the server for a misconfigured
-  workflow, which D-0046 set out to prevent. `diff` with an unreadable run also exits 1.
-  *Fix:* catch both exceptions in `RunCommand` and exit 2 with the message.
-  *Docs:* `docs/cli.md` ("Exit codes") and `docs/troubleshooting.md`.
+  (`ProvisioningException`) escaped `RunCommand`, and picocli exited 1. That is the code for
+  a non-conformant server, so the GitHub Action blamed the server for a misconfigured
+  workflow, which D-0046 set out to prevent. `diff` with an unreadable run also exited 1.
+  → **Fixed.** Exit code 2 now means "no verdict" everywhere:
+  - `run` catches both exceptions and prints the reason and its causes on one line each,
+    without a stack trace.
+  - `diff` does the same for an unreadable run, and `coverage` for an invalid manifest.
+  - Every command declares `exitCodeOnExecutionException = 2`, so an exception nothing
+    anticipated cannot exit with the code for a verdict.
+  - `--help` lists each command's exit codes, and the Action's message covers the new
+    cases.
+
+  Five CLI tests cover the change, and each failed before it.
 - [ ] **Three verdicts.**
   - The reports count a failed or errored test as non-conformant only if it cites a MUST.
   - `touchstone run` exits 1 on any failure.
