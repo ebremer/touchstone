@@ -1,0 +1,37 @@
+# The manifests/ tests retired when the YAML-LD engine replaced the manifest executor
+# (DECISIONS.md D-0055). Each definition's supersedes names one of these; the lint checks that
+# it does, and COVERAGE.md table 2 maps each to its successor. The files themselves are in git
+# history: git show 76256e4:manifests/<id>.yaml
+auth-oidc/alg-none-401
+auth-oidc/anonymous-request-401-challenge
+auth-oidc/bad-signature-401
+auth-oidc/expired-token-401
+auth-oidc/non-owner-403
+auth-oidc/unknown-key-401
+auth-oidc/valid-token-access
+auth-oidc/wrong-audience-401
+auth-oidc/wrong-issuer-401
+core/conditional-get-304
+core/conditional-get-stale-validator-200
+core/conditional-if-match-mismatch-412
+core/contained-resource-format
+core/contained-resource-type-values
+core/container-conneg
+core/container-containment-after-post
+core/container-create-basic
+core/create-advertises-linkset-link
+core/create-in-missing-container-404
+core/data-resource-get
+core/data-resource-range-request
+core/delete-non-empty-container-409
+core/delete-resource-updates-parent
+core/delete-updates-parent-etag
+core/etag-on-head-and-container-listing
+core/head-parity
+core/link-up-on-resources
+core/linkset-discovery-and-patch-advertisement
+core/patch-merge-patch-baseline
+core/post-to-non-container-405
+core/put-replace-with-if-match
+core/put-unconditional-428
+core/storage-description-discovery

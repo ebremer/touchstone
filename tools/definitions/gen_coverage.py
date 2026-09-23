@@ -1,8 +1,8 @@
 """Check 6 of definitions/README.md, "Validating": the coverage report.
 
 Generates definitions/COVERAGE.md from the JSON form of the definitions (build/json/,
-written by validate_ld.js). It maps every lws-test-suite test and every manifests/ entry to
-its counterparts, and lists every definition by module. It needs a lws-test-suite checkout
+written by validate_ld.js). It maps every lws-test-suite test and every retired manifests/ test
+to its counterparts, and lists every definition by module. It needs a lws-test-suite checkout
 (README.md). COVERAGE.md is generated, so edit the definitions or the notes below, not the
 file.
 
@@ -15,7 +15,7 @@ import os
 import sys
 from collections import Counter, defaultdict
 
-from _paths import DEFS, JSON_OUT, REPO, lts_manifests, lws_test_suite
+from _paths import DEFS, JSON_OUT, REPO, lts_manifests, lws_test_suite, retired_manifests
 
 OUT = str(JSON_OUT)
 DST = DEFS / "COVERAGE.md"
@@ -56,7 +56,7 @@ LTS_NOTES = {
     "authn-saml-invalid-signature": "As above.",
 }
 TS_NOTES = {
-    "core/put-unconditional-428": "Retired. The 21 September 2026 draft removed the 428 MUST (\"Clients SHOULD use conditional requests\"), so this manifest now fails conforming servers.",
+    "core/put-unconditional-428": "None. The 21 September 2026 draft removed the 428 MUST (\"Clients SHOULD use conditional requests\"), so this test failed conforming servers.",
 }
 
 
@@ -89,8 +89,7 @@ mirrors_of = defaultdict(list)
 for t in tests:
     for m in t["_mirrors"]:
         mirrors_of[m].append(t)
-ts_manifests = sorted(os.path.relpath(p, os.path.join(TS, "manifests")).replace("\\", "/")[:-5]
-                      for p in glob.glob(os.path.join(TS, "manifests", "*", "*.yaml")))
+ts_manifests = sorted(retired_manifests())
 superseded_by = defaultdict(list)
 for t in tests:
     for s in t.get("supersedes", []):
@@ -112,14 +111,14 @@ L.append("## Summary")
 L.append("")
 L.append(f"- **{len(tests)} tests**: {levels['MUST']} MUST, {levels['SHOULD']} SHOULD, {levels['MAY']} MAY; "
          f"{types['ValidationTest']} validation tests, {types['NegativeTest']} negative tests.")
-L.append(f"- **{len(cited)} catalog requirements** cited. For comparison, `manifests/` covers 48 of 232.")
+L.append(f"- **{len(cited)} catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.")
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
 L.append(f"- **lws-test-suite:** all {covered} of {len(lts_order)} tests are accounted for "
          "(table 1). The definitions change what those tests assert wherever it contradicts the "
          "21 September draft.")
 sup = sum(1 for m in ts_manifests if m in superseded_by)
-L.append(f"- **manifests/:** {sup} of {len(ts_manifests)} manifests are superseded; the other one is "
-         "retired because its clause left the specification (table 2).")
+L.append(f"- **manifests/ (retired, D-0055):** {sup} of its {len(ts_manifests)} tests have a successor; the "
+         "other one was dropped because its clause left the specification (table 2).")
 L.append("")
 L.append("| Module | Tests | MUST | SHOULD | MAY |")
 L.append("|---|---:|---:|---:|---:|")
@@ -140,9 +139,11 @@ for key, name in lts_order:
 L.append("")
 L.append("Definitions with no lws-test-suite counterpart extend it. That is every test in table 3 with an empty *Mirrors* column.")
 L.append("")
-L.append("## 2. manifests/ → definitions")
+L.append("## 2. Retired manifests/ → definitions")
 L.append("")
-L.append("| Touchstone manifest | Superseded by |")
+L.append("`touchstone run` executed these until the YAML-LD engine replaced them (D-0055).")
+L.append("")
+L.append("| Retired manifest | Superseded by |")
 L.append("|---|---|")
 for m in ts_manifests:
     defs = ", ".join(link(t) for t in superseded_by.get(m, [])) or TS_NOTES.get(m, "")

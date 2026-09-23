@@ -33,7 +33,8 @@ The lint covers what the schema cannot:
 - catalog IRIs that exist and have not drifted;
 - `source` anchors that exist in their dated snapshots;
 - fixtures that exist, and no example hosts in executable values;
-- `mirrors` and `supersedes` targets that exist.
+- `mirrors` and `supersedes` targets that exist. `supersedes` names a retired manifests/
+  test, listed in `retired-manifests.txt` (D-0055).
 
 Two of the files are generated, so edit their sources rather than the files:
 - **`vocab.yamlld`:** edit the table in `gen_vocab.py`, then run `python check.py --write`

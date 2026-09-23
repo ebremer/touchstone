@@ -13,6 +13,13 @@ LWS10 = DEFS / "lws10"
 BUILD = HERE / "build"
 JSON_OUT = BUILD / "json"
 ANCHORS = HERE / "anchors.json"
+RETIRED = HERE / "retired-manifests.txt"
+
+
+def retired_manifests():
+    """The ids of the retired manifests/ tests, which a definition's supersedes may name."""
+    lines = RETIRED.read_text(encoding="utf-8").splitlines()
+    return [line.strip() for line in lines if line.strip() and not line.startswith("#")]
 
 
 def lws_test_suite():

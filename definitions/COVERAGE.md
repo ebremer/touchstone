@@ -7,9 +7,9 @@ of 2026-09-21.
 ## Summary
 
 - **101 tests**: 84 MUST, 15 SHOULD, 2 MAY; 54 validation tests, 47 negative tests.
-- **127 catalog requirements** cited. For comparison, `manifests/` covers 48 of 232.
+- **127 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
-- **manifests/:** 32 of 33 manifests are superseded; the other one is retired because its clause left the specification (table 2).
+- **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
@@ -61,9 +61,11 @@ of 2026-09-21.
 
 Definitions with no lws-test-suite counterpart extend it. That is every test in table 3 with an empty *Mirrors* column.
 
-## 2. manifests/ → definitions
+## 2. Retired manifests/ → definitions
 
-| Touchstone manifest | Superseded by |
+`touchstone run` executed these until the YAML-LD engine replaced them (D-0055).
+
+| Retired manifest | Superseded by |
 |---|---|
 | `auth-oidc/alg-none-401` | `core/storage_authorization#authz-token-alg-none-rejected` |
 | `auth-oidc/anonymous-request-401-challenge` | `core/storage_authorization#getContainer-private-unauthorized` |
@@ -96,7 +98,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `core/patch-merge-patch-baseline` | `core/data_resources#patch-merge-patch-baseline` |
 | `core/post-to-non-container-405` | `core/data_resources#post-to-non-container-405` |
 | `core/put-replace-with-if-match` | `core/conditional_requests#update-changes-strong-etag`, `core/data_resources#updateDataResource` |
-| `core/put-unconditional-428` | Retired. The 21 September 2026 draft removed the 428 MUST ("Clients SHOULD use conditional requests"), so this manifest now fails conforming servers. |
+| `core/put-unconditional-428` | None. The 21 September 2026 draft removed the 428 MUST ("Clients SHOULD use conditional requests"), so this test failed conforming servers. |
 | `core/storage-description-discovery` | `core/discovery#discovery-get-links-storageDescription`, `core/discovery#discovery-storage-description` |
 
 ## 3. All definitions

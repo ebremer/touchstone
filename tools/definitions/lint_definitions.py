@@ -8,7 +8,7 @@ what the schema cannot:
 - catalog IRIs exist and none has drifted;
 - every `source` anchor exists in its dated snapshot (anchors.json);
 - fixtures exist, and no executable value names an example host;
-- `mirrors` and `supersedes` name real lws-test-suite tests and manifests/ entries.
+- `mirrors` and `supersedes` name real lws-test-suite tests and retired manifests/ tests.
 """
 import glob
 import json
@@ -19,7 +19,7 @@ from collections import Counter, defaultdict
 
 import rdflib
 
-from _paths import ANCHORS, JSON_OUT, LWS10, REPO, lts_manifests, lws_test_suite
+from _paths import ANCHORS, JSON_OUT, LWS10, REPO, lts_manifests, lws_test_suite, retired_manifests
 
 OUT = str(JSON_OUT)
 DEF = str(LWS10)
@@ -42,8 +42,8 @@ for f in glob.glob(os.path.join(TS, "catalog", "*.ttl")):
 T = rdflib.Namespace("https://example.org/touchstone/vocab#")
 catalog = {str(s) for s in g.subjects(rdflib.RDF.type, T.Requirement)}
 
-ts_manifests = {os.path.relpath(p, os.path.join(TS, "manifests")).replace("\\", "/")[:-5]
-                for p in glob.glob(os.path.join(TS, "manifests", "*", "*.yaml"))}
+# manifests/ is retired (D-0055); retired-manifests.txt keeps the ids supersedes may name.
+ts_manifests = set(retired_manifests())
 # `mirrors` is checked against lws-test-suite's own files when a checkout is available.
 LTS = lws_test_suite()
 lts_tests = None
@@ -152,7 +152,7 @@ for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True))
             mirrored[m].append(n)
         for s in t.get("supersedes", []):
             if s not in ts_manifests:
-                E(f"{where}: supersedes unknown touchstone manifest {s}")
+                E(f"{where}: supersedes {s}, which is not a retired manifests/ test")
             superseded[s].append(n)
         test_as = t.get("as")
         reqs = set(t.get("requires", []))
@@ -280,7 +280,7 @@ if lts_tests is None:
     print("lws-test-suite: no checkout found, so mirrors were not checked (set LWS_TEST_SUITE; see README.md)")
 else:
     print(f"lws-test-suite tests mirrored: {len(set(lts_tests) & set(mirrored))}/{len(lts_tests)}; not mirrored: {unmirrored}")
-print(f"touchstone manifests superseded: {len(ts_manifests & set(superseded))}/{len(ts_manifests)}; not superseded: {unsuperseded}")
+print(f"retired manifests superseded: {len(ts_manifests & set(superseded))}/{len(ts_manifests)}; not superseded: {unsuperseded}")
 for w in warnings:
     print("WARN ", w)
 for e in errors:

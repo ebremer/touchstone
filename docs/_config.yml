@@ -43,17 +43,11 @@ defaults:
       title: Distribution
       nav_order: 7
   - scope:
-      path: "manifest-schema/RATIONALE.md"
-    values:
-      title: Schema rationale
-      parent: Writing tests
-      nav_order: 1
-  - scope:
       path: "harvest.md"
     values:
       title: Porting Solid tests
       parent: Writing tests
-      nav_order: 2
+      nav_order: 1
 
 search_enabled: true
 search:
