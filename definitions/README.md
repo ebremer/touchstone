@@ -26,8 +26,9 @@ exist for three reasons:
    definitions for contribution is a mechanical conversion (see "Export"). Nothing is
    contributed yet; that is a later, deliberate step.
 
-The engine that runs them is to be generated from these definitions and `EXECUTION.md`.
-Until it exists, `touchstone run` keeps executing `manifests/` unchanged.
+`touchstone run` executes them. Its engine (`harness-core`, D-0054) implements
+`EXECUTION.md`, and every build runs all 101 against the reference deployment in
+`harness-fixtures` and against its broken twins.
 
 ## Layout
 
@@ -36,7 +37,7 @@ definitions/
   README.md                 this file
   EXECUTION.md              the contract an engine must implement (variables, matching, outcomes)
   COMPARISON.md             this format against lws-test-suite's: what was merged, and why it is stronger
-  COVERAGE.md               generated: lws-test-suite and manifests/ mapping, every test by module
+  COVERAGE.md               generated: lws-test-suite and retired-manifest mapping, every test by module
   schema/
     definitions.schema.json JSON Schema (2020-12) for manifests and the identity registry
   lws10/                    mirrors lws-test-suite's lws10/ tree, so export is file-for-file
@@ -189,7 +190,7 @@ For this version all six passed:
 - 16 documents and 5,933 triples;
 - 101 tests with no lint errors, and all 20 schema negative controls rejected;
 - all 27 lws-test-suite tests accounted for;
-- 32 of 33 `manifests/` superseded, with the other one retired.
+- 32 of the 33 retired `manifests/` tests superseded; the other tested a clause the draft dropped.
 
 The move from 0.1.0 was mechanical, and checked:
 - 30 tests took the short form, 25 declare prerequisites, and 13 use the challenge
@@ -236,13 +237,20 @@ lws-test-suite's context in ways its test group must agree to:
 
 ## Relationship to the rest of Touchstone
 
-- **`manifests/`** (schema 1-1-0) is what `touchstone run` executes today. Nothing here
-  changes it. Once the YAML-LD engine exists, `manifests/` is superseded. COVERAGE.md
-  table 2 maps each manifest to its successor; that decision is recorded as proposed in
-  DECISIONS.md.
+- **The engine.** `harness-core` runs these definitions for every front end: the CLI, the
+  MCP server, the Docker image and the GitHub Action (D-0054). It refuses a set of
+  definitions that fails the checks of `EXECUTION.md` section 2 before sending anything.
+- **The reference deployment.** `harness-fixtures` holds a reference storage server and a
+  reference authorization server that follow the 21 September draft. Against them 100 of
+  the 101 definitions pass, and the notification test is inapplicable, since the reference
+  offers no notification service. Against their broken twins, the tests that exist to
+  catch each defect fail.
+- **The retired manifests.** The YAML test manifests Touchstone ran before (schema 1-1-0,
+  following the 21 August draft) were retired when the engine replaced them (D-0055).
+  COVERAGE.md table 2 maps each to its successor; `supersedes` names them, and
+  `tools/definitions/retired-manifests.txt` keeps their ids.
 - **`catalog/`** is baselined on the 21 August 2026 core draft. The 21 September draft
-  changed 14 catalogued clauses; `tools/extractor/check_drift.py` reports them. Four of
-  those changes affect `manifests/`:
+  changed 14 catalogued clauses; `tools/extractor/check_drift.py` reports them:
   - the 428-on-unconditional-PUT MUST is gone;
   - conditional-request support dropped from MUST to SHOULD;
   - the MUST that a container's ETag change after a member is deleted is gone;
@@ -298,8 +306,9 @@ These affect how tests are written, and are worth raising with the WG:
   notifications (section 11.6).
 - **Optional behaviours:** RFC 9457 problem details (SHOULD), `Prefer: set-linkset`
   (optional), `lws#PreferLinkRelations` (MAY).
-- **Key rotation mid-session.** It needs the harness to be the authorization server, so
-  it stays a fixture-level test in `harness-fixtures` for now.
+- **Key rotation mid-session.** It needs the harness to control the authorization
+  server's keys during a run, which a definition cannot ask for, so it stays a
+  fixture-level test in `harness-fixtures`.
 
 ## Format version
 

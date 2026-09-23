@@ -19,11 +19,12 @@ server with an AI assistant.
 ## Start the server
 
 Build once from the repository root, then start the jar from there. The server reads
-`catalog/`, `manifests/` and `targets.yaml` from the working directory, and writes run
-bundles to `runs/`.
+`catalog/`, `definitions/` and `targets.yaml` from the working directory, and writes run
+bundles to `runs/`. It loads and lints the definitions at startup: a server that starts can
+run every test it lists, and definitions that cannot be run stop it from starting.
 
 ```sh
-./mvnw -q install -DskipTests
+./mvnw -q clean install -DskipTests
 java -jar harness-mcp/target/harness-mcp-0.1.0-SNAPSHOT.jar
 ```
 
@@ -36,13 +37,13 @@ start the server from somewhere else:
 ```sh
 java -jar /path/to/touchstone/harness-mcp/target/harness-mcp-0.1.0-SNAPSHOT.jar \
   --touchstone.catalog=/path/to/touchstone/catalog \
-  --touchstone.manifests=/path/to/touchstone/manifests \
+  --touchstone.definitions=/path/to/touchstone/definitions \
   --touchstone.targets=/path/to/touchstone/targets.yaml \
   --touchstone.runs=/path/to/touchstone/runs
 ```
 
 The `ref` target in the checked-in registry needs the reference server running (see
-[Getting started](getting-started.md#start-the-reference-server)). Any other server has to
+[Getting started](getting-started.md#run-against-the-open-reference-server)). Any other server has to
 be added to `targets.yaml` before an agent can use it; see
 [Targets and credentials](targets.md).
 
@@ -73,7 +74,7 @@ directory:
         "-jar", "/path/to/touchstone/harness-mcp/target/harness-mcp-0.1.0-SNAPSHOT.jar",
         "--spring.profiles.active=stdio",
         "--touchstone.catalog=/path/to/touchstone/catalog",
-        "--touchstone.manifests=/path/to/touchstone/manifests",
+        "--touchstone.definitions=/path/to/touchstone/definitions",
         "--touchstone.targets=/path/to/touchstone/targets.yaml",
         "--touchstone.runs=/path/to/touchstone/runs"
       ]
@@ -95,13 +96,13 @@ Argument names are exactly as listed. Arguments in *italics* are optional.
 |---|---|---|
 | `list_requirements` | *`module`*, *`level`* | Lists catalog requirements (IRI, level, module, section, summary). Filters by spec module, such as `lws10-core`, and by level, such as `MUST`. |
 | `get_requirement` | `iri` | Returns one requirement in full, including the verbatim clause text and a link to its section. |
-| `list_tests` | *`requirement`*, *`module`*, *`tag`* | Lists test metadata: id, title, module, requirements, capabilities and tags. |
+| `list_tests` | *`requirement`*, *`module`*, *`level`*, *`trait`* | Lists test metadata: id, label, level, type, manifest, requirements, the capabilities it `requires`, and traits. `module` takes the same selectors as `start_run`. |
 | `coverage` | *`module`* | Returns the requirements-by-tests coverage matrix per spec module and level. |
-| `start_run` | `targetId`, *`module`* | Starts a run in the background and returns its `runId` at once. The default module is `core`. |
-| `get_run` | `runId` | Returns status and progress, totals, counts by requirement level, and the conformance verdict. |
-| `get_failures` | `runId`, *`page`*, *`pageSize`* | Returns paged summaries of failed and errored tests: the test, its requirements, the failing step and the reason. Pages hold 20 by default. |
-| `get_trace` | `runId`, `testId` | Returns one test's steps with the redacted HTTP exchange and each assertion's expected and actual values. |
-| `run_one` | `targetId`, `testId` | Runs one test synchronously in a fresh run and returns its full trace. This is for the fix-and-verify loop. |
+| `start_run` | `targetId`, *`module`* | Starts a run in the background and returns its `runId` at once. `module` selects `all` (the default), a module (`core`, `auth`), a manifest (`core/containers`) or one test. |
+| `get_run` | `runId` | Returns status and progress, totals (passed, failed, cantTell, inapplicable), counts by test level, and the conformance verdict. |
+| `get_failures` | `runId`, *`page`*, *`pageSize`* | Returns paged summaries of the tests that failed or ended cantTell, MUST tests first: the test, its level and outcome, its requirements, the failing step and the reason. Pages hold 20 by default. |
+| `get_trace` | `runId`, `testId` | Returns one test's steps with the redacted HTTP exchange and each expectation's expected and actual values. `testId` is an id such as `core/containers#getContainer`, or a test's name. |
+| `run_one` | `targetId`, `testId` | Runs one test synchronously in a run of its own and returns its full trace. This is for the fix-and-verify loop. |
 | `diff_runs` | `before`, `after` | Compares two runs: regressions, fixes, other changes, and added or removed tests. |
 | `get_report` | `runId`, *`format`* | Returns a finished run's report. The formats are `markdown` (the default), `json`, `html`, `earl`, `junit` and `pdf`. For `pdf`, only the file's path and size are returned. |
 
@@ -114,14 +115,14 @@ Every tool carries MCP annotations that tell a client whether to ask before call
   They send deliberately malformed traffic to a server, and create and delete resources
   on it.
 - **The other nine** are marked read-only, idempotent and closed-world. They only read
-  the catalog, the manifests and recorded runs.
+  the catalog, the definitions and recorded runs.
 
 ### Prompts
 
 | Prompt | Argument | Purpose |
 |---|---|---|
 | `triage_run` | `run_id` | Walks the agent through triage: counts, failures, the clause behind each failure, the trace, then grouping by root cause and proposing the smallest server fix. |
-| `draft_test` | `requirement_iri` | Drafts a manifest for one requirement. The prompt states the rules, and states that the draft must go through schema validation, a dry run and a pull request before it is committed. |
+| `draft_test` | `requirement_iri` | Drafts a YAML-LD test definition for one requirement. The prompt states the rules of format 0.2.0, and that the draft must pass the definition checks, run green against the reference deployment and arrive as a pull request before it is committed. |
 
 ### Resources
 
@@ -133,12 +134,14 @@ Every tool carries MCP annotations that tell a client whether to ask before call
 ## A typical session
 
 1. `coverage` or `list_requirements` gives an overview of what is tested.
-2. `start_run` with `targetId: ref` returns a `runId`.
+2. `start_run` with `targetId: ref` returns a `runId`. Give a `module` such as
+   `core/containers` to run part of the suite.
 3. Poll `get_run` until `status` is `COMPLETE`. `start_run` sends one progress
    notification straight away, and sends later ones on a best-effort basis. Polling
    `get_run` is the reliable way to watch a run.
-4. `get_failures` pages through what failed. For each failure, `get_requirement` shows
-   why the test exists, and `get_trace` shows what the server actually sent.
+4. `get_failures` pages through what failed, MUST tests first; `conformant` in `get_run`
+   is the verdict. For each failure, `get_requirement` shows why the test exists, and
+   `get_trace` shows what the server actually sent.
 5. After changing the server, `run_one` re-checks the one test.
 6. `start_run` again, then `diff_runs` with the old and new run ids, confirms the fix
    and shows that nothing else broke.
@@ -158,7 +161,7 @@ in traces are truncated.
   `targets.yaml` lists.
 - **Redacted traces.** Credentials are removed before a trace is stored, so no tool can
   return one. See [Redaction](reports.md#redaction).
-- **Human-gated tests.** An agent can draft tests, but nothing reaches `manifests/`
+- **Human-gated tests.** An agent can draft tests, but nothing reaches `definitions/`
   without review and a pull request.
 
 The [Security model](security.md) page covers these rules for the whole harness.

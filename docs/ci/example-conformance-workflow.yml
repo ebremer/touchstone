@@ -31,7 +31,13 @@ jobs:
 
       - name: Run LWS conformance
         uses: ebremer/touchstone/.github/actions/lws-conformance@master
+        # For a server that authenticates, pass alice's and bob's tokens as secrets and
+        # declare the capability; the action hands them to the harness by name only:
+        # env:
+        #   TOUCHSTONE_TOKEN_ALICE: ${{ secrets.LWS_TOKEN_ALICE }}
+        #   TOUCHSTONE_TOKEN_BOB: ${{ secrets.LWS_TOKEN_BOB }}
         with:
           target-url: http://localhost:3000/
-          module: core
+          module: all
+          # capabilities: Authentication
           fail-on-nonconformance: "true"

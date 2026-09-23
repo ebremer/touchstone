@@ -106,7 +106,7 @@ no drift: every catalog clause still appears in the spec, and every section anch
 
 When the draft moves, the catalog is **re-baselined**. The new snapshot replaces the old
 one in `catalog/sources/`. Changed clauses are updated, new ones are added, and retired
-ones are removed or deprecated. Manifests that cite affected requirements are reviewed.
+ones are removed or deprecated. Definitions that cite affected requirements are reviewed.
 Because re-baselining rewrites Approved entries, it is a reviewed change.
 
 {: .important }

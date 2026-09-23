@@ -1,7 +1,7 @@
 ---
 title: Targets and credentials
 nav_order: 4
-description: "Register the servers Touchstone may test, and give it the identities and tokens it needs."
+description: "Register the servers Touchstone may test, declare what they support, and give the harness the identities and tokens it needs."
 ---
 
 # Targets and credentials
@@ -32,67 +32,68 @@ targets:
 
 | Key | Required | Meaning |
 |---|---|---|
-| `baseUrl` | yes | A container in the storage under test. Touchstone creates its run root inside it, so the provisioning identity must be allowed to create containers there. The storage root is the usual choice. Tests can read it as `${target.baseUrl}`. |
+| `baseUrl` | yes | A container in the storage under test. Touchstone creates its run root inside it, so alice must be allowed to create containers there. The storage root is the usual choice. Tests can read it as `${target.baseUrl}`. |
 | `adapter` | no | The provisioning adapter. Default `env`, currently the only one. |
-| `capabilities` | no | Capability keys the server supports. Tests that require a capability the target does not list are skipped. The auth tests require `authentication`. |
-| `properties` | no | Adapter settings, all strings. See below. |
+| `capabilities` | no | What the deployment provides that the server cannot reveal about itself: `Authentication`, `HarnessIssuedTokens`, `ReachableFixtures`, `SamlTrust`. A test that needs one the target does not list is inapplicable. [Authentication](auth.md#capabilities) says what each means. |
+| `properties` | no | Settings, all strings. See below. |
 
 `run` reads `targets.yaml` from the working directory. Use `--targets <file>` to point at
 another registry.
 
 ## Identities
 
-Tests refer to abstract identities: `alice`, `bob`, `alice-expired`, and so on. The name
-`anonymous` is reserved and means no credentials. Every other name is resolved by the
-target's adapter.
+Tests never carry credentials. They name identities from
+`definitions/lws10/identities.yamlld`:
 
-A step's identity is chosen in this order: the step's `as`, then the manifest's `as`,
-then the target's `defaultIdentity`, then `anonymous`. The core tests declare no identity,
-because the operations they test are not about authentication. On an open server they
-run anonymously. On a protected one they act as whatever `defaultIdentity` names.
+- `anonymous` sends no credentials;
+- `alice` owns the storage. She creates the run root and every test's container, and a
+  step that names no identity acts as her;
+- `bob` is a second authenticated agent, with no access to alice's resources unless a
+  test grants it;
+- fault identities, such as `alice-expired`, are a basis identity with one defect;
+- subject credentials, such as `didkey` and `oidc`, are the credentials the authentication
+  suites exchange for access tokens. The harness mints them.
 
-## The `env` adapter
-
-The `env` adapter does two things:
-
-- **It creates the run root.** It POSTs a new container to `baseUrl`, acting as the
-  provisioning identity. It tries to delete the run root again when the run ends.
-- **It turns identities into bearer tokens.** For an identity `name`, it sends
-  `Authorization: Bearer <token>` and looks the token up in this order:
-  1. the target property `token.<name>`;
-  2. the environment variable `TOUCHSTONE_TOKEN_<NAME>`, with the name upper-cased and `-`
-     replaced by `_`. For example, the token for `alice-expired` is read from
-     `TOUCHSTONE_TOKEN_ALICE_EXPIRED`.
-
-  If neither is set, the step ends in `ERROR` with a message naming both places.
+## Properties
 
 | Property | Meaning |
 |---|---|
-| `defaultIdentity` | The identity for every step whose test declares none. Set it when the storage is not world-readable and world-writable. |
-| `provisioner` | The identity that creates and deletes the run root and the per-test containers. It defaults to `defaultIdentity`, then to `anonymous`. |
-| `token.<name>` | A literal token for identity `<name>`. Use this only for throwaway tokens, such as the ones the secured reference scenario generates. |
+| `token.<name>` | A literal access token for `alice` or `bob`. Use this only for throwaway tokens; otherwise use the environment (below). |
+| `webid.<name>` | The agent IRI of `alice` or `bob`, which grants name and harness-issued tokens carry as `sub`. Also `TOUCHSTONE_WEBID_<NAME>`. |
+| `as.signingKey` | The authorization server's private JWK, with `HarnessIssuedTokens`. `as.clientId` sets the `client_id` its tokens carry (default `touchstone`). |
+| `didkey.jwk.<name>` | A P-256 private JWK. For `alice` or `bob`, the engine exchanges a did:key credential for their token; for `didkey`, it pins the key the did:key suite uses. |
+| `fixtures.baseUrl`, `fixtures.bind` | With `ReachableFixtures`: the URL the server reaches the harness's fixture host at, and where the harness listens if that differs (`host:port`). |
+| `saml.idpKey`, `saml.idpCertificate` | With `SamlTrust`: the harness identity provider's RSA private JWK, and its PEM certificate if the server trusts it by certificate. |
+| `timeout` | Seconds before a request is abandoned. Default `30`. |
+| `parallelism` | How many tests run at once. Default `16`. |
+
+Tokens are looked up in the target property `token.<name>`, then in the environment
+variable `TOUCHSTONE_TOKEN_<NAME>`: the name upper-cased, `-` replaced by `_`. On a target
+that does not declare `Authentication`, alice and bob send nothing when neither is set.
+[Authentication](auth.md#where-tokens-come-from) gives the full order, including tokens the
+harness mints or exchanges.
 
 ## Testing a protected server
 
-Most real storages do not let anonymous clients create containers. Name one identity for
-the suite to act as, and keep its token out of the file:
+Most real storages do not let anonymous clients create containers. Give alice a token, and
+keep it out of the file:
 
 ```yaml
 targets:
   mine:
-    baseUrl: https://storage.example/alice/
+    baseUrl: https://storage.my-lws-server.test/alice/
     adapter: env
-    properties:
-      defaultIdentity: touchstone
+    capabilities: []
 ```
 
 ```sh
-export TOUCHSTONE_TOKEN_TOUCHSTONE='<token>'
-touchstone run --target mine --module core
+export TOUCHSTONE_TOKEN_ALICE='<token>'
+touchstone run --target mine
 ```
 
-Without `defaultIdentity`, every core step would run anonymously. The run would stop at
-provisioning, or every test would fail with `401`.
+Without a token for alice, the run stops before any test: the run root cannot be created,
+and the exit code is `2`. With a second agent's token in `TOUCHSTONE_TOKEN_BOB`, add
+`Authentication` to `capabilities`, and the access-control tests apply too.
 
 {: .warning }
 Never write a real credential into `targets.yaml`. The file is checked in and ships with
@@ -105,19 +106,20 @@ storage follows that chain to decide whether to trust the issuer. Which provider
 client and which grant to use are facts about your deployment. They belong in your
 environment, not in the repository.
 
-ID Tokens are short-lived; five minutes is a common default. A core run against a remote
-server takes on the order of a minute, so mint a fresh token for each session.
+ID Tokens are short-lived; five minutes is a common default. A run of every definition
+takes seconds, so one token covers a run; mint a fresh one for each session.
 
 ## What the server must allow
 
-The provisioning identity must be able to:
+alice must be able to:
 
 - **create a container** under `baseUrl`, by POSTing with the `lws#Container` type link
   and receiving `201` with a `Location` header;
-- **delete a non-empty container** with `Depth: infinity`. Recursive delete is optional
-  in the draft. On a server without it, run roots are left behind, and each run logs a
-  warning naming its run root.
+- **delete what she created.** Each test deletes its own container at the end, with
+  `Depth: infinity` and `If-Match`. Recursive delete is optional in the draft; on a server
+  without it, the harness deletes bottom-up by listing, and logs a warning naming anything
+  left behind.
 
-Touchstone also sends a `Slug` header when it creates the run root, so the container is
-easy to recognise in your storage. The current draft does not define `Slug`, and nothing
+Touchstone also sends a `Slug` header when it creates a container, so run roots are easy
+to recognise in your storage. The current draft does not define `Slug`, and nothing
 depends on the server honouring it.

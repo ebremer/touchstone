@@ -45,13 +45,17 @@ The CID suite has a 21 September WD with no normative drift.
   - the short form as pure shorthand;
   - rejecting example hosts.
   → **Done (D-0053).** Frozen on 2026-09-23 with all three defaults accepted.
-- [ ] **Generate the YAML-LD engine from `definitions/EXECUTION.md`.** It needs:
+- [x] **Generate the YAML-LD engine from `definitions/EXECUTION.md`.** It needs:
   - a YAML 1.2 Core Schema parser;
   - templates and derived variables;
   - RFC 8288 and RFC 9110 challenge parsing;
   - identities, and the fixture host for did:key, CID, OIDC and SAML.
-- [ ] **Teach `RefLwsServer` what the new definitions exercise,** so the self-test loop covers
+  → **Done (D-0054).** `harness-core` runs all 101 definitions; every front end uses it.
+- [x] **Teach `RefLwsServer` what the new definitions exercise,** so the self-test loop covers
   them: token exchange with did:key, access grants, the lws#storage link on 401.
+  → **Done (D-0054).** With the new `RefAuthorizationServer`, the reference deployment passes
+  100 of 101 definitions (the notification test is inapplicable), and its broken twins fail
+  exactly the tests that exist to catch them.
 - [x] **CI: the six definition checks.** See `definitions/README.md`, "Validating".
   → **Done (D-0052).** `tools/definitions/check.py` runs them, and the export trial, in the
   CI job `definitions`, against a pinned lws-test-suite checkout.
@@ -59,10 +63,12 @@ The CID suite has a 21 September WD with no normative drift.
   went unnoticed because CI only runs `mvnw verify`.
 - [ ] **Re-baseline the core catalog onto WD-lws10-core-20260921 and the CID catalog onto its
   21 September WD.** This rewrites Approved entries, so it waits for review (as D-0037).
-- [ ] **Until the engine replaces them, stop `manifests/` failing conforming servers:**
+- [x] **Until the engine replaces them, stop `manifests/` failing conforming servers:**
   - retire `core/put-unconditional-428`;
   - move the positive 304 checks (`conditional-get-304`, and the 304 step of
     `etag-on-head-and-container-listing`) out of MUST.
+  → **Done (D-0055).** The engine replaced them, and `manifests/` is retired. The
+  definitions have no 428 test, and test the positive 304 at SHOULD.
 
 ## 2026-09-23 — found while writing the documentation site
 
@@ -101,7 +107,7 @@ site's workarounds for them are gone.
     cases.
 
   Five CLI tests cover the change, and each failed before it.
-- [ ] **Three verdicts.**
+- [x] **Three verdicts.**
   - The reports count a failed or errored test as non-conformant only if it cites a MUST.
   - `touchstone run` exits 1 on any failure.
   - MCP `get_run` counts MUST failures and failures with unclassified requirements.
@@ -109,6 +115,9 @@ site's workarounds for them are gone.
   So a SHOULD-only failure gives a CONFORMANT report and exit code 1. Decide whether the
   exit code should follow the report, perhaps behind a flag. *Docs:* `docs/reports.md`,
   "How the verdict relates to exit codes and the MCP server".
+  → **Done (D-0054).** Frozen format 0.2.0 settles it: each test has one level, and
+  EXECUTION.md section 9's verdict (no MUST test failed or ended cantTell) is the report's,
+  the exit code's and `get_run`'s alike.
 - [x] **A failed assertion followed by a failed bind is recorded as `ERROR`.** For example,
   a create that answers `200` with no `Location` was reported as `earl:cantTell`, not
   `earl:failed`, because `Executor` checked the step's error before its assertions.

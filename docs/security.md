@@ -61,8 +61,8 @@ configuration.
 
 The mapping from tests to requirements is what every verdict rests on. An agent can
 draft a test, and the MCP `draft_test` prompt helps it do so. The draft must still pass
-schema validation and a dry run against the reference server, and then go through a pull
-request. No tool writes to `manifests/`.
+the definition checks and a run against the reference deployment, and then go through a
+pull request. No tool writes to `definitions/`.
 
 ## 5. The MCP endpoint is local unless you secure it
 

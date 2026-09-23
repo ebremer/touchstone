@@ -8,10 +8,9 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 {: .no_toc }
 
 {: .important }
-**Format version 0.2.0, frozen on 2026-09-23.** The definitions are written and
-validated, but Touchstone does not execute them yet. `touchstone run` still runs
-`manifests/`. The engine for this format is generated from the definitions and their
-execution contract.
+**Format version 0.2.0, frozen on 2026-09-23.** These are the tests `touchstone run`
+executes. The engine that runs them implements the format's execution contract, and all 101
+run against the reference deployment in every build.
 
 1. TOC
 {:toc}
@@ -40,7 +39,7 @@ serve that effort in three ways:
 definitions/
   README.md                 why the definitions exist, authoring rules, validation, export
   EXECUTION.md              the contract an engine must implement
-  COVERAGE.md               mapping to lws-test-suite and to manifests/, test by test
+  COVERAGE.md               mapping to lws-test-suite and to the retired manifests, test by test
   COMPARISON.md             this format against lws-test-suite's, and why it is stronger
   schema/
     definitions.schema.json JSON Schema (2020-12) for manifests and the identity registry
@@ -141,20 +140,24 @@ lws-test-suite's current files:
 The full comparison, with both formats side by side and what would change in
 lws-test-suite's files, is [COMPARISON.md]({% include src.html path="definitions/COMPARISON.md" %}).
 
-## How they relate to the rest of Touchstone
+## How Touchstone runs them
 
-| | `manifests/` | `definitions/` |
-|---|---|---|
-| Format | YAML, schema `1-1-0` (frozen) | YAML-LD, format `0.2.0` (frozen) |
-| Executed by `touchstone run` | yes | not yet |
-| Draft followed | 21 August 2026 | 21 September 2026 |
-| Tests | 33 | 101 |
-| Destination | Touchstone | Touchstone, and lws-test-suite as JSON-LD |
+The engine in `harness-core` implements
+[`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %}): it
+loads, validates, expands and lints the definitions, then runs them with the identities,
+prerequisites and expectations the contract defines. The CLI, the MCP server, the Docker
+image and the GitHub Action all run the definitions through it. [How it
+works](how-it-works.md) follows a run step by step.
 
-32 of the 33 manifests have a successor among the definitions. The remaining one,
-`core/put-unconditional-428`, tests a requirement the September draft removed, so it is
-retired. Superseding `manifests/` is proposed, not decided. It will follow once a
-generated engine runs the definitions green against the reference server.
+Every build runs all 101 against the reference deployment, where 100 pass and the
+notification test is inapplicable, and against broken twins, where the tests that exist to
+catch each defect fail.
+
+The definitions replaced the YAML test manifests Touchstone ran before, which followed the
+21 August 2026 draft. 32 of those 33 tests have a successor among the definitions. The
+other, `core/put-unconditional-428`, tested a requirement the September draft removed, so
+it has none. [COVERAGE.md]({% include src.html path="definitions/COVERAGE.md" %}), table 2,
+maps each to its successor.
 
 ## Validating the definitions
 
@@ -171,7 +174,8 @@ The definitions are data, so they are checked as data:
 6. `COVERAGE.md` regenerates without changes.
 
 All six pass for version 0.2.0, as does the JSON-LD export trial below. One command runs
-them all, and CI runs it on every push and pull request:
+them all, and CI runs it on every push and pull request. The engine applies the same
+checks, bar the anchor and lws-test-suite ones, before every run:
 
 ```sh
 cd tools/definitions && npm ci && pip install -r requirements.txt
@@ -204,5 +208,5 @@ canonical RDF for all 16 documents.
 - [definitions/EXECUTION.md]({% include src.html path="definitions/EXECUTION.md" %}): the
   engine contract, covering variables, matching, identities, outcomes and reporting
 - [definitions/COVERAGE.md]({% include src.html path="definitions/COVERAGE.md" %}): every
-  test, mapped to lws-test-suite and to `manifests/`
+  test, mapped to lws-test-suite and to the manifests it replaced
 - [The definitions tree]({% include src.html path="definitions" kind="tree" %}) on GitHub

@@ -49,7 +49,6 @@
     <!-- Phase 5/6 stacks — imported only by the modules that need them (DECISIONS.md D-0004, D-0009). -->
     <spring-boot.version>4.1.1</spring-boot.version>
     <spring-ai.version>2.0.1</spring-ai.version>
-    <opensaml.version>5.2.3</opensaml.version>
 
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>

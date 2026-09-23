@@ -1341,3 +1341,112 @@ stays `status: Proposed`.
    in executable values (section 2.5).
 
 This closes the review gate D-0047 opened, the analogue of Gate 2 (D-0013).
+
+### D-0054 — the YAML-LD engine runs the definitions, against a reference deployment of the 21 September draft
+The second of the three steps (D-0053). `harness-core` now has an engine that implements
+`definitions/EXECUTION.md` (format 0.2.0), and the CLI, the MCP server, the Docker image, the
+GitHub Action and the self-test loop all run the definitions through it. The manifest executor
+is gone (D-0055).
+
+**The engine** follows the contract section by section:
+- *Loading (section 2):* YAML 1.2 Core Schema with snakeyaml-engine 3.1.1 (Maven Central,
+  checked 2026-09-23), refusing extra documents, duplicate keys, tags, anchors and tabs; the
+  JSON Schema (a bundled copy, kept identical to `definitions/schema/` by a test); JSON-LD
+  expansion with only the repository's two contexts, in safe mode through Titanium's
+  undefined-terms policy; and the lint of section 2.5, plus 6.2's rule that a step setting
+  Authorization itself runs as anonymous. The schema `$id` must be `…/0-2-0`.
+- *Running (sections 3, 4, 6, 7, 10):* templates and derived variables, prerequisites and
+  grants, the RFC 8288 and RFC 9110 parsers (strict: an unquoted URI is not a token, so it is
+  not an auth-param), the expectations in the contract's order, cleanup bottom-up when
+  recursive delete is refused.
+- *Identities (section 5):* harness-issued access tokens (`as.signingKey`), tokens exchanged
+  for a configured did:key (`didkey.jwk.<name>`), static tokens, open targets; every fault; the
+  did:key, CID, OpenID Connect and SAML subject credentials; and a fixture host on the JDK's
+  HTTP server, serving only the identity documents and the two OpenID Providers.
+
+**Where the contract leaves a choice, the engine makes this one:**
+1. Minting alice's token to create the run root needs `as.issuer` and `as.realm` before any
+   test container exists, so provisioning probes the base URL for the challenge. Either way
+   the values are derived once per run.
+2. Tests run 16 at a time (`parallelism`). With all 101 in flight, the reference server's
+   accept queue refused connections, and the run reported them as cantTell.
+3. `service.<Type>` also matches a type given as the full LWS IRI.
+4. Checks nested in `some`, `every` and `none` capture nothing: which element's value a
+   capture would take is not something a definition can rely on.
+
+**One verdict.** TODO's "Three verdicts" item is settled by the frozen format: each test has
+one level, and section 9's verdict (no MUST test failed or ended cantTell) is the report's,
+the exit code's and `get_run`'s alike. A run whose only failures are SHOULD or MAY tests now
+exits 0, not 1. Outcomes are EARL's names (`passed`, `failed`, `cantTell`, `inapplicable`);
+run records with the old `ERROR` and `SKIPPED`, and `manifestId`, still load.
+
+**The reference deployment** (`harness-fixtures`):
+- `RefAuthorizationServer` replaces `OidcIssuer`. It serves RFC 8414 metadata and a JWKS, and
+  exchanges subject tokens (RFC 8693) after validating each the way its suite says: the
+  did:key key decoded from the identifier (P-256, or Ed25519 through the existing fixtures),
+  the CID key found by `kid` in the dereferenced document, the ID Token's provider found in the
+  subject's document, and the SAML signature, audience and validity. This code is written
+  apart from the engine's, so a shared bug cannot cancel out. Its broken twin exchanges
+  anything.
+- `RefLwsServer` follows WD-20260921: no 428 on an unconditional PUT; linksets stored with
+  their own ETag, merge-patchable, 405 on PUT, removed with their resource; access grants and
+  access requests as containers, and authorization by ownership or grant; member `size` and
+  `modified`; the storage link on a 401; access tokens refused when they name two audiences
+  or were issued in the future.
+- `ReferenceScenario` wires them up and says how the harness is configured for them.
+  `DefinitionsSelfTest` runs every definition four ways: secured (100 passed, and the
+  notification test inapplicable), open (exactly the tests that need Authentication
+  inapplicable), a broken authorization server (the 19 credential tests and the
+  unknown-resource test fail, and nothing else), and a broken storage (its 14 access-control
+  tests fail). The whole loop takes about three seconds.
+- Notifications stay unimplemented (D-0041), so the reference advertises no notification
+  service, and the test that checks one is inapplicable against it. A reference that
+  advertised a service it does not provide would lie to that test.
+
+**SAML without OpenSAML.** DESIGN.md section 4 pinned OpenSAML 5 for SAML, and D-0024 deferred
+it because it comes from `build.shibboleth.net`, not Maven Central. The harness only has to
+build, sign and alter assertions, and the reference only to verify one, so both use the JDK's
+own XML Signature API (JSR 105): enveloped signature, exclusive canonicalisation,
+RSA-SHA256, secure validation, and a check that the signature references the assertion
+itself. The unused `opensaml.version` pin is removed.
+
+**Dependencies.** snakeyaml-engine 3.1.1 is new; `nimbus-jose-jwt` (already pinned) is now also
+a `harness-core` dependency; `jena-shacl` leaves `harness-core`, since the format has no SHACL
+assertions (D-0055).
+
+**Found while verifying, and fixed:**
+- *Credentials in run.json.* A token-exchange test checks the access token it was issued,
+  and the checked value went into the expectation's `actual`: 18 live tokens in one run.json.
+  Expectation values are now redacted as traces are (DESIGN.md 7.2): a check on a credential
+  member records that it held, and any JWT is blanked by its shape.
+- *A registry that does not parse* ended in a stack trace; it is now one line and exit 2.
+- *A stale shaded jar.* An incremental build re-shaded the previous fat jar and kept its old
+  classes. CI builds clean; the docs say `clean install`.
+
+**What changed for people who run it:** `run --module` defaults to `all` and takes a module, a
+manifest or a test; `--manifests` is now `--definitions`; the `defaultIdentity` and
+`provisioner` properties are gone, since alice does both, so the `vulcan` target's token now
+comes from `TOUCHSTONE_TOKEN_ALICE`; the Action's `module` defaults to `all`, it gains a
+`capabilities` input, and it passes `TOUCHSTONE_TOKEN_ALICE`/`_BOB` and
+`TOUCHSTONE_WEBID_ALICE`/`_BOB` through by name; the MCP tools take the same selectors.
+
+### D-0055 — `manifests/` is retired
+The third step (D-0053). With the engine in place (D-0054), the YAML test manifests are
+removed: `manifests/`, the frozen schema 1-1-0 and its documentation (`docs/manifest-schema/`),
+the manifest loader and executor, and the graph and SHACL assertion engine.
+
+- **Nothing is lost.** 32 of the 33 manifests have a successor among the definitions
+  (`definitions/COVERAGE.md`, table 2). The 33rd, `core/put-unconditional-428`, tested a MUST
+  the 21 September draft removed, so it failed conforming servers and has no successor.
+- **Their ids stay meaningful.** `supersedes` still names them, and
+  `tools/definitions/retired-manifests.txt` keeps the list the lint and `COVERAGE.md` check
+  against. The files are in git history at 76256e4.
+- **Graph and SHACL assertions leave with the format that had them.** DESIGN.md section 5.2
+  lists graph isomorphism and SHACL shapes among the assertions the executor must support.
+  Format 0.2.0 has neither, deliberately: no published LWS JSON-LD context defines the terms
+  they would test (definitions/README.md, open question 7), so JSON pointers read responses
+  as sent. They come back as a new format version once the context is published. JSON-LD
+  parsing remains for one purpose: saying whether negotiated representations that differ in
+  bytes carry the same graph.
+- **The gate moves.** Gate 2 (D-0013) froze the manifest schema before test #1. Its
+  successor is D-0053, which froze format 0.2.0 before the engine.
