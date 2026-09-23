@@ -32,17 +32,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/linkset-media-type-json
     mirrors: lws10/manifest.jsonld#getLinkset
     supersedes: [core/linkset-discovery-and-patch-advertisement]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource with metadata
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: reading it names its linkset
         request:
           method: GET
@@ -104,17 +99,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
       - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-advertised
     supersedes: [core/linkset-discovery-and-patch-advertisement]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource with metadata
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: find its linkset
         request:
           method: GET
@@ -153,17 +143,12 @@ entries:
       Catalog entry linkset-if-match-412-428 carries the 21 August text (If-Match required,
       428 when absent); the 21 September draft keeps only the 412 MUST. Not cited until
       the catalog is re-baselined.
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource with metadata
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: find its linkset
         request:
           method: GET
@@ -203,17 +188,12 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
       - https://example.org/touchstone/req/lws10-core/linkset-optional-methods-advertised
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource with metadata
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: find its linkset
         request:
           method: GET
@@ -266,17 +246,12 @@ entries:
     traits: [Delete, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource with metadata
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: find its linkset
         request:
           method: GET
@@ -325,17 +300,12 @@ entries:
     traits: [Patch, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-patch-merge-patch
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: a resource that will get a license
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: find its linkset
         request:
           method: GET

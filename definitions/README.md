@@ -1,8 +1,13 @@
 # LWS test definitions (YAML-LD)
 
-**Status: Proposed, format version 0.1.0 — not frozen.** The context, vocabulary, schema
+**Status: Proposed, format version 0.2.0 — not frozen.** The context, vocabulary, schema
 and `EXECUTION.md` are a proposal awaiting review (see "Review gate"). Every test is
 `status: Proposed`.
+
+0.2.0 merges this format with the best of lws-test-suite's own. A test that is one
+request and one response is written as exactly that, and the state a test needs is
+declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
+its files, why the merged format is the stronger design.
 
 These are Touchstone's test definitions for the Linked Web Storage Protocol 1.0 and its
 four authentication suites, written in [YAML-LD](https://www.w3.org/TR/yaml-ld/). They
@@ -29,6 +34,7 @@ Until it exists, `touchstone run` keeps executing `manifests/` unchanged.
 definitions/
   README.md                 this file
   EXECUTION.md              the contract an engine must implement (variables, matching, outcomes)
+  COMPARISON.md             this format against lws-test-suite's: what was merged, and why it is stronger
   COVERAGE.md               generated: lws-test-suite and manifests/ mapping, every test by module
   schema/
     definitions.schema.json JSON Schema (2020-12) for manifests and the identity registry
@@ -50,24 +56,47 @@ spelling for mirrored tests and use kebab-case for new ones.
 
 ## A test, briefly
 
+A test that is one exchange is written as one: `request` and `response` directly on the
+test, which is lws-test-suite's shape.
+
 ```yaml
-  - id: "#deleteDataResource"          # IRI fragment; always "#" + name
-    type: ValidationTest                # NegativeTest when the point is a refusal
-    name: deleteDataResource
-    label: DELETE removes a data resource with 204 and takes it out of its container
+  - id: "#getContainer-private-unauthorized"   # IRI fragment; always "#" + name
+    type: NegativeTest                          # the point is a refusal
+    name: getContainer-private-unauthorized
+    label: An anonymous request for a protected container is refused with 401 and a conforming challenge
     status: Proposed
-    level: MUST                         # one level per test; SHOULD/MAY checks get their own test
-    source:                             # dated spec snapshot + anchor (or an RFC section)
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
-    traits: [Delete, DataResource, Container]
-    requirements: [...]                 # touchstone only: catalog IRIs
-    mirrors: lws10/manifest.jsonld#deleteDataResource   # touchstone only
+    level: MUST                 # one level per test; SHOULD/MAY checks get their own test
+    source:                     # dated spec snapshot + anchor (or an RFC section)
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+    traits: [Get, Container, Private, Authn]
+    requires: [Authentication]  # on an open target the test is inapplicable, not failed
+    as: anonymous               # who sends the request; never a credential
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:  # parsed per RFC 9110: any order, token or quoted values
+        wwwAuthenticate: Bearer
+        asUri: {matches: '^https?://'}
+        realm: {matches: '^https?://'}
+```
+
+What a test needs but does not examine is declared, and the engine creates it (EXECUTION.md
+section 4.3). Ordered `steps` are for flows, such as a delete followed by checks of its
+effect:
+
+```yaml
+  - id: "#deleteDataResource"
+    ...
+    prereqs:
+      hierarchy:
+        - dataResource: created        # the server picks the URI; it becomes ${created}
+          contentType: text/plain
+          body: short-lived resource
+          # authorization: {read: [anonymous]} would also make it public, by access grant
     steps:
-      - label: create a data resource
-        request: {method: POST, url: "${test.container}", contentType: text/plain, body: short-lived resource}
-        response:
-          statusCode: 201
-          location: {capture: created}  # server-chosen URI, never assumed
       - label: delete it
         request: {method: DELETE, url: "${created}", ifMatch: current}
         response: {statusCode: 204}
@@ -79,9 +108,11 @@ spelling for mirrored tests and use kebab-case for new ones.
 The term names are lws-test-suite's wherever their meaning holds: `request`, `response`,
 `method`, `url`, `contentType`, `linkHeaders`/`rel`/`href`/`mediaType`,
 `otherHeaders`/`headerName`/`headerValue`, `body`/`bodyURL`, `statusCode`,
-`authenticationChallenge`, `traits`, `status`, `source`, `name`, `entries`, `include`. The
-additions are what its reviewers asked for (w3c/lws-protocol PR #145) and what its tests
-needed but could not say:
+`authenticationChallenge`/`wwwAuthenticate`/`asUri`/`realm`, `prereqs`/`hierarchy`/
+`authorization`, `traits`, `status`, `source`, `name`, `entries` and `include`. Its two
+shapes are kept too: the one-exchange test and declared prerequisites. The additions are
+what its reviewers asked for (w3c/lws-protocol PR #145) and what its tests needed but
+could not say:
 - ordered `steps` with `capture`d values;
 - a template language;
 - explicit matching (`json` pointers with `some`/`every`/`none`, parsed challenges,
@@ -124,6 +155,14 @@ needed but could not say:
 11. **Catalog citations.** `requirements` cites a catalog IRI only when its clause still
     holds in the snapshot the test's `source` names. Otherwise, add a `note` explaining
     why it is not cited.
+12. **One exchange, one request.** A test that sends one request uses `request` and
+    `response` directly. `steps` are for flows.
+13. **Declare what the test does not examine.** A resource a test needs goes in
+    `prereqs`, and the access it needs goes in `authorization`. Create it in a step only
+    when creation is the point, in which case the test's `traits` include `Post`. A failed
+    step is a finding; a failed prerequisite is not.
+14. **No example hosts.** `storage.example` and its kind can never match a live server.
+    Executable values use templates and discovered URLs, and the lint rejects the rest.
 
 ## Validating
 
@@ -134,8 +173,10 @@ The definitions are data, so the checks are data checks. CI should run:
    dropped term is an error.
 4. The lint of EXECUTION.md section 2.5:
    - names are unique;
-   - variables are bound;
-   - identities exist;
+   - each test has steps or the short form, not both;
+   - variables are bound, by a prerequisite or an earlier capture;
+   - identities exist, and grants name agents other than alice;
+   - no executable value names an example host;
    - catalog IRIs exist and none has drifted;
    - `source` anchors resolve;
    - fixtures exist.
@@ -143,10 +184,18 @@ The definitions are data, so the checks are data checks. CI should run:
 6. `COVERAGE.md` regenerates without a diff.
 
 For this version all six passed:
-- 16 documents and 6,162 triples;
-- 101 tests with no lint errors;
+- 16 documents and 5,933 triples;
+- 101 tests with no lint errors, and all 20 schema negative controls rejected;
 - all 27 lws-test-suite tests accounted for;
 - 32 of 33 `manifests/` superseded, with the other one retired.
+
+The move from 0.1.0 was mechanical, and checked:
+- 30 tests took the short form, 25 declare prerequisites, and 13 use the challenge
+  shorthand.
+- Every test, desugared back into 0.1.0 steps, equals its 0.1.0 text. The exception is
+  `getContainer-public-read`, rewritten by hand to declare its public container as
+  lws-test-suite's `getContainer` does.
+- The JSON-LD export trial still produces identical graphs for all 16 documents.
 
 Implementing these checks as project code is part of the engine work.
 
@@ -175,7 +224,12 @@ lws-test-suite's context in ways its test group must agree to:
 - `steps`;
 - templates in place of fixed hosts;
 - no `@vocab` fallback;
-- `location` as a capture rather than an IRI resolved against the manifest.
+- `location` as a capture rather than an IRI resolved against the manifest;
+- prerequisites that name resources instead of placing them, with the draft's four
+  access actions instead of `write`, `append` and `control`;
+- challenge values as expectations rather than fixed IRIs.
+
+`COMPARISON.md` gives the reason for each.
 
 ## Relationship to the rest of Touchstone
 
@@ -246,7 +300,7 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Review gate
 
-Freezing format version 0.1.0 is a review decision, the analogue of Gate 2 (D-0013). It
+Freezing format version 0.2.0 is a review decision, the analogue of Gate 2 (D-0013). It
 covers `context.jsonld`, `vocab.yamlld`, `schema/definitions.schema.json` and
 `EXECUTION.md`. Engine generation should start from the frozen format, and any later
 change bumps the schema `$id` with a DECISIONS.md entry.

@@ -40,35 +40,33 @@ entries:
       - https://example.org/touchstone/req/lws10-core/container-representation-required-properties
       - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
     mirrors: lws10/manifest.jsonld#getContainer
-    steps:
-      - label: GET the test container as its owner
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          contentType: application/lws+json
-          otherHeaders:
-            - headerName: ETag
-              present: true
-          linkHeaders:
-            - rel: linkset
-            - rel: up
-              href: "${run.root}"
-            - rel: type
-              href: https://www.w3.org/ns/lws#Container
-            - rel: https://www.w3.org/ns/lws#storage
-              href: "${storage}"
-          json:
-            - pointer: /id
-              equalsIri: "${test.container}"
-            - pointer: /type
-              hasValue: Container
-            - pointer: /totalItems
-              jsonType: number
-            - pointer: /items
-              jsonType: array
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      contentType: application/lws+json
+      otherHeaders:
+        - headerName: ETag
+          present: true
+      linkHeaders:
+        - rel: linkset
+        - rel: up
+          href: "${run.root}"
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
+        - rel: https://www.w3.org/ns/lws#storage
+          href: "${storage}"
+      json:
+        - pointer: /id
+          equalsIri: "${test.container}"
+        - pointer: /type
+          hasValue: Container
+        - pointer: /totalItems
+          jsonType: number
+        - pointer: /items
+          jsonType: array
 
   - id: "#createContainer"
     type: ValidationTest
@@ -137,21 +135,19 @@ entries:
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
-    steps:
-      - label: create a sub-container and read its type from the 201
-        request:
-          method: POST
-          url: "${test.container}"
-          linkHeaders:
-            - rel: type
-              href: https://www.w3.org/ns/lws#Container
-        response:
-          statusCode: 201
-          location:
-            capture: sub
-          linkHeaders:
-            - rel: type
-              href: https://www.w3.org/ns/lws#Container
+    request:
+      method: POST
+      url: "${test.container}"
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
+    response:
+      statusCode: 201
+      location:
+        capture: sub
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
 
   - id: "#getContainer-containmentIntegrity"
     type: ValidationTest
@@ -451,20 +447,18 @@ entries:
       - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
       - https://example.org/touchstone/req/lws10-core/lws-json-media-type-container-representation
     supersedes: [core/container-conneg]
-    steps:
-      - label: all three representations are one document
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          contentType: application/lws+json
-          connegEquivalent:
-            accepts:
-              - application/lws+json
-              - application/ld+json
-              - application/json
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      contentType: application/lws+json
+      connegEquivalent:
+        accepts:
+          - application/lws+json
+          - application/ld+json
+          - application/json
 
   - id: "#container-conneg-vary"
     type: ValidationTest
@@ -481,17 +475,15 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-vary-accept
     supersedes: [core/container-conneg]
-    steps:
-      - label: GET the container
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          otherHeaders:
-            - headerName: Vary
-              matches: '(?i)(^|[\s,])accept($|[\s,])'
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      otherHeaders:
+        - headerName: Vary
+          matches: '(?i)(^|[\s,])accept($|[\s,])'
 
   - id: "#container-head-parity"
     type: ValidationTest

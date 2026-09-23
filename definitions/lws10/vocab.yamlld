@@ -110,6 +110,30 @@
       The response carries a Location header; its value, resolved against the request URL,
       is captured.
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Prerequisites
+    type: rdfs:Class
+    label: "Prerequisites"
+    comment: >-
+      The state a test needs before its first step: resources the engine creates, as
+      alice, and the access it grants on them. A failure to establish it is setup, not a
+      finding: the outcome is cantTell, or inapplicable for access the target cannot
+      grant.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:PrerequisiteResource
+    type: rdfs:Class
+    label: "Prerequisite resource"
+    comment: >-
+      A container or data resource the engine creates inside ${test.container}, or inside
+      an earlier entry, before the test runs. The server chooses its URI; the entry's
+      container or dataResource names the variable bound to it.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ResourceAuthorization
+    type: rdfs:Class
+    label: "Resource authorization"
+    comment: >-
+      Access the engine grants on a prerequisite resource through the storage's access
+      grant service, by LWS action. alice, who creates the resource, needs no grant.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:ConnegExpectation
     type: rdfs:Class
     label: "Content-negotiation expectation"
@@ -525,17 +549,102 @@
     type: rdf:Property
     label: "request"
     comment: >-
-      The request a step sends.
-    domain: lwst:Step
+      The request a step sends. Directly on a test, with response, it is shorthand for a
+      test of exactly one step.
     range: lwst:Request
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:response
     type: rdf:Property
     label: "response"
     comment: >-
-      The expectations on the step's response.
-    domain: lwst:Step
+      The expectations on the step's response. Directly on a test, with request, it is
+      shorthand for a test of exactly one step.
     range: lwst:ResponseExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:prereqs
+    type: rdf:Property
+    label: "prereqs"
+    comment: >-
+      The state the test needs before its first step; the engine establishes it
+      (EXECUTION.md section 4.3).
+    domain: mf:ManifestEntry
+    range: lwst:Prerequisites
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:hierarchy
+    type: rdf:Property
+    label: "hierarchy"
+    comment: >-
+      The resources to create, in order; an entry is created before any entry inside it.
+    domain: lwst:Prerequisites
+    range: lwst:PrerequisiteResource
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:container
+    type: rdf:Property
+    label: "container"
+    comment: >-
+      Creates a container and binds the variable this names to the URI the server assigns.
+    domain: lwst:PrerequisiteResource
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:dataResource
+    type: rdf:Property
+    label: "dataResource"
+    comment: >-
+      Creates a data resource with the entry's content and binds the variable this names
+      to the URI the server assigns.
+    domain: lwst:PrerequisiteResource
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:in
+    type: rdf:Property
+    label: "in"
+    comment: >-
+      The variable of an earlier container entry to create this resource in. Unset means
+      ${test.container}.
+    domain: lwst:PrerequisiteResource
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:authorization
+    type: rdf:Property
+    label: "authorization"
+    comment: >-
+      Access to grant on the resource once it exists.
+    domain: lwst:PrerequisiteResource
+    range: lwst:ResourceAuthorization
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:read
+    type: rdf:Property
+    label: "read"
+    comment: >-
+      An identity granted the read action (GET, HEAD). anonymous means the public: the
+      assignee is foaf:Agent.
+    domain: lwst:ResourceAuthorization
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:modify
+    type: rdf:Property
+    label: "modify"
+    comment: >-
+      An identity granted the modify action (PUT, PATCH). anonymous means the public.
+    domain: lwst:ResourceAuthorization
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:create
+    type: rdf:Property
+    label: "create"
+    comment: >-
+      An identity granted the create action (POST into a container). anonymous means the
+      public.
+    domain: lwst:ResourceAuthorization
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:delete
+    type: rdf:Property
+    label: "delete"
+    comment: >-
+      An identity granted the delete action (DELETE). anonymous means the public.
+    domain: lwst:ResourceAuthorization
+    range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:method
     type: rdf:Property
@@ -647,8 +756,8 @@
     type: rdf:Property
     label: "body"
     comment: >-
-      Template for a request body sent as UTF-8 text.
-    domain: lwst:Request
+      Template for a body sent as UTF-8 text: a request's, or a prerequisite data
+      resource's content.
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:bodyURL
@@ -663,9 +772,8 @@
     type: rdf:Property
     label: "bodyJSON"
     comment: >-
-      A JSON value sent as the request body; string members are templates. Content-Type
-      defaults to application/json.
-    domain: lwst:Request
+      A JSON value sent as a body (a request's, or a prerequisite data resource's
+      content); string members are templates. Content-Type defaults to application/json.
     range: rdf:JSON
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:bodyForm
@@ -702,13 +810,29 @@
     domain: lwst:ResponseExpectation
     range: lwst:ChallengeExpectation
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
-  - id: lwst:scheme
+  - id: lwst:wwwAuthenticate
     type: rdf:Property
-    label: "scheme"
+    label: "wwwAuthenticate"
     comment: >-
-      The challenge's auth-scheme, compared case-insensitively.
+      The challenge's auth-scheme, compared case-insensitively (lws-test-suite's term).
     domain: lwst:ChallengeExpectation
     range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:asUri
+    type: rdf:Property
+    label: "asUri"
+    comment: >-
+      The challenge's as_uri auth-param: a template it must equal exactly, or a parameter
+      expectation (present, matches, capture).
+    domain: lwst:ChallengeExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:realm
+    type: rdf:Property
+    label: "realm"
+    comment: >-
+      The challenge's realm auth-param: a template it must equal exactly, or a parameter
+      expectation (present, matches, capture).
+    domain: lwst:ChallengeExpectation
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:params
     type: rdf:Property
@@ -870,9 +994,9 @@
     type: rdf:Property
     label: "absent"
     comment: >-
-      When true, no Link value satisfies the other conditions of this expectation (a
-      header's absence is present: false).
-    domain: lwst:LinkExpectation
+      On a link expectation: no Link value satisfies its other conditions (a header's
+      absence is present: false). On a prerequisite resource: the engine does not create
+      it, and binds its variable to a fresh URI inside its parent that names nothing.
     range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:equals
@@ -935,7 +1059,8 @@
     comment: >-
       Binds a variable, for later steps, to the value this expectation located: a Link
       target (absolute), a header value, an auth-param value, the Location (absolute), or
-      a JSON value.
+      a JSON value. (A prerequisite resource binds its variable through container or
+      dataResource.)
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:cleanup

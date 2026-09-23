@@ -44,21 +44,16 @@ entries:
       - lws10/manifest.jsonld#discovery-unauthorized-response-headers
       - lws10/auth/oidc/manifest.jsonld#authn-oidc-server-metadata-discovery
     supersedes: [auth-oidc/anonymous-request-401-challenge]
-    steps:
-      - label: GET the test container without credentials
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: as_uri
-                matches: '^https?://'
-              - paramName: realm
-                matches: '^https?://'
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {matches: '^https?://'}
+        realm: {matches: '^https?://'}
 
   - id: "#getContainer-authenticated-owner"
     type: ValidationTest
@@ -80,18 +75,16 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
     mirrors: lws10/manifest.jsonld#getContainer-authenticated-owner
     supersedes: [auth-oidc/valid-token-access]
-    steps:
-      - label: GET the test container as its owner
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          contentType: application/lws+json
-          otherHeaders:
-            - headerName: ETag
-              present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      contentType: application/lws+json
+      otherHeaders:
+        - headerName: ETag
+          present: true
 
   - id: "#createDataResource-unauthorized"
     type: NegativeTest
@@ -120,12 +113,9 @@ entries:
         response:
           statusCode: 401
           authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+            wwwAuthenticate: Bearer
+            asUri: {present: true}
+            realm: {present: true}
       - label: the container is still empty
         request:
           method: GET
@@ -153,17 +143,12 @@ entries:
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
-    steps:
-      - label: the owner creates a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: original content
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: PUT without credentials
         as: anonymous
         request:
@@ -174,12 +159,9 @@ entries:
         response:
           statusCode: 401
           authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+            wwwAuthenticate: Bearer
+            asUri: {present: true}
+            realm: {present: true}
       - label: the content is unchanged
         request:
           method: GET
@@ -205,17 +187,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/delete-401-403-404-semantics
       - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
     mirrors: lws10/manifest.jsonld#deleteDataResource-unauthorized
-    steps:
-      - label: the owner creates a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: not to be deleted
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: DELETE without credentials
         as: anonymous
         request:
@@ -224,12 +201,9 @@ entries:
         response:
           statusCode: 401
           authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+            wwwAuthenticate: Bearer
+            asUri: {present: true}
+            realm: {present: true}
       - label: the resource survives
         request:
           method: GET
@@ -257,14 +231,12 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
     supersedes: [auth-oidc/non-owner-403]
-    steps:
-      - label: bob reads alice's container
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: [403, 404]
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: [403, 404]
 
   - id: "#authz-non-owner-write-rejected"
     type: NegativeTest
@@ -345,17 +317,12 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-401-403-404-semantics
       - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
-    steps:
-      - label: alice creates a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: not bob's to delete
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: bob's DELETE is refused
         as: bob
         request:
@@ -391,23 +358,19 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-invalid-token-401-error-param
     mirrors: lws10/manifest.jsonld#authz-expired-token-rejected
     supersedes: [auth-oidc/expired-token-401]
-    steps:
-      - label: GET with an expired token
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-bad-signature-rejected"
     type: NegativeTest
@@ -427,23 +390,19 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
       - https://example.org/touchstone/req/lws10-core/authz-invalid-token-401-error-param
     supersedes: [auth-oidc/bad-signature-401]
-    steps:
-      - label: GET with a token whose signature does not verify
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-alg-none-rejected"
     type: NegativeTest
@@ -467,23 +426,19 @@ entries:
       The touchstone manifest also cited lws10-authn-openid id-token-alg-not-none, a rule
       about ID Tokens presented to an authorization server; this token is an access token
       presented to the storage, so only the core clauses apply.
-    steps:
-      - label: GET with an unsigned token
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-unknown-key-rejected"
     type: NegativeTest
@@ -503,23 +458,19 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-jwt-signature-jwks-rotation
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
     supersedes: [auth-oidc/unknown-key-401]
-    steps:
-      - label: GET with a token signed by an unpublished key
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-wrong-audience-rejected"
     type: NegativeTest
@@ -543,23 +494,19 @@ entries:
     note: >-
       The touchstone manifest also cited lws10-authn-openid id-token-aud-claim, which
       governs ID Tokens, not access tokens.
-    steps:
-      - label: GET with a token for another audience
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-wrong-issuer-rejected"
     type: NegativeTest
@@ -578,23 +525,19 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
       - https://example.org/touchstone/req/lws10-core/authz-access-token-iss-claim
     supersedes: [auth-oidc/wrong-issuer-401]
-    steps:
-      - label: GET with a token claiming another issuer
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-not-yet-valid-rejected"
     type: NegativeTest
@@ -611,23 +554,19 @@ entries:
     as: alice-not-yet-valid
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
-    steps:
-      - label: GET with a token that is not valid yet
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-issued-in-future-rejected"
     type: NegativeTest
@@ -644,23 +583,19 @@ entries:
     as: alice-issued-in-future
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
-    steps:
-      - label: GET with a token issued an hour from now
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token
 
   - id: "#authz-token-multiple-audiences-rejected"
     type: NegativeTest
@@ -679,20 +614,16 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
       - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
-    steps:
-      - label: GET with a token for this storage and another one
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 401
-          authenticationChallenge:
-            scheme: Bearer
-            params:
-              - paramName: error
-                paramValue: invalid_token
-              - paramName: as_uri
-                present: true
-              - paramName: realm
-                present: true
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: application/lws+json
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {present: true}
+        realm: {present: true}
+        params:
+          - paramName: error
+            paramValue: invalid_token

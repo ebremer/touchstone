@@ -39,24 +39,22 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-server-metadata-well-known
       - https://example.org/touchstone/req/lws10-core/authz-token-exchange-grant
     mirrors: lws10/manifest.jsonld#authz-server-metadata-well-known
-    steps:
-      - label: GET the metadata derived from the challenge's as_uri
-        request:
-          method: GET
-          url: "${as.metadataUrl}"
-          accept: application/json
-        response:
-          statusCode: 200
-          contentType: application/json
-          json:
-            - pointer: /issuer
-              equals: "${as.uri}"
-            - pointer: /token_endpoint
-              jsonType: string
-            - pointer: /jwks_uri
-              jsonType: string
-            - pointer: /grant_types_supported
-              hasValue: urn:ietf:params:oauth:grant-type:token-exchange
+    request:
+      method: GET
+      url: "${as.metadataUrl}"
+      accept: application/json
+    response:
+      statusCode: 200
+      contentType: application/json
+      json:
+        - pointer: /issuer
+          equals: "${as.uri}"
+        - pointer: /token_endpoint
+          jsonType: string
+        - pointer: /jwks_uri
+          jsonType: string
+        - pointer: /grant_types_supported
+          hasValue: urn:ietf:params:oauth:grant-type:token-exchange
 
   - id: "#authz-metadata-subject-token-types"
     type: ValidationTest
@@ -73,17 +71,15 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-metadata-subject-token-types
-    steps:
-      - label: GET the metadata
-        request:
-          method: GET
-          url: "${as.metadataUrl}"
-          accept: application/json
-        response:
-          statusCode: 200
-          json:
-            - pointer: /subject_token_types_supported
-              jsonType: array
+    request:
+      method: GET
+      url: "${as.metadataUrl}"
+      accept: application/json
+    response:
+      statusCode: 200
+      json:
+        - pointer: /subject_token_types_supported
+          jsonType: array
 
   - id: "#authz-metadata-subject-identifier-types"
     type: ValidationTest
@@ -100,17 +96,15 @@ entries:
     requires: [Authentication]
     as: anonymous
     note: Uncatalogued; the clause is newer than the catalog baseline.
-    steps:
-      - label: GET the metadata
-        request:
-          method: GET
-          url: "${as.metadataUrl}"
-          accept: application/json
-        response:
-          statusCode: 200
-          json:
-            - pointer: /subject_identifier_types_supported
-              jsonType: array
+    request:
+      method: GET
+      url: "${as.metadataUrl}"
+      accept: application/json
+    response:
+      statusCode: 200
+      json:
+        - pointer: /subject_identifier_types_supported
+          jsonType: array
 
   - id: "#authz-token-exchange-valid"
     type: ValidationTest
@@ -321,21 +315,19 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-token-exchange-subject-token-param
       - https://example.org/touchstone/req/lws10-core/authz-token-error-rfc6749
     mirrors: lws10/auth/did_key/manifest.jsonld#authn-didkey-missing-credential
-    steps:
-      - label: exchange nothing
-        request:
-          method: POST
-          url: "${as.tokenEndpoint}"
-          bodyForm:
-            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
-            subject_token_type: urn:ietf:params:oauth:token-type:jwt
-        response:
-          statusCode: 400
-          contentType: application/json
-          json:
-            - pointer: /error
-              equals: invalid_request
+    request:
+      method: POST
+      url: "${as.tokenEndpoint}"
+      bodyForm:
+        grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+        resource: "${as.realm}"
+        subject_token_type: urn:ietf:params:oauth:token-type:jwt
+    response:
+      statusCode: 400
+      contentType: application/json
+      json:
+        - pointer: /error
+          equals: invalid_request
 
   - id: "#authz-issued-token-accepted-by-storage"
     type: ValidationTest

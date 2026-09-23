@@ -34,21 +34,19 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/access-endpoints-are-lws-containers
       - https://example.org/touchstone/req/lws10-core/access-services-advertised
-    steps:
-      - label: GET the advertised grant endpoint
-        request:
-          method: GET
-          url: "${service.AccessGrantService}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          contentType: application/lws+json
-          linkHeaders:
-            - rel: type
-              href: https://www.w3.org/ns/lws#Container
-          json:
-            - pointer: /items
-              jsonType: array
+    request:
+      method: GET
+      url: "${service.AccessGrantService}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      contentType: application/lws+json
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
+      json:
+        - pointer: /items
+          jsonType: array
 
   - id: "#access-grant-create"
     type: ValidationTest
@@ -177,9 +175,10 @@ entries:
     name: getContainer-public-read
     label: A container granted to the public can be read without credentials
     comment: >-
-      lws-test-suite's getContainer read a container made public through a prerequisite
-      the protocol gives no way to set up. This is that behaviour through the one
-      mechanism the draft does define: an AccessGrant whose assignee is foaf:Agent.
+      lws-test-suite's getContainer declares a public container as a prerequisite, which is
+      right, but gives no way to realise it. Here the engine makes it public through the one
+      mechanism the draft defines, an AccessGrant whose assignee is foaf:Agent (EXECUTION.md
+      section 4.3). A target whose grant service refuses makes the test inapplicable.
     status: Proposed
     level: MUST
     source:
@@ -191,41 +190,22 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/policy-assignee-uri-foaf-agent
     mirrors: lws10/manifest.jsonld#getContainer
-    steps:
-      - label: make the test container public (otherwise this test does not apply)
-        precondition: true
-        request:
-          method: POST
-          url: "${service.AccessGrantService}"
-          contentType: application/lws+json
-          bodyJSON:
-            "@context": ["https://www.w3.org/ns/lws/v1"]
-            type: [AccessGrant]
-            storage: "${storage}"
-            access:
-              - type: [AccessPolicy]
-                action: [read]
-                assignee: http://xmlns.com/foaf/0.1/Agent
-                target:
-                  type: StorageResource
-                  value: ["${test.container}"]
-        response:
-          statusCode: 201
-          location:
-            capture: grant
-            cleanup: true
-      - label: an anonymous GET returns the listing
-        as: anonymous
-        request:
-          method: GET
-          url: "${test.container}"
-          accept: application/lws+json
-        response:
-          statusCode: 200
-          contentType: application/lws+json
-          json:
-            - pointer: /type
-              hasValue: Container
+    prereqs:
+      hierarchy:
+        - container: notes
+          authorization:
+            read: [anonymous]
+    as: anonymous
+    request:
+      method: GET
+      url: "${notes}"
+      accept: application/lws+json
+    response:
+      statusCode: 200
+      contentType: application/lws+json
+      json:
+        - pointer: /type
+          hasValue: Container
 
   - id: "#readDataResource-public-read"
     type: ValidationTest
@@ -246,48 +226,21 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/policy-assignee-uri-foaf-agent
     mirrors: lws10/manifest.jsonld#readDataResource
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           bodyURL: ../fixtures/shoppinglist.txt
-        response:
-          statusCode: 201
-          location:
-            capture: created
-      - label: make it public (otherwise this test does not apply)
-        precondition: true
-        request:
-          method: POST
-          url: "${service.AccessGrantService}"
-          contentType: application/lws+json
-          bodyJSON:
-            "@context": ["https://www.w3.org/ns/lws/v1"]
-            type: [AccessGrant]
-            storage: "${storage}"
-            access:
-              - type: [AccessPolicy]
-                action: [read]
-                assignee: http://xmlns.com/foaf/0.1/Agent
-                target:
-                  type: StorageResource
-                  value: ["${created}"]
-        response:
-          statusCode: 201
-          location:
-            capture: grant
-            cleanup: true
-      - label: an anonymous GET returns the content
-        as: anonymous
-        request:
-          method: GET
-          url: "${created}"
-        response:
-          statusCode: 200
-          contentType: text/plain
-          bodyURL: ../fixtures/shoppinglist.txt
+          authorization:
+            read: [anonymous]
+    as: anonymous
+    request:
+      method: GET
+      url: "${created}"
+    response:
+      statusCode: 200
+      contentType: text/plain
+      bodyURL: ../fixtures/shoppinglist.txt
 
   - id: "#access-grant-authenticated-agent"
     type: ValidationTest
@@ -308,39 +261,14 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/policy-action-values
       - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
-    steps:
-      - label: alice creates a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: shared with bob, read-only
-        response:
-          statusCode: 201
-          location:
-            capture: created
-      - label: alice grants bob read access to it (otherwise this test does not apply)
-        precondition: true
-        request:
-          method: POST
-          url: "${service.AccessGrantService}"
-          contentType: application/lws+json
-          bodyJSON:
-            "@context": ["https://www.w3.org/ns/lws/v1"]
-            type: [AccessGrant]
-            storage: "${storage}"
-            access:
-              - type: [AccessPolicy]
-                action: [read]
-                assignee: "${identity.bob.webid}"
-                target:
-                  type: StorageResource
-                  value: ["${created}"]
-        response:
-          statusCode: 201
-          location:
-            capture: grant
-            cleanup: true
+          authorization:
+            read: [bob]
+    steps:
       - label: bob can read it
         as: bob
         request:

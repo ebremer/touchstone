@@ -71,17 +71,12 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-link-header
       - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: storage link check
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: GET of the data resource links to the container's storage
         request:
           method: GET
@@ -131,43 +126,41 @@ entries:
       - https://example.org/touchstone/req/lws10-core/storage-capability-type-required
     mirrors: lws10/manifest.jsonld#discovery-storage-description
     supersedes: [core/storage-description-discovery]
-    steps:
-      - label: GET the storage the test container links to
-        request:
-          method: GET
-          url: "${storage}"
-          accept: application/lws+cid
-        response:
-          statusCode: 200
-          contentType: application/lws+cid
-          json:
-            - pointer: /@context
-              jsonType: array
-            - pointer: /@context/0
-              equals: https://www.w3.org/ns/cid/v1
-            - pointer: /@context/1
-              equals: https://www.w3.org/ns/lws/v1
-            - pointer: /id
-              equalsIri: "${storage}"
+    request:
+      method: GET
+      url: "${storage}"
+      accept: application/lws+cid
+    response:
+      statusCode: 200
+      contentType: application/lws+cid
+      json:
+        - pointer: /@context
+          jsonType: array
+        - pointer: /@context/0
+          equals: https://www.w3.org/ns/cid/v1
+        - pointer: /@context/1
+          equals: https://www.w3.org/ns/lws/v1
+        - pointer: /id
+          equalsIri: "${storage}"
+        - pointer: /type
+          hasValue: Storage
+        - pointer: /service
+          jsonType: array
+        - pointer: /service
+          every:
             - pointer: /type
-              hasValue: Storage
-            - pointer: /service
-              jsonType: array
-            - pointer: /service
-              every:
-                - pointer: /type
-                  exists: true
-                - pointer: /serviceEndpoint
-                  jsonType: string
-            - pointer: /service
-              some:
-                - pointer: /type
-                  hasValue: StorageRoot
-            - pointer: /capability
-              optional: true
-              every:
-                - pointer: /type
-                  exists: true
+              exists: true
+            - pointer: /serviceEndpoint
+              jsonType: string
+        - pointer: /service
+          some:
+            - pointer: /type
+              hasValue: StorageRoot
+        - pointer: /capability
+          optional: true
+          every:
+            - pointer: /type
+              exists: true
 
   - id: "#discovery-storage-description-default-media-type"
     type: ValidationTest
@@ -184,14 +177,12 @@ entries:
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
-    steps:
-      - label: GET the storage URI with no Accept header
-        request:
-          method: GET
-          url: "${storage}"
-        response:
-          statusCode: 200
-          contentType: application/lws+cid
+    request:
+      method: GET
+      url: "${storage}"
+    response:
+      statusCode: 200
+      contentType: application/lws+cid
 
   - id: "#discovery-unauthorized-response-headers"
     type: NegativeTest
@@ -219,13 +210,11 @@ entries:
       lws-test-suite's version also asserted the challenge (a MUST) and used
       rel="storageDescription" with a /storage_1/metadata target; the challenge moved to
       getContainer-private-unauthorized and the relation to lws#storage.
-    steps:
-      - label: an anonymous GET is refused and still names the storage
-        request:
-          method: GET
-          url: "${test.container}"
-        response:
-          statusCode: 401
-          linkHeaders:
-            - rel: https://www.w3.org/ns/lws#storage
-              href: "${storage}"
+    request:
+      method: GET
+      url: "${test.container}"
+    response:
+      statusCode: 401
+      linkHeaders:
+        - rel: https://www.w3.org/ns/lws#storage
+          href: "${storage}"

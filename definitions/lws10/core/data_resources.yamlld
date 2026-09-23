@@ -75,20 +75,18 @@ entries:
     traits: [Post, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
-    steps:
-      - label: create a data resource and read its type from the 201
-        request:
-          method: POST
-          url: "${test.container}"
-          contentType: text/plain
-          body: typed on creation
-        response:
-          statusCode: 201
-          location:
-            capture: created
-          linkHeaders:
-            - rel: type
-              href: https://www.w3.org/ns/lws#DataResource
+    request:
+      method: POST
+      url: "${test.container}"
+      contentType: text/plain
+      body: typed on creation
+    response:
+      statusCode: 201
+      location:
+        capture: created
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#DataResource
 
   - id: "#create-in-missing-container-rejected"
     type: NegativeTest
@@ -140,15 +138,13 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
     supersedes: [core/create-in-missing-container-404]
-    steps:
-      - label: POST beneath a container name that was never created
-        request:
-          method: POST
-          url: "${test.container}${uuid}/"
-          contentType: text/plain
-          body: lost letter
-        response:
-          statusCode: 404
+    request:
+      method: POST
+      url: "${test.container}${uuid}/"
+      contentType: text/plain
+      body: lost letter
+    response:
+      statusCode: 404
 
   - id: "#create-server-managed-links-protected"
     type: ValidationTest
@@ -221,36 +217,29 @@ entries:
       - https://example.org/touchstone/req/lws10-core/link-storage-on-responses
     mirrors: lws10/manifest.jsonld#readDataResource
     supersedes: [core/data-resource-get, core/link-up-on-resources]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           bodyURL: ../fixtures/shoppinglist.txt
-        response:
-          statusCode: 201
-          location:
-            capture: created
-      - label: read it back byte-exact with its metadata
-        request:
-          method: GET
-          url: "${created}"
-        response:
-          statusCode: 200
-          contentType: text/plain
-          otherHeaders:
-            - headerName: ETag
-              present: true
-          linkHeaders:
-            - rel: linkset
-            - rel: up
-              href: "${test.container}"
-            - rel: type
-              href: https://www.w3.org/ns/lws#DataResource
-            - rel: https://www.w3.org/ns/lws#storage
-              href: "${storage}"
-          bodyURL: ../fixtures/shoppinglist.txt
+    request:
+      method: GET
+      url: "${created}"
+    response:
+      statusCode: 200
+      contentType: text/plain
+      otherHeaders:
+        - headerName: ETag
+          present: true
+      linkHeaders:
+        - rel: linkset
+        - rel: up
+          href: "${test.container}"
+        - rel: type
+          href: https://www.w3.org/ns/lws#DataResource
+        - rel: https://www.w3.org/ns/lws#storage
+          href: "${storage}"
+      bodyURL: ../fixtures/shoppinglist.txt
 
   - id: "#data-resource-head-parity"
     type: ValidationTest
@@ -267,17 +256,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/head-parity-with-get
       - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
     supersedes: [core/head-parity, core/etag-on-head-and-container-listing, core/link-up-on-resources]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: head parity check
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: GET it and keep its entity tag
         request:
           method: GET
@@ -323,17 +307,12 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
     supersedes: [core/data-resource-range-request]
-    steps:
-      - label: create a data resource with known bytes
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: "0123456789"
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: a byte range yields 206 with just those bytes
         request:
           method: GET
@@ -372,26 +351,19 @@ entries:
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
     traits: [Get, DataResource, Range]
     supersedes: [core/data-resource-range-request]
-    steps:
-      - label: create a ten-byte data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: "0123456789"
-        response:
-          statusCode: 201
-          location:
-            capture: created
-      - label: ask for bytes that do not exist
-        request:
-          method: GET
-          url: "${created}"
-          otherHeaders:
-            - headerName: Range
-              headerValue: bytes=100-200
-        response:
-          statusCode: 416
+    request:
+      method: GET
+      url: "${created}"
+      otherHeaders:
+        - headerName: Range
+          headerValue: bytes=100-200
+    response:
+      statusCode: 416
 
   - id: "#data-resource-accept-ranges"
     type: ValidationTest
@@ -406,26 +378,19 @@ entries:
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.3
     traits: [Get, DataResource, Range]
     supersedes: [core/data-resource-range-request]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: "0123456789"
-        response:
-          statusCode: 201
-          location:
-            capture: created
-      - label: the full read names byte ranges
-        request:
-          method: GET
-          url: "${created}"
-        response:
-          statusCode: 200
-          otherHeaders:
-            - headerName: Accept-Ranges
-              matches: '(?i)\bbytes\b'
+    request:
+      method: GET
+      url: "${created}"
+    response:
+      statusCode: 200
+      otherHeaders:
+        - headerName: Accept-Ranges
+          matches: '(?i)\bbytes\b'
 
   - id: "#updateDataResource"
     type: ValidationTest
@@ -445,17 +410,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/update-content-vs-metadata-prefer-set-linkset
     mirrors: lws10/manifest.jsonld#updateDataResource
     supersedes: [core/put-replace-with-if-match]
-    steps:
-      - label: create version one
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           bodyURL: ../fixtures/shoppinglist.txt
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: replace it
         request:
           method: PUT
@@ -489,20 +449,15 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/patch-json-merge-patch-baseline
     supersedes: [core/patch-merge-patch-baseline]
-    steps:
-      - label: create a JSON data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: application/json
           bodyJSON:
             title: first
             keep: true
             drop: gone
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: merge-patch it
         request:
           method: PATCH
@@ -553,17 +508,12 @@ entries:
       - https://example.org/touchstone/req/lws10-core/status-204-410-deletions
     mirrors: lws10/manifest.jsonld#deleteDataResource
     supersedes: [core/delete-resource-updates-parent]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: short-lived resource
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: delete it
         request:
           method: DELETE

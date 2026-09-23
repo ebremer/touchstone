@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/definitions/0-1-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), proposal 0.1.0",
+  "$id": "https://example.org/touchstone/schema/definitions/0-2-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), proposal 0.2.0",
   "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. PROPOSED, not frozen: freezing it is a review gate (definitions/README.md). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
@@ -59,7 +59,13 @@
     "test": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "name", "label", "status", "level", "source", "traits", "steps"],
+      "required": ["id", "type", "name", "label", "status", "level", "source", "traits"],
+      "anyOf": [
+        {"required": ["steps"], "properties": {"steps": true}},
+        {"required": ["request"], "properties": {"request": true}}
+      ],
+      "dependentRequired": {"request": ["response"], "response": ["request"]},
+      "dependentSchemas": {"steps": {"properties": {"request": false, "response": false}}},
       "properties": {
         "id": {"type": "string", "pattern": "^#[A-Za-z][A-Za-z0-9-]*$"},
         "type": {"enum": ["ValidationTest", "NegativeTest"]},
@@ -96,9 +102,73 @@
           "items": {"type": "string", "pattern": "^(core|auth-oidc)/[a-z0-9-]+$"}
         },
         "note": {"description": "touchstone only: internal remark (dropped on export)", "type": "string"},
-        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"}}
+        "prereqs": {"$ref": "#/$defs/prereqs"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"}},
+        "request": {"$ref": "#/$defs/request", "description": "short form: the test's one request"},
+        "response": {"$ref": "#/$defs/response", "description": "short form: the expectations on its response"}
       }
     },
+
+    "prereqs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hierarchy"],
+      "properties": {
+        "hierarchy": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/prereqResource"}}
+      }
+    },
+
+    "prereqResource": {
+      "description": "A resource the engine creates as alice before the test (EXECUTION.md section 4.3). Exactly one of container or dataResource, which names the variable bound to the URI the server assigns.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "container": {"$ref": "#/$defs/capture"},
+        "dataResource": {"$ref": "#/$defs/capture"},
+        "in": {"$ref": "#/$defs/capture"},
+        "contentType": {"type": "string"},
+        "body": {"$ref": "#/$defs/template"},
+        "bodyURL": {"type": "string", "pattern": "^(\\.\\./)*fixtures/[A-Za-z0-9_.-]+$"},
+        "bodyJSON": {},
+        "authorization": {"$ref": "#/$defs/resourceAuthorization"},
+        "absent": {"const": true}
+      },
+      "oneOf": [
+        {"required": ["container"], "properties": {"container": true, "dataResource": false}},
+        {"required": ["dataResource"], "properties": {"dataResource": true, "container": false}}
+      ],
+      "dependentSchemas": {
+        "container": {"properties": {"contentType": false, "body": false, "bodyURL": false, "bodyJSON": false}},
+        "absent": {"properties": {"authorization": false, "contentType": false, "body": false, "bodyURL": false, "bodyJSON": false}},
+        "body": {"properties": {"bodyURL": false, "bodyJSON": false}},
+        "bodyURL": {"properties": {"body": false, "bodyJSON": false}},
+        "bodyJSON": {"properties": {"body": false, "bodyURL": false}}
+      },
+      "if": {"required": ["dataResource"], "properties": {"dataResource": true, "absent": false}},
+      "then": {
+        "required": ["contentType"],
+        "properties": {"contentType": true},
+        "anyOf": [
+          {"required": ["body"], "properties": {"body": true}},
+          {"required": ["bodyURL"], "properties": {"bodyURL": true}},
+          {"required": ["bodyJSON"], "properties": {"bodyJSON": true}}
+        ]
+      }
+    },
+
+    "resourceAuthorization": {
+      "description": "Access to grant, by LWS action (WD section 11.3.2), to identities; anonymous means the public (foaf:Agent). alice, the creator, needs no grant.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "read": {"$ref": "#/$defs/assignees"},
+        "modify": {"$ref": "#/$defs/assignees"},
+        "create": {"$ref": "#/$defs/assignees"},
+        "delete": {"$ref": "#/$defs/assignees"}
+      }
+    },
+    "assignees": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identityName"}},
 
     "step": {
       "type": "object",
@@ -176,9 +246,11 @@
         "linkHeaders": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/linkExpectation"}},
         "otherHeaders": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/headerExpectation"}},
         "authenticationChallenge": {
-          "type": "object", "additionalProperties": false, "required": ["scheme"],
+          "type": "object", "additionalProperties": false, "required": ["wwwAuthenticate"],
           "properties": {
-            "scheme": {"type": "string"},
+            "wwwAuthenticate": {"type": "string"},
+            "asUri": {"$ref": "#/$defs/paramShorthand"},
+            "realm": {"$ref": "#/$defs/paramShorthand"},
             "params": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/paramExpectation"}}
           }
         },
@@ -231,6 +303,16 @@
       }
     },
 
+    "paramShorthand": {
+      "description": "asUri or realm: a template the auth-param must equal exactly, or an expectation on it.",
+      "oneOf": [
+        {"$ref": "#/$defs/template"},
+        {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {"present": {"type": "boolean"}, "matches": {"type": "string"}, "capture": {"$ref": "#/$defs/capture"}}
+        }
+      ]
+    },
     "paramExpectation": {
       "type": "object",
       "additionalProperties": false,

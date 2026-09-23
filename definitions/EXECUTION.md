@@ -1,7 +1,8 @@
 # Executing the LWS test definitions
 
-**Status: proposal 0.1.0.** This is the contract an engine that runs `definitions/` must
-implement. It is written for that engine's authors, human or AI: where a definition
+**Status: proposal 0.2.0.** This is the contract an engine that runs `definitions/` must
+implement. 0.2.0 merges two strengths of lws-test-suite's format into it: the
+one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something
 else is wrong even if every test it runs passes. `README.md` explains why the
 definitions exist, `vocab.yamlld` gives the RDF meaning of each term, and
@@ -40,8 +41,17 @@ The engine adds no assertions and softens none.
 5. **Lint.** Before a run starts, refuse (exit code 2, as for an uncatalogued
    requirement in D-0039) any set of definitions that fails a check:
    - every test `name` is unique across all manifests, and `id` is `#` + `name`;
-   - every `${...}` in a step is a built-in, derived or identity variable, or was
-     captured by an earlier step. A `jwt` block may also use captures made in its own
+   - every test has either `steps`, or both `request` and `response` (the short form),
+     never both;
+   - every prerequisite variable is new, and an entry's `in` names an earlier container
+     entry;
+   - every `authorization` assignee is `anonymous` or a StorageAccessToken identity other
+     than alice, and a test that grants access `requires` Authentication;
+   - no value in `prereqs`, `steps`, `request` or `response` names an example host
+     (RFC 2606 and RFC 6761: `example`, `*.example`, `example.com`, `example.net`,
+     `example.org`). Such a value can never match a live server.
+   - every `${...}` in a step is a built-in, derived or identity variable, or was bound
+     by a prerequisite or captured by an earlier step. A `jwt` block may also use captures made in its own
      step.
    - every `as:` names a registered NoCredential or StorageAccessToken identity;
    - every `credential.<name>` names a SubjectCredential identity whose capabilities
@@ -90,7 +100,7 @@ becomes an object. Anywhere else the value is converted to a string.
 | `credential.<name>` | The subject credential minted for a SubjectCredential identity (section 5.3). |
 | `fixtures.baseUrl` | The harness fixture host as the target reaches it; from target configuration, ending in `/`. Defined only when the target declares ReachableFixtures. |
 | `self.webid`, `self.kid`, `self.publicJwk` | Inside identity templates only: the identity being minted. |
-| *captured* | Bound by `capture` in an earlier step of the same test, or earlier in the same step for `jwt`. Names match `^[a-z][A-Za-z0-9]*$`. A capture never rebinds a name. |
+| *captured* | Bound by a prerequisite entry (section 4.3), or by `capture` in an earlier step of the same test, or earlier in the same step for `jwt`. Names match `^[a-z][A-Za-z0-9]*$`. A capture never rebinds a name. |
 
 Derived variables are computed on first use and cached. `storage`, `as.*` and the
 storage description are cached per run; the rest per test.
@@ -121,7 +131,8 @@ conformance (D-0040). If creation fails, the run stops with exit code 2; no test
    the report names the missing capability.
 2. **Test container.** POST to `${run.root}` as alice, in the same way as the run root.
    The Location becomes `${test.container}`. A failure is *cantTell*.
-3. **Steps** run strictly in order, each fully evaluated before the next is sent. The
+3. **Prerequisites**, if the test declares any (section 4.3).
+4. **Steps** run strictly in order, each fully evaluated before the next is sent. The
    first failing expectation ends the test:
    - In a step marked `precondition: true`, the outcome is *inapplicable*, citing the
      step label.
@@ -129,18 +140,67 @@ conformance (D-0040). If creation fails, the run stops with exit code 2; no test
      the expected and actual values. This holds even when the same response also leaves a
      capture unmade: a refused create has no Location, and the failed expectation is the
      finding (D-0049).
-4. If every step passes, the outcome is *passed*.
-5. **Cleanup** runs whatever the outcome (section 10).
+5. If every step passes, the outcome is *passed*.
+6. **Cleanup** runs whatever the outcome (section 10).
+
+**Short form.** A test that has `request` and `response` directly on it, instead of
+`steps`, is a test of exactly one step, labelled with the test's `label`. Its identity is
+the test's `as`, else alice. There is no other difference.
 
 Tests are independent and MAY run in parallel. Within a test nothing runs in parallel
 except the fetches of one `connegEquivalent`. Every request has a 30 s timeout, unless
 the target configuration sets another. Redirects are never followed: a 3xx is the
 response under test. Nothing is retried.
 
+### 4.3 Prerequisites
+
+`prereqs.hierarchy` declares the resources a test needs before its first step, and the
+access to grant on them. The engine realises them, so the test's steps are only the
+exchanges it examines. Entries are processed in order, always as alice:
+
+1. **Parent.** The parent is `${<in>}` when `in` is given, else `${test.container}`.
+2. **Absent entry.** With `absent: true`, nothing is created: the variable is bound to
+   the parent's URI followed by `touchstone-absent-` and a fresh `${uuid}`, plus a
+   trailing `/` for a container. Nothing can exist there, since the parent is new.
+3. **Create.** POST to the parent:
+   - `container`: with `Link: <https://www.w3.org/ns/lws#Container>; rel="type"`, no
+     body and no Content-Type;
+   - `dataResource`: with `Content-Type` from `contentType`, and the body from `body`,
+     `bodyURL` or `bodyJSON` as in section 6.
+
+   The response must be 201 with a `Location`, which, resolved against the request URL,
+   is bound to the variable that `container` or `dataResource` names. Anything else
+   ends the test as *cantTell*, naming the entry. Creation is what other tests examine;
+   here it is setup, and a setup failure is not a finding.
+4. **Grant.** For `authorization`, the engine groups the actions by assignee, in the
+   order read, modify, create, delete. For each assignee it POSTs to
+   `${service.AccessGrantService}` with Content-Type `application/lws+json`:
+
+   ```json
+   {"@context": ["https://www.w3.org/ns/lws/v1"], "type": ["AccessGrant"], "storage": "${storage}",
+    "access": [{"type": ["AccessPolicy"], "action": ["<actions>"], "assignee": "<assignee>",
+                "target": {"type": "StorageResource", "value": ["<the entry's URI>"]}}]}
+   ```
+
+   The assignee is `http://xmlns.com/foaf/0.1/Agent` for `anonymous`, and
+   `${identity.<name>.webid}` for any other identity. A 201 with a `Location` registers
+   the grant for cleanup (section 10).
+
+   When the storage advertises no access grant service, the engine asks the target's
+   provisioning adapter to grant the same access out of band, as lws-test-suite leaves
+   to its harness. When neither can, or the webid cannot be produced, or the service
+   answers anything but 201, the test is *inapplicable*, naming the entry. Public access
+   is a MAY (WD section 11.3.3), and whom to grant access to is the target's policy.
+
+Prerequisite resources live inside `${test.container}` and are deleted with it. alice
+creates them, so she needs no grant. The actions are the draft's four (WD section
+11.3.2); there is no `write`, `append` or `control`.
+
 ## 5. Identities and credentials
 
 The registry is `lws10/identities.yamlld`. A step's identity is its own `as`, else the
-test's `as`, else `alice`.
+test's `as`, else `alice`. Prerequisites are always created, and access granted, as alice
+(section 4.3).
 
 ### 5.1 NoCredential
 
@@ -265,7 +325,10 @@ passes:
 6. **`authenticationChallenge`.** Parse every `WWW-Authenticate` line into challenges
    per RFC 9110 section 11.6.1. auth-params may be tokens or quoted strings (unquote the
    latter), and their order is irrelevant. The expectation passes if some challenge has
-   the given `scheme` (case-insensitive) and satisfies every `params` entry:
+   the scheme `wwwAuthenticate` names (case-insensitive) and satisfies every `params`
+   entry. `asUri` and `realm` are shorthand for `params` entries naming `as_uri` and
+   `realm`: a string is the exact value (`paramValue`), and an object carries `present`,
+   `matches` or `capture`. Each `params` entry is checked as follows:
    - the name matches case-insensitively;
    - `present: true` means the parameter is there;
    - `paramValue` means its value equals the expanded template;
@@ -351,8 +414,8 @@ passes:
 
 ## 10. Cleanup, redaction and safety
 
-- **At test end.** DELETE every location registered with `cleanup: true`, in reverse
-  order, as the identity whose step captured it. Then DELETE `${test.container}` with
+- **At test end.** DELETE every location registered with `cleanup: true`, and every grant
+  a prerequisite created, in reverse order, as the identity that created it. Then DELETE `${test.container}` with
   `Depth: infinity` and `If-Match: current`.
 - **At run end.** Do the same for `${run.root}`. If the server refuses recursive delete
   (it is a MAY), delete bottom-up by listing. Cleanup failures are logged with the URL

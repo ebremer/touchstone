@@ -33,17 +33,12 @@ entries:
       Catalog entry etag-on-get-head-conditional-304 is MUST in the 21 August baseline;
       the 21 September draft made conditional-request support SHOULD. Not cited until the
       catalog is re-baselined.
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: conditional request check
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: read it and keep the validator
         request:
           method: GET
@@ -121,17 +116,12 @@ entries:
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2
     traits: [Get, Put, DataResource, Conditional]
     supersedes: [core/conditional-get-stale-validator-200]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: first revision
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: read it and keep the validator
         request:
           method: GET
@@ -192,17 +182,12 @@ entries:
       The touchstone manifest cited put-unconditional-rejected-428, a clause the 21
       September draft removed; it also accepted 409, which the current text no longer
       mentions.
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: original content
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: read it and keep the validator that is about to go stale
         request:
           method: GET
@@ -254,17 +239,12 @@ entries:
       - https://www.rfc-editor.org/rfc/rfc9110#section-8.8.1
     traits: [Get, Put, DataResource, Conditional]
     supersedes: [core/put-replace-with-if-match]
-    steps:
-      - label: create a data resource
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: version one
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: its entity tag is strong (otherwise this test does not apply)
         precondition: true
         request:
@@ -318,17 +298,12 @@ entries:
     note: >-
       Catalog entry delete-updates-parent-listing-etag still carries the removed ETag
       clause; it is not cited until the catalog is re-baselined.
-    steps:
-      - label: create a member
-        request:
-          method: POST
-          url: "${test.container}"
+    prereqs:
+      hierarchy:
+        - dataResource: created
           contentType: text/plain
           body: not long for this world
-        response:
-          statusCode: 201
-          location:
-            capture: created
+    steps:
       - label: the listing's entity tag is strong (otherwise this test does not apply)
         precondition: true
         request:
