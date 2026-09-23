@@ -14,6 +14,15 @@
   <name>Touchstone :: Fixtures + Reference Server</name>
   <description>Embedded Jetty fixture servers: the in-memory reference LWS server (DECISIONS.md D-0015) now; OIDC issuer, SAML IdP, CID/did:key signer at Phase 4+. Test scope hosts the conformance self-test loop.</description>
 
+  <properties>
+    <!-- exec:java starts the reference server unless -Dexec.mainClass names another launcher,
+         such as com.ebremer.touchstone.fixtures.SecuredRefScenarioMain. This must stay a
+         property. It used to be the plugin's <mainClass> configuration, and configuration in
+         the POM beats the command line: the documented SecuredRefScenarioMain command started
+         this class instead, which then parsed its file argument as a port (D-0048). -->
+    <exec.mainClass>com.ebremer.touchstone.fixtures.lws.RefLwsServerMain</exec.mainClass>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -64,13 +73,11 @@
 
   <build>
     <plugins>
-      <!-- Run the reference server standalone: mvn -pl harness-fixtures exec:java -Dexec.args=4711 -->
+      <!-- Run the reference server standalone: mvn -pl harness-fixtures exec:java -Dexec.args=4711
+           The main class comes from the exec.mainClass property above. -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <configuration>
-          <mainClass>com.ebremer.touchstone.fixtures.lws.RefLwsServerMain</mainClass>
-        </configuration>
       </plugin>
     </plugins>
   </build>
