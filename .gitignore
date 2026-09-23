@@ -23,6 +23,10 @@ Thumbs.db
 __pycache__/
 *.pyc
 
+# definitions checks (tools/definitions): build output and installed packages
+tools/definitions/build/
+tools/definitions/node_modules/
+
 # misc
 *.log
 dependency-reduced-pom.xml

@@ -166,11 +166,20 @@ The definitions are data, so they are checked as data:
 3. JSON-LD `toRDF` of every document with an offline loader, in safe mode, so a dropped
    term is an error;
 4. a lint: names are unique, variables are bound, identities exist, catalog IRIs exist,
-   `source` anchors resolve, fixtures exist;
+   `source` anchors resolve, fixtures exist, and no executable value names an example host;
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.2.0.
+All six pass for version 0.2.0, as does the JSON-LD export trial below. One command runs
+them all, and CI runs it on every push and pull request:
+
+```sh
+cd tools/definitions && npm ci && pip install -r requirements.txt
+python check.py              # add --write to regenerate vocab.yamlld and COVERAGE.md
+```
+
+See [tools/definitions/README.md]({% include src.html path="tools/definitions/README.md" %})
+for what each check does, and for the lws-test-suite checkout that two of them read.
 
 ## Exporting to JSON-LD
 

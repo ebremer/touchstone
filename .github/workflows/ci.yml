@@ -25,3 +25,43 @@ jobs:
 
       - name: CLI smoke test (touchstone --version)
         run: java -jar harness-cli/target/touchstone.jar --version
+
+  definitions:
+    # The YAML-LD test definitions are data, so they are checked as data
+    # (definitions/README.md, "Validating"). This job also fails when a generated file,
+    # vocab.yamlld or COVERAGE.md, is stale (D-0052).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The definitions mirror lws-test-suite, so the lint and COVERAGE.md read its files.
+      # It is pinned to the commit definitions/COMPARISON.md was measured on.
+      - name: Check out lws-test-suite
+        uses: actions/checkout@v7
+        with:
+          repository: lws-contrib/lws-test-suite
+          ref: b8cb134fd2a4d18e8f4272532cf3715c95180dba
+          path: lws-test-suite
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tools/definitions/package-lock.json
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/definitions/requirements.txt
+
+      - name: Install the checks' dependencies
+        working-directory: tools/definitions
+        run: |
+          npm ci
+          pip install -r requirements.txt
+
+      - name: Check the definitions
+        env:
+          LWS_TEST_SUITE: ${{ github.workspace }}/lws-test-suite/lws10
+        run: python tools/definitions/check.py

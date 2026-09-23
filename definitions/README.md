@@ -166,7 +166,8 @@ could not say:
 
 ## Validating
 
-The definitions are data, so the checks are data checks. CI should run:
+The definitions are data, so the checks are data checks. `tools/definitions/check.py` runs
+them all, and CI runs it on every push and pull request (`tools/definitions/README.md`):
 1. YAML 1.2 Core Schema parse, and equivalence with a YAML 1.1 reading (rule 2 above).
 2. JSON Schema validation against `schema/definitions.schema.json` in strict mode.
 3. JSON-LD `toRDF` of every document with an offline loader, in safe mode, where a
@@ -197,7 +198,8 @@ The move from 0.1.0 was mechanical, and checked:
   lws-test-suite's `getContainer` does.
 - The JSON-LD export trial still produces identical graphs for all 16 documents.
 
-Implementing these checks as project code is part of the engine work.
+The same run also performs the JSON-LD export trial of the next section. For `COVERAGE.md`
+and the `mirrors` check it reads a pinned lws-test-suite checkout.
 
 ## Export to lws-test-suite (JSON-LD)
 

@@ -39,7 +39,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |
 | `manifests/` | declarative test manifests (`core`, `auth-oidc`) |
 | `definitions/` | YAML-LD test definitions (proposed): mirror and extend lws-test-suite, contributed back as JSON-LD; the engine for them is to be generated (DECISIONS.md D-0047) |
-| `tools/` | catalog extraction and spec-drift tooling |
+| `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring; plus the manifest schema, distribution and harvest method |
 
 ## Build
