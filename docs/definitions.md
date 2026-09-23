@@ -8,7 +8,7 @@ description: "The proposed YAML-LD test format: it mirrors and extends the LWS t
 {: .no_toc }
 
 {: .important }
-**Proposed, format version 0.1.0, not frozen.** The definitions are written and
+**Proposed, format version 0.2.0, not frozen.** The definitions are written and
 validated, but Touchstone does not execute them yet. `touchstone run` still runs
 `manifests/`. The engine for this format will be generated from the definitions and
 their execution contract once the format has been reviewed and frozen.
@@ -41,6 +41,7 @@ definitions/
   README.md                 why the definitions exist, authoring rules, validation, export
   EXECUTION.md              the contract an engine must implement
   COVERAGE.md               mapping to lws-test-suite and to manifests/, test by test
+  COMPARISON.md             this format against lws-test-suite's, and why it is stronger
   schema/
     definitions.schema.json JSON Schema (2020-12) for manifests and the identity registry
   lws10/                    laid out like lws-test-suite's lws10/, so export is file for file
@@ -57,22 +58,42 @@ definitions/
 
 ## A definition
 
+A test that is one exchange is written as one, the way lws-test-suite writes its tests:
+
+```yaml
+  - id: "#getContainer-private-unauthorized"
+    type: NegativeTest
+    name: getContainer-private-unauthorized
+    level: MUST
+    source: [https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery]
+    traits: [Get, Container, Private, Authn]
+    requires: [Authentication]
+    as: anonymous
+    request:
+      method: GET
+      url: "${test.container}"
+    response:
+      statusCode: 401
+      authenticationChallenge:
+        wwwAuthenticate: Bearer
+        asUri: {matches: '^https?://'}
+        realm: {matches: '^https?://'}
+```
+
+What a test needs but does not examine is declared, and the engine creates it. A flow of
+several exchanges uses `steps`:
+
 ```yaml
   - id: "#deleteDataResource"
     type: ValidationTest
-    name: deleteDataResource
-    label: DELETE removes a data resource with 204 and takes it out of its container
-    status: Proposed
     level: MUST
-    source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
-    traits: [Delete, DataResource, Container]
+    ...
+    prereqs:
+      hierarchy:
+        - dataResource: created          # the server picks the URI; it becomes ${created}
+          contentType: text/plain
+          body: short-lived resource
     steps:
-      - label: create a data resource
-        request: {method: POST, url: "${test.container}", contentType: text/plain, body: short-lived resource}
-        response:
-          statusCode: 201
-          location: {capture: created}
       - label: delete it
         request: {method: DELETE, url: "${created}", ifMatch: current}
         response: {statusCode: 204}
@@ -81,13 +102,17 @@ definitions/
         response: {statusCode: [404, 410]}
 ```
 
-The terms are lws-test-suite's wherever their meaning is the same: `request`,
-`response`, `method`, `url`, `contentType`, `statusCode`, `linkHeaders`, `traits`,
-`status`, `source`, and others. The additions are the ones its reviewers asked for, or
-that its tests needed but could not express:
+A prerequisite can also carry access, such as `authorization: {read: [anonymous]}`, which the
+engine grants through the storage's access grant service.
 
-- ordered `steps` with captured values;
-- templates such as `${test.container}` in place of fixed hosts;
+The terms are lws-test-suite's wherever their meaning is the same: `request`,
+`response`, `method`, `url`, `contentType`, `statusCode`, `linkHeaders`,
+`authenticationChallenge`, `prereqs`, `hierarchy`, `authorization`, `traits`, `status`,
+`source`, and others. The additions are the ones its reviewers asked for, or that its tests
+needed but could not express:
+
+- ordered `steps` with captured values, for tests that need more than one exchange;
+- templates such as `${test.container}` in place of fixed hosts and paths;
 - explicit matching: JSON pointers with `some`/`every`/`none`, parsed authentication
   challenges, content-negotiation equivalence, and JWT claims;
 - exactly one `level` per test, so a SHOULD check can never decide conformance;
@@ -95,11 +120,32 @@ that its tests needed but could not express:
   inapplicable instead of failed;
 - abstract identities instead of embedded credentials.
 
+## Compared with lws-test-suite
+
+Format 0.2.0 merges lws-test-suite's design into this one. It keeps that suite's
+vocabulary, its one-request tests and its declared prerequisites. It fixes what stops those
+tests running against a real server or makes them contradict the draft. Measured on
+lws-test-suite's current files:
+
+| lws-test-suite today | The merged format |
+|---|---|
+| 21 of 27 tests name example hosts such as `storage.example`, and 13 share the path `/alice/notes/` | Every server-chosen URL is a variable; each test has its own container; the checks reject example hosts |
+| Access modes `write`, `append` and `control` are Solid's, not LWS's; `Role-Authenticated` cannot be expressed in the draft | The draft's four actions; grants to identities, carried out through the access grant service |
+| No rules for comparing content types, links, bodies or challenges | Every comparison defined, with challenges parsed per RFC 9110 |
+| One request per test, so no test can check a delete took effect | One request when that suffices, `steps` for flows |
+| 7 tests carry credential placeholders like `<expired-token>` | Named identities whose valid and broken credentials the harness makes |
+| No test declares a level; every `source` is an undated editor's draft | One level per test; dated sources whose anchors are checked |
+| A nonexistent `mf:` namespace, an `@vocab` fallback, `Location` resolved against the manifest | Real namespaces, no fallback, strict JSON-LD; `Location` captured |
+| No validation; its YAML and JSON-LD copies disagree | Six automated checks, negative controls, and an export trial |
+
+The full comparison, with both formats side by side and what would change in
+lws-test-suite's files, is [COMPARISON.md]({% include src.html path="definitions/COMPARISON.md" %}).
+
 ## How they relate to the rest of Touchstone
 
 | | `manifests/` | `definitions/` |
 |---|---|---|
-| Format | YAML, schema `1-1-0` (frozen) | YAML-LD, format `0.1.0` (proposed) |
+| Format | YAML, schema `1-1-0` (frozen) | YAML-LD, format `0.2.0` (proposed) |
 | Executed by `touchstone run` | yes | not yet |
 | Draft followed | 21 August 2026 | 21 September 2026 |
 | Tests | 33 | 101 |
@@ -124,7 +170,7 @@ The definitions are data, so they are checked as data:
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.1.0.
+All six pass for version 0.2.0.
 
 ## Exporting to JSON-LD
 
@@ -142,6 +188,8 @@ canonical RDF for all 16 documents.
 
 ## Read more
 
+- [definitions/COMPARISON.md]({% include src.html path="definitions/COMPARISON.md" %}): the
+  format against lws-test-suite's, side by side, with the evidence
 - [definitions/README.md]({% include src.html path="definitions/README.md" %}): authoring
   rules, open questions for the working group, and what is not defined yet
 - [definitions/EXECUTION.md]({% include src.html path="definitions/EXECUTION.md" %}): the
