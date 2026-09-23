@@ -37,13 +37,14 @@ changed clauses. Four change what `manifests/` asserts (details in D-0047):
 
 The CID suite has a 21 September WD with no normative drift.
 
-- [ ] **Review and freeze the definitions format 0.2.0** (0.1.0 merged with lws-test-suite's
+- [x] **Review and freeze the definitions format 0.2.0** (0.1.0 merged with lws-test-suite's
   design, D-0051). This covers `definitions/lws10/context.jsonld`, `vocab.yamlld`,
   `schema/definitions.schema.json` and `EXECUTION.md`. It is a gate, like Gate 2. It
   includes the three defaults D-0051 chose:
   - the adapter fallback for grants;
   - the short form as pure shorthand;
   - rejecting example hosts.
+  → **Done (D-0053).** Frozen on 2026-09-23 with all three defaults accepted.
 - [ ] **Generate the YAML-LD engine from `definitions/EXECUTION.md`.** It needs:
   - a YAML 1.2 Core Schema parser;
   - templates and derived variables;

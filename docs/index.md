@@ -73,9 +73,9 @@ As of September 2026:
 - **Spec baseline:** the catalog is baselined on the 21 August 2026 core Working Draft.
   The 21 September 2026 draft changed 14 catalogued clauses. Re-baselining is pending
   review (see [Requirements catalog](catalog.md#tracking-the-draft)).
-- **Next test format:** a [YAML-LD test format](definitions.md) is proposed. It mirrors and
-  extends the LWS test group's JSON-LD suite, `lws-test-suite`, and has 101 test
-  definitions so far. Touchstone does not execute it yet.
+- **Next test format:** a [YAML-LD test format](definitions.md), frozen at version 0.2.0. It
+  mirrors and extends the LWS test group's JSON-LD suite, `lws-test-suite`, and has 101
+  test definitions so far. Touchstone does not execute it yet.
 
 {: .note }
 LWS is a Working Draft and changes often. Touchstone tracks it deliberately: each

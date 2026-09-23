@@ -1,17 +1,17 @@
 ---
 title: YAML-LD definitions
 nav_order: 12
-description: "The proposed YAML-LD test format: it mirrors and extends the LWS test group's JSON-LD suite and is designed to be contributed back."
+description: "The YAML-LD test format: it mirrors and extends the LWS test group's JSON-LD suite and is designed to be contributed back."
 ---
 
 # YAML-LD test definitions
 {: .no_toc }
 
 {: .important }
-**Proposed, format version 0.2.0, not frozen.** The definitions are written and
+**Format version 0.2.0, frozen on 2026-09-23.** The definitions are written and
 validated, but Touchstone does not execute them yet. `touchstone run` still runs
-`manifests/`. The engine for this format will be generated from the definitions and
-their execution contract once the format has been reviewed and frozen.
+`manifests/`. The engine for this format is generated from the definitions and their
+execution contract.
 
 1. TOC
 {:toc}
@@ -145,7 +145,7 @@ lws-test-suite's files, is [COMPARISON.md]({% include src.html path="definitions
 
 | | `manifests/` | `definitions/` |
 |---|---|---|
-| Format | YAML, schema `1-1-0` (frozen) | YAML-LD, format `0.2.0` (proposed) |
+| Format | YAML, schema `1-1-0` (frozen) | YAML-LD, format `0.2.0` (frozen) |
 | Executed by `touchstone run` | yes | not yet |
 | Draft followed | 21 August 2026 | 21 September 2026 |
 | Tests | 33 | 101 |

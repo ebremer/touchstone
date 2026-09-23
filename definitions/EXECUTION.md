@@ -1,7 +1,7 @@
 # Executing the LWS test definitions
 
-**Status: proposal 0.2.0.** This is the contract an engine that runs `definitions/` must
-implement. 0.2.0 merges two strengths of lws-test-suite's format into it: the
+**Status: frozen, format 0.2.0 (2026-09-23, DECISIONS.md D-0053).** This is the contract
+an engine that runs `definitions/` must implement. 0.2.0 merges two strengths of lws-test-suite's format into it: the
 one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something
 else is wrong even if every test it runs passes. `README.md` explains why the

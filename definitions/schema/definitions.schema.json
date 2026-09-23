@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.org/touchstone/schema/definitions/0-2-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), proposal 0.2.0",
-  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. PROPOSED, not frozen: freezing it is a review gate (definitions/README.md). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.2.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/identityRegistry"}

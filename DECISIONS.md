@@ -1319,3 +1319,25 @@ at n^maxWorkFactor, with a default of 1, as a guard against hostile input. The e
 exceeded the cap on documents with repeated step structures. These are the repository's
 own files, so the trial passes `maxWorkFactor: 2`. A negative control confirmed the trial
 still reports a corrupted export, and reports only that document.
+
+### D-0053 — definitions format 0.2.0 is frozen, with the three defaults accepted
+Erich reviewed format 0.2.0 and asked for the three remaining steps, in this order:
+freeze the format, build the engine that runs it, and retire `manifests/`. This entry is
+the first. `definitions/README.md` said the engine should start from the frozen format,
+so the freeze lands before any engine code.
+
+**What is frozen:** `definitions/lws10/context.jsonld`, `vocab.yamlld`,
+`schema/definitions.schema.json` (`$id` `…/definitions/0-2-0`) and `EXECUTION.md`. A
+later change to any of them bumps the schema `$id` and needs its own entry. Test content
+is not format: adding, correcting or retiring a definition needs neither, and every test
+stays `status: Proposed`.
+
+**The three defaults D-0051 left open are accepted as written:**
+1. Access that the storage's grant service cannot set up goes through the target's
+   provisioning adapter. When neither can set it up, the test is inapplicable
+   (EXECUTION.md section 4.3).
+2. The short form is pure shorthand for a test of one step (section 4.2).
+3. Literal values are allowed, and the lint rejects RFC 2606 and RFC 6761 example hosts
+   in executable values (section 2.5).
+
+This closes the review gate D-0047 opened, the analogue of Gate 2 (D-0013).

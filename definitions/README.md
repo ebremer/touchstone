@@ -1,8 +1,9 @@
 # LWS test definitions (YAML-LD)
 
-**Status: Proposed, format version 0.2.0 — not frozen.** The context, vocabulary, schema
-and `EXECUTION.md` are a proposal awaiting review (see "Review gate"). Every test is
-`status: Proposed`.
+**Status: format version 0.2.0, frozen on 2026-09-23 (DECISIONS.md D-0053).** The
+context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
+schema `$id` (see "Format version"). The tests themselves are content, not format, and
+every test is `status: Proposed`.
 
 0.2.0 merges this format with the best of lws-test-suite's own. A test that is one
 request and one response is written as exactly that, and the state a test needs is
@@ -300,9 +301,19 @@ These affect how tests are written, and are worth raising with the WG:
 - **Key rotation mid-session.** It needs the harness to be the authorization server, so
   it stays a fixture-level test in `harness-fixtures` for now.
 
-## Review gate
+## Format version
 
-Freezing format version 0.2.0 is a review decision, the analogue of Gate 2 (D-0013). It
-covers `context.jsonld`, `vocab.yamlld`, `schema/definitions.schema.json` and
-`EXECUTION.md`. Engine generation should start from the frozen format, and any later
-change bumps the schema `$id` with a DECISIONS.md entry.
+Format version 0.2.0 was frozen on 2026-09-23 after review (D-0053), the analogue of
+Gate 2 (D-0013). The freeze covers `context.jsonld`, `vocab.yamlld`,
+`schema/definitions.schema.json` and `EXECUTION.md`, and accepts the three defaults that
+D-0051 left open:
+
+1. Access that the storage's grant service cannot set up goes through the target's
+   provisioning adapter. When neither can set it up, the test is inapplicable
+   (`EXECUTION.md` section 4.3).
+2. The short form is pure shorthand for a test of one step (section 4.2).
+3. Literal values are allowed, but the lint rejects RFC 2606 and RFC 6761 example hosts
+   in executable values (section 2.5).
+
+A later change to any of the four files bumps the schema `$id` and needs a DECISIONS.md
+entry. Adding, correcting or retiring a test is content, not format, and needs neither.
