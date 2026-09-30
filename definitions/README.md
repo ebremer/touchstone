@@ -249,16 +249,11 @@ lws-test-suite's context in ways its test group must agree to:
   following the 21 August draft) were retired when the engine replaced them (D-0055).
   COVERAGE.md table 2 maps each to its successor; `supersedes` names them, and
   `tools/definitions/retired-manifests.txt` keeps their ids.
-- **`catalog/`** is baselined on the 21 August 2026 core draft. The 21 September draft
-  changed 14 catalogued clauses; `tools/extractor/check_drift.py` reports them:
-  - the 428-on-unconditional-PUT MUST is gone;
-  - conditional-request support dropped from MUST to SHOULD;
-  - the MUST that a container's ETag change after a member is deleted is gone;
-  - so is the SHOULD for a new ETag after a PUT.
-
-  The definitions already follow the new text, and cite none of the seven affected
-  catalog entries. Re-baselining the catalog rewrites Approved entries, so it waits for
-  review, as D-0037 did.
+- **`catalog/`** is baselined on the same 21 September 2026 core and CID drafts as the
+  definitions (D-0057). The tests that had waited for that re-baseline now cite the
+  successor entries: `conditional-requests-supported` (SHOULD),
+  `linkset-precondition-failed-412`, `linkset-etag-get-head`,
+  `delete-removes-from-parent-listing` and `authz-metadata-subject-identifier-types`.
 
 ## Open questions
 

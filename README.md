@@ -17,8 +17,8 @@ Every build runs all 101 against a reference deployment, a storage server and an
 authorization server, and against broken twins of both. Touchstone ships as a **Docker
 image + GitHub Action**, so a third-party LWS server gets a conformance report by adding
 one workflow file (`docs/distribution.md`). The **requirements catalog** spans all five
-published spec modules (232 requirements, drift-hashed), baselined on the 21 August 2026
-core Working Draft (D-0037/D-0040/D-0042).
+published spec modules (231 requirements, drift-hashed), baselined on the 21 September 2026
+core and CID Working Drafts, the latest W3C versions as of 28 September 2026 (D-0057).
 
 Three consumers, CLI, CI and MCP, over one engine: templates and derived variables,
 prerequisites and access grants, RFC 8288 links and RFC 9110 challenges, JSON pointer,

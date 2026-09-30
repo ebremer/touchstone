@@ -59,10 +59,20 @@ The CID suite has a 21 September WD with no normative drift.
 - [x] **CI: the six definition checks.** See `definitions/README.md`, "Validating".
   → **Done (D-0052).** `tools/definitions/check.py` runs them, and the export trial, in the
   CI job `definitions`, against a pinned lws-test-suite checkout.
-- [ ] **CI: a scheduled `check_drift.py` against the live `/TR/` URLs.** The 21 September drift
+- [x] **CI: a scheduled `check_drift.py` against the live `/TR/` URLs.** The 21 September drift
   went unnoticed because CI only runs `mvnw verify`.
-- [ ] **Re-baseline the core catalog onto WD-lws10-core-20260921 and the CID catalog onto its
+  → **Done (D-0057).** `.github/workflows/spec-drift.yml` runs
+  `tools/extractor/check_published.py` weekly: it fails on a newer dated version on `/TR/`
+  as well as on clause drift.
+- [x] **Re-baseline the core catalog onto WD-lws10-core-20260921 and the CID catalog onto its
   21 September WD.** This rewrites Approved entries, so it waits for review (as D-0037).
+  → **Done (D-0057)**, at Erich's request to make Touchstone current as of 28 September
+  2026. Three Approved seeds kept Approved status (same obligation), two were retired and
+  their successors are Draft; flagged for review in D-0057.
+- [ ] **Decide the did:key suite's fate.** W3C published it as a Discontinued Draft on
+  29 September 2026, subsumed by the CID suite. Its catalog (12 MUST) and definitions
+  (`auth/did_key`) still follow the 3 August WD, and the definitions schema accepts only
+  `WD-` source URLs (D-0057).
 - [x] **Until the engine replaces them, stop `manifests/` failing conforming servers:**
   - retire `core/put-unconditional-428`;
   - move the positive 304 checks (`conditional-get-304`, and the 304 step of

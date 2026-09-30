@@ -19,15 +19,15 @@ links are all computed from those citations.
 
 | File | Source document | Requirements |
 |---|---|---:|
-| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 21 August 2026 | 191 |
+| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 21 September 2026 | 190 |
 | `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 3 August 2026 | 8 |
 | `catalog/lws10-authn-ssi-did-key.ttl` | Self-signed identity using did:key, WD 3 August 2026 | 12 |
-| `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 21 August 2026 | 14 |
+| `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 21 September 2026 | 14 |
 | `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 3 August 2026 | 7 |
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
-The catalog holds 232 requirements in total: 188 MUST, 22 SHOULD and 22 MAY.
+The catalog holds 231 requirements in total: 185 MUST, 24 SHOULD and 22 MAY.
 
 ## A requirement
 
@@ -37,7 +37,7 @@ req:create-post-201-location-links
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260821/#create-resource> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
     touchstone:clauseText """On success, the server MUST return the 201 status code with the new URI in the Location header. ...""" ;
     touchstone:clauseHash "sha256-6808523b25cc42196caf104571dd803d918e6237c1778147d809e65ace11dd87" ;
@@ -98,10 +98,19 @@ or any section anchor no longer resolves. It also lists new normative blocks the
 does not hold. Run against the snapshot the catalog is based on, it passes:
 
 ```text
-catalog entries checked: 191; spec normative blocks: 192; section anchors checked: 191
+catalog entries checked: 190; spec normative blocks: 191; section anchors checked: 190
 info: 1 uncatalogued normative block(s):
   [conformance] The key words MAY, MUST, MUST NOT, OPTIONAL, RECOMMENDED, REQUIRED, SHOULD, and SHOULD NOT...
 no drift: every catalog clause still appears in the spec, and every section anchor resolves
+```
+
+A scheduled CI job, `Spec drift` (`.github/workflows/spec-drift.yml`), does this every
+week for all five documents. `tools/extractor/check_published.py` fetches each document's
+latest version from `/TR/`, and fails when W3C serves a newer dated version than the one
+the catalog is baselined on, or when a catalogued clause has changed:
+
+```sh
+python tools/extractor/check_published.py catalog/lws10-*.ttl
 ```
 
 When the draft moves, the catalog is **re-baselined**. The new snapshot replaces the old
@@ -109,15 +118,15 @@ one in `catalog/sources/`. Changed clauses are updated, new ones are added, and 
 ones are removed or deprecated. Definitions that cite affected requirements are reviewed.
 Because re-baselining rewrites Approved entries, it is a reviewed change.
 
-{: .important }
-The catalog is currently based on the **21 August 2026** core draft. The
-**21 September 2026** draft changed 14 catalogued clauses. Most changes are editorial,
-but four affect existing tests:
-- the requirement to answer an unconditional PUT with `428` is gone;
-- support for conditional requests dropped from MUST to SHOULD;
-- the MUST that a container's ETag changes after a member is deleted is gone;
-- the SHOULD that a PUT yields a new ETag is gone.
+{: .note }
+The catalog is based on the **21 September 2026** core and CID drafts and the
+**3 August 2026** OpenID Connect, SAML and did:key drafts, the versions W3C published as
+of 28 September 2026 (D-0057). Against the 21 August baseline, the September core draft
+removed the `428` on an unconditional PUT, the parent ETag change after a delete, the
+new ETag after an update and the ETag on a `201`; it made conditional requests a SHOULD;
+and it added `subject_identifier_types_supported` to the authorization server metadata.
 
-Until the catalog is re-baselined, `core/put-unconditional-428` tests a MUST that the
-current draft no longer contains, so a server that follows the September draft can fail
-it.
+{: .warning }
+On 29 September 2026 W3C published the did:key suite as a **Discontinued Draft**, in
+favour of the CID suite, which subsumes it. The did:key catalog and definitions still
+follow its 3 August Working Draft; whether to retire them is an open decision (D-0057).

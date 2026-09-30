@@ -120,15 +120,15 @@ touchstone coverage [-c <catalogDir>] [--definitions <dir>]
 
 ```text
 $ touchstone coverage
-Requirements coverage: 127 of 232 covered by 101 test(s)
+Requirements coverage: 132 of 231 covered by 101 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     8/8
 lws10-authn-saml         MUST     7/7
 lws10-authn-ssi-cid      MUST     14/14
 lws10-authn-ssi-did-key  MUST     12/12
-lws10-core               MUST     79/147
-lws10-core               SHOULD   6/22
+lws10-core               MUST     82/144
+lws10-core               SHOULD   8/24
 lws10-core               MAY      1/22
 ```
 

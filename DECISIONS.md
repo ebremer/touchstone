@@ -1472,3 +1472,109 @@ D-0025, D-0030, D-0051) record what was true when they were decided, and the cop
 W3C drafts in `catalog/sources/` are verbatim: the core draft itself says it draws on the
 Solid Protocol, and the catalog's clause hashes depend on the text as published. The frozen
 format files never mentioned Solid, so format 0.2.0 is unchanged.
+
+### D-0057 — the catalog follows the drafts published as of 28 September 2026, and CI now watches /TR/
+Erich asked for Touchstone to be compliant with the specifications current as of
+28 September 2026. On that date W3C's `/TR/` served:
+
+| Document | Latest version on 28 September |
+|---|---|
+| LWS Protocol 1.0 | WD 21 September 2026 |
+| Authentication suite: CID | WD 21 September 2026 |
+| Authentication suites: OpenID Connect, SAML 2.0, did:key | WD 3 August 2026 |
+
+The editor's drafts had no normative change after the 21 September snapshots: the later
+w3c/lws-protocol commits (to 9b03b32, 28 September) touch the did:key snapshot, READMEs and
+the wiki. `lws10-notifications-webhook` and `lws10-index` exist only as editor's drafts, and
+the LWS Vocabulary on `/TR/` is still the 14 July Note draft, so none of them is a baseline.
+`https://www.w3.org/ns/lws/v1` is still a 404 (D-0040). lws-test-suite has no commit after
+the pinned b8cb134 (D-0052).
+
+The definitions and the reference deployment already followed the 21 September draft
+(D-0047, D-0054). The catalog did not, which is the TODO item this entry closes.
+
+**The core catalog is re-baselined on WD-lws10-core-20260921.** It holds **190
+requirements** (was 191): 144 MUST, 24 SHOULD, 22 MAY. The 178 normative blocks whose text
+did not change keep their entries: they were aligned with the new extraction by position,
+so repeated blocks such as "This property is OPTIONAL." map one-to-one. Of the 13 blocks
+that changed:
+- *Five keep their slug with the new words:* `authz-metadata-subject-token-types`,
+  `read-container-etag-type-links`, `update-content-vs-metadata-prefer-set-linkset`,
+  `status-204-410-deletions` and `notification-activity-types-supported`. Three of these
+  changes are editorial: a curly apostrophe, a citation, and "LWS resource" becoming
+  "Storage Resource" (w3c/lws-protocol#234). The subject-token-types clause was reworded
+  around its OPTIONAL metadata member, and the container-ETag entry no longer says the tag
+  changes on membership modifications.
+- *Two are renamed for what they now require:* `linkset-concurrency-controls` becomes
+  `linkset-etag-get-head` (the MUST is now an ETag on GET and HEAD of a linkset), and
+  `linkset-if-match-412-428` becomes `linkset-precondition-failed-412` (If-Match is no
+  longer required, and 428 is gone; a failed precondition still MUST yield 412).
+- *One is new:* `authz-metadata-subject-identifier-types` (SHOULD, w3c/lws-protocol#227).
+- *Three are Approved seeds:*
+  - `get-data-resource-content-range-etag` and `head-parity-with-get` keep their slug and
+    their **Approved** status. The first now says "as defined in [RFC9110]"; the second
+    drops ETag from its illustrative list, and "the same headers as GET" is unchanged.
+  - `delete-updates-parent-listing-etag` becomes `delete-removes-from-parent-listing`,
+    **still Approved**: the draft deleted "its ETag MUST be updated to reflect the change"
+    and kept the rest word for word, so what remains is a subset of what was approved.
+- *Two retired seeds have Draft successors.* `etag-on-get-head-conditional-304` was a MUST;
+  its successor `conditional-requests-supported` is a SHOULD without the ETag MUST.
+  `put-unconditional-rejected-428` is gone; the paragraph that held it now says only
+  "Clients SHOULD use conditional requests", catalogued as the Draft entry
+  `put-clients-use-conditional-requests`. Both successors state a different obligation from
+  the one Gate 1 approved, so neither inherits Approved.
+
+Two entries are retired with no successor, because their clauses lost every BCP 14 keyword:
+`update-success-new-etag` (the SHOULD for a new ETag after an update) and
+`status-201-etag-link-headers` (the MUST for an ETag on a 201). As in D-0040, retired
+entries are removed, not marked.
+
+**The Approved judgements are flagged for Erich**, as D-0040's was. Carrying Approved over
+three seeds follows D-0040's rule (the reviewed obligation survives, only its wording
+changed or a part was deleted); demoting any of them to Draft is a one-line change.
+
+**The CID catalog moves to WD-lws10-authn-ssi-cid-20260921.** Its normative blocks are
+identical to the 21 August draft's; the new text is a note that the suite also serves DID
+subjects, because DID documents extend controlled identifier documents
+(w3c/lws-protocol#233). Only the snapshot, the header and the `sourceDraft` IRIs change.
+
+**The definitions now cite what they waited for.** Four tests carried notes saying they
+would cite their entries once the catalog was re-baselined. They now do:
+`conditional-get-304` cites `conditional-requests-supported`, `linkset-conditional-412`
+cites `linkset-precondition-failed-412`, `delete-updates-parent-strong-etag` adds
+`delete-removes-from-parent-listing` (the tag check still rests on RFC 9110), and
+`authz-metadata-subject-identifier-types` cites its new entry. `getLinkset`, which already
+checked the linkset's ETag, adds `linkset-etag-get-head`. Coverage is 132 of 231 (was 127
+of 232). No definition asserts a clause the draft removed.
+
+**Tooling.**
+- `emit_candidates.py` took the dated draft URL as a constant (the 21 August draft). It now
+  derives it from the extraction's file name, and an entry's own `created` overrides the
+  curation file's, so a re-baseline keeps the date of every entry it does not change.
+- **A weekly CI job, `Spec drift`,** closes the other open TODO item. D-0047 found the
+  21 September draft only because someone looked. `tools/extractor/check_published.py`
+  reads each catalog's `this-version` header, fetches the document's latest version from
+  `/TR/`, and fails when W3C serves a newer dated version (including a change of maturity)
+  or when `check_drift.py` finds a changed clause or a dead anchor. It is stdlib-only
+  Python, like the rest of the extractor.
+
+**Open: did:key was discontinued on 29 September.** The WG merged the discontinuation on 18
+September (w3c/lws-protocol#229) and W3C published
+`https://www.w3.org/TR/2026/DISC-lws10-authn-ssi-did-key-20260929/` the day after the date
+Erich set. It says the CID suite "subsumes this specification by specifying a generalization
+of the mechanism", and that it is "inappropriate to cite this document as other than
+abandoned work". As of 28 September the 3 August WD was current, so the did:key catalog
+(12 MUST) and the `auth/did_key` definitions stay as they are. Consequences if they are
+retired or rebased on the Discontinued Draft:
+- the definitions schema accepts only `WD-` URLs in `specification` and `source`, so citing
+  a `DISC-` document is a format change (D-0053);
+- did:key subjects remain reachable through the CID suite, whose 21 September note covers
+  DID URIs, and through the core `subject_identifier_types_supported` metadata.
+
+Until that is decided, the new `Spec drift` job fails on did:key, and it should: it reports
+exactly this.
+
+Verified: `clause_hash.py --check` passes on all five catalogs; `check_drift.py` reports no
+drift and no dead anchor against the 21 September core and CID snapshots;
+`tools/definitions/check.py` passes 7 of 7; `./mvnw clean verify` is green across five
+modules, including the four-way `DefinitionsSelfTest` against the reference deployment.
