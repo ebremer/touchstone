@@ -45,7 +45,8 @@ import org.w3c.dom.NodeList;
 
 /**
  * How the reference authorization server validates a subject token before it issues anything
- * (core WD section 5.2.3, "validate before issuing"): the did:key and CID self-issued JWTs, the
+ * (core WD section 5.2.3, "validate before issuing"): the CID suite's self-issued JWTs, for
+ * HTTPS and did:key subjects, the
  * OpenID Connect ID Token and the SAML 2.0 assertion, each the way its suite says. Written
  * apart from the harness's own credential code on purpose: a reference that shared the
  * harness's encoder would share its bugs, and the two would cancel out.
@@ -110,11 +111,21 @@ final class SubjectTokens {
         }
     }
 
-    // ------------------------------------------------------------------ did:key
+    // ------------------------------------------------------------------ CID, did:key subject
 
+    /**
+     * The CID suite for a DID subject: the controlled identifier document is the DID document
+     * the did:key method derives, whose one verification method is {@code did:key:z...#z...};
+     * the kid must name it.
+     */
     private Subject didKey(String token, SignedJWT jwt, String audience) throws Invalid {
         JWTClaimsSet c = selfIssued(jwt, audience);
         String did = c.getSubject();
+        String kid = jwt.getHeader().getKeyID();
+        String method = did + "#" + did.substring("did:key:".length());
+        if (kid == null || !(kid.equals(method) || (did + "#" + kid).equals(method))) {
+            throw new Invalid("the kid names no verification method of the DID document " + did + " derives");
+        }
         byte[] decoded = Base58.decode(did.substring("did:key:z".length()));
         if (decoded.length == 35 && (decoded[0] & 0xff) == 0x80 && decoded[1] == 0x24) {
             ECKey key = decompressP256(Arrays.copyOfRange(decoded, 2, 35));

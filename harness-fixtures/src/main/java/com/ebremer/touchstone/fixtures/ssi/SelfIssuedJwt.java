@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 
 /**
- * Minimal EdDSA (Ed25519) compact JWS, hand-built so the did:key / CID suites need no
+ * Minimal EdDSA (Ed25519) compact JWS, hand-built so the CID suite's credentials need no
  * JOSE Ed25519 provider. Enough to mint valid credentials and every broken variant the
  * negative matrix requires — including an {@code alg=none} unsecured token.
  */

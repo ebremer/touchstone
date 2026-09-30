@@ -89,13 +89,15 @@ final class Credentials {
                 .orElseThrow(() -> Unresolvable.cantTell("identity " + name + " is not registered"));
     }
 
+    /**
+     * The credential an identity mints. A CID-suite identity with no {@code webid} template has
+     * a DID subject, a did:key the engine derives from its key, rather than a document the
+     * harness hosts (section 5.3).
+     */
     private static String suite(IdentityDefinition id) {
         String s = id.suite() == null ? "" : id.suite();
-        if (s.contains("did-key")) {
-            return "didkey";
-        }
         if (s.contains("ssi-cid")) {
-            return "cid";
+            return id.webid() == null ? "didkey" : "cid";
         }
         if (s.contains("openid")) {
             return "oidc";
@@ -286,7 +288,7 @@ final class Credentials {
     }
 
     /**
-     * 5.2, item 2: a configured did:key credential exchanged at the token endpoint exactly as
+     * 5.2, item 2: a configured did:key subject's credential exchanged at the token endpoint exactly as
      * the token-exchange tests do. Kept for the run, and renewed a minute before it expires.
      */
     private String exchange(String name, Scope scope) {
@@ -296,8 +298,7 @@ final class Credentials {
             return cached.token();
         }
         ECKey key = pinnedOrFresh(name, null);
-        String credential = mintJwt(identity("didkey"), key, Map.of("self.webid", TextNode.valueOf(DidKeys.did(key))),
-                null, scope);
+        String credential = mintJwt(identity("didkey"), key, didKeySelf(key), null, scope);
         Map<String, String> form = new LinkedHashMap<>();
         form.put("grant_type", TOKEN_EXCHANGE);
         form.put("resource", scope.resolve("as.realm").asText());
@@ -345,8 +346,7 @@ final class Credentials {
         switch (suite(base)) {
             case "didkey" -> {
                 ECKey key = didkeyKey.get();
-                self.put("self.webid", TextNode.valueOf(DidKeys.did(key)));
-                return mintJwt(base, key, self, fault, scope);
+                return mintJwt(base, key, didKeySelf(key), fault, scope);
             }
             case "cid" -> {
                 ECKey key = cidKey.get();
@@ -373,6 +373,17 @@ final class Credentials {
                 }
             }
         }
+    }
+
+    /**
+     * {@code self.webid} and {@code self.kid} for a did:key subject: the identifier, and its
+     * multibase value, which is the fragment of the one verification method the did:key method
+     * derives ({@code did:key:z...#z...}).
+     */
+    private static Map<String, JsonNode> didKeySelf(ECKey key) {
+        String did = DidKeys.did(key);
+        return Map.of("self.webid", TextNode.valueOf(did),
+                "self.kid", TextNode.valueOf(did.substring("did:key:".length())));
     }
 
     /** A JWT credential from an identity's templates, with the fault vocab.yamlld defines applied. */

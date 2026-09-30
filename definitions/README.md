@@ -1,17 +1,18 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.2.0, frozen on 2026-09-23 (DECISIONS.md D-0053).** The
+**Status: format version 0.3.0, frozen on 2026-09-30 (DECISIONS.md D-0058).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
 
-0.2.0 merges this format with the best of lws-test-suite's own. A test that is one
+0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changes
+only how a did:key subject's credential is made, since W3C discontinued the did:key suite. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
 
 These are Touchstone's test definitions for the Linked Web Storage Protocol 1.0 and its
-four authentication suites, written in [YAML-LD](https://www.w3.org/TR/yaml-ld/). They
+three authentication suites (OpenID Connect, SAML 2.0 and Controlled Identifiers), written in [YAML-LD](https://www.w3.org/TR/yaml-ld/). They
 exist for three reasons:
 
 1. **Mirror lws-test-suite.** The LWS test group's suite (`lws-contrib/lws-test-suite`) is
@@ -48,7 +49,7 @@ definitions/
     manifest.yamlld         root manifest; includes the modules below
     core/                   discovery, containers, data_resources, conditional_requests, linksets,
                             storage_authorization, authorization_server, access_grants, notifications
-    auth/                   did_key, oidc, cid, saml — one manifest per authentication suite
+    auth/                   oidc, cid, saml — one manifest per authentication suite
     fixtures/               request and expected-body fixtures (byte-exact; .gitattributes keeps LF)
 ```
 
@@ -307,7 +308,9 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Format version
 
-Format version 0.2.0 was frozen on 2026-09-23 after review (D-0053), the analogue of
+Format version 0.3.0 (2026-09-30, D-0058) replaces the did:key credential of
+`EXECUTION.md` section 5.3 with a CID-suite credential for a DID subject. Nothing else
+changed. Format version 0.2.0 was frozen on 2026-09-23 after review (D-0053), the analogue of
 Gate 2 (D-0013). The freeze covers `context.jsonld`, `vocab.yamlld`,
 `schema/definitions.schema.json` and `EXECUTION.md`, and accepts the three defaults that
 D-0051 left open:

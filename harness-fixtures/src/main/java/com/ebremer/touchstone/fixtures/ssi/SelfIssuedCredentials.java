@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Mints self-issued authentication credentials (did:key and CID suites) — a JWT the
+ * Mints self-issued authentication credentials (CID suite, HTTPS or did:key subjects) — a JWT the
  * subject signs about itself, with {@code sub = iss = client_id}. Provides a valid
  * credential and every one-fault-each broken variant the negative matrix needs.
  */

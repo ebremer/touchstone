@@ -8,9 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Negative matrix for the self-signed identity suites (did:key and CID). A conforming
- * verifier accepts a valid self-issued credential and rejects every broken variant — the
- * substance of the two suites' validation clauses. Real Ed25519 crypto throughout.
+ * Negative matrix for the CID suite, with an HTTPS subject and with a did:key subject. A
+ * conforming verifier accepts a valid self-issued credential and rejects every broken
+ * variant — the substance of the suite's validation clauses. Real Ed25519 crypto throughout.
  */
 class SelfIssuedNegativeMatrixTest {
 
@@ -41,6 +41,8 @@ class SelfIssuedNegativeMatrixTest {
         assertReject(() -> verifier.verifyDidKey(creds.expired(sub, kid, alice)), "expired");
         assertReject(() -> verifier.verifyDidKey(creds.mismatchedClaims(sub, kid, alice)), "same URI");
         assertReject(() -> verifier.verifyDidKey(creds.wrongAudience(sub, kid, alice)), "authorization server");
+        assertReject(() -> verifier.verifyDidKey(creds.valid(sub, foreign.verificationMethodId(), alice)),
+                "verification method");
     }
 
     @Test

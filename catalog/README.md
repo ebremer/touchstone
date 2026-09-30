@@ -11,12 +11,12 @@ requirement IRIs they verify; coverage = requirements × tests.
 | `vocab/touchstone-vocab.ttl` | the catalog vocabulary (subclass of EARL's TestRequirement) |
 | `lws10-core.ttl` | requirements for LWS Protocol 1.0 core (WD 2026-09-21) — 190 |
 | `lws10-authn-openid.ttl` | OpenID Connect authentication suite (WD 2026-08-03) — 8 |
-| `lws10-authn-ssi-did-key.ttl` | Self-signed Identity using did:key (WD 2026-08-03; discontinued 2026-09-29, D-0057) — 12 |
 | `lws10-authn-ssi-cid.ttl` | Self-signed Identity using Controlled Identifiers (WD 2026-09-21) — 14 |
 | `lws10-authn-saml.ttl` | SAML 2.0 authentication suite (WD 2026-08-03) — 7 |
 | `sources/` | archived spec snapshots + raw extraction output (provenance) |
 
-231 requirements across all five published spec modules: 185 MUST, 24 SHOULD, 22 MAY.
+219 requirements across the four current spec modules: 173 MUST, 24 SHOULD, 22 MAY. The
+did:key suite, discontinued by W3C on 2026-09-29, is retired (D-0058).
 
 Tooling lives in `tools/extractor/`. `check_drift.py` is the "spec moved" alarm — it
 re-extracts a fetched draft and fails if any stored clause has vanished or any section

@@ -13,11 +13,12 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 
 /**
  * Validates a self-issued authentication credential the way a conforming verifier must
- * (did:key and CID suites): reject {@code alg=none}; require {@code sub = iss = client_id}
- * as one URI; require the {@code aud} to include the authorization server; require
- * {@code exp} in the future; then obtain the public key — from the did:key identifier
- * itself, or from the subject's controlled identifier document selected by {@code kid} —
- * and verify the signature.
+ * (CID suite): reject {@code alg=none}; require {@code sub = iss = client_id} as one URI;
+ * require the {@code aud} to include the authorization server; require {@code exp} in the
+ * future; then take the verification method {@code kid} names from the subject's controlled
+ * identifier document and verify the signature with it. For a did:key subject that document
+ * is the DID document the did:key method derives from the identifier, which the CID suite
+ * accepts because DID documents extend controlled identifier documents.
  */
 public final class SelfIssuedVerifier {
 
@@ -35,9 +36,18 @@ public final class SelfIssuedVerifier {
         this.authorizationServer = authorizationServer;
     }
 
-    /** Validates a did:key credential; the key comes from the subject identifier itself. */
+    /**
+     * Validates a credential whose subject is a did:key. Its DID document has one
+     * verification method, {@code did:key:z...#z...}, so {@code kid} must name that one.
+     */
     public String verifyDidKey(String token) {
-        return verify(token, (sub, kid) -> DidKey.publicKeyFromDid(sub));
+        return verify(token, (sub, kid) -> {
+            String method = sub + "#" + sub.substring("did:key:".length());
+            if (kid == null || !(kid.equals(method) || (sub + "#" + kid).equals(method))) {
+                throw new IllegalArgumentException("kid " + kid + " names no verification method of " + sub);
+            }
+            return DidKey.publicKeyFromDid(sub);
+        });
     }
 
     /** Validates a CID credential; the key comes from the dereferenced CID document. */

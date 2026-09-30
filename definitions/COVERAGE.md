@@ -1,20 +1,19 @@
 # Coverage of the LWS 1.0 test definitions
 
 Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD
-2026-09-21, the did:key, OpenID Connect and SAML suites of 2026-08-03, and the CID suite
-of 2026-09-21.
+2026-09-21, the OpenID Connect and SAML suites of 2026-08-03, and the CID suite of
+2026-09-21. The did:key suite was discontinued on 2026-09-29; its tests run under the CID suite.
 
 ## Summary
 
 - **101 tests**: 84 MUST, 15 SHOULD, 2 MAY; 54 validation tests, 47 negative tests.
-- **132 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **120 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
-| `auth/cid/manifest` | 6 | 6 | 0 | 0 |
-| `auth/did_key/manifest` | 8 | 8 | 0 | 0 |
+| `auth/cid/manifest` | 14 | 14 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
 | `core/access_grants` | 7 | 6 | 1 | 0 |
@@ -50,8 +49,8 @@ of 2026-09-21.
 | `authz-token-exchange-invalid-resource` | `core/authorization_server#authz-token-exchange-invalid-resource` | Accepts invalid_target (RFC 8693's SHOULD) or invalid_request. |
 | `authz-expired-token-rejected` | `core/storage_authorization#authz-expired-token-rejected` | Identity alice-expired instead of an Authorization header alongside alice's own credentials. |
 | `createContainer` | `core/containers#createContainer` | No body and no Content-Type (the WD's example); the name is read from Location. |
-| `authn-didkey-valid-credential` | `auth/did_key/manifest#authn-didkey-valid-credential` | Token type jwt (the suite's MUST) instead of id_token; checks the access token's sub. |
-| `authn-didkey-invalid-signature` | `auth/did_key/manifest#authn-didkey-invalid-signature` | Token type jwt, so the refusal is for the signature. |
+| `authn-didkey-valid-credential` | `auth/cid/manifest#authn-cid-didkey-valid-credential` | W3C discontinued the did:key suite (29 September 2026) in favour of the CID suite, so this is a CID test with a did:key subject: token type jwt (the CID suite's MUST) instead of id_token, and a kid naming the DID document's verification method; checks the access token's sub. |
+| `authn-didkey-invalid-signature` | `auth/cid/manifest#authn-cid-didkey-invalid-signature` | A CID test with a did:key subject, as above; token type jwt, so the refusal is for the signature. |
 | `authn-didkey-missing-credential` | `core/authorization_server#authz-token-exchange-missing-subject-token` | Moved to core as authz-token-exchange-missing-subject-token (suite-independent). |
 | `authn-oidc-valid-id-token` | `auth/oidc/manifest#authn-oidc-valid-id-token` | The harness hosts the subject's CID document and its own OP, so the trust path is exercised end to end. |
 | `authn-oidc-expired-id-token` | `auth/oidc/manifest#authn-oidc-expired-id-token` | As above, with an expired ID Token. |
@@ -113,19 +112,14 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authn-cid-expired` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `authn-cid-alg-none` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `authn-cid-claims-mismatch` | Negative | MUST | Authentication, ReachableFixtures |  |
-
-### `auth/did_key/manifest`
-
-| Test | Type | Level | Requires | Mirrors |
-|---|---|---|---|---|
-| `authn-didkey-valid-credential` | Validation | MUST | Authentication | authn-didkey-valid-credential |
-| `authn-didkey-invalid-signature` | Negative | MUST | Authentication | authn-didkey-invalid-signature |
-| `authn-didkey-alg-none` | Negative | MUST | Authentication |  |
-| `authn-didkey-expired` | Negative | MUST | Authentication |  |
-| `authn-didkey-claims-mismatch` | Negative | MUST | Authentication |  |
-| `authn-didkey-audience-excludes-as` | Negative | MUST | Authentication |  |
-| `authn-didkey-missing-exp` | Negative | MUST | Authentication |  |
-| `authn-didkey-missing-iat` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-valid-credential` | Validation | MUST | Authentication | authn-didkey-valid-credential |
+| `authn-cid-didkey-invalid-signature` | Negative | MUST | Authentication | authn-didkey-invalid-signature |
+| `authn-cid-didkey-alg-none` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-expired` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-claims-mismatch` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-audience-excludes-as` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-missing-exp` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-missing-iat` | Negative | MUST | Authentication |  |
 
 ### `auth/oidc/manifest`
 

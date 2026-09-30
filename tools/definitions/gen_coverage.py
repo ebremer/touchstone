@@ -46,8 +46,8 @@ LTS_NOTES = {
     "authz-token-exchange-invalid-resource": "Accepts invalid_target (RFC 8693's SHOULD) or invalid_request.",
     "authz-expired-token-rejected": "Identity alice-expired instead of an Authorization header alongside alice's own credentials.",
     "createContainer": "No body and no Content-Type (the WD's example); the name is read from Location.",
-    "authn-didkey-valid-credential": "Token type jwt (the suite's MUST) instead of id_token; checks the access token's sub.",
-    "authn-didkey-invalid-signature": "Token type jwt, so the refusal is for the signature.",
+    "authn-didkey-valid-credential": "W3C discontinued the did:key suite (29 September 2026) in favour of the CID suite, so this is a CID test with a did:key subject: token type jwt (the CID suite's MUST) instead of id_token, and a kid naming the DID document's verification method; checks the access token's sub.",
+    "authn-didkey-invalid-signature": "A CID test with a did:key subject, as above; token type jwt, so the refusal is for the signature.",
     "authn-didkey-missing-credential": "Moved to core as authz-token-exchange-missing-subject-token (suite-independent).",
     "authn-oidc-valid-id-token": "The harness hosts the subject's CID document and its own OP, so the trust path is exercised end to end.",
     "authn-oidc-expired-id-token": "As above, with an expired ID Token.",
@@ -104,8 +104,8 @@ L = []
 L.append("# Coverage of the LWS 1.0 test definitions")
 L.append("")
 L.append("Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD")
-L.append("2026-09-21, the did:key, OpenID Connect and SAML suites of 2026-08-03, and the CID suite")
-L.append("of 2026-09-21.")
+L.append("2026-09-21, the OpenID Connect and SAML suites of 2026-08-03, and the CID suite of")
+L.append("2026-09-21. The did:key suite was discontinued on 2026-09-29; its tests run under the CID suite.")
 L.append("")
 L.append("## Summary")
 L.append("")

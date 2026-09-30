@@ -10,12 +10,11 @@ id: "#manifest"
 type: Manifest
 label: LWS 1.0 conformance test definitions
 comment: >-
-  Tests for the Linked Web Storage Protocol 1.0 and its four authentication suites,
+  Tests for the Linked Web Storage Protocol 1.0 and its three authentication suites,
   authored in YAML-LD for Touchstone and intended for contribution to lws-test-suite as
   JSON-LD. Each included manifest covers one area of the specification.
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
   - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
@@ -29,7 +28,6 @@ include:
   - core/authorization_server.yamlld
   - core/access_grants.yamlld
   - core/notifications.yamlld
-  - auth/did_key/manifest.yamlld
   - auth/oidc/manifest.yamlld
   - auth/cid/manifest.yamlld
   - auth/saml/manifest.yamlld

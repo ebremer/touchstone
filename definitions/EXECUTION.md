@@ -1,7 +1,9 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.2.0 (2026-09-23, DECISIONS.md D-0053).** This is the contract
-an engine that runs `definitions/` must implement. 0.2.0 merges two strengths of lws-test-suite's format into it: the
+**Status: frozen, format 0.3.0 (2026-09-30, DECISIONS.md D-0058; 0.2.0 was frozen on
+2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must
+implement. 0.3.0 differs from 0.2.0 only in section 5.3: W3C discontinued the did:key
+authentication suite, so a did:key subject is now a CID-suite credential. 0.2.0 merged two strengths of lws-test-suite's format into it: the
 one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something
 else is wrong even if every test it runs passes. `README.md` explains why the
@@ -242,18 +244,25 @@ An identity that cannot be produced makes the test *inapplicable*.
 `${credential.<name>}` is minted when first used in a test, with its audience taken from
 `${as.issuer}`. It is the exact string presented as `subject_token`.
 
-- **did:key.** A P-256 key pair per run, unless the target pins one (for an
-  authorization server that only issues tokens to pre-registered agents). The
-  identifier is `did:key:z` + base58btc(varint 0x1200 ‖ compressed point). The
-  credential is a compact JWS built from the identity's `credentialHeader` and
-  `credentialClaims` templates, signed ES256.
-- **cid.** A P-256 key pair per run.
+- **cid, HTTPS subject** (an identity with a `webid`). A P-256 key pair per run.
   - `self.kid` is a fresh short identifier, and `self.publicJwk` is the public JWK,
     carrying that kid and `alg ES256`.
-  - The harness serves the rendered `identityDocument` at `${identity.cid.webid}` as
+  - The harness serves the rendered `identityDocument` at the identity's webid as
     `application/ld+json`.
   - The JWS header `kid` is `self.kid`, and the document's verification method id is
     `${self.webid}#${self.kid}`.
+- **cid, DID subject** (an identity with no `webid`). A P-256 key pair per run, unless
+  the target pins one (for an authorization server that only issues tokens to
+  pre-registered agents). DID documents extend controlled identifier documents, so the
+  CID suite validates them as it does any other (CID suite section 1).
+  - `self.webid` is the did:key identifier: `did:key:z` + base58btc(varint 0x1200 ‖
+    compressed point).
+  - `self.kid` is that identifier's multibase value, the part after `did:key:`, so
+    `${self.webid}#${self.kid}` is the one verification method of the DID document the
+    did:key method derives.
+  - Nothing is hosted: the verifier derives the document from the identifier.
+- In both cases the credential is a compact JWS built from the identity's
+  `credentialHeader` and `credentialClaims` templates, signed ES256.
 - **oidc.** The harness runs an OpenID Provider at `${fixtures.baseUrl}op`.
   - It serves OpenID Connect Discovery at `…/op/.well-known/openid-configuration` and a
     JWKS at the `jwks_uri` that document names.

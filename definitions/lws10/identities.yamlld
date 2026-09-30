@@ -131,23 +131,28 @@ identities:
     fault: MultipleAudiences
     requires: [HarnessIssuedTokens]
 
-  # ----------------------------------------------------- did:key subject credentials
+  # ------------------------- self-issued credentials for a DID subject (did:key)
 
   - id: "#didkey"
     type: Identity
-    label: Self-issued did:key credential
+    label: Self-issued credential for a did:key subject
     kind: SubjectCredential
-    suite: https://www.w3.org/TR/lws10-authn-ssi-did-key/
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     comment: >-
-      A P-256 key pair generated fresh for each run. ${identity.didkey.webid} is its
-      did:key identifier (multicodec p256-pub, compressed point, base58btc: did:key:zDn...),
-      and ${self.webid} inside the templates below is the same value. Needs no trust set
-      up in advance: the verifier derives the public key from the identifier itself.
+      A controlled-identifier credential whose subject is a DID (CID suite section 1). A
+      P-256 key pair generated fresh for each run. ${identity.didkey.webid} is its did:key
+      identifier (multicodec p256-pub, compressed point, base58btc: did:key:zDn...), and
+      ${self.webid} inside the templates below is the same value. ${self.kid} is the
+      identifier's multibase value, so the kid names the one verification method,
+      ${self.webid}#${self.kid}, of the DID document the did:key method derives. It has no
+      webid template and nothing is hosted: the verifier resolves the identifier itself,
+      so no trust needs setting up and the target need not reach the harness.
     credentialHeader:
       alg: ES256
       typ: JWT
+      kid: "${self.kid}"
     credentialClaims:
       sub: "${self.webid}"
       iss: "${self.webid}"

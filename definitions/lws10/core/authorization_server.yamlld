@@ -9,10 +9,11 @@ comment: >-
   Tests of the storage's authorization server, which the harness finds the way a client
   does: an anonymous request to the test container yields a challenge whose as_uri is the
   authorization server, whose metadata sits at the RFC 8414 well-known location for
-  lws-configuration, and whose token endpoint performs RFC 8693 token exchange. A
-  did:key credential is the vehicle wherever a valid subject token is needed, because it
-  needs no trust set up in advance; those tests apply only when the metadata lists did:key
-  among its subject identifier types.
+  lws-configuration, and whose token endpoint performs RFC 8693 token exchange. A CID-suite
+  credential for a did:key subject is the vehicle wherever a valid subject token is
+  needed, because it needs no trust set up in advance and no document the storage must
+  reach; those tests apply only when the metadata lists did:key among its subject
+  identifier types.
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
 entries:
