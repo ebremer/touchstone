@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
-<meta name="generator" content="ReSpec 37.3.1">
+<meta name="generator" content="ReSpec 37.3.6">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <style>
 span.example-title{text-transform:none}
@@ -83,11 +83,11 @@ details.respec-tests-details>li{padding-left:1em}
 .self-link:hover{opacity:1;text-decoration:none;background-color:transparent}
 aside.example .marker>a.self-link{color:inherit}
 .header-wrapper{display:flex;align-items:baseline}
-:is(h2,h3,h4,h5,h6):not(#toc>h2,#abstract>h2,#sotd>h2,.head>h2):has(+a.self-link){position:relative;left:-.5em}
-:is(h2,h3,h4,h5,h6):not(#toch2)+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.5}
-:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§";text-decoration:none;color:var(--heading-text)}
+:is(h2,h3,h4,h5,h6):not(:where(#toc>h2,#abstract>h2,#sotd>h2,.head>h2)):has(+a.self-link){position:relative;left:-.5em}
+:is(h2,h3,h4,h5,h6):not(:where(#toch2))+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.8;text-decoration:none}
+:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§"}
 :is(h2,h3)+a.self-link{top:-.2em}
-:is(h4,h5,h6)+a.self-link::before{color:#000}
+:is(h2,h3)+a.self-link::before{color:var(--heading-text)}
 @media (max-width:767px){
 dd{margin-left:0}
 }
@@ -101,8 +101,7 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
 <link rel="stylesheet" href="local.css">
     
   
-<meta name="color-scheme" content="light">
-<meta name="revision" content="602ca1917b45450163400a43edaf961cec20873e">
+<meta name="revision" content="2b130c26a4ac9e7b3da11235f78d38257644e173">
 <meta name="description" content="[@@ from charter]">
 <link rel="canonical" href="https://www.w3.org/TR/lws10-core/">
 <script type="application/ld+json">{
@@ -135,14 +134,14 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
   "name": "Linked Web Storage Protocol 1.0",
   "inLanguage": "en",
   "license": "https://www.w3.org/copyright/software-license-2023/",
-  "datePublished": "2026-08-21",
+  "datePublished": "2026-09-21",
   "copyrightHolder": {
     "name": "World Wide Web Consortium",
     "url": "https://www.w3.org/"
   },
   "discussionUrl": "https://github.com/w3c/lws-protocol/issues/",
   "alternativeHeadline": "",
-  "isBasedOn": "https://www.w3.org/TR/2026/WD-lws10-core-20260821/",
+  "isBasedOn": "https://www.w3.org/TR/2026/WD-lws10-core-20260921/",
   "description": "[@@ from charter]",
   "editor": [
     {
@@ -485,40 +484,6 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
         },
         {
           "name": "J. Snell"
-        }
-      ],
-      "publisher": {
-        "name": "IETF"
-      }
-    },
-    {
-      "id": "https://httpwg.org/specs/rfc7232.html",
-      "type": "TechArticle",
-      "name": "Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests",
-      "url": "https://httpwg.org/specs/rfc7232.html",
-      "creator": [
-        {
-          "name": "R. Fielding, Ed."
-        },
-        {
-          "name": "J. Reschke, Ed."
-        }
-      ],
-      "publisher": {
-        "name": "IETF"
-      }
-    },
-    {
-      "id": "https://httpwg.org/specs/rfc6585.html",
-      "type": "TechArticle",
-      "name": "Additional HTTP Status Codes",
-      "url": "https://httpwg.org/specs/rfc6585.html",
-      "creator": [
-        {
-          "name": "M. Nottingham"
-        },
-        {
-          "name": "R. Fielding"
         }
       ],
       "publisher": {
@@ -990,24 +955,24 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
   "lint": {
     "no-unused-dfns": true
   },
-  "gitRevision": "602ca1917b45450163400a43edaf961cec20873e",
-  "publishDate": "2026-08-21",
+  "gitRevision": "2b130c26a4ac9e7b3da11235f78d38257644e173",
+  "publishDate": "2026-09-21",
   "previousMaturity": "WD",
-  "previousPublishDate": "2026-08-21",
-  "publishISODate": "2026-08-21T00:00:00.000Z",
-  "generatedSubtitle": "W3C Working Draft 21 August 2026"
+  "previousPublishDate": "2026-09-21",
+  "publishISODate": "2026-09-21T00:00:00.000Z",
+  "generatedSubtitle": "W3C Working Draft 21 September 2026"
 }</script>
 <link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD"></head>
   <body class="h-entry" data-cite="web-platform"><div class="head">
     <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
   </a></p>
     <h1 id="title" class="title">Linked Web Storage Protocol 1.0</h1> 
-    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-08-21">21 August 2026</time></p>
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-09-21">21 September 2026</time></p>
     <details open="">
       <summary>More details about this document</summary>
       <dl>
         <dt>This version:</dt><dd>
-                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-core-20260821/">https://www.w3.org/TR/2026/WD-lws10-core-20260821/</a>
+                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-core-20260921/">https://www.w3.org/TR/2026/WD-lws10-core-20260921/</a>
                 </dd>
         <dt>Latest published version:</dt><dd>
                   <a href="https://www.w3.org/TR/lws10-core/">https://www.w3.org/TR/lws10-core/</a>
@@ -1136,8 +1101,8 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       </p>
       <p>This specification is intended to be used by:</p>
       <ul>
-        <li>Developers building client applications that access LWS resources</li>
-        <li>Developers building compliant servers that mediate access to LWS resources</li>
+        <li>Developers building client applications that access <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-1">Storage Resources</a></li>
+        <li>Developers building compliant servers that mediate access to <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-2">Storage Resources</a></li>
       </ul>
       <p>
         Different LWS server instances each maintain their own hierarchy of linked resources. An agent might use the same identification to navigate across servers, with access to each server's resources determined by the permissions granted by that server's resource managers. It is not guaranteed that every LWS server instance will support every possible agent identifier; any given LWS server instance might require that an agent identify itself via a particular identity provider, to gain access to resources managed by that server instance.
@@ -1220,7 +1185,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       </p>
       <ul>
         <li><dfn data-plurals="access grants" id="dfn-access-grant" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">access grant</dfn> — a data object created by a <a href="#dfn-storage-controller" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-controller-1">storage controller</a>, expressing
-        an ability for an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-5">agent</a> to perform specific actions on <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-1">storage</a> resources within certain
+        an ability for an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-5">agent</a> to perform specific actions on <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-3">Storage Resources</a> within certain
         defined constraints.</li>
         <li><dfn data-lt="access profiles|access profile" id="dfn-access-profiles" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">access profile</dfn> — an access profile describes the
         requirements for expressing a valid access policy. Every access profile is identified
@@ -1228,7 +1193,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
         referencing them in the <code>conformsTo</code> property of a service object in its
         <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-1">storage description</a> resource.</li>
         <li><dfn data-plurals="access requests" id="dfn-access-request" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">access request</dfn> — a data object submitted by an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-6">agent</a>, expressing a
-        request to perform specific actions on storage resources, including the desired scope
+        request to perform specific actions on <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-4">Storage Resources</a>, including the desired scope
         and constraints.</li>
         <li><dfn data-lt="agents|agent" id="dfn-agents" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">agent</dfn> — a person, social entity, or software identified by a URI.</li>
         <li><dfn data-lt="authentication credentials|authentication credential" id="dfn-authentication-credentials" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">authentication credential</dfn> — a security token that asserts claims about an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-7">agent</a> or end-user. This token is secured with a cryptographic proof.
@@ -1236,26 +1201,27 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
           capability such as ZCAPs.
         </li>
         <li><dfn data-lt="authentication suites|authentication suite" id="dfn-authentication-suites" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">authentication suite</dfn> — a defined validation mechanism for a concrete serialization of an <a href="#dfn-authentication-credentials" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-authentication-credentials-1">authentication credential</a>.</li>
-        <li><dfn id="dfn-auxiliary-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">auxiliary resource</dfn> — an <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-1">LWS resource</a> that plays a particular role with respect to a <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-2">LWS resource</a>, called its <dfn id="dfn-primary-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">primary resource</dfn>,
+        <li><dfn id="dfn-auxiliary-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">auxiliary resource</dfn> — a <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-5">Storage Resource</a> that plays a particular role with respect to a <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-6">Storage Resource</a>, called its <dfn id="dfn-primary-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">primary resource</dfn>,
         and whose lifetime is bound to the primary resource.
         This specification defines <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-1">linkset resource</a> and <a href="#dfn-metadata-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-metadata-resource-1">metadata resource</a> as types of auxiliary resources,
         but <a href="#dfn-lws-server" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-server-1">LWS Servers</a> are free to manage additional kinds of auxiliary resources (e.g. access control resources, notification inboxes).
         Auxiliary resources are discovered using web links [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>] of a specific type (see Section <a href="#metadata" class="sec-ref"><bdi class="secno">9.1 </bdi>Metadata</a>).
         Some auxiliary resources may, in some implementations, be identical to their primary resource.
         </li>
-        <li><dfn data-lt="LWS resources|LWS resource" data-plurals="lws resources" id="dfn-lws-resources" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">LWS resource</dfn> — an HTTP <a data-link-type="dfn" href="https://www.w3.org/TR/webarch/#def-resource">resource</a> as defined in <cite><a data-matched-text="[[[RFC9110]]]" href="https://httpwg.org/specs/rfc9110.html">HTTP Semantics</a></cite> which supports the read operations defined by the Linked Web Storage Protocol.
-        Following <cite><a data-matched-text="[[[RFC9110]]]" href="https://httpwg.org/specs/rfc9110.html">HTTP Semantics</a></cite>, this specification "does not limit the nature of a [LWS] resource; it merely defines an interface that might be used to interact with [LWS] resources." [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>]
+        <li><dfn data-lt="Storage Resources|Storage Resource" data-plurals="storage resources" id="dfn-storage-resources" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">Storage Resource</dfn> — an HTTP <a data-link-type="dfn" href="https://www.w3.org/TR/webarch/#def-resource">resource</a> as defined in <cite><a data-matched-text="[[[RFC9110]]]" href="https://httpwg.org/specs/rfc9110.html">HTTP Semantics</a></cite> which supports the read operations defined by the Linked Web Storage Protocol.
+        Following <cite><a data-matched-text="[[[RFC9110]]]" href="https://httpwg.org/specs/rfc9110.html">HTTP Semantics</a></cite>, this specification "does not limit the nature of a resource; it merely defines an interface that might be used to interact with resources." [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>]
+        This class is identified by the IRI <code>https://www.w3.org/ns/lws#StorageResource</code>.
         </li>
-        <li><dfn data-lt="containers|container" id="dfn-containers" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">container</dfn> — an <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-3">LWS resource</a> that is able to enumerate a collection of <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-4">LWS resources</a>, conforming to the conventions described in <a href="#container-representation">Section 8. Containers</a>. The ability to create new resources in a container or to delete an existing container follows the requirements outlined in <a href="#operations">Section 9. Operations</a>.</li>
-        <li><dfn data-lt="data resources|data resource" id="dfn-data-resources" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">data resource</dfn> — a data-bearing <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-5">LWS resource</a> such as a document, image, or structured information whose support for update and delete operations follows the requirements outlined in <a href="#operations">Section 9. Operations</a>.</li>
-        <li><dfn id="dfn-containment" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">containment</dfn> — the relationship between a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-1">container</a> and the <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-6">LWS resources</a> whose lifecycle the <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-2">container</a> manages.</li>
+        <li><dfn data-lt="containers|container" id="dfn-containers" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">container</dfn> — a <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-7">Storage Resource</a> that is able to enumerate a collection of <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-8">Storage Resources</a>, conforming to the conventions described in <a href="#container-representation">Section 8. Containers</a>. The ability to create new resources in a container or to delete an existing container follows the requirements outlined in <a href="#operations">Section 9. Operations</a>.</li>
+        <li><dfn data-lt="data resources|data resource" id="dfn-data-resources" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">data resource</dfn> — a data-bearing <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-9">Storage Resource</a> such as a document, image, or structured information whose support for update and delete operations follows the requirements outlined in <a href="#operations">Section 9. Operations</a>.</li>
+        <li><dfn id="dfn-containment" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">containment</dfn> — the relationship between a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-1">container</a> and the <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-10">Storage Resources</a> whose lifecycle the <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-2">container</a> manages.</li>
         <li><dfn id="dfn-linkset-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">linkset resource</dfn> — a type of <a href="#dfn-auxiliary-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-auxiliary-resource-1">auxiliary resource</a> whose representation conforms to <cite><a data-matched-text="[[[RFC9264]]]" href="https://www.rfc-editor.org/info/rfc9264/">Linkset: Media Types and a Link Relation Type for Link Sets</a></cite>. Update operations for linkset resources follow the requirements outlined in <a href="#operations">Section 9. Operations</a>.</li>
-        <li><dfn id="dfn-metadata-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">metadata resource</dfn> — an <a href="#dfn-auxiliary-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-auxiliary-resource-2">auxiliary resource</a>, managed by a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-2">storage</a>, that describes an <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-7">LWS resource</a> and conforms to the conventions described in <a href="todo-metadata-resource">TBD</a>. The lifecycle of a metadata resource is bound to the <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-8">LWS resource</a> it describes.</li>
-        <li><dfn id="dfn-resource" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/webarch/#def-resource">resource</a></dfn> — a resource is, as described by [<cite><a class="bibref" data-link-type="biblio" href="#bib-webarch" title="Architecture of the World Wide Web, Volume One">WebArch</a></cite>] and [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc3986" title="Uniform Resource Identifier (URI): Generic Syntax">RFC3986</a></cite>], “whatever might be identified by a URI”. Resources whose essential characteristics can be conveyed in a message (such as web pages, images, structured data objects...) are called <dfn id="dfn-information-resources" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/webarch/#def-information-resource">information resources</a></dfn> [<cite><a class="bibref" data-link-type="biblio" href="#bib-webarch" title="Architecture of the World Wide Web, Volume One">WebArch</a></cite>].
+        <li><dfn id="dfn-metadata-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">metadata resource</dfn> — an <a href="#dfn-auxiliary-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-auxiliary-resource-2">auxiliary resource</a>, managed by a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-1">storage</a>, that describes a <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-11">Storage Resource</a> and conforms to the conventions described in <a href="todo-metadata-resource">TBD</a>. The lifecycle of a metadata resource is bound to the <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-12">Storage Resource</a> it describes.</li>
+        <li><dfn id="dfn-resource" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/webarch/#def-resource">resource</a></dfn> — a resource is, as described by [<cite><a class="bibref" data-link-type="biblio" href="#bib-webarch" title="Architecture of the World Wide Web, Volume One">WebArch</a></cite>] and [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc3986" title="Uniform Resource Identifier (URI): Generic Syntax">RFC3986</a></cite>], "whatever might be identified by a URI". Resources whose essential characteristics can be conveyed in a message (such as web pages, images, structured data objects...) are called <dfn id="dfn-information-resources" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/webarch/#def-information-resource">information resources</a></dfn> [<cite><a class="bibref" data-link-type="biblio" href="#bib-webarch" title="Architecture of the World Wide Web, Volume One">WebArch</a></cite>].
         </li><li><dfn id="dfn-storage" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage</dfn> — a set of hierarchically organized HTTP resources whose lifecycle is managed by the conventions described by the Linked Web Storage Protocol. A storage is described by a <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-2">storage description resource</a> which references a collection of services that provide affordances over those resources.</li>
-        <li><dfn data-plurals="storage controllers" id="dfn-storage-controller" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage controller</dfn> — an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-8">agent</a> that controls all resources in a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-3">storage</a>.</li>
-        <li><dfn data-lt="storage description resource|storage description" id="dfn-storage-description-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage description</dfn> — an <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-9">LWS resource</a>, conforming to the requirements of a <abbr title="World Wide Web Consortium">W3C</abbr> Controlled Identifier document [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>], that describes a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-4">storage</a> along with its services and capabilities.</li>
-        <li><dfn id="dfn-storage-root" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage root</dfn> — a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-3">container</a> at the root of a <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-1">containment</a> hierarchy of a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-5">storage</a>. The storage root is the only <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-10">LWS resource</a> that does not have a parent in the LWS <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-2">containment</a> hierarchy nor a <a href="#dfn-primary-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-primary-resource-1">primary resource</a>.</li>
+        <li><dfn data-plurals="storage controllers" id="dfn-storage-controller" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage controller</dfn> — an <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-8">agent</a> that controls all resources in a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-2">storage</a>.</li>
+        <li><dfn data-lt="storage description resource|storage description" id="dfn-storage-description-resource" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage description</dfn> — a <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-13">Storage Resource</a>, conforming to the requirements of a <abbr title="World Wide Web Consortium">W3C</abbr> Controlled Identifier document [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>], that describes a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-3">storage</a> along with its services and capabilities.</li>
+        <li><dfn id="dfn-storage-root" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">storage root</dfn> — a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-3">container</a> at the root of a <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-1">containment</a> hierarchy of a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-4">storage</a>. The storage root is the only <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-14">Storage Resource</a> that does not have a parent in the LWS <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-2">containment</a> hierarchy nor a <a href="#dfn-primary-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-primary-resource-1">primary resource</a>.</li>
         <li><dfn data-lt="notifications|notification" id="dfn-notifications" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">notification</dfn> — a message describing an event that has occurred on a resource.</li>
         <li><dfn data-lt="subscriptions|subscription" id="dfn-subscriptions" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">subscription</dfn> — a registration expressing interest in receiving notifications for a given resource or set of resources.</li>
         <li><dfn data-plurals="subscribers" id="dfn-subscriber" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">subscriber</dfn> — the <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-9">agent</a> that creates a <a href="#dfn-subscriptions" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-subscriptions-1">subscription</a> and receives the resulting notifications.</li>
@@ -1432,10 +1398,27 @@ client (called in this specification <dfn id="dfn-authorization-client" class="e
     </p>
 
     <p>
-      An authorization server <em class="rfc2119">SHOULD</em> advertise the subject tokens that it supports by including a <code>subject_token_types_supported</code>
-      entry in the server metadata document. This entry is a JSON array containing a list of valid <code>subject_token_type</code> values
-      that can be supplied at the authorization server's token endpoint.
+      In addition to the metadata defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8414" title="OAuth 2.0 Authorization Server Metadata">RFC8414</a></cite>], an LWS authorization server metadata document
+      defines the following parameters:
     </p>
+
+    <ul>
+      <li>
+        <dfn id="dfn-subject_token_types_supported" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn" class="respec-offending-element" title="Found definition for &quot;subject_token_types_supported&quot;, but nothing links to it. This is usually a spec bug!"><code>subject_token_types_supported</code></dfn>
+        <em class="rfc2119">OPTIONAL</em>. JSON array containing a list of valid <code>subject_token_type</code> values
+        that can be supplied at the authorization server's token endpoint. An authorization server
+        <em class="rfc2119">SHOULD</em> advertise the subject tokens that it supports by including this entry in the server metadata document.
+      </li>
+      <li>
+        <dfn id="dfn-subject_identifier_types_supported" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn" class="respec-offending-element" title="Found definition for &quot;subject_identifier_types_supported&quot;, but nothing links to it. This is usually a spec bug!"><code>subject_identifier_types_supported</code></dfn>
+        <em class="rfc2119">OPTIONAL</em>. JSON array containing a list of subject identifier types that the authorization server supports.
+        Each value is a URI starting with its scheme such as <code>"https:"</code>, or, for Decentralized Identifiers,
+        <code>"did:"</code> followed by the DID method name (e.g., <code>"did:web"</code>, <code>"did:key"</code>).
+        An authorization server <em class="rfc2119">SHOULD</em> advertise the subject identifier types
+        that it supports by including this entry in the server metadata document.
+        If omitted, the default value is <code>["https"]</code>.
+      </li>
+    </ul>
 
     <p>
       An example authorization server metadata resource is included below.
@@ -1459,7 +1442,11 @@ client (called in this specification <dfn id="dfn-authorization-client" class="e
         <span class="hljs-string">"token"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
     <span class="hljs-attr">"subject_token_types_supported"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
         <span class="hljs-string">"urn:ietf:params:oauth:token-type:jwt"</span><span class="hljs-punctuation">,</span>
-        <span class="hljs-string">"urn:ietf:params:oauth:token-type:id-token"</span><span class="hljs-punctuation">]</span>
+        <span class="hljs-string">"urn:ietf:params:oauth:token-type:id-token"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"subject_identifier_types_supported"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">"did:web"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"did:key"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https"</span><span class="hljs-punctuation">]</span>
 <span class="hljs-punctuation">}</span></code></pre>
       </div>
 
@@ -1491,7 +1478,7 @@ client (called in this specification <dfn id="dfn-authorization-client" class="e
         <li>The <code>resource</code> parameter is <em class="rfc2119">REQUIRED</em>. The value of this parameter <em class="rfc2119">MUST</em> be a URI and will be used to populate the
         <code>aud</code> (audience) claim in the resulting access token. The supplied value will be the same as the
         <code>realm</code> parameter response in a <code>WWW-Authenticate</code> challenge. The authorization server
-        <em class="rfc2119">MUST</em> reject any request in which the resource parameter identifies an unknown or untrusted <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-6">storage</a>.
+        <em class="rfc2119">MUST</em> reject any request in which the resource parameter identifies an unknown or untrusted <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-5">storage</a>.
         </li>
 
         <li>
@@ -1708,7 +1695,7 @@ signature</code></pre>
 
   <p>
     A <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-3">storage description resource</a> provides information a client can use
-    when interacting with a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-7">storage</a>, including descriptions of capabilities and
+    when interacting with a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-6">storage</a>, including descriptions of capabilities and
     service endpoints.
   </p>
 
@@ -1722,7 +1709,7 @@ signature</code></pre>
 
     <ul>
       <li>
-        <strong><code>id</code></strong> - the <code>id</code> property is <em class="rfc2119">REQUIRED</em>. Its value <em class="rfc2119">MUST</em> be the canonical URI of the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-8">storage</a>.
+        <strong><code>id</code></strong> - the <code>id</code> property is <em class="rfc2119">REQUIRED</em>. Its value <em class="rfc2119">MUST</em> be the canonical URI of the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-7">storage</a>.
         Per [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>], this URI is also the canonical URL of the controlled identifier document.
       </li>
       <li>
@@ -1772,13 +1759,13 @@ signature</code></pre>
     
 
     <p>
-      All responses to <code>GET</code> and <code>HEAD</code> requests targeting <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-9">storage</a> resources <em class="rfc2119">MUST</em> include a
-      <code>Link</code> header whose target is the canonical URI of the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-10">storage</a>, including a relation
+      All responses to <code>GET</code> and <code>HEAD</code> requests targeting <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-8">storage</a> resources <em class="rfc2119">MUST</em> include a
+      <code>Link</code> header whose target is the canonical URI of the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-9">storage</a>, including a relation
       (<code>rel</code>) parameter whose value equals <code>https://www.w3.org/ns/lws#storage</code>.
     </p>
 
     <p>
-      Requests for the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-11">storage</a> URI <em class="rfc2119">MUST</em> return a document that conforms to the
+      Requests for the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-10">storage</a> URI <em class="rfc2119">MUST</em> return a document that conforms to the
       <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-5">storage description resource</a> data model with a media type of <code>application/lws+cid</code>,
       unless content negotiation requires a different format.
     </p>
@@ -1788,7 +1775,7 @@ signature</code></pre>
     
 
     <p>
-      A <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-6">storage description</a> may contain descriptions of additional capabilities supported by the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-12">storage</a>.
+      A <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-6">storage description</a> may contain descriptions of additional capabilities supported by the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-11">storage</a>.
     </p>
   </section>
 
@@ -1798,7 +1785,7 @@ signature</code></pre>
     <p>
       A <a href="#dfn-storage-description-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-description-resource-7">storage description resource</a> <em class="rfc2119">MUST</em> contain a <code>StorageRoot</code> service whose
       <code>serviceEndpoint</code> is the URI of the <a href="#dfn-storage-root" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-root-1">storage root</a> container.
-      Additional services connected to a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-13">storage</a> <em class="rfc2119">MAY</em> also be present.
+      Additional services connected to a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-12">storage</a> <em class="rfc2119">MAY</em> also be present.
       The API definition of these additional services are outside the scope of this specification.
     </p>
   </section>
@@ -1872,10 +1859,10 @@ signature</code></pre>
 <p>Linked Web Storage organizes resources into <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-4">containers</a>. A <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-5">container</a> is a specialized resource that holds references to other resources, called its members. Containers serve
 as organizational units, analogous to directories or collections, enabling clients to group, discover, and navigate resources. A container maintains references to its member resources,
 which may comprise both non-container resources and additional container resources, thereby enabling hierarchical formations. Typically, a container holds minimal intrinsic content
-beyond metadata or enumerations of its members; its principal role is to aggregate and structure subordinate resources. The <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-14">storage</a> system's root is designated as a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-6">container</a>, serving
+beyond metadata or enumerations of its members; its principal role is to aggregate and structure subordinate resources. The <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-13">storage</a> system's root is designated as a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-6">container</a>, serving
 as the apex organizational unit devoid of a superior parent. The structure of <a href="#dfn-container-representation" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-container-representation-1">container representations</a> is defined in <a href="#container-representation" class="sec-ref"><bdi class="secno">8.1 </bdi>Container Representation</a>; their media type and pagination requirements are defined in <a href="#lws-media-type" class="sec-ref"><bdi class="secno">12. </bdi>LWS Media Type</a>.
 Storage <em class="rfc2119">MAY</em> function as a root container, enabling direct writes.</p>
-<p>Every LWS <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-15">storage</a> has a <strong><a href="#dfn-storage-root" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-root-2">storage root</a></strong> that serves as the top-level organizational unit. The <a href="#dfn-storage-root" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-root-3">storage root</a> has no parent and acts as the entry point for the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-16">storage</a> hierarchy.</p>
+<p>Every LWS <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-14">storage</a> has a <strong><a href="#dfn-storage-root" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-root-2">storage root</a></strong> that serves as the top-level organizational unit. The <a href="#dfn-storage-root" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-root-3">storage root</a> has no parent and acts as the entry point for the <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-15">storage</a> hierarchy.</p>
 <p>Resources in LWS are classified as either:</p>
 <ul>
 <li><strong><a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-7">Container</a></strong> — a resource that contains other resources.</li>
@@ -1962,11 +1949,11 @@ paginated, <code>items</code> contains only the current page of resources; see <
 	  <p>This section defines the four core operations that a Linked Web Storage (LWS) server <em class="rfc2119">MUST</em> support. These operations manipulate resources and containers in a transport-independent manner, focusing on semantics rather than implementation details. Each operation specifies inputs, expected behaviors, and possible responses. Responses include success indicators, resource representations (where applicable), and error conditions. Implementations <em class="rfc2119">MUST</em> handle these operations atomically and consistently, meaning each operation either succeeds completely or fails without partial side effects. In case of errors, responses <em class="rfc2119">SHOULD</em> provide enough detail for <a href="#dfn-agents" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-agents-13">agents</a> to understand the issue without leaking sensitive information.</p>
 
 	  
-	  <p>For each core operation (create, read, update, delete), we describe the HTTP method(s) to use, required headers or special considerations (including concurrency controls via ETags, content negotiation, and pagination for container listings), and what the server should do and return. Standard HTTP status codes are used to indicate outcomes with additional mappings for scenarios such as quota exceeded (507 Insufficient Storage) or precondition failures (412 Precondition Failed). The binding tries to adhere to HTTP/1.1 and relevant RFCs (such as [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7231" title="Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content">RFC7231</a></cite>] for HTTP semantics, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7233" title="Hypertext Transfer Protocol (HTTP/1.1): Range Requests">RFC7233</a></cite>] for range requests, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc5789" title="PATCH Method for HTTP">RFC5789</a></cite>] for PATCH, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>] for Web Linking, and [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9264" title="Linkset: Media Types and a Link Relation Type for Link Sets">RFC9264</a></cite>] for Link Sets) so that it integrates naturally with web standards. Discoverability is emphasized through mechanisms like Link headers and WWW-Authenticate headers on 401 responses, avoiding hardcoded URI locations. Metadata integration is required across operations, ensuring atomicity and use of Link Sets for server-managed and user-managed properties.</p>
+	  <p>For each core operation (create, read, update, delete), we describe the HTTP method(s) to use, required headers or other special considerations (including content negotiation, pagination for container listings, and conditional requests), and what the server should do and return. Standard HTTP status codes are used to indicate outcomes with additional mappings for scenarios such as quota exceeded (<code>507 Insufficient Storage</code>) or precondition failures (<code>412 Precondition Failed</code>). The binding tries to adhere to HTTP/1.1 and relevant RFCs (such as [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7231" title="Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content">RFC7231</a></cite>] for HTTP semantics, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7233" title="Hypertext Transfer Protocol (HTTP/1.1): Range Requests">RFC7233</a></cite>] for range requests, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc5789" title="PATCH Method for HTTP">RFC5789</a></cite>] for PATCH, [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>] for Web Linking, and [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9264" title="Linkset: Media Types and a Link Relation Type for Link Sets">RFC9264</a></cite>] for Link Sets) so that it integrates naturally with web standards. Discoverability is emphasized through mechanisms like <code>Link</code> headers and <code>WWW-Authenticate</code> headers on <code>401</code> responses, avoiding hardcoded URI locations. Metadata integration is required across operations, ensuring atomicity and use of Link Sets for server-managed and user-managed properties.</p>
 <p><strong>Note:</strong> As all examples in this specifications, examples given in this section (HTTP request and response snippets) are <strong>non-normative</strong>, meant to illustrate typical usage. The actual requirements are stated in the descriptive text and tables. Also, while this binding covers HTTP (as the initial target protocol), the LWS operations could in principle be bound to other protocols in the future. Media type requirements for <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-29">container</a> representations are defined in <a href="#lws-media-type" class="sec-ref"><bdi class="secno">12. </bdi>LWS Media Type</a>.</p>
 
 	  <section id="metadata"><div class="header-wrapper"><h3 id="x9-1-metadata"><bdi class="secno">9.1 </bdi>Metadata</h3><a class="self-link" href="#metadata" aria-label="Permalink for Section 9.1"></a></div>
-<p>This section defines the model for associating metadata with <a href="#dfn-lws-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-lws-resources-11">LWS resources</a>. The LWS metadata system is based on the principles of Web Linking [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>], which allows servers to describe the relationships between resources using typed links. Metadata enhances discoverability, supports self-descriptive APIs, and aligns with resource operations, and <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-30">container</a> hierarchies.</p>
+<p>This section defines the model for associating metadata with <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-15">Storage Resources</a>. The LWS metadata system is based on the principles of Web Linking [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>], which allows servers to describe the relationships between resources using typed links. Metadata enhances discoverability, supports self-descriptive APIs, and aligns with resource operations, and <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-30">container</a> hierarchies.</p>
 <p><strong>Metadata Model</strong>
 All metadata in LWS is expressed as a set of typed links originating from a resource (the link context). Each link consists of:</p>
 <ul>
@@ -1976,7 +1963,7 @@ All metadata in LWS is expressed as a set of typed links originating from a reso
 </ul>
 <p>Metadata distinguishes between resources and their representations, allowing for multiple media types where applicable. For <a href="#dfn-data-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-data-resources-2">data resources</a>, metadata includes representations, each with format and optional sizeInBytes. For <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-31">containers</a> and <a href="#dfn-data-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-data-resources-3">data resources</a>, we consider the link to its parent <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-32">container</a> resource to be part of the metadata of the resource.</p>
 <p><strong>The <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-2">Linkset Resource</a></strong>
-For each resource in <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-17">storage</a>, a server <em class="rfc2119">MUST</em> make metadata links available as a standalone resource according to [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9264" title="Linkset: Media Types and a Link Relation Type for Link Sets">RFC9264</a></cite>].</p>
+For each resource in <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-16">storage</a>, a server <em class="rfc2119">MUST</em> make metadata links available as a standalone resource according to [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9264" title="Linkset: Media Types and a Link Relation Type for Link Sets">RFC9264</a></cite>].</p>
 <ul>
 <li>Discovery: A resource's linkset is discoverable via a Link header with the relation <code>rel="linkset"</code>.</li>
 <li>Media Type: A <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-3">linkset resource</a> <em class="rfc2119">MUST</em> be available as <code>application/linkset+json</code>.</li>
@@ -2022,7 +2009,7 @@ Core metadata <em class="rfc2119">MAY</em> be modified by clients. To ensure int
 </ol>
 <p>[!IMPORTANT] Clients <em class="rfc2119">SHOULD NOT</em> assume support for PUT or specific patch formats unless they are advertised in the resource headers and <em class="rfc2119">MUST</em> handle 405 Method Not Allowed or 415 Unsupported Media Type responses gracefully.</p>
 <p><strong>Managing Metadata</strong>
-Metadata is managed by interacting with the resource's associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-5">linkset resource</a> URI. Servers <em class="rfc2119">MUST</em> support concurrency controls for updates.</p>
+Metadata is managed by interacting with the resource's associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-5">linkset resource</a> URI. Servers <em class="rfc2119">MUST</em> include an <code>ETag</code> header as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] in responses to GET and HEAD requests.</p>
 <ul>
 <li><p>Partial Updates (PATCH): This is the primary mechanism for metadata management. Servers <em class="rfc2119">MUST</em> support PATCH using <code>application/merge-patch+json</code>.</p>
 </li>
@@ -2132,9 +2119,9 @@ While metadata is primarily retrieved via read operations, it is generated durin
 </li>
 <li><strong>Outcome</strong>: The requested representation or a notification of failure.</li>
 </ul>
-<p>The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-53">container</a> or a non-container resource (<a href="#dfn-data-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-data-resources-7">data resource</a>). Servers <em class="rfc2119">MUST</em> distinguish resource types via metadata. All responses <em class="rfc2119">MUST</em> integrate with metadata as defined in Section 8.1, including Link headers for key relations such as <code>rel="linkset"</code>, <code>rel="up"</code>, and <code>rel="type"</code>. Servers <em class="rfc2119">MUST</em> ensure atomicity between the resource state and its metadata during reads.</p>
+<p>The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-53">container</a> or a non-container resource (<a href="#dfn-data-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-data-resources-7">data resource</a>). Servers <em class="rfc2119">MUST</em> distinguish resource types via metadata. All responses <em class="rfc2119">MUST</em> integrate with metadata as defined in Section 8.1, including <code>Link</code> headers for key relations such as <code>rel="linkset"</code>, <code>rel="up"</code>, and <code>rel="type"</code>. Servers <em class="rfc2119">MUST</em> ensure atomicity between the resource state and its metadata during reads.</p>
 <p><strong>GET (non-container resource)</strong> – <em>Retrieve a resource's content:</em>
-Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers <em class="rfc2119">MUST</em> support range requests per [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7233" title="Hypertext Transfer Protocol (HTTP/1.1): Range Requests">RFC7233</a></cite>] for partial retrieval. Responses <em class="rfc2119">MUST</em> include an ETag header for concurrency control and caching.</p>
+Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers <em class="rfc2119">MUST</em> support range requests per [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7233" title="Hypertext Transfer Protocol (HTTP/1.1): Range Requests">RFC7233</a></cite>] for partial retrieval. Responses <em class="rfc2119">MUST</em> include an <code>ETag</code> header as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>].</p>
 <p><strong>Example (GET a file):</strong></p>
 <pre><code aria-busy="false" class="hljs http"><span class="hljs-keyword">GET</span> <span class="hljs-string">/alice/notes/shoppinglist.txt</span> <span class="hljs-meta">HTTP/1.1</span>
 <span class="hljs-attribute">Authorization</span><span class="hljs-punctuation">: </span>Bearer &lt;token&gt;
@@ -2158,7 +2145,7 @@ chocolate bars
 hash
 eggs
 </code></pre>
-<p>The server returned the text content (34 bytes in total, as indicated by <code>Content-Length</code>). The content is exactly the stored data in the file. The <code>ETag: "abc123456"</code> is a version identifier for caching or concurrency purposes. The response includes Link headers for metadata discoverability, with mandatory fields such as <code>up</code> and <code>type</code>.</p>
+<p>The server returned the text content (34 bytes in total, as indicated by <code>Content-Length</code>). The content is exactly the stored data in the file. The <code>ETag: "abc123456"</code> is a validator for caching and conditional request purposes. The response includes <code>Link</code> headers for metadata discoverability, with mandatory fields such as <code>up</code> and <code>type</code>.</p>
 <p><strong>GET (<a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-54">container</a> resource)</strong> – <em>List a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-55">container</a>'s contents:</em>
 When the target URI corresponds to a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-56">container</a> (determined via metadata type), a GET request returns a listing of the <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-57">container</a>'s members. The response body is a <a href="#dfn-container-representation" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-container-representation-3">container representation</a> as defined in the <a href="#container-representation">Container Representation</a> section, using the LWS container media type. The listing includes metadata for each member: resource identifiers (<em class="rfc2119">MUST</em>), types (<em class="rfc2119">MUST</em>), media types (<em class="rfc2119">MUST</em> for DataResources), sizes (<em class="rfc2119">SHOULD</em>), and modification timestamps (<em class="rfc2119">SHOULD</em>).</p>
 <p><strong>Example (GET a container):</strong></p>
@@ -2198,11 +2185,11 @@ When the target URI corresponds to a <a href="#dfn-containers" class="internalDF
 <span class="hljs-punctuation">}</span>
 </span></code></pre>
 <p>In this example, <code>/alice/notes/</code> is a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-58">container</a>. The response uses JSON-LD with the LWS context, listing members with required metadata. Each item includes its <code>type</code>, <code>id</code>, <code>format</code>, <code>size</code>, and <code>modified</code> timestamp as flat properties.</p>
-<p>In all cases, the server <em class="rfc2119">MUST</em> include the following metadata in the response headers: an ETag (representing the listing version, which changes on membership modifications), and Link headers with <code>rel="type"</code> indicating it is a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-59">container</a>, <code>rel="linkset"</code> and <code>rel="up"</code>.</p>
+<p>In all cases, the server <em class="rfc2119">MUST</em> include the following metadata in the response headers: an <code>ETag</code> header as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>], and <code>Link</code> headers with <code>rel="linkset"</code>, <code>rel="up"</code>, and <code>rel="type"</code> indicating it is a <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-59">container</a>.</p>
 <p><strong>HEAD (any resource or <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-60">container</a>)</strong> – <em>Headers/metadata only:</em>
-The LWS server <em class="rfc2119">MUST</em> support HEAD [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] for both <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-61">containers</a> and non-containers, returning the same headers as GET (including ETag, Content-Type, Link for metadata) but without a body. This enables metadata retrieval without transferring content.</p>
-<p><strong>Caching and Conditional Requests:</strong> LWS leverages HTTP caching semantics. Servers <em class="rfc2119">MUST</em> support conditional requests via If-None-Match (with ETags) or If-Modified-Since headers. If the resource or <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-62">container</a> listing has not changed, respond with 304 Not Modified to avoid redundant transfers. ETags <em class="rfc2119">MUST</em> be provided in all GET/HEAD responses for concurrency and caching support.</p>
-<p><strong>Discoverability and Authorization:</strong> For enhanced discoverability, servers <em class="rfc2119">SHOULD</em> include WWW-Authenticate headers on 401 Unauthorized responses with parameters to guide clients without hardcoded URIs. Metadata links <em class="rfc2119">SHOULD</em> be included where applicable.</p>
+The LWS server <em class="rfc2119">MUST</em> support HEAD [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] for both <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-61">containers</a> and non-containers, returning the same headers as GET (including <code>Content-Type</code>, <code>Link</code> for metadata) but without a body. This enables metadata retrieval without transferring content.</p>
+<p><strong>Caching and Conditional Requests:</strong> LWS leverages HTTP caching semantics. Servers <em class="rfc2119">SHOULD</em> support conditional requests as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>], including mechanisms such as entity tags (<code>ETags</code>) and date-based validators (like <code>If-Modified-Since</code> headers). If the resource or <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-62">container</a> listing has not changed, respond with <code>304 Not Modified</code> to avoid redundant transfers.</p>
+<p><strong>Discoverability and Authorization:</strong> For enhanced discoverability, servers <em class="rfc2119">SHOULD</em> include <code>WWW-Authenticate</code> headers on <code>401 Unauthorized</code> responses with parameters to guide clients without hardcoded URIs. Metadata links <em class="rfc2119">SHOULD</em> be included where applicable.</p>
 
       </section>
 
@@ -2214,10 +2201,10 @@ The LWS server <em class="rfc2119">MUST</em> support HEAD [<cite><a class="bibre
 <li><strong>Behavior</strong>: The server applies the changes atomically. If concurrency constraints are provided, the update is rejected if the resource has been modified since it was last read by the requester.</li>
 <li><strong>Outcome</strong>: Confirmation of the update or a notification of conflict.</li>
 </ul>
-<p>The <a href="#dfn-update-resource" id="ref-for-dfn-update-resource-2">update resource</a> modifies the contents of an existing <a href="#dfn-served-resource" id="ref-for-dfn-served-resource-7">served resource</a> by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource’s URL to perform these operations.
+<p>The <a href="#dfn-update-resource" id="ref-for-dfn-update-resource-2">update resource</a> modifies the contents of an existing <a href="#dfn-served-resource" id="ref-for-dfn-served-resource-7">served resource</a> by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource's URL to perform these operations.
 Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.3.2.
-LWS servers <em class="rfc2119">MUST</em> handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-9">linkset resource</a>. To optionally update both content and metadata in a single atomic operation, clients <em class="rfc2119">MAY</em> include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in RFC 7240). In this case, the server <em class="rfc2119">MUST</em> interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is <em class="rfc2119">OPTIONAL</em> for servers but, if supported, <em class="rfc2119">MUST</em> be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates <em class="rfc2119">MUST</em> ignore the preference or respond with 501 Not Implemented.</p>
-<p><strong>PUT (replace full resource)</strong> – Send PUT to the resource URI with new full content in the body and matching Content-Type (generally consistent with existing type). PUT is idempotent for existing resources. For safety, include If-Match with current ETag (per Section 7.3 concurrency); mismatch yields 412 Precondition Failed or 409 Conflict. Without checks, updates are unconditional but risk overwriting concurrent changes. If a server supports <code>Etags</code> for a resource, it <em class="rfc2119">MUST</em> reject unconditional PUT requests that lack an If-Match header with a 428 Precondition Required response.</p>
+LWS servers <em class="rfc2119">MUST</em> handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-9">linkset resource</a>. To optionally update both content and metadata in a single atomic operation, clients <em class="rfc2119">MAY</em> include <code>Link</code> headers in the PUT/PATCH request to the resource URI and specify the preference <code>'Prefer: set-linkset'</code> (as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7240" title="Prefer Header for HTTP">RFC7240</a></cite>]). In this case, the server <em class="rfc2119">MUST</em> interpret the provided <code>Link</code> headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is <em class="rfc2119">OPTIONAL</em> for servers but, if supported, <em class="rfc2119">MUST</em> be invoked explicitly via the <code>Prefer</code> header to prevent unintentional metadata overwrites. Servers that do not support combined updates <em class="rfc2119">MUST</em> ignore the preference or respond with <code>501 Not Implemented</code>.</p>
+<p><strong>PUT (replace full resource)</strong> – Send PUT to the resource URI with new full content in the body and matching <code>Content-Type</code> (generally consistent with existing type). PUT is idempotent for existing resources. Clients <em class="rfc2119">SHOULD</em> use conditional requests as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] to avoid overwriting concurrent changes.</p>
 <p><strong>Example (PUT to update a resource):</strong></p>
 <pre><code aria-busy="false" class="hljs css">PUT /alice/personalinfo<span class="hljs-selector-class">.json</span> HTTP/<span class="hljs-number">1.1</span>
 Authorization: Bearer &lt;token&gt;
@@ -2230,38 +2217,27 @@ If-Match: <span class="hljs-string">"abc123456"</span>
 <span class="hljs-string">"state"</span>: <span class="hljs-string">"Connecticut"</span>
 }
 </code></pre>
-<p>In this example, the client is updating an existing JSON resource at /alice/personalinfo.json. It includes an If-Match header with the ETag "abc123456" that it got from an earlier GET or HEAD request. The server will compare that to the current ETag; if they match, it proceeds to replace the content with the JSON provided. If they don’t match, the server rejects the update (because the resource was changed by someone else in the meantime).
-Successful response: If the update succeeds, the server can respond with 200 OK and possibly include the updated representation or some confirmation (like the new content or a part of it). Alternatively, the server may respond with 204 No Content to indicate success with no body (especially common if no further info needs to be conveyed). In either case, the server <em class="rfc2119">SHOULD</em> include a new ETag to signify the new version, and maybe a Content-Type if a body is returned. For example:</p>
+<p>In this example, the client is updating an existing JSON resource at <code>/alice/personalinfo.json</code>. It includes an <code>If-Match</code> header with an entity tag (<code>ETag</code>) that it received from an earlier GET or HEAD request. The server will compare that to the current entity tag (<code>ETag</code>); if they match, it proceeds to replace the content with the JSON provided. If they don't match, the server rejects the update (because the resource was changed by someone else in the meantime).
+Successful response: If the update succeeds, the server can respond with <code>200 OK</code> and possibly include the updated representation or some confirmation (like the new content or a part of it). Alternatively, the server may respond with <code>204 No Content</code> to indicate success with no body (especially common if no further info needs to be conveyed). For example:</p>
 <pre><code aria-busy="false" class="hljs http"><span class="hljs-meta">HTTP/1.1</span> <span class="hljs-number">204</span> No Content
-<span class="hljs-attribute">ETag</span><span class="hljs-punctuation">: </span>"def789012"
 </code></pre>
-<p>This tells the client the update went through and provides the new <code>ETag</code>. If the server chose to return the updated content, it might use <code>200 OK</code> and include the JSON in the body, along with headers.</p>
 <ul>
-<li><strong>Error responses:</strong> If the <code>If-Match</code> did not match (concurrent modification), the server could return <code>412 Precondition Failed</code> (meaning the precondition header failed) or <code>409 Conflict</code> – our earlier abstract description used Conflict for concurrency issues, and 409 is a natural mapping for that scenario. If the resource did not exist, a PUT meant as an update will result in <code>404 Not Found</code> (unless the intent was to create, but typically clients use PUT for create only when they are sure of what they’re doing, or they use it as upsert without If-Match). If the client is not authorized, <code>403 Forbidden</code> (or 401 Unauthorized if no valid credentials were provided). If the request payload is not valid, <code>400 Bad Request</code>.</li>
+<li><strong>Error responses:</strong> If the <code>If-Match</code> precondition did not match (concurrent modification), the server responds with <code>412 Precondition Failed</code>. If the resource did not exist, a PUT meant as an update will result in <code>404 Not Found</code>. If the client is not authorized, <code>403 Forbidden</code> (or <code>401 Unauthorized</code> if no valid credentials were provided). If the request payload is not valid, <code>400 Bad Request</code>.</li>
 </ul>
 <p><strong>PATCH (partial update)</strong> – The HTTP PATCH method [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc5789" title="PATCH Method for HTTP">RFC5789</a></cite>] allows a client to specify partial modifications to a resource, rather than sending the whole new content. This is useful for large resources where sending the entire content would be inefficient if only a small part changed, or for concurrent editing where you want to apply specific changes. LWS server <em class="rfc2119">MUST</em> minimally support JSON Merge Patch (application/merge-patch+json) as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7386" title="JSON Merge Patch">RFC7386</a></cite>].</p>
 <p><strong>Update Resource Metadata (HTTP PUT / PATCH on Linkset)</strong>
 A resource's metadata is updated by modifying its corresponding <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-10">linkset resource</a>, discovered via the Link header with rel="linkset".
 Full Replacement (PUT): A PUT request to the <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-11">linkset resource</a> URI with a complete linkset document in the body replaces all metadata for the resource.
 Partial Update (PATCH): A PATCH request to the <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-12">linkset resource</a> URI adds, removes, or modifies specific links.</p>
-<p><strong>Concurrency Control for Metadata</strong>
-Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is critical. To ensure data integrity, LWS servers and clients <em class="rfc2119">MUST</em> implement optimistic concurrency control using conditional requests [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7232" title="Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests">RFC7232</a></cite>] for all PUT and PATCH operations on a <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-13">linkset resource</a>.
-Server Responsibilities:
-A server <em class="rfc2119">MUST</em> include an Etag header in its responses to GET and HEAD requests for a <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-14">linkset resource</a>.
-Upon a successful PUT or PATCH on the linkset, the server <em class="rfc2119">MUST</em> generate a new, unique Etag value for the modified linkset and return it in the Etag header of the response.
-Client Responsibilities:
-When modifying a <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-15">linkset resource</a>, a client <em class="rfc2119">MUST</em> include an If-Match header containing the most recent Etag it received for that resource.
-Processing Rules:
-If the If-Match header value does not match the linkset's current Etag, the server <em class="rfc2119">MUST</em> reject the request with a 412 Precondition Failed status code.
-If the If-Match header is missing from a PUT or PATCH request to a linkset URI, the server <em class="rfc2119">MUST</em> reject the request with a 428 Precondition Required status code [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc6585" title="Additional HTTP Status Codes">RFC6585</a></cite>].
+<p><strong>Conditional Requests for Metadata</strong>
+Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is important. Servers and clients <em class="rfc2119">SHOULD</em> use conditional requests as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] for PUT and PATCH operations on a <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-13">linkset resource</a>. When a server receives a conditional request for which the precondition fails, it <em class="rfc2119">MUST</em> reject the request with a <code>412 Precondition Failed</code> status code.
 Example (PUT to replace a linkset):
-A client first fetches the linkset and receives its ETag.</p>
+A client first fetches the linkset.</p>
 <pre><code aria-busy="false" class="hljs css">GET /alice/personalinfo<span class="hljs-selector-class">.json</span><span class="hljs-selector-class">.meta</span> HTTP/<span class="hljs-number">1.1</span>
 Authorization: Bearer &lt;token&gt;
 Accept: application/linkset+json
 HTTP/<span class="hljs-number">1.1</span> <span class="hljs-number">200</span> OK
 Content-Type: application/linkset+json
-ETag: <span class="hljs-string">"meta-v1"</span>
 {
   "linkset": [
     {
@@ -2271,11 +2247,10 @@ ETag: <span class="hljs-string">"meta-v1"</span>
   ]
 }
 </code></pre>
-<p>The client now wants to add a license. It constructs a new, complete linkset document and sends a PUT request with the If-Match header.</p>
+<p>The client now wants to add a license. It constructs a new, complete linkset document and sends a PUT request.</p>
 <pre><code aria-busy="false" class="hljs css">PUT /alice/personalinfo<span class="hljs-selector-class">.json</span><span class="hljs-selector-class">.meta</span> HTTP/<span class="hljs-number">1.1</span>
 Authorization: Bearer &lt;token&gt;
 Content-Type: application/linkset+json
-If-Match: <span class="hljs-string">"meta-v1"</span>
 {
   "linkset": [
     {
@@ -2286,13 +2261,12 @@ If-Match: <span class="hljs-string">"meta-v1"</span>
   ]
 }
 </code></pre>
-<p>If successful, the server responds with success and the new ETag.</p>
+<p>If successful, the server responds with success.</p>
 <pre><code aria-busy="false" class="hljs http"><span class="hljs-meta">HTTP/1.1</span> <span class="hljs-number">204</span> No Content
-<span class="hljs-attribute">ETag</span><span class="hljs-punctuation">: </span>"meta-v2"
 </code></pre>
 <p><strong>Summary of Update Rules</strong>
 If you want to change only the content of a resource → PUT/PATCH the resource itself.
-If you want to change only the links (metadata) of a resource → PUT/PATCH the resource’s associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-16">linkset resource</a>.
+If you want to change only the links (metadata) of a resource → PUT/PATCH the resource's associated <a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-14">linkset resource</a>.
 If you want to change both content and links → PUT/PATCH the resource itself, including the appropriate Link headers AND 'Prefer: set-linkset'. Setting both is off by default.</p>
 
       </section>
@@ -2312,8 +2286,8 @@ If you want to change both content and links → PUT/PATCH the resource itself, 
 <p>The delete resource operation is implemented using the HTTP DELETE method, as defined in the abstract operation above. This section specifies the HTTP bindings for inputs, behaviors, and responses.</p>
 <p>The DELETE request targets the URI of the resource or <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-67">container</a> to remove. Clients <em class="rfc2119">MAY</em> include an <code>If-Match</code> header with an ETag for concurrency checks.</p>
 <p><strong>Deletion and <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-9">Containment</a>:</strong>
-When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically remove it from its parent <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-68">container</a>'s <code>items</code> list. The parent container's <code>totalItems</code> count <em class="rfc2119">SHOULD</em> be updated accordingly, and its ETag <em class="rfc2119">MUST</em> be updated to reflect the change.</p>
-<p>For non-container resources, the server removes the resource content, its associated metadata (<a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-17">linkset resource</a>), and the <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-10">containment</a> reference in the parent <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-69">container</a>.</p>
+When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically remove it from its parent <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-68">container</a>'s <code>items</code> list. The parent container's <code>totalItems</code> count <em class="rfc2119">SHOULD</em> be updated accordingly.</p>
+<p>For non-container resources, the server removes the resource content, its associated metadata (<a href="#dfn-linkset-resource" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-linkset-resource-15">linkset resource</a>), and the <a href="#dfn-containment" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containment-10">containment</a> reference in the parent <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-69">container</a>.</p>
 <p>For <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-70">container</a> resources, the server defaults to non-recursive deletion. If the <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-71">container</a> is not empty and recursion is not requested, the server <em class="rfc2119">MUST</em> reject the request with 409 Conflict. Servers <em class="rfc2119">MAY</em> support recursive deletion of all contained resources within the <a href="#dfn-containers" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-containers-72">container</a> that is being deleted. Clients <em class="rfc2119">MUST</em> use the <code>Depth: infinity</code> header to request for a recursive delete, as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc4918" title="HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)">RFC4918</a></cite>].</p>
 <p>On success, the server <em class="rfc2119">MUST</em> respond with 204 No Content. Servers <em class="rfc2119">SHOULD</em> support conditional requests, as defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>].</p>
 <p>If the client lacks authorization, the server <em class="rfc2119">MUST</em> return 403 Forbidden (if the client's identity is known but permissions are insufficient) or 401 Unauthorized (if no valid authentication is provided). In cases where revealing resource existence poses a security risk, the server <em class="rfc2119">MAY</em> return 404 Not Found instead.</p>
@@ -2346,7 +2320,7 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
 
       </section>
 	  <section id="summary-of-http-status-mappings"><div class="header-wrapper"><h3 id="x9-6-summary-of-http-status-mappings"><bdi class="secno">9.6 </bdi>Summary of HTTP Status Mappings</h3><a class="self-link" href="#summary-of-http-status-mappings" aria-label="Permalink for Section 9.6"></a></div>
-<p>This table maps generic LWS <a href="#dfn-responses" id="ref-for-dfn-responses-2">responses</a> (from Section 8) to HTTP status codes and payloads for consistency, incorporating specific scenarios such as pagination, concurrency controls, quota constraints, and metadata integration:</p>
+<p>This table maps generic LWS <a href="#dfn-responses" id="ref-for-dfn-responses-2">responses</a> (from Section 8) to HTTP status codes and payloads for consistency, incorporating specific scenarios such as pagination, conditional requests, quota constraints, and metadata integration:</p>
 <table>
 <thead>
 <tr>
@@ -2357,23 +2331,23 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
 </thead>
 <tbody><tr>
 <td><a href="#dfn-success" id="ref-for-dfn-success-2">Success</a> (read or update, returning data)</td>
-<td>200 OK</td>
-<td><a href="#dfn-resource-representation" id="ref-for-dfn-resource-representation-1">Resource representation</a> in the response body (for GET or if PUT/PATCH returns content), along with relevant headers (Content-Type, ETag, Link for metadata such as rel="linkset", rel="up"). For container listings, include JSON-LD with normative context and member metadata (IDs, types, sizes, timestamps).</td>
+<td><code>200 OK</code></td>
+<td><a href="#dfn-resource-representation" id="ref-for-dfn-resource-representation-1">Resource representation</a> in the response body (for GET or if PUT/PATCH returns content), along with relevant headers (<code>Content-Type</code>, <code>Link</code> for metadata such as <code>rel="linkset"</code> or <code>rel="up"</code>). For container listings, include JSON-LD with normative context and member metadata (IDs, types, sizes, timestamps, etc.).</td>
 </tr>
 <tr>
 <td><a href="#dfn-created">Created</a> (new resource)</td>
-<td>201 Created</td>
-<td>Typically no response body (or a minimal representation of the new resource). The <code>Location</code> header is set to the new resource’s URI. Headers like ETag <em class="rfc2119">MUST</em> be included for concurrency; Link headers for server-managed metadata.</td>
+<td><code>201 Created</code></td>
+<td>Typically no response body (or a minimal representation of the new resource). The <code>Location</code> header is set to the new resource's URI. <code>Link</code> headers for server-managed metadata.</td>
 </tr>
 <tr>
 <td>Deleted (no content to return)</td>
-<td>204 No Content</td>
-<td>No response body. Indicates the resource was deleted or the request succeeded and there’s nothing else to say. Servers <em class="rfc2119">MAY</em> use 410 Gone for permanent deletions.</td>
+<td><code>204 No Content</code></td>
+<td>No response body. Indicates the resource was deleted or the request succeeded and there's nothing else to say. Servers <em class="rfc2119">MAY</em> use <code>410 Gone</code> for permanent deletions.</td>
 </tr>
 <tr>
 <td>Bad Request (invalid input or constraints)</td>
-<td>400 Bad Request</td>
-<td>Error details explaining what was wrong. Servers <em class="rfc2119">SHOULD</em> use the standard format defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9457" title="Problem Details for HTTP APIs">RFC9457</a></cite>] for structured error responses, such as a JSON object with fields like "type", "title", "status", "detail", and "instance".</td>
+<td><code>400 Bad Request</code></td>
+<td>Error details explaining what was wrong. Servers <em class="rfc2119">SHOULD</em> use the standard format defined in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9457" title="Problem Details for HTTP APIs">RFC9457</a></cite>] for structured error responses, such as a JSON object with fields like <code>"type"</code>, <code>"title"</code>, <code>"status"</code>, <code>"detail"</code>, and <code>"instance"</code>.</td>
 </tr>
 </tbody></table>
 </section>
@@ -2550,7 +2524,7 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
 
     <p>
       A server <em class="rfc2119">MUST</em> support the following Activity Streams 2.0 activity types to
-      indicate LWS resource changes:
+      indicate <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-16">Storage Resource</a> changes:
     </p>
 
     <ul>
@@ -3176,7 +3150,7 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
       </li>
       <li>
         <code>https://www.w3.org/ns/lws#StorageResource</code> — matches
-        any resource managed by a <a href="#dfn-storage" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-18">storage</a>.
+        any <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-17">Storage Resource</a>.
       </li>
     </ul>
 
@@ -3188,9 +3162,9 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
       This property is <em class="rfc2119">OPTIONAL</em>.
     </p>
 
-    <div class="example" id="example-target-property-with-resource-type">
+    <div class="example" id="example-target-property-with-storageresource-type">
         <div class="marker">
-    <a class="self-link" href="#example-target-property-with-resource-type">Example<bdi> 23</bdi></a><span class="example-title">: target property with Resource type</span>
+    <a class="self-link" href="#example-target-property-with-storageresource-type">Example<bdi> 23</bdi></a><span class="example-title">: target property with StorageResource type</span>
   </div> <pre aria-busy="false"><code class="hljs json"><span class="hljs-punctuation">{</span>
   <span class="hljs-attr">"access"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span>
     <span class="hljs-attr">"target"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
@@ -3365,7 +3339,7 @@ When a resource is deleted, the server <em class="rfc2119">MUST</em> atomically 
       
 
       <p>
-        All LWS resources will include link headers indicating type values:
+        All <a href="#dfn-storage-resources" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-storage-resources-18">Storage Resources</a> will include link headers indicating type values:
       </p>
 
       <div class="example" id="example-link-headers-with-type-values">
@@ -3986,6 +3960,21 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
       Specification Document(s): Section 5 of LWS-Auth
     </li>
   </ul>
+
+  <ul>
+    <li>
+      Metadata Name: subject_identifier_types_supported
+    </li>
+    <li>
+      Metadata Description: JSON array containing a list of subject identifier types that this authorization server supports
+    </li>
+    <li>
+      Change Controller: <abbr title="World Wide Web Consortium">W3C</abbr>
+    </li>
+    <li>
+      Specification Document(s): Section 5 of LWS-Auth
+    </li>
+  </ul>
 </section>
 
 <section id="iana-media-type-registry"><div class="header-wrapper"><h3 id="x18-3-the-application-lws-json-media-type"><bdi class="secno">18.3 </bdi>The <code>application/lws+json</code> Media Type</h3><a class="self-link" href="#iana-media-type-registry" aria-label="Permalink for Section 18.3"></a></div>
@@ -4093,16 +4082,12 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
       <a href="https://www.rfc-editor.org/info/rfc4918/"><cite>HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)</cite></a>. L. Dusseault, Ed. IETF. June 2007. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc4918/">https://www.rfc-editor.org/info/rfc4918/</a>
     </dd><dt id="bib-rfc5789">[RFC5789]</dt><dd>
       <a href="https://httpwg.org/specs/rfc5789.html"><cite>PATCH Method for HTTP</cite></a>. L. Dusseault; J. Snell.  IETF. March 2010. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc5789.html">https://httpwg.org/specs/rfc5789.html</a>
-    </dd><dt id="bib-rfc6585">[RFC6585]</dt><dd>
-      <a href="https://httpwg.org/specs/rfc6585.html"><cite>Additional HTTP Status Codes</cite></a>. M. Nottingham; R. Fielding.  IETF. April 2012. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc6585.html">https://httpwg.org/specs/rfc6585.html</a>
     </dd><dt id="bib-rfc6749">[RFC6749]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc6749/"><cite>The OAuth 2.0 Authorization Framework</cite></a>. D. Hardt, Ed. IETF. October 2012. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc6749/">https://www.rfc-editor.org/info/rfc6749/</a>
     </dd><dt id="bib-rfc6750">[RFC6750]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc6750/"><cite>The OAuth 2.0 Authorization Framework: Bearer Token Usage</cite></a>. M. Jones; D. Hardt.  IETF. October 2012. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc6750/">https://www.rfc-editor.org/info/rfc6750/</a>
     </dd><dt id="bib-rfc7231">[RFC7231]</dt><dd>
       <a href="https://httpwg.org/specs/rfc7231.html"><cite>Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content</cite></a>. R. Fielding, Ed.; J. Reschke, Ed. IETF. June 2014. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc7231.html">https://httpwg.org/specs/rfc7231.html</a>
-    </dd><dt id="bib-rfc7232">[RFC7232]</dt><dd>
-      <a href="https://httpwg.org/specs/rfc7232.html"><cite>Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests</cite></a>. R. Fielding, Ed.; J. Reschke, Ed. IETF. June 2014. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc7232.html">https://httpwg.org/specs/rfc7232.html</a>
     </dd><dt id="bib-rfc7233">[RFC7233]</dt><dd>
       <a href="https://httpwg.org/specs/rfc7233.html"><cite>Hypertext Transfer Protocol (HTTP/1.1): Range Requests</cite></a>. R. Fielding, Ed.; Y. Lafon, Ed.; J. Reschke, Ed. IETF. June 2014. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc7233.html">https://httpwg.org/specs/rfc7233.html</a>
     </dd><dt id="bib-rfc7240">[RFC7240]</dt><dd>
@@ -4438,19 +4423,27 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
       <a href="#ref-for-dfn-primary-resource-1" title="§ 3. Terminology">§ 3. Terminology</a> 
     </li>
   </ul>
-    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-lws-resources" aria-label="Links in this document to definition: LWS resource">
+    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-storage-resources" aria-label="Links in this document to definition: Storage Resource">
       <span class="caret"></span>
       <div>
-        <a class="self-link" href="#dfn-lws-resources" aria-label="Permalink for definition: LWS resource. Activate to close this dialog.">Permalink</a>
+        <a class="self-link" href="#dfn-storage-resources" aria-label="Permalink for definition: Storage Resource. Activate to close this dialog.">Permalink</a>
          
         
       </div>
       <p><b>Referenced in:</b></p>
       <ul>
     <li>
-      <a href="#ref-for-dfn-lws-resources-1" title="§ 3. Terminology">§ 3. Terminology</a> <a href="#ref-for-dfn-lws-resources-2" title="Reference 2">(2)</a> <a href="#ref-for-dfn-lws-resources-3" title="Reference 3">(3)</a> <a href="#ref-for-dfn-lws-resources-4" title="Reference 4">(4)</a> <a href="#ref-for-dfn-lws-resources-5" title="Reference 5">(5)</a> <a href="#ref-for-dfn-lws-resources-6" title="Reference 6">(6)</a> <a href="#ref-for-dfn-lws-resources-7" title="Reference 7">(7)</a> <a href="#ref-for-dfn-lws-resources-8" title="Reference 8">(8)</a> <a href="#ref-for-dfn-lws-resources-9" title="Reference 9">(9)</a> <a href="#ref-for-dfn-lws-resources-10" title="Reference 10">(10)</a> 
+      <a href="#ref-for-dfn-storage-resources-1" title="§ 2. Introduction">§ 2. Introduction</a> <a href="#ref-for-dfn-storage-resources-2" title="Reference 2">(2)</a> 
     </li><li>
-      <a href="#ref-for-dfn-lws-resources-11" title="§ 9.1 Metadata">§ 9.1 Metadata</a> 
+      <a href="#ref-for-dfn-storage-resources-3" title="§ 3. Terminology">§ 3. Terminology</a> <a href="#ref-for-dfn-storage-resources-4" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-resources-5" title="Reference 3">(3)</a> <a href="#ref-for-dfn-storage-resources-6" title="Reference 4">(4)</a> <a href="#ref-for-dfn-storage-resources-7" title="Reference 5">(5)</a> <a href="#ref-for-dfn-storage-resources-8" title="Reference 6">(6)</a> <a href="#ref-for-dfn-storage-resources-9" title="Reference 7">(7)</a> <a href="#ref-for-dfn-storage-resources-10" title="Reference 8">(8)</a> <a href="#ref-for-dfn-storage-resources-11" title="Reference 9">(9)</a> <a href="#ref-for-dfn-storage-resources-12" title="Reference 10">(10)</a> <a href="#ref-for-dfn-storage-resources-13" title="Reference 11">(11)</a> <a href="#ref-for-dfn-storage-resources-14" title="Reference 12">(12)</a> 
+    </li><li>
+      <a href="#ref-for-dfn-storage-resources-15" title="§ 9.1 Metadata">§ 9.1 Metadata</a> 
+    </li><li>
+      <a href="#ref-for-dfn-storage-resources-16" title="§ 10.2.3 Activity Types">§ 10.2.3 Activity Types</a> 
+    </li><li>
+      <a href="#ref-for-dfn-storage-resources-17" title="§ 11.3.4 Targets">§ 11.3.4 Targets</a> 
+    </li><li>
+      <a href="#ref-for-dfn-storage-resources-18" title="§ 11.3.5.4 Resource Type Constraints">§ 11.3.5.4 Resource Type Constraints</a> 
     </li>
   </ul>
     </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-containers" aria-label="Links in this document to definition: container">
@@ -4554,9 +4547,9 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
     </li><li>
       <a href="#ref-for-dfn-linkset-resource-7" title="§ 9.2 Create resource">§ 9.2 Create resource</a> <a href="#ref-for-dfn-linkset-resource-8" title="Reference 2">(2)</a> 
     </li><li>
-      <a href="#ref-for-dfn-linkset-resource-9" title="§ 9.4 Update resource">§ 9.4 Update resource</a> <a href="#ref-for-dfn-linkset-resource-10" title="Reference 2">(2)</a> <a href="#ref-for-dfn-linkset-resource-11" title="Reference 3">(3)</a> <a href="#ref-for-dfn-linkset-resource-12" title="Reference 4">(4)</a> <a href="#ref-for-dfn-linkset-resource-13" title="Reference 5">(5)</a> <a href="#ref-for-dfn-linkset-resource-14" title="Reference 6">(6)</a> <a href="#ref-for-dfn-linkset-resource-15" title="Reference 7">(7)</a> <a href="#ref-for-dfn-linkset-resource-16" title="Reference 8">(8)</a> 
+      <a href="#ref-for-dfn-linkset-resource-9" title="§ 9.4 Update resource">§ 9.4 Update resource</a> <a href="#ref-for-dfn-linkset-resource-10" title="Reference 2">(2)</a> <a href="#ref-for-dfn-linkset-resource-11" title="Reference 3">(3)</a> <a href="#ref-for-dfn-linkset-resource-12" title="Reference 4">(4)</a> <a href="#ref-for-dfn-linkset-resource-13" title="Reference 5">(5)</a> <a href="#ref-for-dfn-linkset-resource-14" title="Reference 6">(6)</a> 
     </li><li>
-      <a href="#ref-for-dfn-linkset-resource-17" title="§ 9.5 Delete resource">§ 9.5 Delete resource</a> 
+      <a href="#ref-for-dfn-linkset-resource-15" title="§ 9.5 Delete resource">§ 9.5 Delete resource</a> 
     </li>
   </ul>
     </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-metadata-resource" aria-label="Links in this document to definition: metadata resource">
@@ -4584,25 +4577,23 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
       <p><b>Referenced in:</b></p>
       <ul>
     <li>
-      <a href="#ref-for-dfn-storage-1" title="§ 3. Terminology">§ 3. Terminology</a> <a href="#ref-for-dfn-storage-2" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-3" title="Reference 3">(3)</a> <a href="#ref-for-dfn-storage-4" title="Reference 4">(4)</a> <a href="#ref-for-dfn-storage-5" title="Reference 5">(5)</a> 
+      <a href="#ref-for-dfn-storage-1" title="§ 3. Terminology">§ 3. Terminology</a> <a href="#ref-for-dfn-storage-2" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-3" title="Reference 3">(3)</a> <a href="#ref-for-dfn-storage-4" title="Reference 4">(4)</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-6" title="§ 5.2.3.1 Request">§ 5.2.3.1 Request</a> 
+      <a href="#ref-for-dfn-storage-5" title="§ 5.2.3.1 Request">§ 5.2.3.1 Request</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-7" title="§ 6.1 Storage Description Resource">§ 6.1 Storage Description Resource</a> 
+      <a href="#ref-for-dfn-storage-6" title="§ 6.1 Storage Description Resource">§ 6.1 Storage Description Resource</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-8" title="§ 6.1.1 Data Model">§ 6.1.1 Data Model</a> 
+      <a href="#ref-for-dfn-storage-7" title="§ 6.1.1 Data Model">§ 6.1.1 Data Model</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-9" title="§ 6.1.2 Discovery and Binding">§ 6.1.2 Discovery and Binding</a> <a href="#ref-for-dfn-storage-10" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-11" title="Reference 3">(3)</a> 
+      <a href="#ref-for-dfn-storage-8" title="§ 6.1.2 Discovery and Binding">§ 6.1.2 Discovery and Binding</a> <a href="#ref-for-dfn-storage-9" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-10" title="Reference 3">(3)</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-12" title="§ 6.1.3 Storage Capabilities">§ 6.1.3 Storage Capabilities</a> 
+      <a href="#ref-for-dfn-storage-11" title="§ 6.1.3 Storage Capabilities">§ 6.1.3 Storage Capabilities</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-13" title="§ 6.1.4 Storage Services">§ 6.1.4 Storage Services</a> 
+      <a href="#ref-for-dfn-storage-12" title="§ 6.1.4 Storage Services">§ 6.1.4 Storage Services</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-14" title="§ 7.1 Container Model">§ 7.1 Container Model</a> <a href="#ref-for-dfn-storage-15" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-16" title="Reference 3">(3)</a> 
+      <a href="#ref-for-dfn-storage-13" title="§ 7.1 Container Model">§ 7.1 Container Model</a> <a href="#ref-for-dfn-storage-14" title="Reference 2">(2)</a> <a href="#ref-for-dfn-storage-15" title="Reference 3">(3)</a> 
     </li><li>
-      <a href="#ref-for-dfn-storage-17" title="§ 9.1 Metadata">§ 9.1 Metadata</a> 
-    </li><li>
-      <a href="#ref-for-dfn-storage-18" title="§ 11.3.4 Targets">§ 11.3.4 Targets</a> 
+      <a href="#ref-for-dfn-storage-16" title="§ 9.1 Metadata">§ 9.1 Metadata</a> 
     </li>
   </ul>
     </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-storage-controller" aria-label="Links in this document to definition: storage controller">
@@ -4937,6 +4928,28 @@ infrastructure, reduces latency, and prevents context manipulation attacks.
       <span class="caret"></span>
       <div>
         <a class="self-link" href="#dfn-audience-restriction" aria-label="Permalink for definition: audience restriction. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+      <li>Not referenced in this document.</li>
+    </ul>
+    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-subject_token_types_supported" aria-label="Links in this document to definition: subject_token_types_supported">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-subject_token_types_supported" aria-label="Permalink for definition: subject_token_types_supported. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+      <li>Not referenced in this document.</li>
+    </ul>
+    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-subject_identifier_types_supported" aria-label="Links in this document to definition: subject_identifier_types_supported">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-subject_identifier_types_supported" aria-label="Permalink for definition: subject_identifier_types_supported. Activate to close this dialog.">Permalink</a>
          
         
       </div>

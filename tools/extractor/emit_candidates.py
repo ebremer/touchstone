@@ -8,7 +8,10 @@ in the catalog before Gate 1), skipped (with a reason), or curated (slug + summa
 Levels derive from the strongest BCP 14 keyword in the block (MUST-family >
 SHOULD-family > MAY) unless the curation entry overrides with "level". clauseText
 is the full block text unless the entry overrides with "text" (trimming to the
-normative sentences). Hashes follow DECISIONS.md D-0008.
+normative sentences). Hashes follow DECISIONS.md D-0008. An entry's "created"
+overrides the file's, so a re-baseline keeps the date an unchanged entry was
+written. The dated source URL comes from the extraction's file name, which is the
+draft's (catalog/sources/WD-lws10-core-YYYYMMDD.clauses.json).
 
 The generated section of the catalog file starts at MARKER; re-running replaces
 everything from the marker on, so regeneration is idempotent. Never hand-edit
@@ -23,7 +26,7 @@ from pathlib import Path
 
 MARKER = "## ================= Mass extraction (generated) ================="
 TR = "https://www.w3.org/TR/lws10-core/"
-DATED = "https://www.w3.org/TR/2026/WD-lws10-core-20260821/"
+DRAFT_RE = re.compile(r"(WD-lws10-core-((\d{4})\d{4}))\.clauses\.json$")
 MUST_KW = {"MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED"}
 SHOULD_KW = {"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED"}
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*$")
@@ -47,6 +50,11 @@ def derive_level(keywords) -> str:
 
 
 def main() -> int:
+    draft = DRAFT_RE.search(Path(sys.argv[1]).name)
+    if draft is None:
+        print(f"cannot tell the draft from {sys.argv[1]}: expected WD-lws10-core-YYYYMMDD.clauses.json")
+        return 2
+    dated = f"https://www.w3.org/TR/{draft.group(3)}/{draft.group(1)}/"
     clauses = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     curation = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
     catalog = Path(sys.argv[3])
@@ -120,12 +128,12 @@ def main() -> int:
             f"    touchstone:level \"{level}\" ;",
             "    touchstone:specModule \"lws10-core\" ;",
             f"    touchstone:section <{TR}#{sec}> ;",
-            f"    touchstone:sourceDraft <{DATED}#{sec}> ;",
+            f"    touchstone:sourceDraft <{dated}#{sec}> ;",
             f"    touchstone:summary \"{e['summary']}\" ;",
             f"    touchstone:clauseText \"\"\"{text}\"\"\" ;",
             f"    touchstone:clauseHash \"{digest(text)}\" ;",
             "    touchstone:status touchstone:Draft ;",
-            f"    dcterms:created \"{created}\"^^xsd:date .",
+            f"    dcterms:created \"{e.get('created', created)}\"^^xsd:date .",
             "",
         ]
 

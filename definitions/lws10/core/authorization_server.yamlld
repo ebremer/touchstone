@@ -95,7 +95,8 @@ entries:
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
-    note: Uncatalogued; the clause is newer than the catalog baseline.
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-metadata-subject-identifier-types
     request:
       method: GET
       url: "${as.metadataUrl}"

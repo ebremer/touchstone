@@ -28,11 +28,9 @@ entries:
       - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.2
     traits: [Get, DataResource, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conditional-requests-supported
     supersedes: [core/conditional-get-304]
-    note: >-
-      Catalog entry etag-on-get-head-conditional-304 is MUST in the 21 August baseline;
-      the 21 September draft made conditional-request support SHOULD. Not cited until the
-      catalog is re-baselined.
     prereqs:
       hierarchy:
         - dataResource: created
@@ -294,10 +292,11 @@ entries:
     traits: [Get, Delete, Container, Conditional]
     requirements:
       - https://example.org/touchstone/req/lws10-core/containment-delete-atomic-items
+      - https://example.org/touchstone/req/lws10-core/delete-removes-from-parent-listing
     supersedes: [core/delete-updates-parent-etag]
     note: >-
-      Catalog entry delete-updates-parent-listing-etag still carries the removed ETag
-      clause; it is not cited until the catalog is re-baselined.
+      Only the removal from the listing is a catalogued requirement: the tag check rests on
+      RFC 9110, since the catalog entry for this paragraph no longer carries the ETag clause.
     prereqs:
       hierarchy:
         - dataResource: created

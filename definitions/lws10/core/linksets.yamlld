@@ -30,6 +30,7 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
       - https://example.org/touchstone/req/lws10-core/linkset-media-type-json
+      - https://example.org/touchstone/req/lws10-core/linkset-etag-get-head
     mirrors: lws10/manifest.jsonld#getLinkset
     supersedes: [core/linkset-discovery-and-patch-advertisement]
     prereqs:
@@ -139,10 +140,8 @@ entries:
     source:
       - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
     traits: [Patch, Linkset, Conditional]
-    note: >-
-      Catalog entry linkset-if-match-412-428 carries the 21 August text (If-Match required,
-      428 when absent); the 21 September draft keeps only the 412 MUST. Not cited until
-      the catalog is re-baselined.
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-precondition-failed-412
     prereqs:
       hierarchy:
         - dataResource: created

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
-<meta name="generator" content="ReSpec 37.3.1">
+<meta name="generator" content="ReSpec 37.3.6">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <style>
 span.example-title{text-transform:none}
@@ -8,6 +8,19 @@ span.example-title{text-transform:none}
 div.illegal-example{color:red}
 div.illegal-example p{color:#000}
 aside.example div.example{border-left-width:.1em;border-color:#999;background:#fff}
+</style>
+<style>
+.issue-label{text-transform:initial}
+.warning>p:first-child{margin-top:0}
+.warning{padding:.5em;border-left-width:.5em;border-left-style:solid}
+span.warning{padding:.1em .5em .15em}
+.issue.closed span.issue-number{text-decoration:line-through}
+.issue.closed span.issue-number::after{content:" (Closed)";font-size:smaller}
+.warning{border-color:#f11;border-color:var(--warning-border,#f11);border-width:.2em;border-style:solid;background:#fbe9e9;background:var(--warning-bg,#fbe9e9);color:#000;color:var(--text,#000)}
+.warning-title:before{content:"⚠";font-size:1.3em;float:left;padding-right:.3em;margin-top:-.3em}
+li.task-list-item{list-style:none}
+input.task-list-item-checkbox{margin:0 .35em .25em -1.6em;vertical-align:middle}
+.issue a.respec-gh-label{padding:5px;margin:0 2px 0 2px;font-size:10px;text-transform:none;text-decoration:none;font-weight:700;border-radius:4px;position:relative;bottom:2px;border:none;display:inline-block}
 </style>
 <style>
 dfn{cursor:pointer}
@@ -70,11 +83,11 @@ details.respec-tests-details>li{padding-left:1em}
 .self-link:hover{opacity:1;text-decoration:none;background-color:transparent}
 aside.example .marker>a.self-link{color:inherit}
 .header-wrapper{display:flex;align-items:baseline}
-:is(h2,h3,h4,h5,h6):not(#toc>h2,#abstract>h2,#sotd>h2,.head>h2):has(+a.self-link){position:relative;left:-.5em}
-:is(h2,h3,h4,h5,h6):not(#toch2)+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.5}
-:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§";text-decoration:none;color:var(--heading-text)}
+:is(h2,h3,h4,h5,h6):not(:where(#toc>h2,#abstract>h2,#sotd>h2,.head>h2)):has(+a.self-link){position:relative;left:-.5em}
+:is(h2,h3,h4,h5,h6):not(:where(#toch2))+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.8;text-decoration:none}
+:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§"}
 :is(h2,h3)+a.self-link{top:-.2em}
-:is(h4,h5,h6)+a.self-link::before{color:#000}
+:is(h2,h3)+a.self-link::before{color:var(--heading-text)}
 @media (max-width:767px){
 dd{margin-left:0}
 }
@@ -88,8 +101,7 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
 <link rel="stylesheet" href="local.css">
     
   
-<meta name="color-scheme" content="light">
-<meta name="revision" content="c3ca6944a0b3d2ea235d686ac51cbce95d5c0242">
+<meta name="revision" content="3ddc6423bb08c1e3285176bb72e995706a32465c">
 <meta name="description" content="This document defines an authentication suite for the Linked Web Storage (LWS) protocol, enabling clients that are able to sign their own identity tokens to integrate with LWS.">
 <link rel="canonical" href="https://www.w3.org/TR/lws10-authn-ssi-cid/">
 <style>
@@ -194,24 +206,24 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       "id": "lws10-core"
     }
   },
-  "gitRevision": "c3ca6944a0b3d2ea235d686ac51cbce95d5c0242",
-  "publishDate": "2026-08-21",
+  "gitRevision": "3ddc6423bb08c1e3285176bb72e995706a32465c",
+  "publishDate": "2026-09-21",
   "previousMaturity": "WD",
-  "previousPublishDate": "2026-08-03",
-  "publishISODate": "2026-08-21T00:00:00.000Z",
-  "generatedSubtitle": "W3C Working Draft 21 August 2026"
+  "previousPublishDate": "2026-08-21",
+  "publishISODate": "2026-09-21T00:00:00.000Z",
+  "generatedSubtitle": "W3C Working Draft 21 September 2026"
 }</script>
 <link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD"></head>
   <body class="h-entry" data-cite="web-platform"><div class="head">
     <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
   </a></p>
     <h1 id="title" class="title">LWS 1.0 Authentication Suite: Self-signed Identity using Controlled Identifiers</h1> 
-    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-08-21">21 August 2026</time></p>
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-09-21">21 September 2026</time></p>
     <details open="">
       <summary>More details about this document</summary>
       <dl>
         <dt>This version:</dt><dd>
-                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260821/">https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260821/</a>
+                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/">https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/</a>
                 </dd>
         <dt>Latest published version:</dt><dd>
                   <a href="https://www.w3.org/TR/lws10-authn-ssi-cid/">https://www.w3.org/TR/lws10-authn-ssi-cid/</a>
@@ -318,6 +330,12 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
         In these cases, the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a> is able to securely manage the private portion of a keypair, which it uses to generate signed JSON Web Tokens (JWT).
         This specification describes how this class of <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agents</a> can generate <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credentials</a> that can be used with a Linked Web Storage.
       </p>
+
+      <div class="note" role="note" id="issue-container-generatedID"><div class="note-title marker" id="h-note"><span>Note</span></div><div class="">
+        <p>
+          This authentication suite is designed to work with subject identifiers that use HTTPS URIs as well as DID URIs. Since DID documents, as defined in Decentralized Identifiers (DIDs) 1.1 [<cite><a class="bibref" data-link-type="biblio" href="#bib-did-1-1" title="Decentralized Identifiers (DIDs) v1.1">DID-1.1</a></cite>] Section 5.1.2, extend controlled identifier documents [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>], they are compatible with the validation process described in this specification.
+        </p>
+      </div></div>
     </section>
     <section id="conformance"><div class="header-wrapper"><h2 id="x2-conformance"><bdi class="secno">2. </bdi>Conformance</h2><a class="self-link" href="#conformance" aria-label="Permalink for Section 2."></a></div><p>As well as sections marked as non-normative, all authoring guidelines, diagrams, examples, and notes in this specification are non-normative. Everything else in this specification is normative.</p><p>
         The key words <em class="rfc2119">MAY</em>, <em class="rfc2119">MUST</em>, and <em class="rfc2119">MUST NOT</em> in this document
@@ -545,7 +563,9 @@ signature</code></pre>
     </dd></dl>
   </section><section id="informative-references"><div class="header-wrapper"><h3 id="a-2-informative-references"><bdi class="secno">A.2 </bdi>Informative references</h3><a class="self-link" href="#informative-references" aria-label="Permalink for Appendix A.2"></a></div>
     
-    <dl class="bibliography"><dt id="bib-openid-connect-core">[OPENID-CONNECT-CORE]</dt><dd>
+    <dl class="bibliography"><dt id="bib-did-1-1">[DID-1.1]</dt><dd>
+      <a href="https://www.w3.org/TR/did-1.1/"><cite>Decentralized Identifiers (DIDs) v1.1</cite></a>. Manu Sporny; Dmitri Zagidulin.  W3C. 5 March 2026. W3C Candidate Recommendation. URL: <a href="https://www.w3.org/TR/did-1.1/">https://www.w3.org/TR/did-1.1/</a>
+    </dd><dt id="bib-openid-connect-core">[OPENID-CONNECT-CORE]</dt><dd>
       <a href="https://openid.net/specs/openid-connect-core-1_0.html"><cite>OpenID Connect Core 1.0 incorporating errata set 2</cite></a>. N. Sakimura; J. Bradley; M. Jones; B. de Medeiros; C. Mortimore.  OpenID Foundation. 15 December 2023. Final. URL: <a href="https://openid.net/specs/openid-connect-core-1_0.html">https://openid.net/specs/openid-connect-core-1_0.html</a>
     </dd><dt id="bib-rfc9700">[RFC9700]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc9700/"><cite>Best Current Practice for OAuth 2.0 Security</cite></a>. T. Lodderstedt; J. Bradley; A. Labunets; D. Fett.  IETF. January 2025. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc9700/">https://www.rfc-editor.org/info/rfc9700/</a>

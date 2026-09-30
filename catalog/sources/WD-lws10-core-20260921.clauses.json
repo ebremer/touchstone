@@ -298,16 +298,35 @@
    "authorization-protocol-flow",
    "authorization-server-metadata"
   ],
-  "tag": "p",
+  "tag": "li",
   "rfc2119_markup": true,
   "in_note": false,
   "keywords": [
+   "OPTIONAL",
    "SHOULD"
   ],
-  "text": "An authorization server SHOULD advertise the subject tokens that it supports by including a subject_token_types_supported entry in the server metadata document. This entry is a JSON array containing a list of valid subject_token_type values that can be supplied at the authorization server's token endpoint."
+  "text": "subject_token_types_supported OPTIONAL. JSON array containing a list of valid subject_token_type values that can be supplied at the authorization server's token endpoint. An authorization server SHOULD advertise the subject tokens that it supports by including this entry in the server metadata document."
  },
  {
   "i": 19,
+  "section": "authorization-server-metadata",
+  "heading": "5.2.2 Authorization Server Metadata",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-server-metadata"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL",
+   "SHOULD"
+  ],
+  "text": "subject_identifier_types_supported OPTIONAL. JSON array containing a list of subject identifier types that the authorization server supports. Each value is a URI starting with its scheme such as \"https:\", or, for Decentralized Identifiers, \"did:\" followed by the DID method name (e.g., \"did:web\", \"did:key\"). An authorization server SHOULD advertise the subject identifier types that it supports by including this entry in the server metadata document. If omitted, the default value is [\"https\"]."
+ },
+ {
+  "i": 20,
   "section": "authorization-token-exchange-request",
   "heading": "5.2.3.1 Request",
   "path": [
@@ -323,25 +342,6 @@
    "MUST"
   ],
   "text": "The authorization server's token endpoint MUST support the urn:ietf:params:oauth:grant-type:token-exchange grant type, as described in OAuth 2.0 Token Exchange [RFC8693]."
- },
- {
-  "i": 20,
-  "section": "authorization-token-exchange-request",
-  "heading": "5.2.3.1 Request",
-  "path": [
-   "authorization",
-   "authorization-protocol-flow",
-   "authorization-token-exchange",
-   "authorization-token-exchange-request"
-  ],
-  "tag": "li",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MUST",
-   "REQUIRED"
-  ],
-  "text": "The resource parameter is REQUIRED. The value of this parameter MUST be a URI and will be used to populate the aud (audience) claim in the resulting access token. The supplied value will be the same as the realm parameter response in a WWW-Authenticate challenge. The authorization server MUST reject any request in which the resource parameter identifies an unknown or untrusted storage."
  },
  {
   "i": 21,
@@ -360,10 +360,29 @@
    "MUST",
    "REQUIRED"
   ],
-  "text": "The subject_token parameter is REQUIRED. The value of this parameter MUST include a valid subject token, such as an authentication credential."
+  "text": "The resource parameter is REQUIRED. The value of this parameter MUST be a URI and will be used to populate the aud (audience) claim in the resulting access token. The supplied value will be the same as the realm parameter response in a WWW-Authenticate challenge. The authorization server MUST reject any request in which the resource parameter identifies an unknown or untrusted storage."
  },
  {
   "i": 22,
+  "section": "authorization-token-exchange-request",
+  "heading": "5.2.3.1 Request",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-request"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "The subject_token parameter is REQUIRED. The value of this parameter MUST include a valid subject token, such as an authentication credential."
+ },
+ {
+  "i": 23,
   "section": "authorization-token-exchange-request",
   "heading": "5.2.3.1 Request",
   "path": [
@@ -381,7 +400,7 @@
   "text": "Before returning an access token to the client, the authorization server MUST successfully validate all presented tokens."
  },
  {
-  "i": 23,
+  "i": 24,
   "section": "authorization-token-exchange-response",
   "heading": "5.2.3.2 Response",
   "path": [
@@ -397,25 +416,6 @@
    "MUST"
   ],
   "text": "If the token request is valid and the client is authorized to make the request, the authorization server response MUST conform to Section 5.1 from the OAuth 2.0 Authorization Framework [RFC6749]. The resulting access token MUST conform to the JSON Web Token Profile for OAuth 2.0 Access Tokens [RFC9068]."
- },
- {
-  "i": 24,
-  "section": "authorization-token-exchange-response",
-  "heading": "5.2.3.2 Response",
-  "path": [
-   "authorization",
-   "authorization-protocol-flow",
-   "authorization-token-exchange",
-   "authorization-token-exchange-response"
-  ],
-  "tag": "li",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MUST",
-   "REQUIRED"
-  ],
-  "text": "sub (subject) — REQUIRED. This claim MUST be a URI identifying the agent performing the operation"
  },
  {
   "i": 25,
@@ -434,7 +434,7 @@
    "MUST",
    "REQUIRED"
   ],
-  "text": "iss (issuer) — REQUIRED. This claim MUST be the URI of the authorization server"
+  "text": "sub (subject) — REQUIRED. This claim MUST be a URI identifying the agent performing the operation"
  },
  {
   "i": 26,
@@ -453,7 +453,7 @@
    "MUST",
    "REQUIRED"
   ],
-  "text": "client_id (client id) — REQUIRED. This claim MUST be a URI identifying the client."
+  "text": "iss (issuer) — REQUIRED. This claim MUST be the URI of the authorization server"
  },
  {
   "i": 27,
@@ -472,10 +472,29 @@
    "MUST",
    "REQUIRED"
   ],
-  "text": "aud (audience) — REQUIRED. This claim MUST include the URI supplied by the client in the resource parameter. This value will be used to restrict the entities for which the access token is valid. This will be the same value as provided by a storage server in the realm parameter of a WWW-Authenticate challenge."
+  "text": "client_id (client id) — REQUIRED. This claim MUST be a URI identifying the client."
  },
  {
   "i": 28,
+  "section": "authorization-token-exchange-response",
+  "heading": "5.2.3.2 Response",
+  "path": [
+   "authorization",
+   "authorization-protocol-flow",
+   "authorization-token-exchange",
+   "authorization-token-exchange-response"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "REQUIRED"
+  ],
+  "text": "aud (audience) — REQUIRED. This claim MUST include the URI supplied by the client in the resource parameter. This value will be used to restrict the entities for which the access token is valid. This will be the same value as provided by a storage server in the realm parameter of a WWW-Authenticate challenge."
+ },
+ {
+  "i": 29,
   "section": "authorization-token-exchange-response",
   "heading": "5.2.3.2 Response",
   "path": [
@@ -495,7 +514,7 @@
   "text": "exp (expiration) — REQUIRED. Authorization servers SHOULD issue tokens with short lifetimes (RECOMMENDED: 300 seconds or less) to limit exposure from token theft."
  },
  {
-  "i": 29,
+  "i": 30,
   "section": "authorization-token-exchange-response",
   "heading": "5.2.3.2 Response",
   "path": [
@@ -513,7 +532,7 @@
   "text": "iat (issued at) — REQUIRED."
  },
  {
-  "i": 30,
+  "i": 31,
   "section": "authorization-token-exchange-response",
   "heading": "5.2.3.2 Response",
   "path": [
@@ -531,7 +550,7 @@
   "text": "jti (JWT ID) — REQUIRED."
  },
  {
-  "i": 31,
+  "i": 32,
   "section": "authorization-token-exchange-response",
   "heading": "5.2.3.2 Response",
   "path": [
@@ -549,7 +568,7 @@
   "text": "All invalid or unauthorized requests MUST result in an error response as described in Section 5.2 in the OAuth 2.0 Authorization Framework [RFC6749]."
  },
  {
-  "i": 32,
+  "i": 33,
   "section": "authorization-token-validation-presentation",
   "heading": "5.2.4.1 Presentation",
   "path": [
@@ -567,7 +586,7 @@
   "text": "A client MUST present an access token to a storage server using the Authorization header with an authentication scheme as defined in [RFC6750]."
  },
  {
-  "i": 33,
+  "i": 34,
   "section": "authorization-token-validation-verification",
   "heading": "5.2.4.2 Validation",
   "path": [
@@ -585,7 +604,7 @@
   "text": "A storage server MUST validate an access token by performing the following checks, rejecting the request upon any failure:"
  },
  {
-  "i": 34,
+  "i": 35,
   "section": "authorization-token-validation-verification",
   "heading": "5.2.4.2 Validation",
   "path": [
@@ -604,7 +623,7 @@
   "text": "JWT Signature Validation: Verify the JWT signature using the authorization server's public key retrieved from the jwks_uri specified in the authorization server metadata. Storage servers SHOULD cache these keys and MUST support key rotation."
  },
  {
-  "i": 35,
+  "i": 36,
   "section": "authorization-token-validation-verification",
   "heading": "5.2.4.2 Validation",
   "path": [
@@ -622,7 +641,7 @@
   "text": "If validation fails, the storage server MUST return 401 Unauthorized with a WWW-Authenticate header containing an appropriate error parameter (e.g., invalid_token, invalid_request, or insufficient_scope)."
  },
  {
-  "i": 36,
+  "i": 37,
   "section": "authorization-token-validation-verification",
   "heading": "5.2.4.2 Validation",
   "path": [
@@ -640,7 +659,7 @@
   "text": "If the token is otherwise valid but an authorization policy does not allow the requested operation, the storage server MUST reject the request."
  },
  {
-  "i": 37,
+  "i": 38,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -658,7 +677,7 @@
   "text": "id - the id property is REQUIRED. Its value MUST be the canonical URI of the storage. Per [CID-1.0], this URI is also the canonical URL of the controlled identifier document."
  },
  {
-  "i": 38,
+  "i": 39,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -676,7 +695,7 @@
   "text": "type - the type property is REQUIRED. Its value MUST be a string that equals Storage or a set of strings that contains an item equal to Storage (case-sensitive)."
  },
  {
-  "i": 39,
+  "i": 40,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -694,7 +713,7 @@
   "text": "id - the id property is OPTIONAL. If present, its value MUST be a URI."
  },
  {
-  "i": 40,
+  "i": 41,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -712,7 +731,7 @@
   "text": "type - the type property is REQUIRED. Its value MUST be a string or a set of strings."
  },
  {
-  "i": 41,
+  "i": 42,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -731,7 +750,7 @@
   "text": "capability - the capability property is OPTIONAL. Its value MUST be a set of capabilities, where each capability is described by a map containing the following properties. Additional properties MAY be present."
  },
  {
-  "i": 42,
+  "i": 43,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -749,7 +768,7 @@
   "text": "id - the id property is OPTIONAL. If present, its value MUST be a URI."
  },
  {
-  "i": 43,
+  "i": 44,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -767,7 +786,7 @@
   "text": "type - the type property is REQUIRED. Its value MUST be a string or a set of strings."
  },
  {
-  "i": 44,
+  "i": 45,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -785,7 +804,7 @@
   "text": "serviceEndpoint - the serviceEndpoint property is REQUIRED. Its value MUST be a URI."
  },
  {
-  "i": 45,
+  "i": 46,
   "section": "storage-description-data-model",
   "heading": "6.1.1 Data Model",
   "path": [
@@ -804,7 +823,7 @@
   "text": "service - the service property is REQUIRED. Its value MUST be a set of services, where each service is described by a map containing the following properties. Additional properties MAY be present. The set MUST contain a service whose type equals StorageRoot."
  },
  {
-  "i": 46,
+  "i": 47,
   "section": "storage-description-binding",
   "heading": "6.1.2 Discovery and Binding",
   "path": [
@@ -821,7 +840,7 @@
   "text": "All responses to GET and HEAD requests targeting storage resources MUST include a Link header whose target is the canonical URI of the storage, including a relation (rel) parameter whose value equals https://www.w3.org/ns/lws#storage."
  },
  {
-  "i": 47,
+  "i": 48,
   "section": "storage-description-binding",
   "heading": "6.1.2 Discovery and Binding",
   "path": [
@@ -838,7 +857,7 @@
   "text": "Requests for the storage URI MUST return a document that conforms to the storage description resource data model with a media type of application/lws+cid, unless content negotiation requires a different format."
  },
  {
-  "i": 48,
+  "i": 49,
   "section": "storage-description-services",
   "heading": "6.1.4 Storage Services",
   "path": [
@@ -856,7 +875,7 @@
   "text": "A storage description resource MUST contain a StorageRoot service whose serviceEndpoint is the URI of the storage root container. Additional services connected to a storage MAY also be present. The API definition of these additional services are outside the scope of this specification."
  },
  {
-  "i": 49,
+  "i": 50,
   "section": "storage-description-representation",
   "heading": "6.1.5 Storage Description Representation",
   "path": [
@@ -874,7 +893,7 @@
   "text": "A storage description MUST be serializable with the media type application/lws+cid. The @context property MUST be an array starting with the URIs https://www.w3.org/ns/cid/v1 and https://www.w3.org/ns/lws/v1. Other representations MAY be available via content negotiation."
  },
  {
-  "i": 50,
+  "i": 51,
   "section": "container-model",
   "heading": "7.1 Container Model",
   "path": [
@@ -890,7 +909,7 @@
   "text": "Linked Web Storage organizes resources into containers. A container is a specialized resource that holds references to other resources, called its members. Containers serve as organizational units, analogous to directories or collections, enabling clients to group, discover, and navigate resources. A container maintains references to its member resources, which may comprise both non-container resources and additional container resources, thereby enabling hierarchical formations. Typically, a container holds minimal intrinsic content beyond metadata or enumerations of its members; its principal role is to aggregate and structure subordinate resources. The storage system's root is designated as a container, serving as the apex organizational unit devoid of a superior parent. The structure of container representations is defined in 8.1 Container Representation; their media type and pagination requirements are defined in 12. LWS Media Type. Storage MAY function as a root container, enabling direct writes."
  },
  {
-  "i": 51,
+  "i": 52,
   "section": "containment",
   "heading": "7.2 Containment",
   "path": [
@@ -906,7 +925,7 @@
   "text": "The containment relationship between a resource and its parent container is expressed via the rel=\"up\" link relation. Servers MUST include a Link header with rel=\"up\" pointing to the parent container in responses to GET and HEAD requests on any non-root resource."
  },
  {
-  "i": 52,
+  "i": 53,
   "section": "containment-integrity",
   "heading": "7.3 Containment Integrity",
   "path": [
@@ -922,7 +941,7 @@
   "text": "The server MUST maintain containment integrity at all times:"
  },
  {
-  "i": 53,
+  "i": 54,
   "section": "containment-integrity",
   "heading": "7.3 Containment Integrity",
   "path": [
@@ -938,7 +957,7 @@
   "text": "Creation: When a new resource is created in a container, the server MUST atomically add the resource to the container's items list."
  },
  {
-  "i": 54,
+  "i": 55,
   "section": "containment-integrity",
   "heading": "7.3 Containment Integrity",
   "path": [
@@ -954,7 +973,7 @@
   "text": "Deletion: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. Deleting a container requires the container to be empty, unless recursive deletion is explicitly requested."
  },
  {
-  "i": 55,
+  "i": 56,
   "section": "containment-integrity",
   "heading": "7.3 Containment Integrity",
   "path": [
@@ -970,7 +989,7 @@
   "text": "No orphans: Every non-root resource MUST be reachable from the storage root through the containment hierarchy."
  },
  {
-  "i": 56,
+  "i": 57,
   "section": "containment-integrity",
   "heading": "7.3 Containment Integrity",
   "path": [
@@ -986,7 +1005,7 @@
   "text": "No cycles: A container MUST NOT directly or indirectly contain itself."
  },
  {
-  "i": 57,
+  "i": 58,
   "section": "resource-identification-0",
   "heading": "7.4 Resource Identification",
   "path": [
@@ -1003,7 +1022,7 @@
   "text": "Resources are identified by URIs. The URI of a resource is independent of its position in the containment hierarchy. Servers assign URIs during resource creation and MAY incorporate client hints, but clients SHOULD NOT assume that URI structure reflects containment."
  },
  {
-  "i": 58,
+  "i": 59,
   "section": "container-membership-and-authorization",
   "heading": "7.5 Container Membership and Authorization",
   "path": [
@@ -1020,7 +1039,7 @@
   "text": "If a client has read access to a container, the container representation MUST include the identifiers for all resources contained in that container to which the client has access. It MAY also contain the identifiers for resources contained in that container to which the client does not have access."
  },
  {
-  "i": 59,
+  "i": 60,
   "section": "container-properties",
   "heading": "8.1.1 Container Properties",
   "path": [
@@ -1037,7 +1056,7 @@
   "text": "A container representation MUST include the following properties:"
  },
  {
-  "i": 60,
+  "i": 61,
   "section": "container-properties",
   "heading": "8.1.1 Container Properties",
   "path": [
@@ -1055,7 +1074,7 @@
   "text": "totalItems: An integer indicating the total number of resources contained in the container which can be disclosed to the client. This count SHOULD be accurate but MAY be approximate."
  },
  {
-  "i": 61,
+  "i": 62,
   "section": "container-properties",
   "heading": "8.1.1 Container Properties",
   "path": [
@@ -1072,7 +1091,7 @@
   "text": "items: An array of contained resource descriptions (see below). If the container is empty, this MUST be an empty array. When the container listing is paginated, items contains only the current page of resources; see Pagination for details."
  },
  {
-  "i": 62,
+  "i": 63,
   "section": "contained-resource-description",
   "heading": "8.1.2 Contained Resource Description",
   "path": [
@@ -1089,7 +1108,7 @@
   "text": "Each entry in the items array describes a resource contained in the container. A contained resource description MUST include:"
  },
  {
-  "i": 63,
+  "i": 64,
   "section": "contained-resource-description",
   "heading": "8.1.2 Contained Resource Description",
   "path": [
@@ -1107,7 +1126,7 @@
   "text": "type: The type of the resource. MUST be \"DataResource\" or \"Container\", or an array containing at least one of these two strings. Servers MAY include additional user-defined types as URIs (e.g., [\"DataResource\", \"http://example.org/customType\"])."
  },
  {
-  "i": 64,
+  "i": 65,
   "section": "contained-resource-description",
   "heading": "8.1.2 Contained Resource Description",
   "path": [
@@ -1124,7 +1143,7 @@
   "text": "A contained resource description SHOULD include:"
  },
  {
-  "i": 65,
+  "i": 66,
   "section": "contained-resource-description",
   "heading": "8.1.2 Contained Resource Description",
   "path": [
@@ -1141,7 +1160,7 @@
   "text": "format: The media type of the resource (e.g., \"text/plain\", \"image/jpeg\"). MUST be present for DataResources."
  },
  {
-  "i": 66,
+  "i": 67,
   "section": "operations",
   "heading": "9. Operations",
   "path": [
@@ -1157,7 +1176,7 @@
   "text": "This section defines the four core operations that a Linked Web Storage (LWS) server MUST support. These operations manipulate resources and containers in a transport-independent manner, focusing on semantics rather than implementation details. Each operation specifies inputs, expected behaviors, and possible responses. Responses include success indicators, resource representations (where applicable), and error conditions. Implementations MUST handle these operations atomically and consistently, meaning each operation either succeeds completely or fails without partial side effects. In case of errors, responses SHOULD provide enough detail for agents to understand the issue without leaking sensitive information."
  },
  {
-  "i": 67,
+  "i": 68,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1173,7 +1192,7 @@
   "text": "The Linkset Resource For each resource in storage, a server MUST make metadata links available as a standalone resource according to [RFC9264]."
  },
  {
-  "i": 68,
+  "i": 69,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1189,7 +1208,7 @@
   "text": "Media Type: A linkset resource MUST be available as application/linkset+json."
  },
  {
-  "i": 69,
+  "i": 70,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1205,7 +1224,7 @@
   "text": "Integrity: The 'linkset' link MUST point to a server-managed resource. Updates to the linkset MUST be atomic with associated resource operations to maintain consistency."
  },
  {
-  "i": 70,
+  "i": 71,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1221,7 +1240,7 @@
   "text": "Storage: Servers MUST include a Link header with rel=\"https://www.w3.org/ns/lws#storage\" on relevant responses."
  },
  {
-  "i": 71,
+  "i": 72,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1237,7 +1256,7 @@
   "text": "Containment: Servers MUST include a Link header with rel=\"up\" pointing to the parent container for any non-root resource."
  },
  {
-  "i": 72,
+  "i": 73,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1253,7 +1272,7 @@
   "text": "Preferences: Clients MAY use the Prefer header [RFC7240] with the URI https://www.w3.org/ns/lws#PreferLinkRelations to include or omit specific relations."
  },
  {
-  "i": 73,
+  "i": 74,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1270,7 +1289,7 @@
   "text": "Modifiability Considerations Core metadata MAY be modified by clients. To ensure interoperability, servers MUST use standard HTTP headers to advertise their capabilities:"
  },
  {
-  "i": 74,
+  "i": 75,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1286,7 +1305,7 @@
   "text": "Method Discovery: Servers MUST advertise support for GET and PATCH operations on the linkset resource via the Allow header."
  },
  {
-  "i": 75,
+  "i": 76,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1302,7 +1321,7 @@
   "text": "Patch Format Discovery: Servers MUST advertise support for JSON Merge Patch [RFC7386] via the Accept-Patch header: Accept-Patch: application/merge-patch+json."
  },
  {
-  "i": 76,
+  "i": 77,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1319,7 +1338,7 @@
   "text": "Optional Methods: Servers MAY support PUT or alternative patch formats; if supported, these MUST be included in the Allow and Accept-Patch headers respectively."
  },
  {
-  "i": 77,
+  "i": 78,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1336,7 +1355,7 @@
   "text": "[!IMPORTANT] Clients SHOULD NOT assume support for PUT or specific patch formats unless they are advertised in the resource headers and MUST handle 405 Method Not Allowed or 415 Unsupported Media Type responses gracefully."
  },
  {
-  "i": 78,
+  "i": 79,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1349,10 +1368,10 @@
   "keywords": [
    "MUST"
   ],
-  "text": "Managing Metadata Metadata is managed by interacting with the resource's associated linkset resource URI. Servers MUST support concurrency controls for updates."
+  "text": "Managing Metadata Metadata is managed by interacting with the resource's associated linkset resource URI. Servers MUST include an ETag header as defined in [RFC9110] in responses to GET and HEAD requests."
  },
  {
-  "i": 79,
+  "i": 80,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1368,7 +1387,7 @@
   "text": "Partial Updates (PATCH): This is the primary mechanism for metadata management. Servers MUST support PATCH using application/merge-patch+json."
  },
  {
-  "i": 80,
+  "i": 81,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1385,7 +1404,7 @@
   "text": "Replacement (PUT): If advertised in the Allow header, a client MAY replace the entire linkset. If the server does not support PUT, it MUST reject the request with 405 Method Not Allowed."
  },
  {
-  "i": 81,
+  "i": 82,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1401,7 +1420,7 @@
   "text": "Restrictions: Servers MAY restrict modifications to specific links (like up or items) to maintain system integrity."
  },
  {
-  "i": 82,
+  "i": 83,
   "section": "metadata",
   "heading": "9.1 Metadata",
   "path": [
@@ -1417,7 +1436,7 @@
   "text": "Lifecycle: Metadata lifecycles are tied to the described resource; deleting a resource MUST result in the automatic removal of its associated linkset resource metadata."
  },
  {
-  "i": 83,
+  "i": 84,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1435,7 +1454,7 @@
   "text": "New resources are created using POST to a target container URI, with the server assigning the final identifier. Clients MAY provide initial user-managed metadata for the new resource by including one or more Link headers in the POST request, following the syntax of Web Linking in [RFC8288]. Server-managed metadata MUST be generated automatically by the server upon creation and MUST NOT be overridden by client-provided links."
  },
  {
-  "i": 84,
+  "i": 85,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1453,7 +1472,7 @@
   "text": "On success, the server MUST return the 201 status code with the new URI in the Location header. The server MUST include Link headers for key server-managed metadata, including a link to the parent container (rel=\"up\"), and a link to the created resource's dedicated linkset resource (rel=\"linkset\"; type=\"application/linkset+json\"). Additional links SHOULD include rel=\"type\" (indicating https://www.w3.org/ns/lws#Container or https://www.w3.org/ns/lws#DataResource). The body MAY be empty or include a minimal representation of the resource. All metadata creation and linking MUST be atomic with the resource creation to maintain consistency."
  },
  {
-  "i": 85,
+  "i": 86,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1469,7 +1488,7 @@
   "text": "To create a Container, the client MUST include a Link header with rel=\"type\" pointing to the Container type: Link: <https://www.w3.org/ns/lws#Container>; rel=\"type\"."
  },
  {
-  "i": 86,
+  "i": 87,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1485,7 +1504,7 @@
   "text": "On success, return 201 Created with the new URI in the Location header. The body may be empty or a minimal representation. If the target container /alice/notes/ does not exist, the server MUST return a 404 error status unless another status code is more appropriate."
  },
  {
-  "i": 87,
+  "i": 88,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1501,7 +1520,7 @@
   "text": "POST is not idempotent. Repeating it may create duplicates; clients SHOULD avoid unintentional retries or use unique identifiers/checks to prevent this."
  },
  {
-  "i": 88,
+  "i": 89,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1517,7 +1536,7 @@
   "text": "Metadata updates are atomic; servers MUST ensure the linkset resource is created and populated with mandatory server-managed fields before returning success."
  },
  {
-  "i": 89,
+  "i": 90,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1533,7 +1552,7 @@
   "text": "For discoverability, servers SHOULD include a Link header with rel=\"https://www.w3.org/ns/lws#storage\" on 401 responses to guide clients without hardcoded URIs."
  },
  {
-  "i": 90,
+  "i": 91,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1549,7 +1568,7 @@
   "text": "For containers, the server returns a listing of member resources which MAY be filtered based on authorization. Listings must include core metadata for each member."
  },
  {
-  "i": 91,
+  "i": 92,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1565,7 +1584,7 @@
   "text": "The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a container or a non-container resource (data resource). Servers MUST distinguish resource types via metadata. All responses MUST integrate with metadata as defined in Section 8.1, including Link headers for key relations such as rel=\"linkset\", rel=\"up\", and rel=\"type\". Servers MUST ensure atomicity between the resource state and its metadata during reads."
  },
  {
-  "i": 92,
+  "i": 93,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1578,10 +1597,10 @@
   "keywords": [
    "MUST"
   ],
-  "text": "GET (non-container resource) – Retrieve a resource's content: Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers MUST support range requests per [RFC7233] for partial retrieval. Responses MUST include an ETag header for concurrency control and caching."
+  "text": "GET (non-container resource) – Retrieve a resource's content: Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers MUST support range requests per [RFC7233] for partial retrieval. Responses MUST include an ETag header as defined in [RFC9110]."
  },
  {
-  "i": 93,
+  "i": 94,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1598,22 +1617,6 @@
   "text": "GET (container resource) – List a container's contents: When the target URI corresponds to a container (determined via metadata type), a GET request returns a listing of the container's members. The response body is a container representation as defined in the Container Representation section, using the LWS container media type. The listing includes metadata for each member: resource identifiers (MUST), types (MUST), media types (MUST for DataResources), sizes (SHOULD), and modification timestamps (SHOULD)."
  },
  {
-  "i": 94,
-  "section": "read-resource",
-  "heading": "9.3 Read resource",
-  "path": [
-   "operations",
-   "read-resource"
-  ],
-  "tag": "p",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MUST"
-  ],
-  "text": "In all cases, the server MUST include the following metadata in the response headers: an ETag (representing the listing version, which changes on membership modifications), and Link headers with rel=\"type\" indicating it is a container, rel=\"linkset\" and rel=\"up\"."
- },
- {
   "i": 95,
   "section": "read-resource",
   "heading": "9.3 Read resource",
@@ -1627,7 +1630,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "HEAD (any resource or container) – Headers/metadata only: The LWS server MUST support HEAD [RFC9110] for both containers and non-containers, returning the same headers as GET (including ETag, Content-Type, Link for metadata) but without a body. This enables metadata retrieval without transferring content."
+  "text": "In all cases, the server MUST include the following metadata in the response headers: an ETag header as defined in [RFC9110], and Link headers with rel=\"linkset\", rel=\"up\", and rel=\"type\" indicating it is a container."
  },
  {
   "i": 96,
@@ -1643,7 +1646,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "Caching and Conditional Requests: LWS leverages HTTP caching semantics. Servers MUST support conditional requests via If-None-Match (with ETags) or If-Modified-Since headers. If the resource or container listing has not changed, respond with 304 Not Modified to avoid redundant transfers. ETags MUST be provided in all GET/HEAD responses for concurrency and caching support."
+  "text": "HEAD (any resource or container) – Headers/metadata only: The LWS server MUST support HEAD [RFC9110] for both containers and non-containers, returning the same headers as GET (including Content-Type, Link for metadata) but without a body. This enables metadata retrieval without transferring content."
  },
  {
   "i": 97,
@@ -1659,10 +1662,26 @@
   "keywords": [
    "SHOULD"
   ],
-  "text": "Discoverability and Authorization: For enhanced discoverability, servers SHOULD include WWW-Authenticate headers on 401 Unauthorized responses with parameters to guide clients without hardcoded URIs. Metadata links SHOULD be included where applicable."
+  "text": "Caching and Conditional Requests: LWS leverages HTTP caching semantics. Servers SHOULD support conditional requests as defined in [RFC9110], including mechanisms such as entity tags (ETags) and date-based validators (like If-Modified-Since headers). If the resource or container listing has not changed, respond with 304 Not Modified to avoid redundant transfers."
  },
  {
   "i": 98,
+  "section": "read-resource",
+  "heading": "9.3 Read resource",
+  "path": [
+   "operations",
+   "read-resource"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "Discoverability and Authorization: For enhanced discoverability, servers SHOULD include WWW-Authenticate headers on 401 Unauthorized responses with parameters to guide clients without hardcoded URIs. Metadata links SHOULD be included where applicable."
+ },
+ {
+  "i": 99,
   "section": "update-resource",
   "heading": "9.4 Update resource",
   "path": [
@@ -1677,23 +1696,7 @@
    "MUST",
    "OPTIONAL"
   ],
-  "text": "The update resource modifies the contents of an existing served resource by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource’s URL to perform these operations. Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.3.2. LWS servers MUST handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated linkset resource. To optionally update both content and metadata in a single atomic operation, clients MAY include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in RFC 7240). In this case, the server MUST interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is OPTIONAL for servers but, if supported, MUST be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates MUST ignore the preference or respond with 501 Not Implemented."
- },
- {
-  "i": 99,
-  "section": "update-resource",
-  "heading": "9.4 Update resource",
-  "path": [
-   "operations",
-   "update-resource"
-  ],
-  "tag": "p",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MUST"
-  ],
-  "text": "PUT (replace full resource) – Send PUT to the resource URI with new full content in the body and matching Content-Type (generally consistent with existing type). PUT is idempotent for existing resources. For safety, include If-Match with current ETag (per Section 7.3 concurrency); mismatch yields 412 Precondition Failed or 409 Conflict. Without checks, updates are unconditional but risk overwriting concurrent changes. If a server supports Etags for a resource, it MUST reject unconditional PUT requests that lack an If-Match header with a 428 Precondition Required response."
+  "text": "The update resource modifies the contents of an existing served resource by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource's URL to perform these operations. Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.3.2. LWS servers MUST handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated linkset resource. To optionally update both content and metadata in a single atomic operation, clients MAY include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in [RFC7240]). In this case, the server MUST interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is OPTIONAL for servers but, if supported, MUST be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates MUST ignore the preference or respond with 501 Not Implemented."
  },
  {
   "i": 100,
@@ -1709,7 +1712,7 @@
   "keywords": [
    "SHOULD"
   ],
-  "text": "In this example, the client is updating an existing JSON resource at /alice/personalinfo.json. It includes an If-Match header with the ETag \"abc123456\" that it got from an earlier GET or HEAD request. The server will compare that to the current ETag; if they match, it proceeds to replace the content with the JSON provided. If they don’t match, the server rejects the update (because the resource was changed by someone else in the meantime). Successful response: If the update succeeds, the server can respond with 200 OK and possibly include the updated representation or some confirmation (like the new content or a part of it). Alternatively, the server may respond with 204 No Content to indicate success with no body (especially common if no further info needs to be conveyed). In either case, the server SHOULD include a new ETag to signify the new version, and maybe a Content-Type if a body is returned. For example:"
+  "text": "PUT (replace full resource) – Send PUT to the resource URI with new full content in the body and matching Content-Type (generally consistent with existing type). PUT is idempotent for existing resources. Clients SHOULD use conditional requests as defined in [RFC9110] to avoid overwriting concurrent changes."
  },
  {
   "i": 101,
@@ -1739,9 +1742,10 @@
   "rfc2119_markup": true,
   "in_note": false,
   "keywords": [
-   "MUST"
+   "MUST",
+   "SHOULD"
   ],
-  "text": "Concurrency Control for Metadata Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is critical. To ensure data integrity, LWS servers and clients MUST implement optimistic concurrency control using conditional requests [RFC7232] for all PUT and PATCH operations on a linkset resource. Server Responsibilities: A server MUST include an Etag header in its responses to GET and HEAD requests for a linkset resource. Upon a successful PUT or PATCH on the linkset, the server MUST generate a new, unique Etag value for the modified linkset and return it in the Etag header of the response. Client Responsibilities: When modifying a linkset resource, a client MUST include an If-Match header containing the most recent Etag it received for that resource. Processing Rules: If the If-Match header value does not match the linkset's current Etag, the server MUST reject the request with a 412 Precondition Failed status code. If the If-Match header is missing from a PUT or PATCH request to a linkset URI, the server MUST reject the request with a 428 Precondition Required status code [RFC6585]. Example (PUT to replace a linkset): A client first fetches the linkset and receives its ETag."
+  "text": "Conditional Requests for Metadata Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is important. Servers and clients SHOULD use conditional requests as defined in [RFC9110] for PUT and PATCH operations on a linkset resource. When a server receives a conditional request for which the precondition fails, it MUST reject the request with a 412 Precondition Failed status code. Example (PUT to replace a linkset): A client first fetches the linkset."
  },
  {
   "i": 103,
@@ -1774,7 +1778,7 @@
    "MUST",
    "SHOULD"
   ],
-  "text": "Deletion and Containment: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. The parent container's totalItems count SHOULD be updated accordingly, and its ETag MUST be updated to reflect the change."
+  "text": "Deletion and Containment: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. The parent container's totalItems count SHOULD be updated accordingly."
  },
  {
   "i": 105,
@@ -1839,28 +1843,12 @@
   "rfc2119_markup": true,
   "in_note": false,
   "keywords": [
-   "MUST"
+   "MAY"
   ],
-  "text": "Typically no response body (or a minimal representation of the new resource). The Location header is set to the new resource’s URI. Headers like ETag MUST be included for concurrency; Link headers for server-managed metadata."
+  "text": "No response body. Indicates the resource was deleted or the request succeeded and there's nothing else to say. Servers MAY use 410 Gone for permanent deletions."
  },
  {
   "i": 109,
-  "section": "summary-of-http-status-mappings",
-  "heading": "9.6 Summary of HTTP Status Mappings",
-  "path": [
-   "operations",
-   "summary-of-http-status-mappings"
-  ],
-  "tag": "td",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MAY"
-  ],
-  "text": "No response body. Indicates the resource was deleted or the request succeeded and there’s nothing else to say. Servers MAY use 410 Gone for permanent deletions."
- },
- {
-  "i": 110,
   "section": "summary-of-http-status-mappings",
   "heading": "9.6 Summary of HTTP Status Mappings",
   "path": [
@@ -1876,7 +1864,7 @@
   "text": "Error details explaining what was wrong. Servers SHOULD use the standard format defined in [RFC9457] for structured error responses, such as a JSON object with fields like \"type\", \"title\", \"status\", \"detail\", and \"instance\"."
  },
  {
-  "i": 111,
+  "i": 110,
   "section": "notification-discovery",
   "heading": "10.1 Notification Discovery",
   "path": [
@@ -1893,7 +1881,7 @@
   "text": "A storage MAY support notifications. A storage that supports notifications MUST advertise a service object in the service array of its storage description resource with type equal to NotificationService."
  },
  {
-  "i": 112,
+  "i": 111,
   "section": "notification-discovery",
   "heading": "10.1 Notification Discovery",
   "path": [
@@ -1909,7 +1897,7 @@
   "text": "The service object MUST include a serviceEndpoint property whose value is the URI of the subscription endpoint. The service object MUST include a subscriptionType property whose value is an array of strings, each identifying a supported subscription type."
  },
  {
-  "i": 113,
+  "i": 112,
   "section": "notification-discovery",
   "heading": "10.1 Notification Discovery",
   "path": [
@@ -1925,7 +1913,7 @@
   "text": "Additional properties MAY be present on the service object."
  },
  {
-  "i": 114,
+  "i": 113,
   "section": "envelope-properties",
   "heading": "10.2.1 Envelope Properties",
   "path": [
@@ -1943,7 +1931,7 @@
   "text": "type — REQUIRED. The value MUST be the string Notification."
  },
  {
-  "i": 115,
+  "i": 114,
   "section": "envelope-properties",
   "heading": "10.2.1 Envelope Properties",
   "path": [
@@ -1960,7 +1948,7 @@
   "text": "storage — REQUIRED. A URI identifying the LWS storage with which the notification is associated."
  },
  {
-  "i": 116,
+  "i": 115,
   "section": "envelope-properties",
   "heading": "10.2.1 Envelope Properties",
   "path": [
@@ -1977,7 +1965,7 @@
   "text": "activity — REQUIRED. A JSON object or an array of JSON objects, each conforming to the Activity Streams 2.0 data model, describing the event or events that occurred. See 10.2.2 Activity Properties."
  },
  {
-  "i": 117,
+  "i": 116,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -1994,7 +1982,7 @@
   "text": "Each activity object within the activity property MUST conform to the Activity Streams 2.0 data model and MUST include the following properties:"
  },
  {
-  "i": 118,
+  "i": 117,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2011,7 +1999,7 @@
   "text": "id — REQUIRED. A string uniquely identifying the activity."
  },
  {
-  "i": 119,
+  "i": 118,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2028,7 +2016,7 @@
   "text": "type — REQUIRED. An array of strings containing at least one Activity Streams 2.0 activity type."
  },
  {
-  "i": 120,
+  "i": 119,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2045,7 +2033,7 @@
   "text": "id — REQUIRED. The URI of the resource."
  },
  {
-  "i": 121,
+  "i": 120,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2063,7 +2051,7 @@
   "text": "type — REQUIRED. An array of strings containing at least one resource type. Values defined by this specification include Container and DataResource. Additional type values MAY be included."
  },
  {
-  "i": 122,
+  "i": 121,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2081,7 +2069,7 @@
   "text": "object — REQUIRED. A JSON object identifying the resource that the notification is about. The object MUST include the following properties:"
  },
  {
-  "i": 123,
+  "i": 122,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2098,7 +2086,7 @@
   "text": "published — REQUIRED. A datetime value conforming to [RFC3339] indicating when the activity occurred."
  },
  {
-  "i": 124,
+  "i": 123,
   "section": "activity-properties",
   "heading": "10.2.2 Activity Properties",
   "path": [
@@ -2115,7 +2103,7 @@
   "text": "The following properties are OPTIONAL:"
  },
  {
-  "i": 125,
+  "i": 124,
   "section": "activity-types",
   "heading": "10.2.3 Activity Types",
   "path": [
@@ -2129,10 +2117,10 @@
   "keywords": [
    "MUST"
   ],
-  "text": "A server MUST support the following Activity Streams 2.0 activity types to indicate LWS resource changes:"
+  "text": "A server MUST support the following Activity Streams 2.0 activity types to indicate Storage Resource changes:"
  },
  {
-  "i": 126,
+  "i": 125,
   "section": "activity-types",
   "heading": "10.2.3 Activity Types",
   "path": [
@@ -2149,7 +2137,7 @@
   "text": "Other activity types MAY also be supported."
  },
  {
-  "i": 127,
+  "i": 126,
   "section": "batching",
   "heading": "10.2.4 Batching Notifications",
   "path": [
@@ -2166,7 +2154,7 @@
   "text": "A server MAY combine multiple activities into a single notification envelope by providing an array of activity objects as the value of the activity property."
  },
  {
-  "i": 128,
+  "i": 127,
   "section": "subscriptions",
   "heading": "10.3 Subscriptions",
   "path": [
@@ -2182,7 +2170,7 @@
   "text": "To receive notifications, a subscriber creates a subscription by sending an authenticated POST request to the serviceEndpoint of the NotificationService. The request body MUST conform to the application/lws+json media type."
  },
  {
-  "i": 129,
+  "i": 128,
   "section": "subscription-request",
   "heading": "10.3.1 Subscription Request",
   "path": [
@@ -2199,7 +2187,7 @@
   "text": "A subscription request MUST contain the following fields:"
  },
  {
-  "i": 130,
+  "i": 129,
   "section": "subscription-request",
   "heading": "10.3.1 Subscription Request",
   "path": [
@@ -2217,7 +2205,7 @@
   "text": "type — REQUIRED. A string identifying the subscription type. The value MUST be one of the types listed in the subscriptionType array of the NotificationService."
  },
  {
-  "i": 131,
+  "i": 130,
   "section": "subscription-request",
   "heading": "10.3.1 Subscription Request",
   "path": [
@@ -2234,7 +2222,7 @@
   "text": "topic — REQUIRED. An array of URIs identifying the resources included in the subscription."
  },
  {
-  "i": 132,
+  "i": 131,
   "section": "subscription-request",
   "heading": "10.3.1 Subscription Request",
   "path": [
@@ -2251,7 +2239,7 @@
   "text": "A subscription request MAY contain additional fields as required by the specific subscription type."
  },
  {
-  "i": 133,
+  "i": 132,
   "section": "subscription-authorization",
   "heading": "10.3.3 Subscription Authorization",
   "path": [
@@ -2268,7 +2256,7 @@
   "text": "A server MUST enforce resource authorization when creating a subscription. If a subscriber does not have the equivalent of read access to all resources listed in the topic array, the server MUST reject the subscription request."
  },
  {
-  "i": 134,
+  "i": 133,
   "section": "subscription-authorization",
   "heading": "10.3.3 Subscription Authorization",
   "path": [
@@ -2286,7 +2274,7 @@
   "text": "Authorization MUST also be enforced at notification delivery time. A server MUST NOT deliver a notification about a resource that the subscriber is not authorized to read at the time the event occurs. This applies to all resources within the scope of a subscription, including resources in subcontainers."
  },
  {
-  "i": 135,
+  "i": 134,
   "section": "subscription-authorization",
   "heading": "10.3.3 Subscription Authorization",
   "path": [
@@ -2304,7 +2292,7 @@
   "text": "If the subscriber's access to a resource or container within the scope of a subscription is revoked after the subscription is created, the server MUST stop delivering notifications for the affected resources. The server SHOULD NOT terminate the entire subscription unless the subscriber has lost access to all resources in the topic array."
  },
  {
-  "i": 136,
+  "i": 135,
   "section": "subscription-response",
   "heading": "10.3.4 Subscription Response",
   "path": [
@@ -2321,7 +2309,7 @@
   "text": "The response to a successful subscription creation request MUST conform to the application/lws+json media type and MUST contain the following fields:"
  },
  {
-  "i": 137,
+  "i": 136,
   "section": "subscription-response",
   "heading": "10.3.4 Subscription Response",
   "path": [
@@ -2338,7 +2326,7 @@
   "text": "type — REQUIRED. A string equal to the subscription type from the request."
  },
  {
-  "i": 138,
+  "i": 137,
   "section": "subscription-response",
   "heading": "10.3.4 Subscription Response",
   "path": [
@@ -2355,7 +2343,7 @@
   "text": "subscription — REQUIRED. A URL representing the subscription."
  },
  {
-  "i": 139,
+  "i": 138,
   "section": "notification-subscription-type-identifier",
   "heading": "10.3.5 Subscription Type Identifiers",
   "path": [
@@ -2372,7 +2360,7 @@
   "text": "Each notification suite MUST be associated with a subscription type string. The subscription type string is used in the subscriptionType array of a NotificationService and in the type field of a subscription request."
  },
  {
-  "i": 140,
+  "i": 139,
   "section": "access-discovery",
   "heading": "11.1 Discovery",
   "path": [
@@ -2390,7 +2378,7 @@
   "text": "A storage MAY advertise support for access requests and access grants in its storage description resource. When such support is advertised, a service object describing an endpoint for access requests MUST have a type equal to the string AccessRequestService, and a service object describing an endpoint for access grants MUST have a type equal to the string AccessGrantService. A service object SHOULD include a conformsTo property whose value is a collection of one or more URIs identifying the access profiles supported at that endpoint. Additional properties MAY be included:"
  },
  {
-  "i": 141,
+  "i": 140,
   "section": "access-data-model",
   "heading": "11.2 Data Model",
   "path": [
@@ -2406,7 +2394,7 @@
   "text": "Other properties MAY be present on access requests and access grants."
  },
  {
-  "i": 142,
+  "i": 141,
   "section": "access-type-property",
   "heading": "11.2.1 Types",
   "path": [
@@ -2424,7 +2412,7 @@
   "text": "The value of the type property MUST be one or more terms and absolute URL strings. For an access request, the value MUST include the term AccessRequest. For an access grant, the value MUST include the term AccessGrant. Additional type values MAY be included."
  },
  {
-  "i": 143,
+  "i": 142,
   "section": "access-type-property",
   "heading": "11.2.1 Types",
   "path": [
@@ -2441,7 +2429,7 @@
   "text": "This property is REQUIRED."
  },
  {
-  "i": 144,
+  "i": 143,
   "section": "access-storage-property",
   "heading": "11.2.2 Storage",
   "path": [
@@ -2458,7 +2446,7 @@
   "text": "The value of the storage property MUST be a URI."
  },
  {
-  "i": 145,
+  "i": 144,
   "section": "access-storage-property",
   "heading": "11.2.2 Storage",
   "path": [
@@ -2475,7 +2463,7 @@
   "text": "This property is REQUIRED."
  },
  {
-  "i": 146,
+  "i": 145,
   "section": "access-inbox-property",
   "heading": "11.2.3 Inbox",
   "path": [
@@ -2492,7 +2480,7 @@
   "text": "The value of the inbox property MUST be a URI."
  },
  {
-  "i": 147,
+  "i": 146,
   "section": "access-inbox-property",
   "heading": "11.2.3 Inbox",
   "path": [
@@ -2509,7 +2497,7 @@
   "text": "This property is OPTIONAL."
  },
  {
-  "i": 148,
+  "i": 147,
   "section": "access-property",
   "heading": "11.2.4 Access",
   "path": [
@@ -2526,7 +2514,7 @@
   "text": "The value of the access property MUST be a collection of one or more objects."
  },
  {
-  "i": 149,
+  "i": 148,
   "section": "access-property",
   "heading": "11.2.4 Access",
   "path": [
@@ -2543,7 +2531,7 @@
   "text": "This property is REQUIRED."
  },
  {
-  "i": 150,
+  "i": 149,
   "section": "odrl-type",
   "heading": "11.3.1 Types",
   "path": [
@@ -2561,7 +2549,7 @@
   "text": "The value of the type property MUST be one or more terms and absolute URL strings, and MUST include the term AccessPolicy. Additional type values MAY be included."
  },
  {
-  "i": 151,
+  "i": 150,
   "section": "odrl-type",
   "heading": "11.3.1 Types",
   "path": [
@@ -2578,7 +2566,7 @@
   "text": "The property is REQUIRED."
  },
  {
-  "i": 152,
+  "i": 151,
   "section": "odrl-action",
   "heading": "11.3.2 Actions",
   "path": [
@@ -2595,7 +2583,7 @@
   "text": "The value of the action property MUST be a collection of one or more strings. Each value MUST correspond to an operation recognized by the server. The following values MUST be supported: read, modify, create, and delete. The read, modify, and delete values are defined by the ODRL Vocabulary. The create value is defined by this specification."
  },
  {
-  "i": 153,
+  "i": 152,
   "section": "odrl-action",
   "heading": "11.3.2 Actions",
   "path": [
@@ -2612,7 +2600,7 @@
   "text": "This property is REQUIRED."
  },
  {
-  "i": 154,
+  "i": 153,
   "section": "odrl-assignee",
   "heading": "11.3.3 Assignee",
   "path": [
@@ -2630,7 +2618,7 @@
   "text": "The value of the assignee property MUST be a URI. Public access MAY be assigned using the Agent class from the FOAF vocabulary, identified by the URI http://xmlns.com/foaf/0.1/Agent."
  },
  {
-  "i": 155,
+  "i": 154,
   "section": "odrl-assignee",
   "heading": "11.3.3 Assignee",
   "path": [
@@ -2647,7 +2635,7 @@
   "text": "This property is REQUIRED."
  },
  {
-  "i": 156,
+  "i": 155,
   "section": "odrl-target",
   "heading": "11.3.4 Targets",
   "path": [
@@ -2664,7 +2652,7 @@
   "text": "The target property MUST be an object containing the following properties:"
  },
  {
-  "i": 157,
+  "i": 156,
   "section": "odrl-target",
   "heading": "11.3.4 Targets",
   "path": [
@@ -2681,7 +2669,7 @@
   "text": "A server MAY support additional type values."
  },
  {
-  "i": 158,
+  "i": 157,
   "section": "odrl-target",
   "heading": "11.3.4 Targets",
   "path": [
@@ -2698,7 +2686,7 @@
   "text": "This property is OPTIONAL."
  },
  {
-  "i": 159,
+  "i": 158,
   "section": "odrl-constraint",
   "heading": "11.3.5 Constraints",
   "path": [
@@ -2715,7 +2703,7 @@
   "text": "The value of the constraint property, if present, MUST be a collection of constraint objects. Each constraint object MUST include the following properties:"
  },
  {
-  "i": 160,
+  "i": 159,
   "section": "odrl-constraint",
   "heading": "11.3.5 Constraints",
   "path": [
@@ -2732,7 +2720,7 @@
   "text": "When multiple constraint objects are present, all of them MUST be satisfied."
  },
  {
-  "i": 161,
+  "i": 160,
   "section": "odrl-constraint",
   "heading": "11.3.5 Constraints",
   "path": [
@@ -2749,7 +2737,7 @@
   "text": "A server advertising support for this profile MUST support the following leftOperand values:"
  },
  {
-  "i": 162,
+  "i": 161,
   "section": "odrl-constraint",
   "heading": "11.3.5 Constraints",
   "path": [
@@ -2766,7 +2754,7 @@
   "text": "This property is OPTIONAL."
  },
  {
-  "i": 163,
+  "i": 162,
   "section": "constraint-combining",
   "heading": "11.3.5.6 Combining Constraints",
   "path": [
@@ -2784,7 +2772,7 @@
   "text": "When multiple constraint objects are present, all of them MUST be satisfied for access to be permitted. The following example restricts access to a specific client application before a specific date:"
  },
  {
-  "i": 164,
+  "i": 163,
   "section": "json-ld-serialization",
   "heading": "11.4.1 JSON-LD Serialization",
   "path": [
@@ -2802,7 +2790,7 @@
   "text": "This specification defines a JSON-LD serialization for access requests and access grants. Documents using this serialization MUST include an @context property whose value is an ordered set that includes https://www.w3.org/ns/lws/v1. Additional context entries MAY be included to define extension terms."
  },
  {
-  "i": 165,
+  "i": 164,
   "section": "access-protocol",
   "heading": "11.5 Protocol",
   "path": [
@@ -2818,7 +2806,7 @@
   "text": "The access request and access grant endpoints are LWS containers and MUST conform to the rules defined in this specification."
  },
  {
-  "i": 166,
+  "i": 165,
   "section": "access-protocol",
   "heading": "11.5 Protocol",
   "path": [
@@ -2835,7 +2823,7 @@
   "text": "These endpoints minimally require support for GET and POST operations. The DELETE operation is RECOMMENDED. Other operations MAY be supported."
  },
  {
-  "i": 167,
+  "i": 166,
   "section": "access-protocol",
   "heading": "11.5 Protocol",
   "path": [
@@ -2852,7 +2840,7 @@
   "text": "These endpoints MUST support the JSON-LD serialization defined in 11.4.1 JSON-LD Serialization for both request and response payloads. Servers MAY support additional serializations."
  },
  {
-  "i": 168,
+  "i": 167,
   "section": "access-protocol",
   "heading": "11.5 Protocol",
   "path": [
@@ -2868,7 +2856,7 @@
   "text": "A successful POST operation MUST respond with a Location header set to the URL of the new resource."
  },
  {
-  "i": 169,
+  "i": 168,
   "section": "access-notifications",
   "heading": "11.6 Notifications",
   "path": [
@@ -2884,7 +2872,7 @@
   "text": "Notifications provide a mechanism for informing agents and storage controllers about changes to access requests and access grants. When an inbox property is present on an access request or access grant, the server SHOULD deliver notifications to that endpoint, informing an assignee of the event."
  },
  {
-  "i": 170,
+  "i": 169,
   "section": "access-notifications",
   "heading": "11.6 Notifications",
   "path": [
@@ -2900,7 +2888,7 @@
   "text": "The serialization of notifications MUST conform to the requirements of the LWS notification data model."
  },
  {
-  "i": 171,
+  "i": 170,
   "section": "access-notifications",
   "heading": "11.6 Notifications",
   "path": [
@@ -2916,7 +2904,7 @@
   "text": "Notifications delivered to an inbox endpoint MUST conform to the requirements defined in the LWS protocol for notification delivery."
  },
  {
-  "i": 172,
+  "i": 171,
   "section": "access-notification-events",
   "heading": "11.6.1 Notification Events",
   "path": [
@@ -2933,7 +2921,7 @@
   "text": "A server SHOULD send notifications in response to the following events:"
  },
  {
-  "i": 173,
+  "i": 172,
   "section": "access-notification-events",
   "heading": "11.6.1 Notification Events",
   "path": [
@@ -2950,7 +2938,7 @@
   "text": "Access Request creation: When a new access request is submitted, the storage controller SHOULD be notified."
  },
  {
-  "i": 174,
+  "i": 173,
   "section": "access-notification-events",
   "heading": "11.6.1 Notification Events",
   "path": [
@@ -2967,7 +2955,7 @@
   "text": "Access Grant creation: When a new access grant is created, the requesting agent SHOULD be notified at the inbox specified in the associated access request."
  },
  {
-  "i": 175,
+  "i": 174,
   "section": "access-notification-events",
   "heading": "11.6.1 Notification Events",
   "path": [
@@ -2984,7 +2972,7 @@
   "text": "A server MAY send notifications in response to other events."
  },
  {
-  "i": 176,
+  "i": 175,
   "section": "lws-media-type-0",
   "heading": "12.1 LWS Media Type",
   "path": [
@@ -3000,7 +2988,7 @@
   "text": "An LWS storage description MUST be serializable with the media type application/lws+cid. The application/lws+cid media type identifies a document that is a specialization of a W3C Controlled Identifier document [CID-1.0], extended with the LWS vocabulary."
  },
  {
-  "i": 177,
+  "i": 176,
   "section": "lws-media-type-0",
   "heading": "12.1 LWS Media Type",
   "path": [
@@ -3016,7 +3004,7 @@
   "text": "An LWS container representation MUST support the media type application/lws+json."
  },
  {
-  "i": 178,
+  "i": 177,
   "section": "lws-media-type-0",
   "heading": "12.1 LWS Media Type",
   "path": [
@@ -3032,7 +3020,7 @@
   "text": "While LWS container representations use JSON-LD conventions, the constraints and requirements for LWS justify the use of a specific media type. Because LWS containers can be considered a restricted profile of JSON-LD, implementations SHOULD consider the application/ld+json; profile=\"https://www.w3.org/ns/lws/v1\" media type as equivalent to application/lws+json."
  },
  {
-  "i": 179,
+  "i": 178,
   "section": "media-type-equivalence",
   "heading": "12.1.1 Media Type Equivalence",
   "path": [
@@ -3049,7 +3037,7 @@
   "text": "For container representations, the media types application/lws+json, application/ld+json, and application/json are equivalent: the response body is the same JSON-LD document conforming to the container representation structure defined in 8.1 Container Representation, and only the Content-Type response header varies. Servers MUST honor a request for any of these media types and MUST set the Content-Type response header to the requested media type."
  },
  {
-  "i": 180,
+  "i": 179,
   "section": "media-type-equivalence",
   "heading": "12.1.1 Media Type Equivalence",
   "path": [
@@ -3066,7 +3054,7 @@
   "text": "Because the Content-Type of a container response depends on the request's Accept header, these responses SHOULD include a Vary: Accept header [RFC9110]."
  },
  {
-  "i": 181,
+  "i": 180,
   "section": "pagination",
   "heading": "12.1.2 Pagination",
   "path": [
@@ -3083,7 +3071,7 @@
   "text": "Certain composite resources, like containers, may hold a large number of resources. To allow clients to retrieve listings incrementally, servers SHOULD support pagination for containers whose membership exceeds a server-determined threshold."
  },
  {
-  "i": 182,
+  "i": 181,
   "section": "pagination-link-relations",
   "heading": "12.1.2.2 Pagination Link Relations",
   "path": [
@@ -3101,7 +3089,7 @@
   "text": "rel=\"first\": The URI of the first page of results. MUST be present on paginated responses."
  },
  {
-  "i": 183,
+  "i": 182,
   "section": "pagination-link-relations",
   "heading": "12.1.2.2 Pagination Link Relations",
   "path": [
@@ -3119,7 +3107,7 @@
   "text": "rel=\"last\": The URI of the last page of results. MAY be present on paginated responses."
  },
  {
-  "i": 184,
+  "i": 183,
   "section": "pagination-link-relations",
   "heading": "12.1.2.2 Pagination Link Relations",
   "path": [
@@ -3137,7 +3125,7 @@
   "text": "rel=\"next\": The URI of the next page of results. MUST be present when there are subsequent pages. MUST be omitted on the last page."
  },
  {
-  "i": 185,
+  "i": 184,
   "section": "pagination-link-relations",
   "heading": "12.1.2.2 Pagination Link Relations",
   "path": [
@@ -3156,7 +3144,7 @@
   "text": "rel=\"prev\": The URI of the previous page of results. MAY be present when there are preceding pages. MUST be omitted on the first page."
  },
  {
-  "i": 186,
+  "i": 185,
   "section": "pagination-link-relations",
   "heading": "12.1.2.2 Pagination Link Relations",
   "path": [
@@ -3175,7 +3163,7 @@
   "text": "All pagination URIs are opaque to the client. Clients SHOULD NOT construct or modify pagination URIs; they SHOULD use the URIs provided by the server."
  },
  {
-  "i": 187,
+  "i": 186,
   "section": "requesting-pages",
   "heading": "12.1.2.3 Requesting Pages",
   "path": [
@@ -3193,7 +3181,7 @@
   "text": "A client requests the composite resource's URI to obtain the first page. The response includes pagination Link headers that the client follows to retrieve subsequent pages. Servers MAY also support direct access to specific pages via the pagination URIs obtained during a previous scan."
  },
  {
-  "i": 188,
+  "i": 187,
   "section": "requesting-pages",
   "heading": "12.1.2.3 Requesting Pages",
   "path": [
@@ -3212,7 +3200,7 @@
   "text": "When a paginated response is returned, the server MUST respond with 200 OK. The totalItems property in the response body SHOULD reflect the total number of items across all pages, not just the current page."
  },
  {
-  "i": 189,
+  "i": 188,
   "section": "security-notifications",
   "heading": "16.4 Notifications",
   "path": [
@@ -3228,7 +3216,7 @@
   "text": "Information Disclosure: Notifications may reveal the existence or modification patterns of resources. Access control on subscriptions and on individual notification delivery MUST be consistent with access control on the underlying resources."
  },
  {
-  "i": 190,
+  "i": 189,
   "section": "privacy-notifications",
   "heading": "17.2 Notifications",
   "path": [
@@ -3244,7 +3232,7 @@
   "text": "Activity Tracking: Notifications inherently reveal when resources change. Subscribers SHOULD only receive notifications for resources they are authorized to access."
  },
  {
-  "i": 191,
+  "i": 190,
   "section": "privacy-notifications",
   "heading": "17.2 Notifications",
   "path": [
@@ -3261,7 +3249,7 @@
   "text": "Actor Disclosure: Including the actor property in notifications reveals who made changes. This may be inappropriate in some contexts. The actor property SHOULD be omitted by default. Servers MAY make its inclusion configurable."
  },
  {
-  "i": 192,
+  "i": 191,
   "section": "iana-media-type-registry",
   "heading": "18.3 The application/lws+json Media Type",
   "path": [

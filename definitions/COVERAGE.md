@@ -7,7 +7,7 @@ of 2026-09-21.
 ## Summary
 
 - **101 tests**: 84 MUST, 15 SHOULD, 2 MAY; 54 validation tests, 47 negative tests.
-- **127 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **132 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
