@@ -61,7 +61,7 @@ Tests never carry credentials. They name identities from
 | `token.<name>` | A literal access token for `alice` or `bob`. Use this only for throwaway tokens; otherwise use the environment (below). |
 | `webid.<name>` | The agent IRI of `alice` or `bob`, which grants name and harness-issued tokens carry as `sub`. Also `TOUCHSTONE_WEBID_<NAME>`. |
 | `as.signingKey` | The authorization server's private JWK, with `HarnessIssuedTokens`. `as.clientId` sets the `client_id` its tokens carry (default `touchstone`). |
-| `didkey.jwk.<name>` | A P-256 private JWK. For `alice` or `bob`, the engine exchanges a did:key credential for their token; for `didkey`, it pins the key the did:key suite uses. |
+| `didkey.jwk.<name>` | A P-256 private JWK. For `alice` or `bob`, the engine exchanges a CID-suite credential for that key's did:key subject for their token; for `didkey`, it pins the key the did:key-subject tests use. |
 | `fixtures.baseUrl`, `fixtures.bind` | With `ReachableFixtures`: the URL the server reaches the harness's fixture host at, and where the harness listens if that differs (`host:port`). |
 | `saml.idpKey`, `saml.idpCertificate` | With `SamlTrust`: the harness identity provider's RSA private JWK, and its PEM certificate if the server trusts it by certificate. |
 | `timeout` | Seconds before a request is abandoned. Default `30`. |

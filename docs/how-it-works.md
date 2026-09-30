@@ -21,7 +21,7 @@ Touchstone is a Java 21 Maven project with four modules, plus the data they oper
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`), built as one runnable jar. |
 | `harness-mcp` | A Model Context Protocol server over the same engine, for AI agents. |
 | `catalog/` | The requirements catalog: one Turtle file per specification document. |
-| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.2.0, and the contract that says how to run them. |
+| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.3.0, and the contract that says how to run them. |
 | `tools/` | Python and Node scripts that check the definitions, extract clauses from a draft, and detect drift. |
 | `targets.yaml` | The registry of servers Touchstone is allowed to test. |
 
@@ -136,8 +136,8 @@ Where alice's and bob's access tokens come from depends on the target:
 
 1. **Minted by the harness,** when the target declares `HarnessIssuedTokens` and gives the
    authorization server's signing key.
-2. **Exchanged** at the authorization server, when the target gives a did:key for the
-   identity.
+2. **Exchanged** at the authorization server, when the target gives the identity a
+   did:key: the engine presents a CID-suite credential for that DID subject.
 3. **Static,** from `token.<name>` or the environment variable `TOUCHSTONE_TOKEN_<NAME>`.
 4. **None,** on a target that does not enforce authentication.
 
@@ -184,8 +184,8 @@ provides both.
     without access, and honours grants;
   - `BROKEN`: claims to protect resources but never challenges or refuses.
 - **`RefAuthorizationServer`** publishes RFC 8414 metadata and a JWKS, and exchanges
-  did:key, CID, OpenID Connect and SAML subject tokens for access tokens (RFC 8693),
-  validating each the way its suite says. Its broken twin exchanges anything.
+  CID (HTTPS and did:key subjects), OpenID Connect and SAML subject tokens for access
+  tokens (RFC 8693), validating each the way its suite says. Its broken twin exchanges anything.
 - **`ReferenceScenario`** wires them together and says how the harness is configured for
   them.
 
@@ -195,7 +195,7 @@ provides both.
   the notification test, which is inapplicable because the reference advertises no
   notification service it does not have;
 - against an open storage, exactly the tests that need authentication are inapplicable;
-- against the broken authorization server, the 19 credential tests of the four
+- against the broken authorization server, the 19 credential tests of the three
   authentication suites fail, and so does the unknown-storage test;
 - against the broken storage, its 14 access-control tests fail.
 

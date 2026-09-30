@@ -69,10 +69,13 @@ The CID suite has a 21 September WD with no normative drift.
   → **Done (D-0057)**, at Erich's request to make Touchstone current as of 28 September
   2026. Three Approved seeds kept Approved status (same obligation), two were retired and
   their successors are Draft; flagged for review in D-0057.
-- [ ] **Decide the did:key suite's fate.** W3C published it as a Discontinued Draft on
+- [x] **Decide the did:key suite's fate.** W3C published it as a Discontinued Draft on
   29 September 2026, subsumed by the CID suite. Its catalog (12 MUST) and definitions
   (`auth/did_key`) still follow the 3 August WD, and the definitions schema accepts only
   `WD-` source URLs (D-0057).
+  → **Done (D-0058).** Retired: Erich's direction is compliance with the spec, not its
+  history. The catalog and snapshot are gone; the eight tests run under the CID suite with
+  a did:key subject (format 0.3.0).
 - [x] **Until the engine replaces them, stop `manifests/` failing conforming servers:**
   - retire `core/put-unconditional-428`;
   - move the positive 304 checks (`conditional-get-304`, and the 304 step of

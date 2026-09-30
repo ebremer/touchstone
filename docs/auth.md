@@ -1,7 +1,7 @@
 ---
 title: Authentication suites
 nav_order: 11
-description: "How Touchstone tests credential handling: harness-owned identity fixtures, the access-token negative matrix, token exchange, and the did:key, OpenID Connect, CID and SAML suites."
+description: "How Touchstone tests credential handling: harness-owned identity fixtures, the access-token negative matrix, token exchange, and the OpenID Connect, CID and SAML suites."
 ---
 
 # Authentication suites
@@ -29,9 +29,8 @@ says what each defect is.
 | Storage authorization (`core/storage_authorization`) | 17 | The 401 challenge, the owner's access, a non-owner refused, and the access-token negative matrix: expired, not yet valid, issued in the future, wrong audience, two audiences, wrong issuer, corrupted signature, unknown key, `alg: none`. |
 | Authorization server (`core/authorization_server`) | 8 | RFC 8414 metadata at `/.well-known/lws-configuration`, and RFC 8693 token exchange: a valid exchange, an unknown or missing resource, a missing subject token, and the storage accepting the token it issued. |
 | Access grants (`core/access_grants`) | 7 | The access grant service, public and per-agent grants, revocation, access requests. |
-| did:key (`auth/did_key`) | 8 | Token exchange with a self-issued did:key credential, and seven defects: signature, `alg: none`, expired, mismatched claims, an audience without the authorization server, no `exp`, no `iat`. |
 | OpenID Connect (`auth/oidc`) | 6 | Token exchange with an ID Token from the harness's OpenID Provider, which the subject's controlled identifier document names, and five defects, including a provider the subject never named. |
-| Controlled Identifiers (`auth/cid`) | 6 | Token exchange with a self-issued credential whose key the verifier finds in a CID document the harness hosts, and five defects, including a `kid` that names no key. |
+| Controlled Identifiers (`auth/cid`) | 14 | Two kinds of subject. With an HTTPS subject (`authn-cid-*`): token exchange with a self-issued credential whose key the verifier finds in a CID document the harness hosts, and five defects, including a `kid` that names no key. With a did:key subject (`authn-cid-didkey-*`), whose DID document the verifier derives from the identifier: token exchange and seven defects: signature, `alg: none`, expired, mismatched claims, an audience without the authorization server, no `exp`, no `iat`. |
 | SAML 2.0 (`auth/saml`) | 3 | Token exchange with a signed assertion from the harness identity provider, an altered one, and an unsigned one. |
 
 All of them pass against the secured reference deployment, and the self-test loop shows
@@ -56,8 +55,8 @@ alice and bob send `Authorization: Bearer <token>`, from the first source that a
 1. **Minted by the harness,** with `HarnessIssuedTokens`: an RFC 9068 access token signed
    with the authorization server's key, for the realm the storage's challenge names.
 2. **Exchanged,** when `didkey.jwk.<name>` gives the identity a P-256 did:key: the engine
-   exchanges a credential for it at the token endpoint, exactly as the token-exchange tests
-   do.
+   exchanges a CID-suite credential for that DID subject at the token endpoint, exactly as
+   the token-exchange tests do.
 3. **Static,** from `token.<name>` or `TOUCHSTONE_TOKEN_<NAME>`.
 4. **None,** on a target that does not declare `Authentication`.
 
@@ -66,8 +65,9 @@ to any target with real JWTs: a corrupted signature, `alg: none`, and a re-signa
 key nobody publishes. The others need `HarnessIssuedTokens`, except `Expired`, which
 without it waits for a real token to expire, when that is at most ten minutes away.
 
-The subject credentials of the four suites are minted per test: a P-256 did:key per run,
-a CID key published in a document the harness hosts, ID Tokens from the harness's own
+The subject credentials of the three suites are minted per test: for CID, a P-256 key
+per run behind either a did:key (its DID document derived, nothing hosted) or a document
+the harness hosts, ID Tokens from the harness's own
 OpenID Provider (and from a rogue one), and SAML assertions signed with enveloped XML
 Signature by the JDK's own XML Signature API.
 
@@ -93,11 +93,13 @@ touchstone run --target secured-ref --targets targets-secured.yaml --module auth
 ```
 
 ```text
-[passed      ] MUST   auth/did_key/manifest#authn-didkey-valid-credential (194 ms)
-[passed      ] MUST   auth/did_key/manifest#authn-didkey-invalid-signature (181 ms)
-[passed      ] MUST   auth/did_key/manifest#authn-didkey-alg-none (125 ms)
+[passed      ] MUST   auth/oidc/manifest#authn-oidc-valid-id-token (381 ms)
+[passed      ] MUST   auth/oidc/manifest#authn-oidc-expired-id-token (206 ms)
+[passed      ] MUST   auth/oidc/manifest#authn-oidc-alg-none (189 ms)
 ...
-23 passed, 0 failed, 0 cantTell, 0 inapplicable  (target secured-ref, run 19803b75)
+[passed      ] MUST   auth/cid/manifest#authn-cid-didkey-valid-credential (300 ms)
+...
+23 passed, 0 failed, 0 cantTell, 0 inapplicable  (target secured-ref, run 9144936a)
 conformant: no MUST test failed or ended cantTell
 ```
 
@@ -114,10 +116,11 @@ retires its signing key, a token that was valid stops validating.
   tokens are JWTs. The other faults need `HarnessIssuedTokens`, which only a deployment
   whose authorization server shares its key with the harness can declare; the self-test
   loop shows those tests can tell a compliant server from a broken one.
-- **Token exchange and did:key.** A did:key needs no trust set up in advance, so the
-  authorization server tests and the did:key suite apply to any server whose metadata
-  lists `did:key` among its subject identifier types. They are inapplicable otherwise.
-- **CID and OpenID Connect.** The authorization server must reach the harness's fixture
+- **Token exchange and did:key subjects.** A did:key needs no trust set up in advance and
+  nothing the server must reach, so the authorization server tests and the CID suite's
+  did:key-subject tests apply to any server whose metadata lists `did:key` among its
+  subject identifier types. They are inapplicable otherwise.
+- **CID with an HTTPS subject, and OpenID Connect.** The authorization server must reach the harness's fixture
   host: declare `ReachableFixtures` and set `fixtures.baseUrl` to the harness's address as
   the server sees it.
 - **SAML.** The authorization server must trust the harness identity provider: declare

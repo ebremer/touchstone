@@ -51,7 +51,7 @@ touchstone run -t <targetId> [-m <selector>] [--targets <file>] [--definitions <
 Before sending any request, `run` checks that:
 
 - the registry file exists, parses, and holds the target id;
-- the definitions are in the format this engine implements (0.2.0);
+- the definitions are in the format this engine implements (0.3.0);
 - every definition parses as YAML 1.2, validates against the schema, expands as JSON-LD in
   safe mode, and passes the lint, including that every requirement IRI it cites is in the
   catalog;
@@ -120,13 +120,12 @@ touchstone coverage [-c <catalogDir>] [--definitions <dir>]
 
 ```text
 $ touchstone coverage
-Requirements coverage: 132 of 231 covered by 101 test(s)
+Requirements coverage: 120 of 219 covered by 101 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     8/8
 lws10-authn-saml         MUST     7/7
 lws10-authn-ssi-cid      MUST     14/14
-lws10-authn-ssi-did-key  MUST     12/12
 lws10-core               MUST     82/144
 lws10-core               SHOULD   8/24
 lws10-core               MAY      1/22
@@ -201,7 +200,7 @@ $ touchstone run --target unconfigured --targets targets-unconfigured.yaml
 cannot run against target 'unconfigured': cannot create the run root: POST http://localhost:50094/ as alice answered 401 without a Location, not 201
 
 $ touchstone run --target ref --module core/nothing
-no test matches 'core/nothing'; try all, a module (core, auth), a manifest (core/discovery, core/containers, core/data_resources, core/conditional_requests, core/linksets, core/storage_authorization, core/authorization_server, core/access_grants, core/notifications, auth/did_key, auth/oidc, auth/cid, auth/saml) or a test id
+no test matches 'core/nothing'; try all, a module (core, auth), a manifest (core/discovery, core/containers, core/data_resources, core/conditional_requests, core/linksets, core/storage_authorization, core/authorization_server, core/access_grants, core/notifications, auth/oidc, auth/cid, auth/saml) or a test id
 ```
 
 An exception that nothing anticipated also exits with `2`, with a stack trace. Such an

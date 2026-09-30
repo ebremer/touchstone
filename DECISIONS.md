@@ -1578,3 +1578,77 @@ Verified: `clause_hash.py --check` passes on all five catalogs; `check_drift.py`
 drift and no dead anchor against the 21 September core and CID snapshots;
 `tools/definitions/check.py` passes 7 of 7; `./mvnw clean verify` is green across five
 modules, including the four-way `DefinitionsSelfTest` against the reference deployment.
+
+### D-0058 — the did:key suite is retired; a did:key subject is tested under the CID suite (format 0.3.0)
+D-0057 left the did:key suite open: W3C published it as a Discontinued Draft on 29 September
+2026 (`https://www.w3.org/TR/2026/DISC-lws10-authn-ssi-did-key-20260929/`), because the CID
+suite "subsumes this specification by specifying a generalization of the mechanism".
+Erich's direction: retire it, since Touchstone is about compliance with the specification,
+not its history.
+
+**What is gone.**
+- `catalog/lws10-authn-ssi-did-key.ttl` (12 MUST) and its snapshot and extraction. The
+  catalog holds **219 requirements** in four modules: 173 MUST, 24 SHOULD, 22 MAY.
+- `definitions/lws10/auth/did_key/`, and the root manifest's `include` and
+  `specification` entries for it. No definition cites the did:key suite.
+- The `Spec drift` job no longer fails: every catalogued document is current.
+
+**What stays, and why.** did:key *identifiers* are not retired with the suite. The 21
+September CID suite says it serves DID subjects as well as HTTPS ones, because DID
+documents extend controlled identifier documents (its section 1), and core's
+`subject_identifier_types_supported` names `did:key` as an example. A did:key subject also
+matters in practice: its DID document is derived from the identifier, so it needs no trust
+set up in advance and nothing the server under test must reach. The core token-exchange
+tests use it for that reason, and so do real targets through `didkey.jwk.<name>`.
+
+So the eight did:key tests **moved into the CID suite** as `authn-cid-didkey-*` rather
+than being deleted. They cite CID requirements and CID source anchors. The valid credential
+now also cites `validation-dereference-sub-cid` and `validation-kid-verification-method`,
+since the verifier resolves the DID and takes the key `kid` names. It no longer cites the
+did:key-only rules "sub must be a did:key URI" and "extract the key from the identifier".
+The CID suite gains the three negative checks it lacked (an audience without the
+authorization server, no `exp`, no `iat`). The definitions still number 101, and
+lws-test-suite's two did:key tests keep their counterparts, so all 27 of its tests stay
+accounted for. Moving them breaks file-for-file export for those two tests: lws-test-suite
+still files them under `auth/did_key`.
+
+**What a did:key credential is now.** Under the did:key suite, the key came from the
+identifier and the JWT carried no `kid`. Under the CID suite, the verifier "MUST use the
+kid ... to identify a verification method from the subject's controlled identifier
+document". The did:key method derives one verification method, `did:key:z…#z…`. The
+`didkey` identity is therefore a CID-suite identity, and its header carries
+`kid: ${self.kid}`, the identifier's multibase value.
+
+**This is a format change, so format 0.3.0.** `EXECUTION.md` section 5.3 defined the
+credential per suite and had a did:key bullet. D-0053 says any change to the frozen files
+bumps the schema `$id`.
+- *What changed:* section 5.3 now has a single CID bullet with two cases. An identity with a
+  `webid` has an HTTPS subject whose document the harness hosts, as before. An identity with
+  no `webid` has a did:key subject: the engine derives it, sets `self.kid` to the
+  multibase value, and hosts nothing.
+- *What did not:* the schema's rules, the context and the vocabulary. The `$id` is
+  `…/0-3-0` in both schema copies, `Definitions.SCHEMA_ID` and `FORMAT_VERSION`. A 0.2.0
+  identity naming the did:key suite no longer resolves, which is why this is a minor bump
+  and not a patch.
+- *Target configuration:* `didkey.jwk.<name>` is unchanged.
+
+**The reference authorization server follows.** `SubjectTokens` validates a did:key
+subject the CID way: the `kid` must name the derived verification method, either as
+`did:key:z…#z…` or as its fragment, before the signature is checked with the key the
+identifier encodes. `SelfIssuedVerifier.verifyDidKey` does the same, and the fixture
+negative matrix gains a credential whose `kid` names another key.
+
+**DESIGN.md is left as the brief.** It still lists `auth-didkey` among the modules, as it
+still describes `manifests/` (D-0055). The spec wins, and this entry records the deviation.
+
+Verified:
+- `./mvnw clean verify` is green across five modules. The four-way `DefinitionsSelfTest`
+  still shows each broken twin failing exactly its tests: 19 credential tests against the
+  broken authorization server.
+- `tools/definitions/check.py` passes 7 of 7, with 27/27 lws-test-suite tests mirrored.
+- `check_published.py` exits 0.
+- The secured reference deployment passes all 23 `auth` tests over HTTP, from the CLI.
+- *Negative control:* with the `kid` removed from the `didkey` identity, the reference
+  refuses the credential. Exactly the three tests that exchange a valid did:key credential
+  fail: `authn-cid-didkey-valid-credential`, `authz-token-exchange-valid` and
+  `authz-issued-token-accepted-by-storage`.

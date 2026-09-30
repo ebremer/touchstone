@@ -21,13 +21,12 @@ links are all computed from those citations.
 |---|---|---:|
 | `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 21 September 2026 | 190 |
 | `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 3 August 2026 | 8 |
-| `catalog/lws10-authn-ssi-did-key.ttl` | Self-signed identity using did:key, WD 3 August 2026 | 12 |
 | `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 21 September 2026 | 14 |
 | `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 3 August 2026 | 7 |
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
-The catalog holds 231 requirements in total: 185 MUST, 24 SHOULD and 22 MAY.
+The catalog holds 219 requirements in total: 173 MUST, 24 SHOULD and 22 MAY.
 
 ## A requirement
 
@@ -105,7 +104,7 @@ no drift: every catalog clause still appears in the spec, and every section anch
 ```
 
 A scheduled CI job, `Spec drift` (`.github/workflows/spec-drift.yml`), does this every
-week for all five documents. `tools/extractor/check_published.py` fetches each document's
+week for all four documents. `tools/extractor/check_published.py` fetches each document's
 latest version from `/TR/`, and fails when W3C serves a newer dated version than the one
 the catalog is baselined on, or when a catalogued clause has changed:
 
@@ -120,13 +119,12 @@ Because re-baselining rewrites Approved entries, it is a reviewed change.
 
 {: .note }
 The catalog is based on the **21 September 2026** core and CID drafts and the
-**3 August 2026** OpenID Connect, SAML and did:key drafts, the versions W3C published as
-of 28 September 2026 (D-0057). Against the 21 August baseline, the September core draft
+**3 August 2026** OpenID Connect and SAML drafts, the versions W3C published as of
+28 September 2026 (D-0057). Against the 21 August baseline, the September core draft
 removed the `428` on an unconditional PUT, the parent ETag change after a delete, the
 new ETag after an update and the ETag on a `201`; it made conditional requests a SHOULD;
 and it added `subject_identifier_types_supported` to the authorization server metadata.
 
-{: .warning }
-On 29 September 2026 W3C published the did:key suite as a **Discontinued Draft**, in
-favour of the CID suite, which subsumes it. The did:key catalog and definitions still
-follow its 3 August Working Draft; whether to retire them is an open decision (D-0057).
+The did:key suite is not catalogued. W3C published it as a **Discontinued Draft** on
+29 September 2026, in favour of the CID suite, which subsumes it, and Touchstone retired
+it (D-0058). A did:key subject is tested under the CID suite.

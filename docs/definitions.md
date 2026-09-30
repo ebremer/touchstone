@@ -8,7 +8,7 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 {: .no_toc }
 
 {: .important }
-**Format version 0.2.0, frozen on 2026-09-23.** These are the tests `touchstone run`
+**Format version 0.3.0, frozen on 2026-09-30.** These are the tests `touchstone run`
 executes. The engine that runs them implements the format's execution contract, and all 101
 run against the reference deployment in every build.
 
@@ -28,7 +28,8 @@ serve that effort in three ways:
 2. **They go further.** There are 101 definitions (84 MUST, 15 SHOULD, 2 MAY). They cover
    storage discovery, containers, data resources, conditional requests, linksets, the
    access-token negative matrix, the authorization server, access grants, notification
-   discovery, and the did:key, OpenID Connect, CID and SAML suites.
+   discovery, and the OpenID Connect, CID and SAML suites. The CID tests cover HTTPS and
+   did:key subjects; W3C discontinued the separate did:key suite on 29 September 2026.
 3. **They can be contributed back.** YAML-LD is JSON-LD written in YAML, so converting a
    definition to JSON-LD is mechanical and loses nothing. Nothing has been contributed
    yet; that will be a separate, deliberate step.
@@ -51,7 +52,7 @@ definitions/
     manifest.yamlld         the root manifest, which includes the modules below
     core/                   discovery, containers, data_resources, conditional_requests, linksets,
                             storage_authorization, authorization_server, access_grants, notifications
-    auth/                   did_key, oidc, cid, saml
+    auth/                   oidc, cid, saml
     fixtures/               request and expected-body files
 ```
 
@@ -173,7 +174,7 @@ The definitions are data, so they are checked as data:
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.2.0, as does the JSON-LD export trial below. One command runs
+All six pass for version 0.3.0, as does the JSON-LD export trial below. One command runs
 them all, and CI runs it on every push and pull request. The engine applies the same
 checks, bar the anchor and lws-test-suite ones, before every run:
 
