@@ -26,6 +26,8 @@ __pycache__/
 # definitions checks (tools/definitions): build output and installed packages
 tools/definitions/build/
 tools/definitions/node_modules/
+# spec-drift check (tools/extractor/check_published.py): fetched drafts
+tools/extractor/build/
 
 # misc
 *.log

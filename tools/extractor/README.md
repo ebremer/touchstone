@@ -24,3 +24,9 @@ requirements never enter the catalog unreviewed.
   (DESIGN.md §8): re-extracts the given draft and fails (exit 1) if any stored
   clause no longer appears; uncatalogued normative blocks are reported as info.
   Run it against a fresh fetch of the editor's draft to detect churn.
+- `check_published.py [--fetch-dir DIR] <catalog.ttl>...` — the scheduled half of
+  that alarm: for each catalog, fetches the document's latest version from `/TR/`,
+  reports a newer dated version or a change of maturity (a Discontinued Draft, say)
+  than the baseline in the catalog's `this-version` header, and runs `check_drift.py`
+  against it. Exit 1 when anything moved, 2 when a document could not be fetched. CI
+  runs it weekly (`.github/workflows/spec-drift.yml`, D-0057).

@@ -1,0 +1,24 @@
+name: Spec drift
+
+# The catalog is baselined on dated W3C drafts, and those drafts move. CI's other jobs
+# check the repository against itself, so the 21 September 2026 core draft went unnoticed
+# until someone looked (D-0047). This job fetches the latest version of every catalogued
+# document from /TR/ each week and fails when W3C has published a newer one or a
+# catalogued clause has changed (D-0057).
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  published:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Compare the catalog with the latest published drafts
+        run: python tools/extractor/check_published.py --fetch-dir build/latest catalog/lws10-*.ttl
