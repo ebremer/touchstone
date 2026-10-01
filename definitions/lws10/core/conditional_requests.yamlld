@@ -338,3 +338,116 @@ entries:
               none:
                 - pointer: /id
                   equalsIri: "${created}"
+
+  - id: "#conditional-get-if-modified-since-304"
+    type: ValidationTest
+    name: conditional-get-if-modified-since-304
+    label: An unchanged data resource answers If-Modified-Since with 304, a changed one with 200
+    comment: >-
+      The draft names date-based validators alongside entity tags: "including mechanisms such
+      as entity tags (ETags) and date-based validators (like If-Modified-Since headers)". A
+      validator equal to the resource's Last-Modified means nothing changed since, so 304 and
+      no body; one at the Unix epoch is older than any resource, so the representation itself.
+      No If-None-Match is sent, which RFC 9110 would let take precedence.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.3
+    traits: [Get, DataResource, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conditional-requests-supported
+    note: >-
+      From langsamu/LWS.net (Test/ConditionalRequestTests.cs, IfModifiedSince), rewritten to
+      need no clock arithmetic: the epoch stands for "before", the server's own Last-Modified
+      for "at".
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: date validator check
+    steps:
+      - label: read it and keep its Last-Modified
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Last-Modified
+              present: true
+              capture: lastModified
+      - label: not modified since that date, so 304 and no body
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-Modified-Since
+              headerValue: "${lastModified}"
+        response:
+          statusCode: 304
+          bodyEmpty: true
+      - label: modified since the epoch, so the representation
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-Modified-Since
+              headerValue: "Thu, 01 Jan 1970 00:00:00 GMT"
+        response:
+          statusCode: 200
+          bodyMatches: 'date validator check'
+
+  - id: "#conditional-get-if-unmodified-since-412"
+    type: NegativeTest
+    name: conditional-get-if-unmodified-since-412
+    label: If-Unmodified-Since passes at the resource's Last-Modified and fails with 412 before it
+    comment: >-
+      The other date-based validator of RFC 9110. At the resource's own Last-Modified the
+      condition holds and the request proceeds; at the Unix epoch the resource has changed
+      since, so the server answers 412. No If-Match is sent, which would take precedence.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.4
+    traits: [Get, DataResource, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conditional-requests-supported
+    note: >-
+      From langsamu/LWS.net (Test/ConditionalRequestTests.cs, IfUnmodifiedSince), rewritten as
+      conditional-get-if-modified-since-304 is.
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: date validator check
+    steps:
+      - label: read it and keep its Last-Modified
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Last-Modified
+              present: true
+              capture: lastModified
+      - label: unmodified since that date, so the request proceeds
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-Unmodified-Since
+              headerValue: "${lastModified}"
+        response:
+          statusCode: 200
+      - label: modified since the epoch, so 412
+        request:
+          method: GET
+          url: "${created}"
+          otherHeaders:
+            - headerName: If-Unmodified-Since
+              headerValue: "Thu, 01 Jan 1970 00:00:00 GMT"
+        response:
+          statusCode: 412

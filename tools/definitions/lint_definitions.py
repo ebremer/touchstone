@@ -63,7 +63,8 @@ for name, i in identities.items():
 
 BUILTIN = {"target.baseUrl", "run.root", "test.container", "uuid", "now", "storage",
            "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri"}
-SERVICES = {"AccessGrantService", "AccessRequestService", "NotificationService"}
+# StorageRoot is the one service every storage description MUST carry (#storage-description-services).
+SERVICES = {"StorageRoot", "AccessGrantService", "AccessRequestService", "NotificationService"}
 VAR = re.compile(r"\$\{([^}]*)\}")
 # RFC 2606 / RFC 6761 example domains: a value naming one can never match a live server.
 EXAMPLE_HOST = re.compile(r"https?://([^/:?#\"'\s]+)", re.I)

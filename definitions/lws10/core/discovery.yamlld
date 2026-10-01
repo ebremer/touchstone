@@ -218,3 +218,48 @@ entries:
       linkHeaders:
         - rel: https://www.w3.org/ns/lws#storage
           href: "${storage}"
+
+  - id: "#discovery-storage-root-is-container"
+    type: ValidationTest
+    name: discovery-storage-root-is-container
+    label: The storage description's StorageRoot service is a container
+    comment: >-
+      "A storage description resource MUST contain a StorageRoot service whose serviceEndpoint
+      is the URI of the storage root container." discovery-storage-description checks that the
+      service is declared; this follows it. Read with a container media type, the endpoint is
+      typed lws#Container in its Link header and its body is a Container. Reading the storage
+      root is the deployment's grant, not the draft's, so a target where alice may not read it
+      makes the test inapplicable rather than failed.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-services
+    traits: [Get, Discovery, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-description-storageroot-service
+    note: >-
+      From langsamu/LWS.net (manifest entry storage-root-is-container), which GETs "/" with no
+      credentials and no Accept. That request is answered with the description (or a 401), not
+      the container, so this follows the StorageRoot service as alice with lws+json instead.
+    steps:
+      - label: alice may read the storage root (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${service.StorageRoot}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+      - label: the storage root is typed and represented as a container
+        request:
+          method: GET
+          url: "${service.StorageRoot}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: type
+              href: https://www.w3.org/ns/lws#Container
+          json:
+            - pointer: /type
+              hasValue: Container

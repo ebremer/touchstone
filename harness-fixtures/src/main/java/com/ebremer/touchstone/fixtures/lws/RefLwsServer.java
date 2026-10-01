@@ -5,6 +5,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -39,6 +42,8 @@ import org.eclipse.jetty.util.Callback;
  *   <li>a storage description served as {@code application/lws+cid} at the storage URI,
  *       advertised by {@code rel="https://www.w3.org/ns/lws#storage"} on every response,
  *       including a 401, and naming the root, access grant and access request services;</li>
+ *   <li>{@code Last-Modified}, and the date validators {@code If-Modified-Since} (304) and
+ *       {@code If-Unmodified-Since} (412), evaluated in RFC 9110 section 13.2.2's order;</li>
  *   <li>strong ETags with 304 and 412, containment-consistent create and delete, 409 on
  *       deleting a non-empty container unless {@code Depth: infinity}, JSON Merge Patch on data
  *       resources, single byte ranges;</li>
@@ -334,9 +339,25 @@ public final class RefLwsServer implements AutoCloseable {
                 status(response, callback, 404);
                 return;
             }
+            // "Servers SHOULD support conditional requests as defined in [RFC9110], including
+            // mechanisms such as entity tags (ETags) and date-based validators (like
+            // If-Modified-Since headers)." Evaluated in RFC 9110 section 13.2.2's order: a date
+            // validator only when the matching entity-tag validator is absent.
+            Instant lastModified = node.modified.truncatedTo(ChronoUnit.SECONDS);
+            if (request.getHeaders().get("If-Match") == null) {
+                Instant unmodifiedSince = httpDate(request.getHeaders().get("If-Unmodified-Since"));
+                if (unmodifiedSince != null && lastModified.isAfter(unmodifiedSince)) {
+                    status(response, callback, 412);
+                    return;
+                }
+            }
             String ifNoneMatch = request.getHeaders().get("If-None-Match");
-            if (ifNoneMatch != null && (ifNoneMatch.equals("*") || ifNoneMatch.equals(node.etag))) {
+            boolean notModified = ifNoneMatch != null
+                    ? ifNoneMatch.equals("*") || ifNoneMatch.equals(node.etag)
+                    : !isAfter(lastModified, modifiedSince(request.getHeaders().get("If-Modified-Since")));
+            if (notModified) {
                 response.getHeaders().put(HttpHeader.ETAG, node.etag);
+                response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
                 addResourceLinks(request, response, path, node);
                 status(response, callback, 304);
                 return;
@@ -387,6 +408,7 @@ public final class RefLwsServer implements AutoCloseable {
                     response.setStatus(206);
                     response.getHeaders().put(HttpHeader.CONTENT_TYPE, contentType);
                     response.getHeaders().put(HttpHeader.ETAG, node.etag);
+                    response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
                     response.getHeaders().put("Content-Range", "bytes " + from + "-" + to + "/" + body.length);
                     addResourceLinks(request, response, path, node);
                     send(response, callback, slice, withBody);
@@ -396,8 +418,36 @@ public final class RefLwsServer implements AutoCloseable {
             response.setStatus(200);
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, contentType);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
+            response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
             addResourceLinks(request, response, path, node);
             send(response, callback, body, withBody);
+        }
+
+        /** True unless {@code since} is a date and {@code modified} is no later than it. */
+        private static boolean isAfter(Instant modified, Instant since) {
+            return since == null || modified.isAfter(since);
+        }
+
+        /** If-Modified-Since's date; one later than now is invalid and ignored (RFC 9110 13.1.3). */
+        private static Instant modifiedSince(String value) {
+            Instant since = httpDate(value);
+            return since != null && since.isAfter(Instant.now()) ? null : since;
+        }
+
+        /** An HTTP-date, or {@code null} when absent or invalid (RFC 9110 13.1.3: then ignored). */
+        private static Instant httpDate(String value) {
+            if (value == null) {
+                return null;
+            }
+            try {
+                return ZonedDateTime.parse(value.trim(), DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+
+        private static String httpDate(Instant instant) {
+            return DateTimeFormatter.RFC_1123_DATE_TIME.format(instant.atZone(ZoneOffset.UTC));
         }
 
         private void send(Response response, Callback callback, byte[] body, boolean withBody) {

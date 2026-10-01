@@ -1652,3 +1652,46 @@ Verified:
   refuses the credential. Exactly the three tests that exchange a valid did:key credential
   fail: `authn-cid-didkey-valid-credential`, `authz-token-exchange-valid` and
   `authz-issued-token-accepted-by-storage`.
+
+## 2026-10-01
+
+### D-0059 — three tests from langsamu/LWS.net: date validators and the storage root container
+langsamu/LWS.net (a .NET runner of the lws-test-suite data, at `80d7beb`) carries three checks this
+suite lacked. They are rewritten as definitions, not copied:
+
+- **`core/conditional_requests#conditional-get-if-modified-since-304`** (SHOULD) and
+  **`#conditional-get-if-unmodified-since-412`** (SHOULD), from its `ConditionalRequestTests`.
+  The draft names date-based validators next to entity tags ("including mechanisms such as
+  entity tags (ETags) and date-based validators (like If-Modified-Since headers)",
+  `req:conditional-requests-supported`), and every conditional test here used entity tags only.
+  LWS.net builds "before" and "after" by clock arithmetic and a two-second sleep; a definition
+  has no date arithmetic, so the server's own `Last-Modified` stands for "at" and the Unix epoch
+  for "before". No entity-tag validator is sent alongside, so RFC 9110 section 13.2.2 cannot
+  let one take precedence.
+- **`core/discovery#discovery-storage-root-is-container`** (MUST), from its manifest entry
+  `storage-root-is-container`. That entry GETs `/` anonymously with no `Accept` and expects
+  `rel="type"` Container, which contradicts its own `storage-content-type-is-lws-cid` (the same
+  request must answer with the description) and draws a 401 from any private storage; it passes
+  only against a storage run with `lws.dev.open=true`. What it reaches for is
+  `req:storage-description-storageroot-service`: "a StorageRoot service whose serviceEndpoint is
+  the URI of the storage root container". `discovery-storage-description` checked that the
+  service is declared; nothing followed it. The definition follows `${service.StorageRoot}` as
+  alice with lws+json. Whether alice may read the root is the deployment's grant, not the
+  draft's, so that is a precondition step: a target registered on a sub-container alice cannot
+  climb out of is inapplicable, not failed.
+
+LWS.net's third check, `RangeRequestsTests`, is already covered by the three range definitions,
+and its added `storage-content-type-is-lws-cid` is `discovery-storage-description-default-media-type`.
+
+**The reference server follows** (the authoring rule: a test nothing can pass proves nothing).
+`RefLwsServer` had no `Last-Modified`; it now sends one on 200, 206 and 304, at one-second
+precision, and evaluates `If-Unmodified-Since` (412) only without `If-Match` and
+`If-Modified-Since` (304) only without `If-None-Match`, ignoring an invalid date and an
+`If-Modified-Since` later than now (RFC 9110 sections 13.1.3, 13.1.4, 13.2.2).
+
+**The Python lint** knew three service types for `${service.*}`; `StorageRoot` joins them. The
+engine and the Java lint already resolved any type, as EXECUTION.md section 3 says.
+
+No catalog change: both requirements were already in it. The counts pinned in
+`DefinitionLoaderTest`, `RunCommandTest` and `TouchstoneMcpEndToEndTest` move from 101 to 104.
+Drafted by an agent; per the authoring rules it waits on branch `lws-net-tests` for review.

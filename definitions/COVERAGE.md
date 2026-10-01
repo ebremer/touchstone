@@ -6,7 +6,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **101 tests**: 84 MUST, 15 SHOULD, 2 MAY; 54 validation tests, 47 negative tests.
+- **104 tests**: 85 MUST, 17 SHOULD, 2 MAY; 56 validation tests, 48 negative tests.
 - **120 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
@@ -18,10 +18,10 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
 | `core/access_grants` | 7 | 6 | 1 | 0 |
 | `core/authorization_server` | 8 | 6 | 2 | 0 |
-| `core/conditional_requests` | 6 | 4 | 2 | 0 |
+| `core/conditional_requests` | 8 | 4 | 4 | 0 |
 | `core/containers` | 14 | 9 | 4 | 1 |
 | `core/data_resources` | 14 | 9 | 4 | 1 |
-| `core/discovery` | 5 | 4 | 1 | 0 |
+| `core/discovery` | 6 | 5 | 1 | 0 |
 | `core/linksets` | 6 | 5 | 1 | 0 |
 | `core/notifications` | 1 | 1 | 0 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
@@ -175,6 +175,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `conditional-put-stale-if-match-412` | Negative | MUST |  |  |
 | `update-changes-strong-etag` | Validation | MUST |  |  |
 | `delete-updates-parent-strong-etag` | Validation | MUST |  |  |
+| `conditional-get-if-modified-since-304` | Validation | SHOULD |  |  |
+| `conditional-get-if-unmodified-since-412` | Negative | SHOULD |  |  |
 
 ### `core/containers`
 
@@ -223,6 +225,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `discovery-storage-description` | Validation | MUST |  | discovery-storage-description |
 | `discovery-storage-description-default-media-type` | Validation | MUST |  |  |
 | `discovery-unauthorized-response-headers` | Negative | SHOULD | Authentication | discovery-unauthorized-response-headers |
+| `discovery-storage-root-is-container` | Validation | MUST |  |  |
 
 ### `core/linksets`
 
