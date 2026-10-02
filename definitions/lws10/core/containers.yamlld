@@ -485,6 +485,34 @@ entries:
         - headerName: Vary
           matches: '(?i)(^|[\s,])accept($|[\s,])'
 
+  - id: "#container-conneg-weighted"
+    type: ValidationTest
+    name: container-conneg-weighted
+    label: A container honours an LWS media type that the Accept header ranks below one it cannot serve
+    comment: >-
+      "Servers MUST honor a request for any of these media types and MUST set the
+      Content-Type response header to the requested media type." A client that prefers
+      text/html but accepts application/ld+json at q=0.5 has requested ld+json among
+      others. The container answers 200 with Content-Type application/ld+json, not 406.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#media-type-equivalence
+      - https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+    traits: [Get, Container, Conneg]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: "text/html;q=0.9, application/ld+json;q=0.5"
+    response:
+      statusCode: 200
+      contentType: application/ld+json
+      json:
+        - pointer: /type
+          hasValue: Container
+
   - id: "#container-head-parity"
     type: ValidationTest
     name: container-head-parity
@@ -705,6 +733,90 @@ entries:
           url: "${occupant}"
         response:
           statusCode: [404, 410]
+
+  - id: "#delete-container-recursive-deep"
+    type: ValidationTest
+    name: delete-container-recursive-deep
+    label: Where supported, a recursive DELETE removes a whole tree, its linksets, and its listing entry
+    comment: >-
+      delete-container-recursive checks one level. Here the tree is two containers deep
+      with a data resource at the bottom. After a 204 to DELETE with Depth: infinity,
+      everything is gone: the inner container, the data resource, and the data resource's
+      linkset (deleting a resource "MUST result in the automatic removal of its associated
+      linkset"). The test container no longer lists the deleted container (containment is
+      updated atomically). A server without recursive deletion (a MAY) makes the test
+      inapplicable.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Post, Delete, Get, Container, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
+      - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
+      - https://example.org/touchstone/req/lws10-core/delete-removes-from-parent-listing
+    prereqs:
+      hierarchy:
+        - container: outer
+        - container: inner
+          in: outer
+    steps:
+      - label: put a data resource at the bottom and note its linkset
+        request:
+          method: POST
+          url: "${inner}"
+          contentType: text/plain
+          body: two containers down
+        response:
+          statusCode: 201
+          location:
+            capture: leaf
+          linkHeaders:
+            - rel: linkset
+              capture: leafLinkset
+      - label: a recursive DELETE of the outer container is accepted (otherwise the feature is absent)
+        precondition: true
+        request:
+          method: DELETE
+          url: "${outer}"
+          ifMatch: current
+          otherHeaders:
+            - headerName: Depth
+              headerValue: infinity
+        response:
+          statusCode: 204
+      - label: the inner container is gone
+        request:
+          method: GET
+          url: "${inner}"
+        response:
+          statusCode: [404, 410]
+      - label: so is the data resource
+        request:
+          method: GET
+          url: "${leaf}"
+        response:
+          statusCode: [404, 410]
+      - label: and its linkset
+        request:
+          method: GET
+          url: "${leafLinkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: [404, 410]
+      - label: the test container no longer lists the deleted container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${outer}"
 
   - id: "#containment-hierarchy-consistent"
     type: ValidationTest

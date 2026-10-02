@@ -88,6 +88,63 @@ entries:
         - rel: type
           href: https://www.w3.org/ns/lws#DataResource
 
+  - id: "#create-post-twice-distinct"
+    type: ValidationTest
+    name: create-post-twice-distinct
+    label: Two identical POSTs create two resources, at distinct URIs
+    comment: >-
+      "POST is not idempotent. Repeating it may create duplicates", and the server assigns
+      each new resource its URI. The same body posted twice to one container yields two
+      201s with different Locations, and both resources are then readable. A server that
+      derived the URI from the content would overwrite the first, or refuse the second.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#resource-identification-0
+    traits: [Post, Get, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-not-idempotent
+      - https://example.org/touchstone/req/lws10-core/uri-independent-of-hierarchy
+    steps:
+      - label: post a body once
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: same bytes
+        response:
+          statusCode: 201
+          location:
+            capture: first
+      - label: post the same body again, which creates another resource
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: same bytes
+        response:
+          statusCode: 201
+          otherHeaders:
+            - headerName: Location
+              differsFrom: "${first}"
+          location:
+            capture: second
+      - label: the first is still there
+        request:
+          method: GET
+          url: "${first}"
+        response:
+          statusCode: 200
+          bodyMatches: '^same bytes$'
+      - label: and so is the second
+        request:
+          method: GET
+          url: "${second}"
+        response:
+          statusCode: 200
+          bodyMatches: '^same bytes$'
+
   - id: "#create-in-missing-container-rejected"
     type: NegativeTest
     name: create-in-missing-container-rejected

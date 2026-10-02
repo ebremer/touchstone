@@ -363,3 +363,118 @@ entries:
             inbox: "${storage}"
         response:
           statusCode: "4xx"
+
+  - id: "#subscription-after-revocation-refused"
+    type: NegativeTest
+    name: subscription-after-revocation-refused
+    label: Once a grant is revoked, the agent it named can no longer subscribe to the resource
+    comment: >-
+      Subscribe-time authorization is decided by access as it is now, not as it was. bob
+      is granted read on a resource and may subscribe to it. Once alice revokes the grant
+      and bob can no longer read the resource, a new subscription to it is refused. The
+      revocation itself is a precondition (access-grant-revoke tests it), so a server whose
+      revocation does not take effect makes this test inapplicable, not failed twice.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
+    traits: [Post, Delete, Notifications, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-authorization-on-create
+      - https://example.org/touchstone/req/lws10-core/security-notification-access-control
+    prereqs:
+      hierarchy:
+        - dataResource: shared
+          contentType: text/plain
+          body: readable by bob until the grant is revoked
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: grant bob read on the resource
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${shared}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: with the grant, bob may subscribe (otherwise this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${shared}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: granted
+      - label: cancel that subscription (tidying up, not judged)
+        as: bob
+        request:
+          method: DELETE
+          url: "${granted}"
+        response:
+          statusCode: ["2xx", "4xx"]
+      - label: alice revokes the grant
+        request:
+          method: DELETE
+          url: "${grant}"
+        response:
+          statusCode: "2xx"
+      - label: bob can no longer read the resource (otherwise revocation did not take effect, and this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: GET
+          url: "${shared}"
+        response:
+          statusCode: [403, 404]
+      - label: a new subscription to it is refused
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${shared}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"

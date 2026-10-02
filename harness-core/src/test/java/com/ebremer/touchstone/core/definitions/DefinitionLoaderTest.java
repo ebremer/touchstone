@@ -24,7 +24,7 @@ class DefinitionLoaderTest {
     @Test
     void loadsEveryDefinitionInTraversalOrder() {
         Definitions defs = DefinitionLoader.load(DEFINITIONS, CATALOG);
-        assertThat(defs.tests()).hasSize(133);
+        assertThat(defs.tests()).hasSize(138);
         assertThat(defs.tests().getFirst().id()).isEqualTo("core/discovery#discovery-get-links-storageDescription");
         assertThat(defs.tests().stream().map(TestDefinition::level).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder("MUST", "SHOULD", "MAY");
@@ -44,10 +44,10 @@ class DefinitionLoaderTest {
     @Test
     void selectorsNameModulesManifestsAndTests() {
         Definitions defs = DefinitionLoader.load(DEFINITIONS, CATALOG);
-        assertThat(defs.select("all")).hasSize(133);
+        assertThat(defs.select("all")).hasSize(138);
         assertThat(defs.select("auth")).hasSize(26);
         assertThat(defs.select("auth/oidc")).hasSize(6);
-        assertThat(defs.select("core/containers")).hasSize(16);
+        assertThat(defs.select("core/containers")).hasSize(18);
         assertThat(defs.select("core/containers#getContainer")).hasSize(1);
         assertThat(defs.select("getContainer")).hasSize(1);
         assertThat(defs.select("cor")).isEmpty();

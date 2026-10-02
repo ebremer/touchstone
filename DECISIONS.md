@@ -1878,3 +1878,33 @@ Halcyon fails three of the four. Its grant service advertises the Access Profile
 to format, type and purpose constraints ("the enforceable constraints are client-eq and dateTime"):
 a MUST failure, which these tests make visible. lws-server passes all four. Drafted by an agent;
 waits on branch `tests/access-constraints`.
+
+### D-0064 — deeper tests on requirements already cited
+Five definitions that test further into requirements other tests already cite (catalog coverage
+174 → 176 of 219):
+- `delete-container-recursive-deep` (MAY, `core/containers`): a recursive DELETE of a tree two
+  containers deep removes the inner container, the data resource and that resource's linkset, and
+  the test container stops listing the tree. `delete-container-recursive` checks only one level.
+- `container-conneg-weighted` (MUST, `core/containers`): `Accept: text/html;q=0.9,
+  application/ld+json;q=0.5` gets 200 with Content-Type `application/ld+json`. ld+json is among the
+  types requested, which the server "MUST honor", so 406 is wrong.
+- `create-post-twice-distinct` (SHOULD, `core/data_resources`): the same body POSTed twice creates
+  two resources at distinct URIs, and both are readable ("POST is not idempotent"). The draft
+  defines no Slug header, so none is sent.
+- `linkset-patch-stays-linkset` (MUST, `core/linksets`): a merge patch replacing the `linkset`
+  array with a string may be refused or repaired, but the linkset afterwards is still an RFC 9264
+  document.
+- `subscription-after-revocation-refused` (MUST, `core/notifications`): bob, granted read, may
+  subscribe; once alice revokes the grant, a new subscription is refused. Two preconditions keep
+  failures attributed to the right test: the first subscription (otherwise the refusal proves
+  nothing), and bob losing read access (`access-grant-revoke` owns that).
+
+Considered and not defined:
+- **Who may read access requests:** the draft has no normative rule, so a test would be opinion.
+- **Concurrent creates:** format 0.3.0 runs a test's steps strictly in sequence.
+- **HEAD parity for containers:** already `container-head-parity`.
+
+Pinned counts move from 133 to 138, and `core/containers` from 16 to 18 (11 MUST). The reference
+passes all five. The broken storage revokes nothing it never enforced, so
+`subscription-after-revocation-refused` is inapplicable there, not failed. Halcyon and lws-server
+pass all five. Drafted by an agent; waits on branch `tests/depth-batch2`.

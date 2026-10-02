@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **133 tests**: 109 MUST, 21 SHOULD, 3 MAY; 76 validation tests, 57 negative tests.
-- **174 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **138 tests**: 112 MUST, 22 SHOULD, 4 MAY; 80 validation tests, 58 negative tests.
+- **176 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -19,11 +19,11 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/access_grants` | 15 | 13 | 1 | 1 |
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
-| `core/containers` | 16 | 10 | 5 | 1 |
-| `core/data_resources` | 15 | 9 | 5 | 1 |
+| `core/containers` | 18 | 11 | 5 | 2 |
+| `core/data_resources` | 16 | 9 | 6 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
-| `core/linksets` | 8 | 7 | 1 | 0 |
-| `core/notifications` | 6 | 6 | 0 | 0 |
+| `core/linksets` | 9 | 8 | 1 | 0 |
+| `core/notifications` | 7 | 7 | 0 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 
@@ -206,10 +206,12 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `contained-resource-size-modified` | Validation | SHOULD |  |  |
 | `container-conneg` | Validation | MUST |  |  |
 | `container-conneg-vary` | Validation | SHOULD |  |  |
+| `container-conneg-weighted` | Validation | MUST |  |  |
 | `container-head-parity` | Validation | MUST |  |  |
 | `delete-empty-container` | Validation | MUST |  |  |
 | `delete-non-empty-container-409` | Negative | MUST |  |  |
 | `delete-container-recursive` | Validation | MAY |  |  |
+| `delete-container-recursive-deep` | Validation | MAY |  |  |
 | `containment-hierarchy-consistent` | Validation | MUST |  |  |
 | `container-ld-json-lws-profile` | Validation | SHOULD |  |  |
 
@@ -219,6 +221,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 |---|---|---|---|---|
 | `createDataResource` | Validation | MUST |  | createDataResource |
 | `createDataResource-type-link` | Validation | SHOULD |  |  |
+| `create-post-twice-distinct` | Validation | SHOULD |  |  |
 | `create-in-missing-container-rejected` | Negative | MUST |  |  |
 | `create-in-missing-container-404` | Negative | SHOULD |  |  |
 | `create-server-managed-links-protected` | Validation | MUST |  |  |
@@ -256,6 +259,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `linkset-removed-with-resource` | Validation | MUST |  |  |
 | `linkset-ready-at-create` | Validation | MUST |  |  |
 | `linkset-up-not-redirected` | Validation | MUST |  |  |
+| `linkset-patch-stays-linkset` | Validation | MUST |  |  |
 | `linkset-patch-merge` | Validation | SHOULD |  |  |
 
 ### `core/notifications`
@@ -268,6 +272,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `subscription-unadvertised-type-refused` | Negative | MUST |  |  |
 | `subscription-missing-topic-refused` | Negative | MUST |  |  |
 | `subscription-unreadable-topic-refused` | Negative | MUST | Authentication |  |
+| `subscription-after-revocation-refused` | Negative | MUST | Authentication |  |
 
 ### `core/pagination`
 

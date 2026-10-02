@@ -389,6 +389,59 @@ entries:
               href: https://linkset.invalid/forged-parent/
               absent: true
 
+  - id: "#linkset-patch-stays-linkset"
+    type: ValidationTest
+    name: linkset-patch-stays-linkset
+    label: A merge patch that would break the linkset document leaves a valid linkset behind
+    comment: >-
+      A linkset resource is an RFC 9264 linkset document, whose linkset member is an array.
+      A merge patch replacing that array with a string would leave something that is not
+      one. The server may refuse the patch or repair the result, but the linkset afterwards
+      must still be a linkset document.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.rfc-editor.org/rfc/rfc9264#section-4.2
+    traits: [Patch, Get, Linkset]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: a resource with metadata
+    steps:
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: try to replace the linkset array with a string (refusal and acceptance are both allowed)
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset: not a linkset
+        response:
+          statusCode: ["2xx", "4xx"]
+      - label: the linkset is still a linkset document
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          contentType: application/linkset+json
+          json:
+            - pointer: /linkset
+              jsonType: array
+
   - id: "#linkset-patch-merge"
     type: ValidationTest
     name: linkset-patch-merge
