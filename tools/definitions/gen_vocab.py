@@ -24,6 +24,7 @@ V = [
     # ---- classes
     ("ValidationTest", C, None, "Validation test", "A test whose steps exercise behaviour the specification requires and assert the responses a conforming server gives.", None, None),
     ("NegativeTest", C, None, "Negative test", "A test whose point is a refusal: at least one step expects a 4xx response, and the test also checks that the refused request had no effect.", None, None),
+    ("Polling", C, None, "Polling", "How long and how often a step is re-sent while its expectations do not yet hold (EXECUTION.md section 4.4). Only the attempt that is judged leaves captures and cleanup behind.", None, None),
     ("Step", C, None, "Step", "One HTTP exchange of a test: a request, the expectations on its response, and the variables it captures. Steps run in order; a test fails at its first failing step.", None, None),
     ("Request", C, None, "Request", "What the harness sends in a step.", None, None),
     ("ResponseExpectation", C, None, "Response expectation", "What the harness checks in the response to a step's request. Every expectation present must hold.", None, None),
@@ -77,7 +78,7 @@ V = [
     # ---- capabilities
     ("Authentication", I, "Capability", "Authentication enforced", "The target storage enforces authentication on the run root: an anonymous request is challenged, and alice and bob are distinct authenticated agents.", None, None),
     ("HarnessIssuedTokens", I, "Capability", "Harness-issued access tokens", "The storage trusts an authorization server whose signing key the harness holds, so the harness can mint otherwise-valid access tokens with one chosen defect.", None, None),
-    ("ReachableFixtures", I, "Capability", "Reachable fixtures", "The target can reach the harness fixture host at ${fixtures.baseUrl} (identity documents, OpenID Provider, JWKS).", None, None),
+    ("ReachableFixtures", I, "Capability", "Reachable fixtures", "The target can reach the harness fixture host at ${fixtures.baseUrl} (identity documents, OpenID Provider, JWKS, and since format 0.4.0 the per-test inbox ${test.inbox} that notification deliveries are POSTed to).", None, None),
     ("SamlTrust", I, "Capability", "SAML trust", "The target's authorization server trusts the harness SAML identity provider's signing certificate.", None, None),
 
     # ---- identity kinds
@@ -112,6 +113,9 @@ V = [
     ("as", P, None, "as", "Name of the identity whose credential authorizes the step's request (on a test, the default for its steps). Unset means alice.", None, "xsd:string"),
     ("steps", P, None, "steps", "The test's ordered steps.", "mf:ManifestEntry", "lwst:Step"),
     ("precondition", P, None, "precondition", "When true, a failing expectation in this step makes the test inapplicable instead of failed, and no later step runs.", "lwst:Step", "xsd:boolean"),
+    ("poll", P, None, "poll", "Re-send the step until its expectations hold or the time runs out, then judge the last attempt (format 0.4.0).", "lwst:Step", "lwst:Polling"),
+    ("within", P, None, "within", "Seconds, from the first attempt, after which a polled step is judged on its last attempt; at most 120.", "lwst:Polling", "xsd:integer"),
+    ("every", P, None, "every", "Seconds to wait between attempts of a polled step; at least 1 and at most within.", "lwst:Polling", "xsd:integer"),
     ("request", P, None, "request", "The request a step sends. Directly on a test, with response, it is shorthand for a test of exactly one step.", None, "lwst:Request"),
     ("response", P, None, "response", "The expectations on the step's response. Directly on a test, with request, it is shorthand for a test of exactly one step.", None, "lwst:ResponseExpectation"),
     ("prereqs", P, None, "prereqs", "The state the test needs before its first step; the engine establishes it (EXECUTION.md section 4.3).", "mf:ManifestEntry", "lwst:Prerequisites"),
@@ -213,7 +217,7 @@ def q(s):
 
 
 defined = {t[0] for t in V}
-structural = {"Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
+structural = {"Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Polling", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
               "ParameterExpectation", "JsonExpectation", "JwtExpectation", "LocationExpectation", "ConnegExpectation",
               "Level", "Trait", "Capability", "IdentityKind", "Fault"}
 ctx_terms = lwst_terms()

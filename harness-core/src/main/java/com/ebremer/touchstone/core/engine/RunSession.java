@@ -58,6 +58,7 @@ final class RunSession implements AutoCloseable {
     private final Map<String, Lazy<?>> derived = new ConcurrentHashMap<>();
     private final Scope runScope;
     private FixtureHost fixtures;
+    private final Inboxes inboxes = new Inboxes();
     private volatile URI runRoot;
 
     private RunSession(Target target, Definitions definitions, String runId) {
@@ -255,6 +256,11 @@ final class RunSession implements AutoCloseable {
             }
         }
         return false;
+    }
+
+    /** The per-test inboxes the fixture host serves (EXECUTION.md section 5.4). */
+    Inboxes inboxes() {
+        return inboxes;
     }
 
     /** {@code ${fixtures.baseUrl}}: only for a target that declares it can reach the fixture host. */

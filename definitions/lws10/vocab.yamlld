@@ -42,6 +42,14 @@
       A test whose point is a refusal: at least one step expects a 4xx response, and the
       test also checks that the refused request had no effect.
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Polling
+    type: rdfs:Class
+    label: "Polling"
+    comment: >-
+      How long and how often a step is re-sent while its expectations do not yet hold
+      (EXECUTION.md section 4.4). Only the attempt that is judged leaves captures and
+      cleanup behind.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:Step
     type: rdfs:Class
     label: "Step"
@@ -349,7 +357,8 @@
     label: "Reachable fixtures"
     comment: >-
       The target can reach the harness fixture host at ${fixtures.baseUrl} (identity
-      documents, OpenID Provider, JWKS).
+      documents, OpenID Provider, JWKS, and since format 0.4.0 the per-test inbox
+      ${test.inbox} that notification deliveries are POSTed to).
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:SamlTrust
     type: lwst:Capability
@@ -544,6 +553,32 @@
       failed, and no later step runs.
     domain: lwst:Step
     range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:poll
+    type: rdf:Property
+    label: "poll"
+    comment: >-
+      Re-send the step until its expectations hold or the time runs out, then judge the
+      last attempt (format 0.4.0).
+    domain: lwst:Step
+    range: lwst:Polling
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:within
+    type: rdf:Property
+    label: "within"
+    comment: >-
+      Seconds, from the first attempt, after which a polled step is judged on its last
+      attempt; at most 120.
+    domain: lwst:Polling
+    range: xsd:integer
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:every
+    type: rdf:Property
+    label: "every"
+    comment: >-
+      Seconds to wait between attempts of a polled step; at least 1 and at most within.
+    domain: lwst:Polling
+    range: xsd:integer
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:request
     type: rdf:Property

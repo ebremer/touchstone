@@ -478,3 +478,718 @@ entries:
             inbox: "${storage}"
         response:
           statusCode: "4xx"
+
+  - id: "#notification-delivered-create"
+    type: ValidationTest
+    name: notification-delivered-create
+    label: A Create in a subscribed container is delivered as a well-formed Notification
+    comment: >-
+      alice subscribes to her test container with the per-test inbox, then creates a data
+      resource in it. A Notification must arrive whose activity is a Create naming that
+      resource. The delivery is then checked against the data model of 10.2: the envelope
+      has type Notification, the storage and an activity; the activity has an id, a type
+      array, an object with an id and a type array, and an RFC 3339 published time.
+      Whether the server batches activities does not matter: the inbox presents them as an
+      array either way (EXECUTION.md section 5.4).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+    traits: [Post, Get, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-envelope-type
+      - https://example.org/touchstone/req/lws10-core/notification-envelope-storage
+      - https://example.org/touchstone/req/lws10-core/notification-envelope-activity
+      - https://example.org/touchstone/req/lws10-core/notification-activity-as2-conformance
+      - https://example.org/touchstone/req/lws10-core/notification-activity-id
+      - https://example.org/touchstone/req/lws10-core/notification-activity-type
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-id
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-type
+      - https://example.org/touchstone/req/lws10-core/notification-activity-published
+      - https://example.org/touchstone/req/lws10-core/notification-activity-types-supported
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to announce
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: a Notification announcing the Create arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Create
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: the delivery has the envelope and activity the data model requires
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /body/type
+                  equals: Notification
+                - pointer: /body/storage
+                  equalsIri: "${storage}"
+                - pointer: /body/activity
+                  exists: true
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      jsonType: array
+                    - pointer: /type
+                      hasValue: Create
+                    - pointer: /id
+                      jsonType: string
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+                    - pointer: /object/type
+                      jsonType: array
+                    - pointer: /object/type
+                      hasValue: DataResource
+                    - pointer: /published
+                      matches: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$'
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-delivered-update"
+    type: ValidationTest
+    name: notification-delivered-update
+    label: An Update to a subscribed data resource is delivered
+    comment: >-
+      A subscription to one data resource; replacing its content must deliver an Update
+      activity naming it ("A server MUST support the following Activity Streams 2.0
+      activity types").
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+    traits: [Put, Get, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-activity-types-supported
+      - https://example.org/touchstone/req/lws10-core/notification-activity-type
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-id
+    prereqs:
+      hierarchy:
+        - dataResource: doc
+          contentType: text/plain
+          body: first version
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the data resource
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${doc}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: replace its content
+        request:
+          method: PUT
+          url: "${doc}"
+          ifMatch: current
+          contentType: text/plain
+          body: second version
+        response:
+          statusCode: [200, 204]
+      - label: a Notification announcing the Update arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${doc}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-delivered-delete"
+    type: ValidationTest
+    name: notification-delivered-delete
+    label: A Delete in a subscribed container is delivered
+    comment: >-
+      A subscription to the test container; deleting a data resource in it must deliver a
+      Delete activity naming the resource.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+    traits: [Delete, Get, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-activity-types-supported
+      - https://example.org/touchstone/req/lws10-core/notification-activity-type
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-id
+    prereqs:
+      hierarchy:
+        - dataResource: doc
+          contentType: text/plain
+          body: about to go
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: delete the data resource
+        request:
+          method: DELETE
+          url: "${doc}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: a Notification announcing the Delete arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Delete
+                    - pointer: /object/id
+                      equalsIri: "${doc}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-not-delivered-for-unreadable-resource"
+    type: NegativeTest
+    name: notification-not-delivered-for-unreadable-resource
+    label: A subscriber hears nothing about a resource inside its topic that it cannot read
+    comment: >-
+      "A server MUST NOT deliver a notification about a resource that the subscriber is
+      not authorized to read at the time the event occurs. This applies to all resources
+      within the scope of a subscription, including resources in subcontainers." bob may
+      read a container and one member of it, and subscribes to the container. alice then
+      creates a second member bob cannot read, and after that updates the member he can.
+      Polling waits for the Update bob is entitled to, then requires that nothing ever
+      named the unreadable member. A server where read access on a container reaches its
+      members gives bob the new member too, so the test checks first that he cannot read
+      it, and does not apply otherwise.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications
+    traits: [Post, Put, Get, Notifications, Authz, Private]
+    requires: [Authentication, ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-authorization-on-delivery
+      - https://example.org/touchstone/req/lws10-core/security-notification-access-control
+      - https://example.org/touchstone/req/lws10-core/privacy-notification-authorized-resources-only
+    prereqs:
+      hierarchy:
+        - container: box
+          authorization:
+            read: [bob]
+        - dataResource: visible
+          in: box
+          contentType: text/plain
+          body: bob may read this
+          authorization:
+            read: [bob]
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: bob subscribes to the container he may read (otherwise this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${box}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: alice creates a member bob is not granted
+        request:
+          method: POST
+          url: "${box}"
+          contentType: text/plain
+          body: not for bob
+        response:
+          statusCode: 201
+          location:
+            capture: secret
+      - label: bob cannot read it (otherwise access to the container reaches its members, and this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: GET
+          url: "${secret}"
+        response:
+          statusCode: [403, 404]
+      - label: alice then updates the member bob may read
+        request:
+          method: PUT
+          url: "${visible}"
+          ifMatch: current
+          contentType: text/plain
+          body: bob may read this, updated
+        response:
+          statusCode: [200, 204]
+      - label: bob hears of the update, and never of the member he cannot read
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${visible}"
+            - pointer: /deliveries
+              none:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${secret}"
+      - label: cancel the subscription (tidying up, not judged)
+        as: bob
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-stops-after-revocation"
+    type: NegativeTest
+    name: notification-stops-after-revocation
+    label: Once access to a resource is revoked, its notifications stop
+    comment: >-
+      "If the subscriber's access to a resource or container within the scope of a
+      subscription is revoked after the subscription is created, the server MUST stop
+      delivering notifications for the affected resources." bob subscribes to two
+      resources he may read, each through its own grant. An Update to the first is
+      delivered. alice revokes that grant and deletes the resource, then updates the
+      second. Once the second Update arrives, no Delete of the first may have been
+      delivered. The server SHOULD NOT end the whole subscription while bob still reads
+      the second; if it does, the second Update never comes and the test does not apply.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
+    traits: [Post, Put, Delete, Get, Notifications, AccessGrants, Authz]
+    requires: [Authentication, ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-authorization-revoked
+      - https://example.org/touchstone/req/lws10-core/subscription-authorization-on-delivery
+      - https://example.org/touchstone/req/lws10-core/security-notification-access-control
+    prereqs:
+      hierarchy:
+        - dataResource: kept
+          contentType: text/plain
+          body: bob keeps reading this
+          authorization:
+            read: [bob]
+        - dataResource: revoked
+          contentType: text/plain
+          body: bob reads this until the grant goes
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: grant bob read on the resource whose access will be revoked
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${revoked}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: bob subscribes to both (otherwise this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${revoked}", "${kept}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: alice updates the resource bob may still read
+        request:
+          method: PUT
+          url: "${revoked}"
+          ifMatch: current
+          contentType: text/plain
+          body: bob reads this until the grant goes, updated
+        response:
+          statusCode: [200, 204]
+      - label: while bob holds the grant, the Update is delivered
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${revoked}"
+      - label: alice revokes the grant
+        request:
+          method: DELETE
+          url: "${grant}"
+        response:
+          statusCode: "2xx"
+      - label: bob can no longer read the resource (otherwise revocation did not take effect, and this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: GET
+          url: "${revoked}"
+        response:
+          statusCode: [403, 404]
+      - label: alice deletes it, then updates the other resource
+        request:
+          method: DELETE
+          url: "${revoked}"
+          ifMatch: current
+        response:
+          statusCode: 204
+      - label: update the resource bob still reads
+        request:
+          method: PUT
+          url: "${kept}"
+          ifMatch: current
+          contentType: text/plain
+          body: bob keeps reading this, updated
+        response:
+          statusCode: [200, 204]
+      - label: the second Update arrives (otherwise the subscription ended altogether, and this test does not apply)
+        precondition: true
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${kept}"
+      - label: and the Delete after revocation was never delivered
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              none:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Delete
+                    - pointer: /object/id
+                      equalsIri: "${revoked}"
+      - label: cancel the subscription (tidying up, not judged)
+        as: bob
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-actor-omitted"
+    type: ValidationTest
+    name: notification-actor-omitted
+    label: Delivered activities omit the actor by default
+    comment: >-
+      "The actor property SHOULD be omitted by default." The Create of a resource in a
+      subscribed container is delivered without an actor.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties
+    traits: [Post, Get, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/privacy-notification-actor-omitted
+      - https://example.org/touchstone/req/lws10-core/notification-activity-optional-properties
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: who made this is nobody's business
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the Create arrives without an actor
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Create
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+                    - pointer: /actor
+                      exists: false
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]

@@ -354,6 +354,78 @@ entries:
           statusCode: 200
           bodyMatches: '^shared by a grant with an extra property$'
 
+  - id: "#access-grant-inbox-notified"
+    type: ValidationTest
+    name: access-grant-inbox-notified
+    label: A grant with an inbox is announced there
+    comment: >-
+      "When an inbox property is present on an access request or access grant, the server
+      SHOULD deliver notifications to that endpoint." alice grants bob read and names this
+      test's inbox; a Notification must arrive there, conforming to the notification data
+      model ("Notification serialization MUST conform").
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events
+    traits: [Post, Get, AccessGrants, Notifications]
+    requires: [Authentication, ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-inbox-notifications
+      - https://example.org/touchstone/req/lws10-core/access-notification-events
+      - https://example.org/touchstone/req/lws10-core/access-notification-data-model
+      - https://example.org/touchstone/req/lws10-core/access-notification-delivery
+    prereqs:
+      hierarchy:
+        - dataResource: shared
+          contentType: text/plain
+          body: shared with bob
+    steps:
+      - label: grant bob read, naming this test's inbox
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            inbox: "${test.inbox}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${shared}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: a Notification arrives at the inbox
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /body/type
+                  equals: Notification
+                - pointer: /activities
+                  some:
+                    - pointer: /id
+                      jsonType: string
+                    - pointer: /type
+                      jsonType: array
+                    - pointer: /published
+                      jsonType: string
+
   - id: "#access-request-create"
     type: ValidationTest
     name: access-request-create

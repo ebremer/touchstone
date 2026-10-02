@@ -1,8 +1,11 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.3.0 (2026-09-30, DECISIONS.md D-0058; 0.2.0 was frozen on
-2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must
-implement. 0.3.0 differs from 0.2.0 only in section 5.3: W3C discontinued the did:key
+**Status: frozen, format 0.4.0 (2026-10-02, DECISIONS.md D-0065; 0.3.0 was frozen on
+2026-09-30, D-0058, and 0.2.0 on 2026-09-23, D-0053).** This is the contract an engine that
+runs `definitions/` must implement. 0.4.0 adds what testing notification delivery needs, and
+changes nothing a 0.3.0 definition relies on: a step may `poll` (section 4.4), the variable
+`test.inbox` names a per-test inbox (section 3), and the fixture host records what is POSTed
+to it (section 5.4). 0.3.0 differed from 0.2.0 only in section 5.3: W3C discontinued the did:key
 authentication suite, so a did:key subject is now a CID-suite credential. 0.2.0 merged two strengths of lws-test-suite's format into it: the
 one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something
@@ -101,6 +104,7 @@ becomes an object. Anywhere else the value is converted to a string.
 | `identity.<name>.webid` | The identity's agent IRI (section 5). |
 | `credential.<name>` | The subject credential minted for a SubjectCredential identity (section 5.3). |
 | `fixtures.baseUrl` | The harness fixture host as the target reaches it; from target configuration, ending in `/`. Defined only when the target declares ReachableFixtures. |
+| `test.inbox` | This test's inbox on the fixture host (section 5.4): `${fixtures.baseUrl}inbox/` followed by a fresh `${uuid}` and `/`, the same for every use within one test. Defined only when the target declares ReachableFixtures. |
 | `self.webid`, `self.kid`, `self.publicJwk` | Inside identity templates only: the identity being minted. |
 | *captured* | Bound by a prerequisite entry (section 4.3), or by `capture` in an earlier step of the same test, or earlier in the same step for `jwt`. Names match `^[a-z][A-Za-z0-9]*$`. A capture never rebinds a name. |
 
@@ -113,7 +117,7 @@ storage description are cached per run; the rest per test.
   - `service.*`, when the storage advertises no such service;
   - `as.*`, when the anonymous probe is not a 401, i.e. the target does not enforce authentication;
   - `identity.*` and `credential.*`, when the identity cannot be produced for this target (section 5);
-  - `fixtures.baseUrl`, when the target does not declare it.
+  - `fixtures.baseUrl` and `test.inbox`, when the target does not declare it.
 - *cantTell*, with the failure named: every other case, such as a missing `lws#storage` link, metadata without `token_endpoint`, or a capture that never happened. The tests that own those behaviours report the failure itself.
 
 ## 4. Running a test
@@ -152,7 +156,7 @@ the test's `as`, else alice. There is no other difference.
 Tests are independent and MAY run in parallel. Within a test nothing runs in parallel
 except the fetches of one `connegEquivalent`. Every request has a 30 s timeout, unless
 the target configuration sets another. Redirects are never followed: a 3xx is the
-response under test. Nothing is retried.
+response under test. Nothing is retried, except a step that polls (section 4.4).
 
 ### 4.3 Prerequisites
 
@@ -197,6 +201,27 @@ exchanges it examines. Entries are processed in order, always as alice:
 Prerequisite resources live inside `${test.container}` and are deleted with it. alice
 creates them, so she needs no grant. The actions are the draft's four (WD section
 11.3.2); there is no `write`, `append` or `control`.
+
+### 4.4 Polling
+
+A step with `poll: {within: W, every: E}` (whole seconds, 1 ≤ E ≤ W ≤ 120) waits for a
+state the server reaches asynchronously, such as a notification arriving in
+`${test.inbox}`:
+
+1. Build and send the request, and evaluate the response, as for any step.
+2. If every expectation passes, the step passes, and its captures and cleanup registrations
+   are those of that attempt.
+3. Otherwise, if less than W seconds have passed since the first attempt was sent, wait E
+   seconds and go back to 1. Before each new attempt, undo every capture the failed
+   attempt bound and every cleanup it registered: only the attempt that is judged leaves
+   anything behind.
+4. When W has passed, the last attempt is judged as in section 4.2 item 4: *failed*, or
+   *inapplicable* in a precondition step.
+
+A transport error ends the step at once, as for any step (*cantTell*). Polling waits for
+something to appear; it cannot prove that something never will. A test that needs an
+absence polls for a later event that would have to follow it, then asserts the absence
+with `none` (section 7, item 8).
 
 ## 5. Identities and credentials
 
@@ -276,6 +301,38 @@ A **fault identity** mints its basis credential with its `fault` applied, re-sig
 where the fault says "validly signed". UntrustedIssuer is minted by a second provider at
 `${fixtures.baseUrl}rogue-op`, which serves its own discovery and JWKS but is named by no
 identity document.
+
+### 5.4 The inbox
+
+For a target that declares ReachableFixtures, the fixture host also serves one inbox per
+running test, at `${test.inbox}`: the URL a test gives a server as a notification
+delivery target.
+
+- **POST** to the inbox URL is recorded and answered `202 Accepted` with no body. Only the
+  inboxes of tests that are running are open; any other path under `inbox/` is `404`. A
+  body over 1 MiB is answered `413` and not recorded, and once an inbox holds 100
+  deliveries further ones are answered `429`.
+- **GET** returns the record as `application/json`:
+
+  ```json
+  {"deliveries": [{"method": "POST", "contentType": "application/lws+json",
+                   "headers": {"content-type": ["application/lws+json"], "...": ["..."]},
+                   "body": {"type": "Notification", "...": "..."},
+                   "activities": [{"type": ["Create"], "...": "..."}],
+                   "receivedAt": "2026-10-02T14:00:00Z"}]}
+  ```
+
+  - `deliveries` lists what arrived, oldest first.
+  - `headers` maps each header name, in lower case, to its field lines in order.
+    `Authorization`, `Cookie` and `Proxy-Authorization` values are replaced by
+    `[redacted]` (section 10).
+  - `body` is the request body parsed as JSON. A body that does not parse is kept as a
+    string.
+  - `activities` is the body's `activity` as an array: the value itself when the server
+    sent an array (a batched notification), a one-element array when it sent an object, and
+    `[]` when the body has no `activity`. It spares a test from depending on whether a
+    server batches, which the notification data model leaves to the server.
+- The record exists while the test runs and is discarded when it ends.
 
 ## 6. Building a request
 
@@ -437,4 +494,5 @@ passes:
 - **Untrusted input.** Target responses are untrusted input. JSON-LD contexts named in
   responses are resolved only from the bundled set, never fetched (D-0026). Only
   pre-registered targets are addressed (DESIGN.md 7.1). The fixture host serves only the
-  documents this section's identities define.
+  documents section 5's identities define and the inboxes of the tests that are running
+  (section 5.4).

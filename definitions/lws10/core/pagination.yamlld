@@ -6,7 +6,7 @@ id: "#manifest"
 type: Manifest
 label: "LWS 1.0 core: pagination"
 comment: >-
-  The threshold above which a server paginates is its own choice, and format 0.3.0 can
+  The threshold above which a server paginates is its own choice, and the format can
   neither read a page size from the target nor create members in bulk. So each test
   builds a container with five members. The multi-page tests apply only when the server
   splits it into pages (its first page carries rel="next"); pagination-single-page covers

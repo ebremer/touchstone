@@ -8,7 +8,7 @@ hosted agent identity documents) so credential failure paths can be tested
 deterministically.
 
 **Status: Phases 0–6 complete, running the YAML-LD definitions.** The tests are 101
-YAML-LD definitions (`definitions/`, format 0.3.0, frozen; DECISIONS.md D-0058) that mirror
+YAML-LD definitions (`definitions/`, format 0.4.0, frozen; DECISIONS.md D-0065) that mirror
 and extend the LWS test group's JSON-LD suite, follow the **21 September 2026** Working
 Draft, and cover the core protocol and all three current authentication suites (OpenID
 Connect, CID with HTTPS and did:key subjects, SAML) end to end. The engine that runs them implements
@@ -38,7 +38,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
 | `harness-mcp` | Spring AI MCP server over the core engine |
 | `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |
-| `definitions/` | the tests: YAML-LD definitions (format 0.3.0, frozen), their execution contract and schema; mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
+| `definitions/` | the tests: YAML-LD definitions (format 0.4.0, frozen), their execution contract and schema; mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
 | `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring and distribution |
 

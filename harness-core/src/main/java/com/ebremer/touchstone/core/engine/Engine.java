@@ -20,7 +20,7 @@ import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.core.results.TestResult;
 
 /**
- * The engine for the YAML-LD definitions (definitions/EXECUTION.md, format 0.3.0): every front
+ * The engine for the YAML-LD definitions (definitions/EXECUTION.md, format 0.4.0): every front
  * end (CLI, MCP, CI, the self-test loop) runs tests through here, so adding a front end never
  * touches execution (DESIGN.md section 3).
  *

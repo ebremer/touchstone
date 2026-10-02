@@ -28,7 +28,7 @@ public final class DefinitionLint {
     public static final Set<String> BUILT_IN = Set.of(
             "target.baseUrl", "run.root", "test.container", "uuid", "now", "storage",
             "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri",
-            "fixtures.baseUrl");
+            "fixtures.baseUrl", "test.inbox");
 
     public static final Pattern VARIABLE = Pattern.compile("\\$\\{([^}]*)}");
     private static final Pattern NOW = Pattern.compile("now[+-]\\d+");
@@ -104,6 +104,10 @@ public final class DefinitionLint {
         for (StepDefinition s : t.steps()) {
             n++;
             String sw = where + " step " + n;
+            if (s.polls() && s.pollEvery() > s.pollWithin()) {
+                errors.add(sw + ": poll every " + s.pollEvery() + " s exceeds within " + s.pollWithin()
+                        + " s (EXECUTION.md section 4.4)");
+            }
             String identity = s.identity() != null ? s.identity() : t.identity() != null ? t.identity() : "alice";
             IdentityDefinition id = identities.get(identity);
             if (id == null) {

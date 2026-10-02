@@ -62,7 +62,7 @@ for name, i in identities.items():
         E(f"identities: {name} kind differs from its basis")
 
 BUILTIN = {"target.baseUrl", "run.root", "test.container", "uuid", "now", "storage",
-           "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri"}
+           "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri", "test.inbox"}
 # StorageRoot is the one service every storage description MUST carry (#storage-description-services).
 SERVICES = {"StorageRoot", "AccessGrantService", "AccessRequestService", "NotificationService"}
 VAR = re.compile(r"\$\{([^}]*)\}")

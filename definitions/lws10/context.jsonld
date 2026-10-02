@@ -71,6 +71,9 @@
     "as":           {"@id": "lwst:as"},
     "steps":        {"@id": "lwst:steps", "@container": "@list"},
     "precondition": {"@id": "lwst:precondition", "@type": "xsd:boolean"},
+    "poll":         {"@id": "lwst:poll"},
+    "within":       {"@id": "lwst:within", "@type": "xsd:integer"},
+    "every":        {"@id": "lwst:every", "@type": "xsd:integer"},
     "request":      {"@id": "lwst:request"},
     "response":     {"@id": "lwst:response"},
 

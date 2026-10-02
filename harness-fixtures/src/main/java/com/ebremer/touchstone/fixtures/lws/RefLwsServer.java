@@ -54,13 +54,16 @@ import org.eclipse.jetty.util.Callback;
  *   <li>container listings paginated above {@value #PAGE_SIZE} members (section 12.1.2), each
  *       page reached through {@code first}/{@code prev}/{@code next}/{@code last} links;</li>
  *   <li>a NotificationService offering {@code WebhookSubscription}: subscriptions are
- *       created (section 10.3, with read access to every topic enforced), read and cancelled.</li>
+ *       created (section 10.3, with read access to every topic enforced), read and cancelled,
+ *       and each Create, Update and Delete inside a topic is POSTed to the subscriber's inbox
+ *       as an application/lws+json Notification (section 10.2), provided the subscriber may
+ *       read the resource when the event occurs (10.3.3); a new access grant with an inbox
+ *       is announced there too (section 11.6).</li>
  * </ul>
  *
  * <p>Container representations name their context by IRI, as the draft's example and every
- * real server do (D-0026/D-0040). Notification delivery is not implemented (D-0041): the
- * definitions test subscribing, not delivery, and a subscription here records what would be
- * delivered without sending anything.
+ * real server do (D-0026/D-0040). Deliveries are unsigned and best-effort: one attempt, off the
+ * request thread, with no retry.
  *
  * <p>Three auth modes (D-0017): {@link AuthMode#OPEN} (no authentication), {@link
  * AuthMode#SECURED} (validates Bearer tokens against the reference authorization server; 401
@@ -86,6 +89,10 @@ public final class RefLwsServer implements AutoCloseable {
     /** The NotificationService endpoint, and its one subscription type. */
     private static final String SUBSCRIPTIONS = "/_subscriptions/";
     private static final String WEBHOOK = "WebhookSubscription";
+    private static final String AS_CONTEXT = "https://www.w3.org/ns/activitystreams";
+    /** Delivers notifications off the request thread; one attempt each (section 10.3). */
+    private static final java.net.http.HttpClient DELIVERY = java.net.http.HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(5)).build();
     private static final Set<String> ACTIONS = Set.of("read", "modify", "create", "delete");
     /**
      * Members per page of a container listing. Small, so that the pagination definitions'
@@ -106,6 +113,8 @@ public final class RefLwsServer implements AutoCloseable {
     private volatile TokenValidator validator;
     private volatile String asUri;
     private volatile String storageOwner;
+    /** The notification twin's one defect: delivery skips the subscriber's read check. */
+    private volatile boolean deliverToAnyone;
 
     private static final class Node {
         final boolean container;
@@ -128,7 +137,7 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     /** A webhook subscription: who made it, what it covers, where it would deliver. */
-    private record Subscription(String id, String subscriber, List<String> topics, String inbox) {
+    private record Subscription(String id, String subscriber, String client, List<String> topics, String inbox) {
     }
 
     /** One AccessPolicy: actions, an assignee, and the resources it covers. */
@@ -228,6 +237,17 @@ public final class RefLwsServer implements AutoCloseable {
         server.storageOwner = owner;
         server.store.get(STORAGE_PATH).owner = owner;
         as.addResource(realm);
+        return server;
+    }
+
+    /**
+     * The notification twin: a secured, compliant storage in every respect but one. It delivers
+     * every notification in a subscription's scope, whether or not the subscriber may read the
+     * resource (lws10-core 10.3.3), so the delivery-time authorization tests must fail against it.
+     */
+    public static RefLwsServer startLeakingNotifications(int port, RefAuthorizationServer as, String owner) {
+        RefLwsServer server = startSecured(port, as, owner);
+        server.deliverToAnyone = true;
         return server;
     }
 
@@ -745,6 +765,7 @@ public final class RefLwsServer implements AutoCloseable {
             parent.children.add(childPath);
             parent.etag = newEtag();
             parent.modified = now();
+            announce(request, "Create", childPath, child, "target", path);
 
             response.setStatus(201);
             response.getHeaders().put(HttpHeader.LOCATION, absolute(request, childPath));
@@ -787,6 +808,7 @@ public final class RefLwsServer implements AutoCloseable {
                 node.contentType = contentType;
             }
             touch(path, node);
+            announce(request, "Update", path, node, null, null);
             response.setStatus(204);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
             callback.succeeded();
@@ -848,6 +870,7 @@ public final class RefLwsServer implements AutoCloseable {
             node.bytes = mapper.writeValueAsBytes(mergePatch(target, patch));
             node.contentType = "application/json";
             touch(path, node);
+            announce(request, "Update", path, node, null, null);
             response.setStatus(204);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
             callback.succeeded();
@@ -897,6 +920,8 @@ public final class RefLwsServer implements AutoCloseable {
                     return;
                 }
             }
+            // Announced before the resource goes, while who may read it can still be decided.
+            announce(request, "Delete", path, node, "origin", parentOf(path));
             removeRecursively(path);
             Node parent = store.get(parentOf(path));
             if (parent != null) {
@@ -1099,6 +1124,65 @@ public final class RefLwsServer implements AutoCloseable {
             callback.succeeded();
         }
 
+        // ---- notification delivery ----
+
+        /**
+         * Tells every subscriber whose topic covers {@code path} that it changed (section 10.2.3):
+         * a topic covers itself and, for a container, everything inside it (10.3.2). A subscriber
+         * that may not read the resource now hears nothing (10.3.3): that is decided here, at
+         * the event, which for a Delete is before the resource is gone. The broken twin, which
+         * forbids nothing, tells everyone.
+         *
+         * @param relation {@code target} for a Create, {@code origin} for a Delete, else null
+         */
+        private void announce(Request request, String type, String path, Node node, String relation, String related) {
+            String uri = absolute(request, path);
+            for (Subscription s : subscriptions.values()) {
+                boolean covered = s.topics().stream().anyMatch(t -> t.equals(uri) || (t.endsWith("/") && uri.startsWith(t)));
+                if (!covered) {
+                    continue;
+                }
+                if (authMode == AuthMode.SECURED && !deliverToAnyone
+                        && !allowed("read", node, uri, s.subscriber(), s.client())) {
+                    continue;
+                }
+                ObjectNode activity = mapper.createObjectNode();
+                activity.putArray("type").add(type);
+                ObjectNode object = activity.putObject("object");
+                object.put("id", uri);
+                object.putArray("type").add(node.container ? "Container" : "DataResource");
+                if (relation != null) {
+                    activity.put(relation, absolute(request, related));
+                }
+                deliver(request, s.inbox(), activity);
+            }
+        }
+
+        /**
+         * POSTs one Notification envelope around {@code activity} to {@code inbox}: lws+json with
+         * the LWS and Activity Streams contexts, the storage, and an id and published time on the
+         * activity (section 10.2). No actor: "The actor property SHOULD be omitted by default."
+         */
+        private void deliver(Request request, String inbox, ObjectNode activity) {
+            activity.put("id", "urn:uuid:" + UUID.randomUUID());
+            activity.put("published", DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.SECONDS)));
+            ObjectNode envelope = mapper.createObjectNode();
+            envelope.putArray("@context").add(LWS_CONTEXT).add(AS_CONTEXT);
+            envelope.put("type", "Notification");
+            envelope.put("storage", absolute(request, STORAGE_PATH));
+            envelope.set("activity", activity);
+            try {
+                java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(URI.create(inbox))
+                        .timeout(java.time.Duration.ofSeconds(10))
+                        .header("Content-Type", LWS_JSON)
+                        .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(bytes(envelope)))
+                        .build();
+                DELIVERY.sendAsync(post, java.net.http.HttpResponse.BodyHandlers.discarding());
+            } catch (RuntimeException e) {
+                // best-effort: an inbox that cannot be reached loses the notification
+            }
+        }
+
         // ---- subscriptions ----
 
         /**
@@ -1196,7 +1280,7 @@ public final class RefLwsServer implements AutoCloseable {
                 }
             }
             String id = UUID.randomUUID().toString();
-            Subscription sub = new Subscription(id, subject, List.copyOf(topics), body.path("inbox").asText());
+            Subscription sub = new Subscription(id, subject, client, List.copyOf(topics), body.path("inbox").asText());
             subscriptions.put(id, sub);
             response.setStatus(201);
             response.getHeaders().put(HttpHeader.LOCATION, absolute(request, SUBSCRIPTIONS + id));
@@ -1351,6 +1435,16 @@ public final class RefLwsServer implements AutoCloseable {
                 document.put("id", absolute(request, base + id));
                 records.put(id, new Record(id, document, grantsService ? policies : List.of(), subject, newEtag()));
                 bump();
+                // "When an inbox property is present on an access request or access grant, the server
+                // SHOULD deliver notifications to that endpoint" (section 11.6).
+                if (grantsService && body.path("inbox").isTextual()) {
+                    ObjectNode activity = mapper.createObjectNode();
+                    activity.putArray("type").add("Create");
+                    ObjectNode object = activity.putObject("object");
+                    object.put("id", absolute(request, base + id));
+                    object.putArray("type").add("AccessGrant");
+                    deliver(request, body.path("inbox").asText(), activity);
+                }
                 response.setStatus(201);
                 response.getHeaders().put(HttpHeader.LOCATION, absolute(request, base + id));
                 callback.succeeded();

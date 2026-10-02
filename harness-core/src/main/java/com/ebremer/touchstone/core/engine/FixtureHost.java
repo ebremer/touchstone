@@ -22,8 +22,9 @@ import com.sun.net.httpserver.HttpServer;
  * Provider and of the rogue one. A target that declares ReachableFixtures dereferences these,
  * so the harness owns the parties it must be able to make misbehave (DESIGN.md section 1).
  *
- * <p>It serves nothing else (section 10), answers only GET and HEAD, and runs only while a run
- * does. Bound to the loopback interface when {@code fixtures.baseUrl} names a loopback host,
+ * <p>It also serves the inboxes of running tests (section 5.4): POST records a delivery, GET
+ * returns the record. It serves nothing else (section 10), answers only GET and HEAD outside
+ * the inboxes, and runs only while a run does. Bound to the loopback interface when {@code fixtures.baseUrl} names a loopback host,
  * otherwise to every interface on its port, unless {@code fixtures.bind} ({@code host:port})
  * says where.
  */
@@ -76,6 +77,11 @@ final class FixtureHost implements AutoCloseable {
     private static void handle(HttpExchange exchange, String basePath, RunSession run, Scope scope) throws IOException {
         try (exchange) {
             String method = exchange.getRequestMethod();
+            String requested = exchange.getRequestURI().getRawPath();
+            if (requested.startsWith(basePath + "inbox/")) {
+                inbox(exchange, requested.substring((basePath + "inbox/").length()), run.inboxes());
+                return;
+            }
             if (!method.equals("GET") && !method.equals("HEAD")) {
                 exchange.getResponseHeaders().set("Allow", "GET, HEAD");
                 exchange.sendResponseHeaders(405, -1);
@@ -107,6 +113,52 @@ final class FixtureHost implements AutoCloseable {
             exchange.sendResponseHeaders(200, body.length);
             try (OutputStream out = exchange.getResponseBody()) {
                 out.write(body);
+            }
+        }
+    }
+
+    /**
+     * {@code inbox/<id>/}: POST records a delivery, GET and HEAD return the record (section 5.4).
+     * Only the inbox URL itself is served, and only while its test runs.
+     */
+    private static void inbox(HttpExchange exchange, String rest, Inboxes inboxes) throws IOException {
+        String method = exchange.getRequestMethod();
+        String id = rest.endsWith("/") ? rest.substring(0, rest.length() - 1) : rest;
+        if (id.isEmpty() || id.contains("/")) {
+            exchange.sendResponseHeaders(404, -1);
+            return;
+        }
+        switch (method) {
+            case "POST" -> {
+                byte[] body = exchange.getRequestBody().readNBytes(Inboxes.MAX_BODY_BYTES + 1);
+                if (body.length > Inboxes.MAX_BODY_BYTES) {
+                    exchange.sendResponseHeaders(413, -1);
+                    return;
+                }
+                exchange.sendResponseHeaders(inboxes.record(id, method, exchange.getRequestHeaders(), body), -1);
+            }
+            case "GET", "HEAD" -> {
+                JsonNode view = inboxes.view(id);
+                if (view == null) {
+                    exchange.sendResponseHeaders(404, -1);
+                    return;
+                }
+                byte[] doc = view.toString().getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                if (method.equals("HEAD")) {
+                    exchange.getResponseHeaders().set("Content-Length", String.valueOf(doc.length));
+                    exchange.sendResponseHeaders(200, -1);
+                    return;
+                }
+                exchange.sendResponseHeaders(200, doc.length);
+                try (OutputStream out = exchange.getResponseBody()) {
+                    out.write(doc);
+                }
+            }
+            default -> {
+                exchange.getResponseHeaders().set("Allow", "GET, HEAD, POST");
+                exchange.sendResponseHeaders(405, -1);
             }
         }
     }

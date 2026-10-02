@@ -338,9 +338,9 @@ today (no manifest, no `RefLwsServer` implementation).
         Activity Streams 2.0 activity objects, required activity types, optional batching.
 - [x] **Subscriptions (D-0061):** five definitions for creating a WebhookSubscription, its
       required fields and the subscribe-time authorization MUST; `RefLwsServer` offers the service.
-- [ ] **Delivery deferred (D-0041):** envelope, activities, delivery-time and revocation
-      authorization. Needs a delivery sink the target can reach. The authorization MUSTs are the ones worth a negative matrix —
-      they are where a plausible implementation leaks data.
+- [x] **Delivery (D-0065, format 0.4.0):** a polled step and a per-test inbox on the fixture host;
+      seven definitions for the data model, the three activity types, delivery-time and revocation
+      authorization (with a broken twin that leaks), actor omission and grant-inbox notification.
 
 ### 7. Authentication suites are published; realign
 

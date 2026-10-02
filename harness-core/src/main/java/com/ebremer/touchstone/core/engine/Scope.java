@@ -35,6 +35,8 @@ final class Scope implements Templates.Resolver {
     private final Map<String, String> bound = new LinkedHashMap<>();
     private final Map<String, String> credentials = new HashMap<>();
     private final Map<String, Optional<String>> tokens = new HashMap<>();
+    /** The id of this test's inbox once {@code ${test.inbox}} is first used (section 5.4). */
+    private String inbox;
 
     Scope(RunSession run, TestDefinition test) {
         this.run = run;
@@ -56,6 +58,24 @@ final class Scope implements Templates.Resolver {
 
     String bound(String name) {
         return bound.get(name);
+    }
+
+    /** The bindings as they stand, so a polled step can undo a failed attempt's captures (4.4). */
+    Map<String, String> snapshot() {
+        return new LinkedHashMap<>(bound);
+    }
+
+    void restore(Map<String, String> snapshot) {
+        bound.clear();
+        bound.putAll(snapshot);
+    }
+
+    /** Closes this test's inbox, if it opened one, discarding its record (section 5.4). */
+    void closeInbox() {
+        if (inbox != null) {
+            run.inboxes().close(inbox);
+            inbox = null;
+        }
     }
 
     @Override
@@ -99,6 +119,15 @@ final class Scope implements Templates.Resolver {
                 return TextNode.valueOf(run.metadataMember(this, "jwks_uri"));
             case "fixtures.baseUrl":
                 return TextNode.valueOf(run.fixturesBaseUrl());
+            case "test.inbox": {
+                // Opened on first use and the same for the rest of the test; undefined (so the
+                // test is inapplicable) without a fixture host the target can reach.
+                String base = run.fixturesBaseUrl();
+                if (inbox == null) {
+                    inbox = run.inboxes().open();
+                }
+                return TextNode.valueOf(base + "inbox/" + inbox + "/");
+            }
             default:
                 break;
         }

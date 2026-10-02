@@ -1,12 +1,13 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.3.0, frozen on 2026-09-30 (DECISIONS.md D-0058).** The
+**Status: format version 0.4.0, frozen on 2026-10-02 (DECISIONS.md D-0065).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
 
-0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changes
-only how a did:key subject's credential is made, since W3C discontinued the did:key suite. A test that is one
+0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changed
+only how a did:key subject's credential is made, since W3C discontinued the did:key suite;
+0.4.0 adds what testing notification delivery needs (a polled step, a per-test inbox). A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -292,11 +293,12 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Not yet defined
 
-- **Notification delivery.** Subscribing is defined (D-0061), for WebhookSubscription.
-  Delivery needs a sink the target can reach, and the delivery-time and revocation
-  authorization MUSTs deserve a negative matrix (D-0041).
+- **Notification delivery to a server without a reachable fixture host.** Delivery is defined
+  (D-0065, format 0.4.0) through the per-test inbox, which the target must be able to reach
+  (ReachableFixtures). Signature checks on deliveries belong to the webhook notification suite,
+  which is not catalogued.
 - **Pagination thresholds.** Pagination is defined (D-0062), but only for a server that
-  paginates a five-member container: format 0.3.0 cannot read a page size from the target
+  paginates a five-member container: the format cannot read a page size from the target
   or create members in bulk, so a server with a larger threshold is inapplicable.
   Deferred to a later format version: a target-declared page size.
 - **Access notifications** (section 11.6), with notification delivery. The access-profile
@@ -309,6 +311,12 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.4.0 (2026-10-02, D-0065) adds three things and changes nothing a 0.3.0
+definition relies on: a step may `poll` until its expectations hold (`EXECUTION.md` section
+4.4), the variable `test.inbox` names a per-test inbox (section 3), and the fixture host
+records what servers POST to it (section 5.4). Together they let a test subscribe to
+notifications and check what is delivered.
 
 Format version 0.3.0 (2026-09-30, D-0058) replaces the did:key credential of
 `EXECUTION.md` section 5.3 with a CID-suite credential for a DID subject. Nothing else

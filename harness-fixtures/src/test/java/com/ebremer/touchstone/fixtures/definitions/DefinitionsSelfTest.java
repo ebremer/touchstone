@@ -70,8 +70,9 @@ class DefinitionsSelfTest {
         try (ReferenceScenario scenario = ReferenceScenario.start(Kind.OPEN)) {
             RunResult run = run(scenario);
 
+            // It declares no capability: neither Authentication nor a fixture host it can reach.
             Set<String> needAuthentication = definitions.tests().stream()
-                    .filter(t -> t.requires().contains("Authentication"))
+                    .filter(t -> t.requires().contains("Authentication") || t.requires().contains("ReachableFixtures"))
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
             Set<String> expected = new TreeSet<>(needAuthentication);
             expected.add(SINGLE_PAGE);
@@ -126,6 +127,22 @@ class DefinitionsSelfTest {
                     "core/notifications#subscription-unreadable-topic-refused");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.
+            assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
+        }
+    }
+
+    /**
+     * A storage that delivers notifications to subscribers who may not read the resource: the
+     * delivery-time authorization tests notice, and nothing else does.
+     */
+    @Test
+    void theDeliveryAuthorizationTestsFailAgainstALeakingStorage() {
+        try (ReferenceScenario scenario = ReferenceScenario.start(Kind.BROKEN_NOTIFICATIONS)) {
+            RunResult run = run(scenario);
+
+            assertThat(failed(run)).as(details(run)).containsExactlyInAnyOrder(
+                    "core/notifications#notification-not-delivered-for-unreadable-resource",
+                    "core/notifications#notification-stops-after-revocation");
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
         }
     }

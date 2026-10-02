@@ -1908,3 +1908,87 @@ Pinned counts move from 133 to 138, and `core/containers` from 16 to 18 (11 MUST
 passes all five. The broken storage revokes nothing it never enforced, so
 `subscription-after-revocation-refused` is inapplicable there, not failed. Halcyon and lws-server
 pass all five. Drafted by an agent; waits on branch `tests/depth-batch2`.
+
+### D-0065 — format 0.4.0: polling and a per-test inbox, for notification delivery
+Notification delivery was the last large untested part of lws10-core: about 25 requirements, 16
+of them MUSTs, including the two delivery-time authorization MUSTs D-0041 singled out. Two things
+blocked it, and format 0.3.0 could not express either:
+- a server delivers asynchronously, so a test must wait for something to arrive;
+- the test needs a delivery target the server can reach and the harness can read.
+
+The fixture host became reachable from our targets once the harness moved to ebremer.com, which
+removed the practical obstacle; this decision removes the format one.
+
+**Format 0.4.0** adds three things and changes nothing a 0.3.0 definition relies on, so every
+existing definition is valid unchanged:
+1. **`poll: {within, every}` on a step** (EXECUTION.md section 4.4).
+   - The step is re-sent every `every` seconds until its expectations hold, or until `within`
+     seconds (at most 120) have passed since the first attempt. Then the last attempt is judged
+     as any step is.
+   - Only the attempt that is judged leaves captures or cleanup registrations behind; the engine
+     undoes a failed attempt's before retrying.
+   - Polling can wait for something to appear but cannot prove it never will. A test that needs
+     an absence polls for a later event that would have to follow it, then asserts the absence
+     with `none`.
+   - Considered and rejected: engine-side polling with no format change. It is behaviour another
+     implementation of the format could not know about, and the contract would no longer say what
+     a step does.
+2. **`${test.inbox}`**, a per-test URL on the fixture host, defined only with ReachableFixtures.
+3. **The inbox** (section 5.4): POSTs to an open inbox are recorded (202); GET returns them as
+   JSON.
+   - Each delivery is recorded with its method, its headers (credentials redacted), its body
+     parsed as JSON, and `activities`, the body's `activity` normalized to an array. That last one
+     spares tests from depending on whether a server batches, which the data model leaves to it.
+   - Limits: only running tests' inboxes are open; 1 MiB per body; 100 deliveries per inbox. The
+     record is discarded when the test ends.
+
+Schema `$id` `…/0-4-0`, `Definitions.FORMAT_VERSION` 0.4.0. The context and vocabulary gain
+`poll`, `within`, `every` and the class `lwst:Polling`.
+
+**Seven definitions** (catalog coverage 176 → 196 of 219):
+- `notification-delivered-create` (MUST, ReachableFixtures only): a Create in a subscribed container
+  arrives, and its delivery has the full 10.2 data model: envelope `type`, `storage` (equal to the
+  storage's URI), `activity`; activity `id`, `type` array, `object.id` and `object.type` array, and
+  an RFC 3339 `published`.
+- `notification-delivered-update` and `notification-delivered-delete` (MUST): the other two
+  activity types a server MUST support.
+- `notification-not-delivered-for-unreadable-resource` (MUST, NegativeTest): bob subscribes to a
+  container he may read; alice creates a member he may not, then updates one he may. Once the
+  Update arrives, nothing may ever have named the unreadable member. A precondition checks that bob
+  cannot read the new member, since a server whose container grants reach members gives him it.
+- `notification-stops-after-revocation` (MUST, NegativeTest): bob subscribes to two resources, each
+  readable through its own grant. An Update to the first arrives; alice revokes that grant and
+  deletes the resource, then updates the second. Once the second Update arrives, the Delete must not
+  have been delivered. A server that ends the whole subscription instead (a SHOULD NOT) makes the
+  test inapplicable rather than failed.
+- `notification-actor-omitted` (SHOULD): delivered activities carry no `actor`.
+- `access-grant-inbox-notified` (SHOULD, `core/access_grants`): a grant naming an inbox is
+  announced there with a well-formed Notification.
+
+Inbox reads go out as `anonymous`, so no storage credential is sent to the fixture host.
+
+**The reference server follows.** `RefLwsServer` POSTs an lws+json Notification to each subscriber
+whose topic covers a created, updated or deleted resource (a container topic covers what is inside
+it), if the subscriber may read the resource at the event (before removal, for a Delete). It sends
+no actor, and also announces a new grant at the grant's inbox. Delivery is one attempt, off the
+request thread.
+
+**A new broken twin, `BROKEN_NOTIFICATIONS`.** The two delivery-time authorization tests cannot
+fail against the broken storage: it lets bob read everything, so their "bob cannot read it"
+preconditions do not hold, and they end inapplicable. `RefLwsServer.startLeakingNotifications` is
+the compliant storage with one defect, delivery without the read check. The self-test requires
+exactly those two tests to fail against it.
+
+Pinned counts move from 138 to 145; against the reference 144 pass and `pagination-single-page`
+stays inapplicable.
+
+**Against our deployments** (run from ebremer.com):
+- **Halcyon** passes all seven.
+- **lws-server** first failed the Update and revocation tests, which was the definitions' fault:
+  their PUTs were unconditional, and lws-server answers those 428. The draft dropped that MUST, but
+  "clients SHOULD use conditional requests", and every other definition's PUT already sent
+  `ifMatch: current`; now these do too. With that, lws-server passes six.
+  `notification-not-delivered-for-unreadable-resource` is inapplicable there by design: lws-server's
+  read access on a container reaches its members.
+
+Drafted by an agent; waits on branch `format-0.4.0-delivery`.

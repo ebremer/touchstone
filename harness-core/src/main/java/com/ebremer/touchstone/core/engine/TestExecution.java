@@ -244,47 +244,71 @@ final class TestExecution {
 
     // ------------------------------------------------------------------ steps (4.2, item 4)
 
-    /** Runs one step; false when the test ends with it. */
+    /**
+     * Runs one step; false when the test ends with it. A polled step (section 4.4) is re-sent
+     * every {@code pollEvery} seconds until its expectations hold or {@code pollWithin} seconds
+     * have passed since the first attempt; only the attempt that is judged leaves captures and
+     * cleanup registrations behind.
+     */
     private boolean step(StepDefinition step) {
         String identity = step.identity() != null ? step.identity() : test.identity() != null ? test.identity() : "alice";
-        Req req;
-        try {
-            req = Requests.build(step.request(), identity, scope, test.directory(), null);
-        } catch (Unresolvable e) {
-            steps.add(new StepResult(step.label(), null, List.of(), "cannot build the request: " + e.getMessage()));
-            end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
+        long deadline = System.nanoTime() + step.pollWithin() * 1_000_000_000L;
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            String label = attempt == 1 ? step.label() : step.label() + " (attempt " + attempt + ")";
+            Map<String, String> before = scope.snapshot();
+            Req req;
+            try {
+                req = Requests.build(step.request(), identity, scope, test.directory(), null);
+            } catch (Unresolvable e) {
+                steps.add(new StepResult(label, null, List.of(), "cannot build the request: " + e.getMessage()));
+                end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
+                return false;
+            }
+            Resp resp;
+            try {
+                resp = run.send(req);
+            } catch (IOException e) {
+                steps.add(new StepResult(label, Http.trace(req, null), List.of(), "transport error: " + e));
+                end(Outcome.CANT_TELL, "step '" + step.label() + "': " + e);
+                return false;
+            }
+            Evaluator.Evaluation evaluation;
+            try {
+                evaluation = Evaluator.evaluate(step.response(), req, resp, scope, test.directory(),
+                        accept -> Requests.build(step.request(), identity, scope, test.directory(), accept));
+            } catch (Unresolvable e) {
+                steps.add(new StepResult(label, Http.trace(req, resp), List.of(), e.getMessage()));
+                end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
+                return false;
+            }
+            if (!evaluation.passed() && step.polls() && System.nanoTime() < deadline) {
+                // Not yet: undo what this attempt bound and try again (section 4.4, item 3).
+                scope.restore(before);
+                try {
+                    Thread.sleep(step.pollEvery() * 1000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    end(Outcome.CANT_TELL, "step '" + step.label() + "': interrupted while polling");
+                    return false;
+                }
+                continue;
+            }
+            evaluation.cleanup().forEach(uri -> cleanups.push(new Cleanup(uri, identity)));
+            steps.add(new StepResult(label, Http.trace(req, resp), evaluation.results(), null));
+            if (evaluation.passed()) {
+                return true;
+            }
+            AssertionResult failed = evaluation.results().getLast();
+            if (step.precondition()) {
+                end(Outcome.INAPPLICABLE, "precondition '" + step.label() + "' does not hold: " + failed.description()
+                        + " expected " + failed.expected() + ", got " + failed.actual());
+            } else {
+                end(Outcome.FAILED, null);
+            }
             return false;
         }
-        Resp resp;
-        try {
-            resp = run.send(req);
-        } catch (IOException e) {
-            steps.add(new StepResult(step.label(), Http.trace(req, null), List.of(), "transport error: " + e));
-            end(Outcome.CANT_TELL, "step '" + step.label() + "': " + e);
-            return false;
-        }
-        Evaluator.Evaluation evaluation;
-        try {
-            evaluation = Evaluator.evaluate(step.response(), req, resp, scope, test.directory(),
-                    accept -> Requests.build(step.request(), identity, scope, test.directory(), accept));
-        } catch (Unresolvable e) {
-            steps.add(new StepResult(step.label(), Http.trace(req, resp), List.of(), e.getMessage()));
-            end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
-            return false;
-        }
-        evaluation.cleanup().forEach(uri -> cleanups.push(new Cleanup(uri, identity)));
-        steps.add(new StepResult(step.label(), Http.trace(req, resp), evaluation.results(), null));
-        if (evaluation.passed()) {
-            return true;
-        }
-        AssertionResult failed = evaluation.results().getLast();
-        if (step.precondition()) {
-            end(Outcome.INAPPLICABLE, "precondition '" + step.label() + "' does not hold: " + failed.description()
-                    + " expected " + failed.expected() + ", got " + failed.actual());
-        } else {
-            end(Outcome.FAILED, null);
-        }
-        return false;
     }
 
     // ------------------------------------------------------------------ cleanup (section 10)
@@ -306,5 +330,6 @@ final class TestExecution {
         if (container != null) {
             run.deleteContainer(container, scope);
         }
+        scope.closeInbox();
     }
 }

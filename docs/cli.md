@@ -51,7 +51,7 @@ touchstone run -t <targetId> [-m <selector>] [--targets <file>] [--definitions <
 Before sending any request, `run` checks that:
 
 - the registry file exists, parses, and holds the target id;
-- the definitions are in the format this engine implements (0.3.0);
+- the definitions are in the format this engine implements (0.4.0);
 - every definition parses as YAML 1.2, validates against the schema, expands as JSON-LD in
   safe mode, and passes the lint, including that every requirement IRI it cites is in the
   catalog;

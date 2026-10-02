@@ -34,11 +34,15 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
  *   <li>{@link Kind#BROKEN_STORAGE}: a storage that claims to authenticate but never challenges
  *       or forbids; the storage's negative tests must fail. It reveals no authorization
  *       server, so the harness is given static tokens instead.</li>
+ *   <li>{@link Kind#BROKEN_NOTIFICATIONS}: the compliant deployment, except that the storage
+ *       delivers notifications without checking that the subscriber may read the resource; the
+ *       delivery-time authorization tests must fail. (Against BROKEN_STORAGE they cannot: it lets
+ *       bob read everything, so their "bob cannot read it" preconditions do not hold.)</li>
  * </ul>
  */
 public final class ReferenceScenario implements AutoCloseable {
 
-    public enum Kind { OPEN, SECURED, BROKEN_AUTHORIZATION_SERVER, BROKEN_STORAGE }
+    public enum Kind { OPEN, SECURED, BROKEN_AUTHORIZATION_SERVER, BROKEN_STORAGE, BROKEN_NOTIFICATIONS }
 
     private final RefAuthorizationServer authorizationServer;
     private final RefLwsServer storage;
@@ -78,9 +82,10 @@ public final class ReferenceScenario implements AutoCloseable {
             return new ReferenceScenario(minter, storage, props, List.of("Authentication", "ReachableFixtures"));
         }
 
-        RefAuthorizationServer as = kind == Kind.SECURED
-                ? RefAuthorizationServer.start(0) : RefAuthorizationServer.startBroken(0);
-        RefLwsServer storage = RefLwsServer.startSecured(0, as, alice);
+        RefAuthorizationServer as = kind == Kind.BROKEN_AUTHORIZATION_SERVER
+                ? RefAuthorizationServer.startBroken(0) : RefAuthorizationServer.start(0);
+        RefLwsServer storage = kind == Kind.BROKEN_NOTIFICATIONS
+                ? RefLwsServer.startLeakingNotifications(0, as, alice) : RefLwsServer.startSecured(0, as, alice);
         RSAKey idp = rsa("idp");
         try {
             as.trustSamlIdentityProvider(fixtures + "idp", idp.toRSAPublicKey());

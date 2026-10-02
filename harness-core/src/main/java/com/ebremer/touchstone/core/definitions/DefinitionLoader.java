@@ -121,8 +121,10 @@ public final class DefinitionLoader {
         String identity = text(t, "as");
         if (t.has("steps")) {
             for (JsonNode s : t.path("steps")) {
+                JsonNode poll = s.path("poll");
                 steps.add(new StepDefinition(s.path("label").asText(), text(s, "as"),
-                        s.path("precondition").asBoolean(false), s.path("request"), s.path("response")));
+                        s.path("precondition").asBoolean(false), s.path("request"), s.path("response"),
+                        poll.path("within").asInt(0), poll.path("every").asInt(0)));
             }
         } else {
             // The short form is a test of exactly one step, labelled with the test's label; its

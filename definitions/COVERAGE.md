@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **138 tests**: 112 MUST, 22 SHOULD, 4 MAY; 80 validation tests, 58 negative tests.
-- **176 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **145 tests**: 117 MUST, 24 SHOULD, 4 MAY; 85 validation tests, 60 negative tests.
+- **196 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -16,14 +16,14 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/cid/manifest` | 17 | 17 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
-| `core/access_grants` | 15 | 13 | 1 | 1 |
+| `core/access_grants` | 16 | 13 | 2 | 1 |
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 18 | 11 | 5 | 2 |
 | `core/data_resources` | 16 | 9 | 6 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
 | `core/linksets` | 9 | 8 | 1 | 0 |
-| `core/notifications` | 7 | 7 | 0 | 0 |
+| `core/notifications` | 13 | 12 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 
@@ -155,6 +155,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `readDataResource-public-read` | Validation | MUST | Authentication | readDataResource |
 | `access-grant-authenticated-agent` | Validation | MUST | Authentication |  |
 | `access-grant-extra-properties-accepted` | Validation | MAY | Authentication |  |
+| `access-grant-inbox-notified` | Validation | SHOULD | Authentication, ReachableFixtures |  |
 | `access-request-create` | Validation | MUST | Authentication |  |
 | `access-grant-document-shape` | Validation | MUST | Authentication |  |
 | `access-grant-incomplete-refused` | Negative | MUST | Authentication |  |
@@ -273,6 +274,12 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `subscription-missing-topic-refused` | Negative | MUST |  |  |
 | `subscription-unreadable-topic-refused` | Negative | MUST | Authentication |  |
 | `subscription-after-revocation-refused` | Negative | MUST | Authentication |  |
+| `notification-delivered-create` | Validation | MUST | ReachableFixtures |  |
+| `notification-delivered-update` | Validation | MUST | ReachableFixtures |  |
+| `notification-delivered-delete` | Validation | MUST | ReachableFixtures |  |
+| `notification-not-delivered-for-unreadable-resource` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `notification-stops-after-revocation` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `notification-actor-omitted` | Validation | SHOULD | ReachableFixtures |  |
 
 ### `core/pagination`
 

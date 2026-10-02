@@ -68,7 +68,7 @@ As of September 2026:
   current LWS 1.0 documents: the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites.
 - **Tests:** 101 [YAML-LD definitions](definitions.md) (84 MUST, 15 SHOULD, 2 MAY),
-  format 0.3.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
+  format 0.4.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cite 120 of the 219 catalogued requirements.
   Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access
