@@ -6,7 +6,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **129 tests**: 105 MUST, 21 SHOULD, 3 MAY; 72 validation tests, 57 negative tests.
+- **133 tests**: 109 MUST, 21 SHOULD, 3 MAY; 76 validation tests, 57 negative tests.
 - **174 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
@@ -16,7 +16,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/cid/manifest` | 17 | 17 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
-| `core/access_grants` | 11 | 9 | 1 | 1 |
+| `core/access_grants` | 15 | 13 | 1 | 1 |
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 16 | 10 | 5 | 1 |
@@ -159,6 +159,10 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `access-grant-document-shape` | Validation | MUST | Authentication |  |
 | `access-grant-incomplete-refused` | Negative | MUST | Authentication |  |
 | `access-grant-constraints-all-satisfied` | Validation | MUST | Authentication |  |
+| `access-grant-left-operands-accepted` | Validation | MUST | Authentication |  |
+| `access-grant-constraint-format` | Validation | MUST | Authentication |  |
+| `access-grant-constraint-type` | Validation | MUST | Authentication |  |
+| `access-grant-constraint-client` | Validation | MUST | Authentication |  |
 
 ### `core/authorization_server`
 

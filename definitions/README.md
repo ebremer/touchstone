@@ -299,8 +299,9 @@ These affect how tests are written, and are worth raising with the WG:
   paginates a five-member container: format 0.3.0 cannot read a page size from the target
   or create members in bulk, so a server with a larger threshold is inapplicable.
   Deferred to a later format version: a target-declared page size.
-- **Access-profile constraints** (client, format, type, purpose, dateTime) and access
-  notifications (section 11.6).
+- **Access notifications** (section 11.6), with notification delivery. The access-profile
+  constraints are defined (D-0060, D-0063), except how a request states its purpose: the draft
+  does not say, so purpose can be tested only as accepted.
 - **Optional behaviours:** RFC 9457 problem details (SHOULD), `Prefer: set-linkset`
   (optional), `lws#PreferLinkRelations` (MAY).
 - **Key rotation mid-session.** It needs the harness to control the authorization

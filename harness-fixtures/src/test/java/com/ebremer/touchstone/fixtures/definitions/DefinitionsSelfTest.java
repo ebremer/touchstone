@@ -120,6 +120,9 @@ class DefinitionsSelfTest {
                     "core/access_grants#access-grant-authenticated-agent",
                     "core/access_grants#access-grant-incomplete-refused",
                     "core/access_grants#access-grant-constraints-all-satisfied",
+                    "core/access_grants#access-grant-constraint-format",
+                    "core/access_grants#access-grant-constraint-type",
+                    "core/access_grants#access-grant-constraint-client",
                     "core/notifications#subscription-unreadable-topic-refused");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.

@@ -854,3 +854,432 @@ entries:
           url: "${created}"
         response:
           statusCode: 200
+
+  - id: "#access-grant-left-operands-accepted"
+    type: ValidationTest
+    name: access-grant-left-operands-accepted
+    label: A server advertising the Access Profile accepts a grant constrained by each leftOperand it must support
+    comment: >-
+      "A server advertising support for this profile MUST support the following
+      leftOperand values": client, format, type, purpose and dateTime. A grant constrained
+      by each one in turn, with the operator the draft's own example uses for it, must be
+      accepted. A server that refuses one does not support it. Whether each is enforced is
+      for the tests that follow; purpose has none, since the draft does not say how a
+      request states its purpose.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-purpose
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-left-operands
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-objects
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: constrained five ways
+    steps:
+      - label: the grant service advertises the Access Profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: AccessGrantService
+                - pointer: /conformsTo
+                  hasValue: https://www.w3.org/ns/lws#AccessProfile
+      - label: a client constraint is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: client
+                    operator: eq
+                    rightOperand: urn:touchstone:client:conformance
+        response:
+          statusCode: 201
+          location:
+            capture: clientGrant
+            cleanup: true
+      - label: a format constraint is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: format
+                    operator: isAnyOf
+                    rightOperand: [text/plain, application/json]
+        response:
+          statusCode: 201
+          location:
+            capture: formatGrant
+            cleanup: true
+      - label: a type constraint is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: type
+                    operator: eq
+                    rightOperand: https://www.w3.org/ns/lws#DataResource
+        response:
+          statusCode: 201
+          location:
+            capture: typeGrant
+            cleanup: true
+      - label: a purpose constraint is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: purpose
+                    operator: isAnyOf
+                    rightOperand: ["urn:touchstone:purpose:conformance-testing", "urn:touchstone:purpose:research"]
+        response:
+          statusCode: 201
+          location:
+            capture: purposeGrant
+            cleanup: true
+      - label: a dateTime constraint is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: dateTime
+                    operator: lteq
+                    rightOperand: "2999-12-31T23:59:59Z"
+        response:
+          statusCode: 201
+          location:
+            capture: dateTimeGrant
+            cleanup: true
+
+  - id: "#access-grant-constraint-format"
+    type: ValidationTest
+    name: access-grant-constraint-format
+    label: A format constraint lets a grant reach only resources of the listed media types
+    comment: >-
+      format represents "the media type of the target HTTP resource"; with isAnyOf, access
+      is permitted if the resource's media type matches any listed value. One grant gives
+      bob read on a text/plain and a text/csv resource, constrained to text/plain or
+      application/json: he can read the first and not the second.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-format
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-left-operands
+    prereqs:
+      hierarchy:
+        - dataResource: plain
+          contentType: text/plain
+          body: a listed media type
+        - dataResource: csv
+          contentType: text/csv
+          body: "not,a,listed,media,type"
+    steps:
+      - label: the grant service advertises the Access Profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: AccessGrantService
+                - pointer: /conformsTo
+                  hasValue: https://www.w3.org/ns/lws#AccessProfile
+      - label: grant bob read on both, for text/plain and application/json only
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${plain}", "${csv}"]
+                constraint:
+                  - leftOperand: format
+                    operator: isAnyOf
+                    rightOperand: [text/plain, application/json]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: bob can read the text/plain resource
+        as: bob
+        request:
+          method: GET
+          url: "${plain}"
+        response:
+          statusCode: 200
+      - label: but not the text/csv one
+        as: bob
+        request:
+          method: GET
+          url: "${csv}"
+        response:
+          statusCode: [403, 404]
+
+  - id: "#access-grant-constraint-type"
+    type: ValidationTest
+    name: access-grant-constraint-type
+    label: A type constraint lets a grant reach only resources of the given type
+    comment: >-
+      type represents "the type URL expressed in a resource's link headers". One grant
+      gives bob read on a container and a data resource, constrained to type eq
+      lws#DataResource: he can read the data resource and not the container.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-type
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-left-operands
+    prereqs:
+      hierarchy:
+        - container: box
+        - dataResource: doc
+          contentType: text/plain
+          body: a data resource
+    steps:
+      - label: the grant service advertises the Access Profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: AccessGrantService
+                - pointer: /conformsTo
+                  hasValue: https://www.w3.org/ns/lws#AccessProfile
+      - label: grant bob read on both, for data resources only
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${box}", "${doc}"]
+                constraint:
+                  - leftOperand: type
+                    operator: eq
+                    rightOperand: https://www.w3.org/ns/lws#DataResource
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: bob can read the data resource
+        as: bob
+        request:
+          method: GET
+          url: "${doc}"
+        response:
+          statusCode: 200
+      - label: but not the container
+        as: bob
+        request:
+          method: GET
+          url: "${box}"
+        response:
+          statusCode: [403, 404]
+
+  - id: "#access-grant-constraint-client"
+    type: ValidationTest
+    name: access-grant-constraint-client
+    label: A client constraint withholds a grant from every other client application
+    comment: >-
+      client represents "the client identifier for an HTTP request". A grant to bob
+      limited to a client identifier his client does not have must not let him read. An
+      unconstrained grant then must: that shows the refusal came from the constraint, not
+      from bob.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-client
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-left-operands
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: for one client application only
+    steps:
+      - label: the grant service advertises the Access Profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: AccessGrantService
+                - pointer: /conformsTo
+                  hasValue: https://www.w3.org/ns/lws#AccessProfile
+      - label: grant bob read, for a client that is not his
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: client
+                    operator: eq
+                    rightOperand: urn:touchstone:client:not-bobs
+        response:
+          statusCode: 201
+          location:
+            capture: constrained
+            cleanup: true
+      - label: bob's own client cannot read
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: [403, 404]
+      - label: grant bob read without a constraint
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: unconstrained
+            cleanup: true
+      - label: now bob can read
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200

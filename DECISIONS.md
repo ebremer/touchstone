@@ -1852,3 +1852,29 @@ tests that must catch it (20 → 23). Pinned counts move from 120 to 129.
 Against our deployments, Halcyon (fixed page size 100) passes `pagination-single-page`. lws-server
 (page size 1000) lists the five members without pagination links, so pagination does not apply
 to it. Drafted by an agent; waits on branch `tests/authn-and-pagination`.
+
+### D-0063 — the Access Profile's leftOperands, each tested
+D-0060 tested only `dateTime`. "A server advertising support for this profile MUST support the
+following leftOperand values: client, format, type, purpose, dateTime." Four definitions in
+`core/access_grants`, each gated on the grant service's `conformsTo` naming `lws#AccessProfile`:
+- `access-grant-left-operands-accepted` (MUST): five grants, each constrained by one leftOperand
+  with the operator the draft's example uses for it (client `eq`, format `isAnyOf`, type `eq`,
+  purpose `isAnyOf`, dateTime `lteq`), are each created with 201. Refusing one is not supporting
+  it. This is the only test for `purpose`: the draft does not say how a request states its
+  purpose, so no definition can check that the constraint is enforced.
+- `access-grant-constraint-format` (MUST): one grant on a text/plain and a text/csv resource,
+  constrained to `isAnyOf [text/plain, application/json]`; bob reads the first, not the second.
+- `access-grant-constraint-type` (MUST): one grant on a container and a data resource, constrained
+  to `eq lws#DataResource`; bob reads the data resource, not the container.
+- `access-grant-constraint-client` (MUST): a grant limited to a client identifier bob's client does
+  not have lets him read nothing. An unconstrained grant then lets him read, so the refusal came
+  from the constraint and not from bob. The positive half (his own client allowed) is not testable:
+  a definition cannot know the client identifier in bob's token.
+
+The reference server already evaluates all five (D-0060). The broken storage forbids nothing, so
+the three enforcement tests join those that must catch it. Pinned counts move from 129 to 133.
+
+Halcyon fails three of the four. Its grant service advertises the Access Profile but answers 422
+to format, type and purpose constraints ("the enforceable constraints are client-eq and dateTime"):
+a MUST failure, which these tests make visible. lws-server passes all four. Drafted by an agent;
+waits on branch `tests/access-constraints`.
