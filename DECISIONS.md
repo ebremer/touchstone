@@ -2154,3 +2154,40 @@ Pinned counts move from 154 to 182.
     either.
 
 Drafted by an agent; waits on branch `index-suite`.
+
+### D-0068 — the index suite, deeper: changes, negotiation, safety, paging
+Five more definitions in `index/manifest`, citing requirements D-0067 catalogued:
+- `type-search-reflects-update` and `type-search-reflects-delete` (SHOULD,
+  `reflect-change-bounded`):
+  - a resource of type Alpha is replaced by one of type Beta, declared by both Link and
+    content; or it is deleted;
+  - a search on the new type comes to find it, and one on the old type comes to omit it. Both
+    are polled, since the clause allows a bounded delay.
+- `type-search-vary-accept` (MUST, `vary-accept`):
+  - it applies when the search answers `Accept: application/ld+json` in that format;
+  - then both that response and the default one must list Accept (or `*`) in Vary.
+- `type-search-safe` (MAY, `query-safe-idempotent`): the resource and its container keep their
+  ETags across two identical searches, and both searches find the resource. The test is
+  filed at MAY because that is the catalog level of the clause, whose only keyword is the MAY
+  of repetition; the safety half is what is asserted.
+- `type-search-next-page` (MUST):
+  - five resources share type Alpha; when the result spans pages, the next page (by GET on
+    the rel=next URI) is a ContainerPage of Alpha resources that does not repeat page one's
+    first item;
+  - it applies only when the page holds fewer than five, so it is inapplicable on both of our
+    servers (100 a page) and runs against the reference server;
+  - it cites the core `pagination-link-first`, since the index draft states the paging
+    model without a keyword.
+
+**The reference server follows.** Its search pages at `PAGE_SIZE` (4), with page links of
+the form `?q=<base64url filter>&page=N`, dereferenced with GET and holding no state. It
+answers `application/ld+json` to a client that asks for it and not for lws+json.
+
+Not written: a cross-check that the type index and the search agree for one client. It
+restates `type-index-lists-readable-types` and `type-search-authorization-filtered` without a
+clause of its own.
+
+**Against our deployments** (2026-10-02): Halcyon (`c6435d0`) and lws-server (`e65a4dc`) each
+pass 32 of the 33 index tests, with `type-search-next-page` inapplicable.
+
+Drafted by an agent; waits on branch `index-followups`.

@@ -1800,3 +1800,508 @@ entries:
               some:
                 - pointer: /id
                   equalsIri: "${typed}"
+
+  - id: "#type-search-reflects-update"
+    type: ValidationTest
+    name: type-search-reflects-update
+    label: After an update changes a resource's types, the search follows
+    comment: >-
+      "Following a write that changes a resource's derivable types ... (creation, update, or
+       deletion), a server SHOULD reflect the change within a bounded, implementation-defined
+       interval." A resource of type Alpha is replaced (both by Link rel=type and in its Turtle) by
+       one of type Beta: a search on Beta comes to find it, and one on Alpha comes to omit it.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
+    traits: [Discovery, Put]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
+      - https://example.org/touchstone/req/lws10-index/types-from-link-headers
+      - https://example.org/touchstone/req/lws10-index/types-from-content
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds the resource (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: replace it with a resource of type Beta
+        request:
+          method: PUT
+          url: "${one}"
+          ifMatch: current
+          contentType: text/turtle
+          body: "<> a <${test.container}#Beta> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Beta"
+        response:
+          statusCode: [200, 204]
+      - label: "[Beta] comes to find it"
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Beta"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: "[Alpha] comes to omit it"
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${one}"
+
+  - id: "#type-search-reflects-delete"
+    type: ValidationTest
+    name: type-search-reflects-delete
+    label: After a resource is deleted, the search stops returning it
+    comment: >-
+      A deletion is one of the writes a server "SHOULD reflect ... within a bounded,
+       implementation-defined interval": once the Alpha resource is deleted, a search on Alpha
+       comes to omit it.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
+    traits: [Discovery, Delete]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds the resource (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: delete it
+        request:
+          method: DELETE
+          url: "${one}"
+        response:
+          statusCode: "2xx"
+      - label: "[Alpha] comes to omit it"
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${one}"
+
+  - id: "#type-search-vary-accept"
+    type: ValidationTest
+    name: type-search-vary-accept
+    label: A search that negotiates its response format lists Accept in Vary
+    comment: >-
+      "A server that negotiates the response representation on Accept ... MUST list Accept in
+       Vary so that caches do not reuse a representation across response formats." Applies when
+       the search answers Accept: application/ld+json in that format; then both that response and
+       the default lws+json one vary on Accept.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery, Conneg]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/vary-accept
+      - https://example.org/touchstone/req/lws10-index/other-response-formats
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: the search answers application/ld+json when asked (otherwise it does not negotiate, and this test does not apply)
+        precondition: true
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          accept: "application/ld+json"
+          bodyJSON:
+            type: ["${test.container}#Nothing"]
+        response:
+          statusCode: 200
+          contentType: application/ld+json
+      - label: the ld+json response lists Accept in Vary
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          accept: "application/ld+json"
+          bodyJSON:
+            type: ["${test.container}#Nothing"]
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Vary
+              matches: "(?i)(^|[\\s,])(accept|\\*)([\\s,]|$)"
+      - label: the default response lists Accept in Vary
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Nothing"]
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Vary
+              matches: "(?i)(^|[\\s,])(accept|\\*)([\\s,]|$)"
+
+  - id: "#type-search-safe"
+    type: ValidationTest
+    name: type-search-safe
+    label: A search changes nothing, and repeating it gives the same result
+    comment: >-
+      "The QUERY method is both safe and idempotent: a search never alters server state, and
+       it MAY be repeated". Around two identical searches, the resource and its container keep
+       their ETags, and both searches find the resource.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery, Conditional]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/query-safe-idempotent
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds the resource (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: note the resource's ETag
+        request:
+          method: HEAD
+          url: "${one}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              capture: resourceEtag
+      - label: note the container's ETag
+        request:
+          method: HEAD
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              capture: containerEtag
+      - label: search once
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: search again, with the same result
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: the resource's ETag is unchanged
+        request:
+          method: HEAD
+          url: "${one}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              headerValue: "${resourceEtag}"
+      - label: the container's ETag is unchanged
+        request:
+          method: HEAD
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              headerValue: "${containerEtag}"
+
+  - id: "#type-search-next-page"
+    type: ValidationTest
+    name: type-search-next-page
+    label: Following a search result's rel=next yields the rest of the same result set
+    comment: >-
+      Search results are "paginated according to the standard LWS pagination model ... page URIs
+       are conveyed in Link headers ... and are dereferenced to retrieve subsequent pages". Five
+       resources share type Alpha; when the search splits them into pages, the next page is 200
+       lws+json, holds only Alpha resources, and does not repeat page one's first item. Applies
+       when the server's page holds fewer than five.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery, Get]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/search-default-containerpage
+      - https://example.org/touchstone/req/lws10-index/result-item-id-type
+      - https://example.org/touchstone/req/lws10-core/pagination-link-first
+    prereqs:
+      hierarchy:
+        - dataResource: m1
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+        - dataResource: m2
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+        - dataResource: m3
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+        - dataResource: m4
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+        - dataResource: m5
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha>, <${test.container}#Epsilon> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+            - rel: type
+              href: "${test.container}#Epsilon"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: the last-created resource is found (so all five are indexed) (otherwise the server derives no declared type, and this test does not apply)
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Epsilon"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${m5}"
+      - label: the search on Alpha spans pages (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+      - label: read the first page, keeping its next link and its first item
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+              capture: next
+          json:
+            - pointer: /items/0/id
+              capture: firstItem
+      - label: the next page holds more Alpha resources, not page one's first
+        request:
+          method: GET
+          url: "${next}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          json:
+            - pointer: /type
+              equals: ContainerPage
+            - pointer: /items
+              some:
+                - pointer: /id
+                  jsonType: string
+            - pointer: /items
+              every:
+                - pointer: /type
+                  hasValue: "${test.container}#Alpha"
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${firstItem}"

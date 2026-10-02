@@ -1248,7 +1248,11 @@ public final class RefLwsServer implements AutoCloseable {
                     callback.succeeded();
                     return;
                 }
-                if (search ? !method.equals("QUERY") : !(method.equals("GET") || method.equals("HEAD"))) {
+                // A page link of a result set is the filter, base64url-encoded, and a page number:
+                // the server keeps nothing, and the link is dereferenced with GET (section 7.1).
+                String q = search ? queryParam(request, "q") : null;
+                boolean pageLink = q != null && (method.equals("GET") || method.equals("HEAD"));
+                if (!pageLink && (search ? !method.equals("QUERY") : !(method.equals("GET") || method.equals("HEAD")))) {
                     if (search) {
                         response.getHeaders().put("Accept-Query", LWS_QUERY);
                     }
@@ -1257,7 +1261,16 @@ public final class RefLwsServer implements AutoCloseable {
                 }
                 List<List<String>> typeGroups = List.of();
                 boolean relationConstrained = false;
-                if (search) {
+                byte[] filterBytes = null;
+                if (pageLink) {
+                    try {
+                        filterBytes = java.util.Base64.getUrlDecoder().decode(q);
+                    } catch (IllegalArgumentException e) {
+                        status(request, response, callback, 404);
+                        return;
+                    }
+                }
+                if (search && !pageLink) {
                     String contentType = request.getHeaders().get("Content-Type");
                     if (contentType == null || contentType.isBlank()) {
                         status(request, response, callback, 400);
@@ -1269,10 +1282,14 @@ public final class RefLwsServer implements AutoCloseable {
                         status(request, response, callback, 415);
                         return;
                     }
-                    JsonNode filter;
                     try (InputStream in = Content.Source.asInputStream(request)) {
-                        byte[] body = in.readAllBytes();
-                        filter = body.length == 0 ? mapper.createObjectNode() : mapper.readTree(body);
+                        filterBytes = in.readAllBytes();
+                    }
+                }
+                if (search) {
+                    JsonNode filter;
+                    try {
+                        filter = filterBytes.length == 0 ? mapper.createObjectNode() : mapper.readTree(filterBytes);
                     } catch (Exception e) {
                         filter = null;
                     }
@@ -1304,10 +1321,15 @@ public final class RefLwsServer implements AutoCloseable {
                     }
                     typeGroups = types;
                 }
-                if (!acceptable(request.getHeaders().get("Accept"))) {
+                String accept = request.getHeaders().get("Accept");
+                if (!acceptable(accept)) {
                     status(request, response, callback, 406);
                     return;
                 }
+                // lws+json, or ld+json for a client that asks for it and not for lws+json: the
+                // response is negotiated, so it varies on Accept (section 7.2).
+                String mediaType = accept != null && accept.contains("application/ld+json")
+                        && !accept.contains(LWS_JSON) ? "application/ld+json" : LWS_JSON;
                 ObjectNode doc = mapper.createObjectNode();
                 doc.put("@context", LWS_CONTEXT);
                 ArrayNode items = mapper.createArrayNode();
@@ -1333,9 +1355,30 @@ public final class RefLwsServer implements AutoCloseable {
                     types.forEach(v -> items.addObject().put("id", v));
                 }
                 doc.put("totalItems", items.size());
-                doc.set("items", items);
+                ArrayNode shown = items;
+                if (search) {
+                    // PAGE_SIZE results a page, so the paging definition spans pages here.
+                    int page = pageLink ? requestedPage(request) : 1;
+                    int pages = Math.max(1, (items.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+                    if (page < 1 || page > pages) {
+                        status(request, response, callback, 404);
+                        return;
+                    }
+                    String token = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(filterBytes);
+                    String base = absolute(request, TYPE_SEARCH) + "?q=" + token + "&page=";
+                    response.getHeaders().add("Link", "<" + base + 1 + ">; rel=\"first\"");
+                    if (page < pages) {
+                        response.getHeaders().add("Link", "<" + base + (page + 1) + ">; rel=\"next\"");
+                    }
+                    ArrayNode slice = mapper.createArrayNode();
+                    for (int i = (page - 1) * PAGE_SIZE; i < Math.min(items.size(), page * PAGE_SIZE); i++) {
+                        slice.add(items.get(i));
+                    }
+                    shown = slice;
+                }
+                doc.set("items", shown);
                 response.setStatus(200);
-                response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, mediaType);
                 // authorization-filtered, so never to be reused for another client (section 8)
                 response.getHeaders().put(HttpHeader.CACHE_CONTROL, "private, no-store");
                 response.getHeaders().put(HttpHeader.VARY, "Authorization, Accept");
@@ -1387,7 +1430,20 @@ public final class RefLwsServer implements AutoCloseable {
                 return out;
             }
 
-            /** Whether Accept admits application/lws+json, the one format these services produce. */
+            private static String queryParam(Request request, String name) {
+                String query = request.getHttpURI().getQuery();
+                if (query == null) {
+                    return null;
+                }
+                for (String param : query.split("&")) {
+                    if (param.startsWith(name + "=")) {
+                        return param.substring(name.length() + 1);
+                    }
+                }
+                return null;
+            }
+
+            /** Whether Accept admits lws+json or ld+json, the formats these services produce. */
             private boolean acceptable(String accept) {
                 if (accept == null || accept.isBlank()) {
                     return true;
@@ -1402,7 +1458,8 @@ public final class RefLwsServer implements AutoCloseable {
                             zero = true;
                         }
                     }
-                    if (!zero && (type.equals("*/*") || type.equals("application/*") || type.equals(LWS_JSON))) {
+                    if (!zero && (type.equals("*/*") || type.equals("application/*") || type.equals(LWS_JSON)
+                            || type.equals("application/ld+json"))) {
                         return true;
                     }
                 }
