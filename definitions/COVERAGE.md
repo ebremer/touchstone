@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **187 tests**: 151 MUST, 30 SHOULD, 6 MAY; 118 validation tests, 69 negative tests.
-- **254 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **192 tests**: 153 MUST, 31 SHOULD, 8 MAY; 122 validation tests, 70 negative tests.
+- **259 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -26,7 +26,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/notifications` | 13 | 12 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
-| `index/manifest` | 33 | 26 | 5 | 2 |
+| `index/manifest` | 38 | 28 | 6 | 4 |
 | `notifications/webhook/manifest` | 9 | 8 | 1 | 0 |
 
 ## 1. lws-test-suite → definitions
@@ -352,6 +352,11 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `type-search-vary-accept` | Validation | MUST | Authentication |  |
 | `type-search-safe` | Validation | MAY | Authentication |  |
 | `type-search-next-page` | Validation | MUST | Authentication |  |
+| `type-search-relation-filter` | Validation | MAY | Authentication |  |
+| `type-search-relation-cnf` | Validation | MAY | Authentication |  |
+| `type-search-relation-from-link-header` | Validation | SHOULD | Authentication |  |
+| `type-search-too-complex` | Validation | MUST | Authentication |  |
+| `type-search-unrecognized-page-link` | Negative | MUST | Authentication |  |
 
 ### `notifications/webhook/manifest`
 

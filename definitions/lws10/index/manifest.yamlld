@@ -938,7 +938,8 @@ entries:
     label: A type element that is not a string or array of strings is rejected with 400
     comment: >-
       A body any of whose elements "is neither a string nor a non-empty array of strings, MUST be
-       rejected with 400 (Bad Request)": a number, and a group holding a number.
+       rejected with 400 (Bad Request)": a number, a group holding a number, and an object, the shape
+       an extension of the grammar (which "a server MUST NOT" make) would take.
     status: Proposed
     level: MUST
     source:
@@ -947,6 +948,7 @@ entries:
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-index/malformed-filter-400
+      - https://example.org/touchstone/req/lws10-index/grammar-not-extended
     steps:
       - label: the storage offers a Type Search Service (otherwise this test does not apply)
         precondition: true
@@ -978,6 +980,16 @@ entries:
           bodyJSON:
             type:
               - ["${test.container}#Alpha", 7]
+        response:
+          statusCode: 400
+      - label: "type [{not: Alpha}] is refused"
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type:
+              - not: "${test.container}#Alpha"
         response:
           statusCode: 400
 
@@ -2305,3 +2317,625 @@ entries:
               none:
                 - pointer: /id
                   equalsIri: "${firstItem}"
+
+  - id: "#type-search-relation-filter"
+    type: ValidationTest
+    name: type-search-relation-filter
+    label: A describedby link in a resource's linkset can be searched on
+    comment: >-
+      "A server MAY additionally index other descriptive link relations. Such a relation is
+       filtered by using the relation itself as a key alongside type". An Alpha resource whose
+       linkset gains describedby a shape is found by type [Alpha] and describedby [shape]. A server
+       that does not index describedby fails this MAY.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery, Linkset, Patch]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/relations-may-be-indexed
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds the resource (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: find the linkset of ${one}
+        request:
+          method: HEAD
+          url: "${one}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: add describedby ShapeOne to ${one} through its linkset (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: PATCH
+          url: "${linkset}"
+          ifMatch: current
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset:
+              - anchor: "${one}"
+                describedby:
+                  - href: "${test.container}#ShapeOne"
+        response:
+          statusCode: "2xx"
+      - label: "[Alpha] with describedby [shape] finds it"
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby: ["${test.container}#ShapeOne"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+
+  - id: "#type-search-relation-cnf"
+    type: ValidationTest
+    name: type-search-relation-cnf
+    label: "Relation values combine like type values: groups ANDed, nested arrays ORed"
+    comment: >-
+      An indexed relation is filtered "with exactly the same conjunctive-normal-form semantics as
+       type (a nested array is an OR group, sibling array elements form AND groups ...)". Two Alpha
+       resources are describedby shape one and shape two, through their linksets: describedby
+       [[one, two]] finds both, and describedby [one, two] finds neither. Applies when the server
+       indexes describedby.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery, Linkset, Patch]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/relations-may-be-indexed
+      - https://example.org/touchstone/req/lws10-index/type-filter
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+        - dataResource: two
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds both resources (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${two}"
+      - label: find the linkset of ${one}
+        request:
+          method: HEAD
+          url: "${one}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linksetOne
+      - label: add describedby ShapeOne to ${one} through its linkset (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: PATCH
+          url: "${linksetOne}"
+          ifMatch: current
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset:
+              - anchor: "${one}"
+                describedby:
+                  - href: "${test.container}#ShapeOne"
+        response:
+          statusCode: "2xx"
+      - label: find the linkset of ${two}
+        request:
+          method: HEAD
+          url: "${two}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linksetTwo
+      - label: add describedby ShapeTwo to ${two} through its linkset (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: PATCH
+          url: "${linksetTwo}"
+          ifMatch: current
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset:
+              - anchor: "${two}"
+                describedby:
+                  - href: "${test.container}#ShapeTwo"
+        response:
+          statusCode: "2xx"
+      - label: describedby [shape one] finds the first (otherwise describedby is not indexed, and this test does not apply)
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby: ["${test.container}#ShapeOne"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: describedby [[shape one, shape two]] finds both
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby:
+              - ["${test.container}#ShapeOne", "${test.container}#ShapeTwo"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${two}"
+      - label: describedby [shape one, shape two] finds neither
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby: ["${test.container}#ShapeOne", "${test.container}#ShapeTwo"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${one}"
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${two}"
+
+  - id: "#type-search-relation-from-link-header"
+    type: ValidationTest
+    name: type-search-relation-from-link-header
+    label: A describedby link sent as a Link header on create is searchable like one in the linkset
+    comment: >-
+      Relation targets "are derived by the server in the same way as types (HTTP Link headers,
+       server-intrinsic state, or parsed content) and all sources MUST be treated identically", and
+       types SHOULD be derived from the Link headers of a create. One Alpha resource gains describedby
+       a shape through its linkset; another declares the same link as a Link header when it is
+       created. Once the first is found by describedby [shape], the second should be too. Applies
+       when the server indexes describedby.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
+    traits: [Discovery, Linkset, Post]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/relation-sources-identical
+      - https://example.org/touchstone/req/lws10-index/types-from-link-headers
+      - https://example.org/touchstone/req/lws10-index/relations-may-be-indexed
+    prereqs:
+      hierarchy:
+        - dataResource: linked
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+            - rel: describedby
+              href: "${test.container}#ShapeOne"
+        - dataResource: patched
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds both resources (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${linked}"
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${patched}"
+      - label: find the linkset of ${patched}
+        request:
+          method: HEAD
+          url: "${patched}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: add describedby ShapeOne to ${patched} through its linkset (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: PATCH
+          url: "${linkset}"
+          ifMatch: current
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset:
+              - anchor: "${patched}"
+                describedby:
+                  - href: "${test.container}#ShapeOne"
+        response:
+          statusCode: "2xx"
+      - label: describedby [shape] finds the linkset resource (otherwise describedby is not indexed, and this test does not apply)
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby: ["${test.container}#ShapeOne"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${patched}"
+      - label: describedby [shape] comes to find the Link-header resource too
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+            describedby: ["${test.container}#ShapeOne"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${linked}"
+
+  - id: "#type-search-too-complex"
+    type: ValidationTest
+    name: type-search-too-complex
+    label: A filter beyond the server's limit is refused with 422, never narrowed
+    comment: >-
+      A filter "that is well-formed but exceeds the complexity a server chooses to support ...
+       MUST be rejected with 422", and "A server MUST NOT silently truncate or otherwise narrow such a
+       filter". Type [Alpha] followed by 99 types nothing bears matches nothing: the server either
+       refuses it with 422 or answers 200 without the Alpha resource. A server that dropped the
+       groups past its limit would return it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors
+    traits: [Discovery]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/too-complex-422
+      - https://example.org/touchstone/req/lws10-index/no-silent-narrowing
+    prereqs:
+      hierarchy:
+        - dataResource: one
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Alpha"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: "[Alpha] finds the resource (otherwise the server derives no declared type, and this test does not apply)"
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${one}"
+      - label: "[Alpha, 99 types nothing bears] is refused with 422 or answered without it"
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type:
+              - "${test.container}#Alpha"
+              - "${test.container}#None-1"
+              - "${test.container}#None-2"
+              - "${test.container}#None-3"
+              - "${test.container}#None-4"
+              - "${test.container}#None-5"
+              - "${test.container}#None-6"
+              - "${test.container}#None-7"
+              - "${test.container}#None-8"
+              - "${test.container}#None-9"
+              - "${test.container}#None-10"
+              - "${test.container}#None-11"
+              - "${test.container}#None-12"
+              - "${test.container}#None-13"
+              - "${test.container}#None-14"
+              - "${test.container}#None-15"
+              - "${test.container}#None-16"
+              - "${test.container}#None-17"
+              - "${test.container}#None-18"
+              - "${test.container}#None-19"
+              - "${test.container}#None-20"
+              - "${test.container}#None-21"
+              - "${test.container}#None-22"
+              - "${test.container}#None-23"
+              - "${test.container}#None-24"
+              - "${test.container}#None-25"
+              - "${test.container}#None-26"
+              - "${test.container}#None-27"
+              - "${test.container}#None-28"
+              - "${test.container}#None-29"
+              - "${test.container}#None-30"
+              - "${test.container}#None-31"
+              - "${test.container}#None-32"
+              - "${test.container}#None-33"
+              - "${test.container}#None-34"
+              - "${test.container}#None-35"
+              - "${test.container}#None-36"
+              - "${test.container}#None-37"
+              - "${test.container}#None-38"
+              - "${test.container}#None-39"
+              - "${test.container}#None-40"
+              - "${test.container}#None-41"
+              - "${test.container}#None-42"
+              - "${test.container}#None-43"
+              - "${test.container}#None-44"
+              - "${test.container}#None-45"
+              - "${test.container}#None-46"
+              - "${test.container}#None-47"
+              - "${test.container}#None-48"
+              - "${test.container}#None-49"
+              - "${test.container}#None-50"
+              - "${test.container}#None-51"
+              - "${test.container}#None-52"
+              - "${test.container}#None-53"
+              - "${test.container}#None-54"
+              - "${test.container}#None-55"
+              - "${test.container}#None-56"
+              - "${test.container}#None-57"
+              - "${test.container}#None-58"
+              - "${test.container}#None-59"
+              - "${test.container}#None-60"
+              - "${test.container}#None-61"
+              - "${test.container}#None-62"
+              - "${test.container}#None-63"
+              - "${test.container}#None-64"
+              - "${test.container}#None-65"
+              - "${test.container}#None-66"
+              - "${test.container}#None-67"
+              - "${test.container}#None-68"
+              - "${test.container}#None-69"
+              - "${test.container}#None-70"
+              - "${test.container}#None-71"
+              - "${test.container}#None-72"
+              - "${test.container}#None-73"
+              - "${test.container}#None-74"
+              - "${test.container}#None-75"
+              - "${test.container}#None-76"
+              - "${test.container}#None-77"
+              - "${test.container}#None-78"
+              - "${test.container}#None-79"
+              - "${test.container}#None-80"
+              - "${test.container}#None-81"
+              - "${test.container}#None-82"
+              - "${test.container}#None-83"
+              - "${test.container}#None-84"
+              - "${test.container}#None-85"
+              - "${test.container}#None-86"
+              - "${test.container}#None-87"
+              - "${test.container}#None-88"
+              - "${test.container}#None-89"
+              - "${test.container}#None-90"
+              - "${test.container}#None-91"
+              - "${test.container}#None-92"
+              - "${test.container}#None-93"
+              - "${test.container}#None-94"
+              - "${test.container}#None-95"
+              - "${test.container}#None-96"
+              - "${test.container}#None-97"
+              - "${test.container}#None-98"
+              - "${test.container}#None-99"
+        response:
+          statusCode: [200, 422]
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${one}"
+
+  - id: "#type-search-unrecognized-page-link"
+    type: NegativeTest
+    name: type-search-unrecognized-page-link
+    label: A page link the server does not recognize is answered 404 or 410
+    comment: >-
+      "A pagination reference (a previously issued page link) that the server no longer recognizes
+       or that has expired MUST result in 404 (Not Found) or 410 (Gone)." A test cannot make a link
+       expire, so it takes the rel=first link of a search and alters it, giving a link the server
+       cannot recognize. Applies when the search response carries rel=first.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors
+    traits: [Discovery, Get]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/expired-page-404-410
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: a search names its first page (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Nothing"]
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+              capture: first
+      - label: the first-page link, altered, is 404 or 410
+        request:
+          method: GET
+          url: "${first}-touchstone-unrecognized"
+          accept: application/lws+json
+        response:
+          statusCode: [404, 410]

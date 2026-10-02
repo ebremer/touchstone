@@ -154,6 +154,8 @@ public final class RefLwsServer implements AutoCloseable {
         volatile ObjectNode linkset;
         /** Types the client declared: Link rel="type" on create or update, or {@code <> a} in Turtle. */
         volatile Set<String> declaredTypes = Set.of();
+        /** Descriptive links the client sent as Link headers on create or update: rel to targets. */
+        volatile java.util.Map<String, Set<String>> declaredLinks = java.util.Map.of();
         volatile String linksetEtag = newEtag();
         final Set<String> children = ConcurrentHashMap.newKeySet();
 
@@ -812,6 +814,7 @@ public final class RefLwsServer implements AutoCloseable {
             }
             if (!isContainer) {
                 child.declaredTypes = declaredTypes(request, absolute(request, childPath), child);
+                child.declaredLinks = declaredLinks(request, absolute(request, childPath));
             }
             parent.children.add(childPath);
             parent.etag = newEtag();
@@ -859,6 +862,7 @@ public final class RefLwsServer implements AutoCloseable {
                 node.contentType = contentType;
             }
             node.declaredTypes = declaredTypes(request, absolute(request, path), node);
+            node.declaredLinks = declaredLinks(request, absolute(request, path));
             touch(path, node);
             announce(request, "Update", path, node, null, null);
             response.setStatus(204);
@@ -1220,11 +1224,76 @@ public final class RefLwsServer implements AutoCloseable {
             return Set.copyOf(types);
         }
 
+        /** Relations the search never indexes: structural or protocol ones (section 7.1). */
+        private static final Set<String> STRUCTURAL_RELATIONS = Set.of("type", "up", "linkset", "acl",
+                "first", "prev", "next", "last", "self", "describes", LWS_NS + "storage", "storagedescription");
+
+        /** The descriptive Link headers of a create or update, by relation (lower-cased if registered). */
+        private java.util.Map<String, Set<String>> declaredLinks(Request request, String uri) {
+            java.util.Map<String, Set<String>> out = new java.util.HashMap<>();
+            String links = String.join(", ", request.getHeaders().getValuesList("Link"));
+            java.util.regex.Matcher link = java.util.regex.Pattern
+                    .compile("<([^>]*)>\\s*((?:;[^,<]*)*)").matcher(links);
+            while (link.find()) {
+                java.util.regex.Matcher rel = java.util.regex.Pattern
+                        .compile("\\brel=\"?([^\";,]+)\"?").matcher(link.group(2));
+                if (!rel.find()) {
+                    continue;
+                }
+                for (String r : rel.group(1).trim().split("\\s+")) {
+                    String key = r.contains(":") ? r : r.toLowerCase(Locale.ROOT);
+                    if (!STRUCTURAL_RELATIONS.contains(key)) {
+                        out.computeIfAbsent(key, k -> new LinkedHashSet<>())
+                                .add(URI.create(uri).resolve(link.group(1)).toString());
+                    }
+                }
+            }
+            java.util.Map<String, Set<String>> frozen = new java.util.HashMap<>();
+            out.forEach((k, v) -> frozen.put(k, Set.copyOf(v)));
+            return java.util.Map.copyOf(frozen);
+        }
+
+        /**
+         * A resource's targets for a relation, from its Link headers and its linkset alike: the
+         * draft has every source of a relation treated the same (section 7.1).
+         */
+        private Set<String> relationTargets(String uri, Node node, String rel) {
+            String key = rel.contains(":") ? rel : rel.toLowerCase(Locale.ROOT);
+            if (STRUCTURAL_RELATIONS.contains(key)) {
+                return Set.of();
+            }
+            Set<String> out = new LinkedHashSet<>(node.declaredLinks.getOrDefault(key, Set.of()));
+            ObjectNode linkset = node.linkset;
+            if (linkset != null) {
+                for (JsonNode entry : linkset.path("linkset")) {
+                    if (!uri.equals(entry.path("anchor").asText())) {
+                        continue;
+                    }
+                    entry.fields().forEachRemaining(f -> {
+                        String k = f.getKey().contains(":") ? f.getKey() : f.getKey().toLowerCase(Locale.ROOT);
+                        if (k.equals(key)) {
+                            for (JsonNode target : f.getValue()) {
+                                if (target.hasNonNull("href")) {
+                                    try {
+                                        out.add(URI.create(uri).resolve(target.get("href").asText()).toString());
+                                    } catch (IllegalArgumentException e) {
+                                        // a linkset may hold a target that is no URI; it matches nothing
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            return out;
+        }
+
         /**
          * The Type Index Service (GET) and the Type Search Service (QUERY). Both list only what the
          * client may read now (section 8): nothing is cached, so a revoked grant is gone from the
-         * next response. Neither pages, since no definition lists more than a handful; one page
-         * is a page. No link relation is indexed, so a relation key matches nothing (section 7.1).
+         * next response. The type index answers in one page; the search pages at PAGE_SIZE, with
+         * stateless page links. Descriptive relations are indexed from Link headers and the linkset; structural
+         * ones never are, so a key naming one matches nothing (section 7.1).
          */
         private final class TypeServices {
             private final String subject;
@@ -1260,7 +1329,7 @@ public final class RefLwsServer implements AutoCloseable {
                     return;
                 }
                 List<List<String>> typeGroups = List.of();
-                boolean relationConstrained = false;
+                java.util.Map<String, List<List<String>>> relationGroups = new java.util.LinkedHashMap<>();
                 byte[] filterBytes = null;
                 if (pageLink) {
                     try {
@@ -1312,7 +1381,7 @@ public final class RefLwsServer implements AutoCloseable {
                         if (field.getKey().equals("type")) {
                             types.addAll(parsed);
                         } else if (!parsed.isEmpty()) {
-                            relationConstrained = true;
+                            relationGroups.computeIfAbsent(field.getKey(), k -> new ArrayList<>()).addAll(parsed);
                         }
                     }
                     if (groups > MAX_FILTER_GROUPS) {
@@ -1336,11 +1405,14 @@ public final class RefLwsServer implements AutoCloseable {
                 if (search) {
                     doc.put("type", "ContainerPage");
                     java.util.TreeMap<String, Set<String>> matches = new java.util.TreeMap<>();
-                    if (!relationConstrained) {
-                        readable(request).forEach((uri, types) -> matches.put(uri, types));
-                    }
+                    readable(request).forEach((uri, types) -> matches.put(uri, types));
                     for (var e : matches.entrySet()) {
-                        boolean all = typeGroups.stream().allMatch(g -> g.stream().anyMatch(e.getValue()::contains));
+                        Node node = store.get(URI.create(e.getKey()).getRawPath());
+                        boolean all = typeGroups.stream().allMatch(g -> g.stream().anyMatch(e.getValue()::contains))
+                                && relationGroups.entrySet().stream().allMatch(r -> {
+                                    Set<String> targets = node == null ? Set.of() : relationTargets(e.getKey(), node, r.getKey());
+                                    return r.getValue().stream().allMatch(g -> g.stream().anyMatch(targets::contains));
+                                });
                         if (all) {
                             ObjectNode item = items.addObject();
                             item.put("id", e.getKey());

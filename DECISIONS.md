@@ -2191,3 +2191,53 @@ clause of its own.
 pass 32 of the 33 index tests, with `type-search-next-page` inapplicable.
 
 Drafted by an agent; waits on branch `index-followups`.
+
+### D-0069 — the index suite, round three: relations, complexity, page links, grammar
+Five more definitions in `index/manifest`, plus one step on an existing one. They cite five
+requirements no test cited before.
+
+- **Relations:**
+  - `type-search-relation-filter` (MAY, `relations-may-be-indexed`): an Alpha resource whose
+    linkset gains `describedby` a shape, through a merge-patch of its linkset, is found by
+    `{"type":[Alpha],"describedby":[shape]}`.
+  - `type-search-relation-cnf` (MAY): two resources, describedby shape one and shape two;
+    `[[one, two]]` finds both and `[one, two]` neither. It applies when describedby is indexed.
+    It is filed at MAY because the draft states these semantics inside the MAY that lets a
+    server index relations.
+  - `type-search-relation-from-link-header` (SHOULD, `relation-sources-identical` with
+    `types-from-link-headers`): once the linkset route works, a resource that declared the same
+    describedby as a Link header when created should be found too. Relation targets "are
+    derived by the server in the same way as types", and deriving types from a create's Link
+    headers is a SHOULD.
+  - The linkset is the primary route because both servers index relations from it. A first
+    draft used Link headers on create and found neither server indexing them (see below).
+- **Complexity:** `type-search-too-complex` (MUST, `too-complex-422` and
+  `no-silent-narrowing`):
+  - type `[Alpha]` followed by 99 types nothing bears must be refused with 422, or answered
+    without the Alpha resource;
+  - a server that dropped the groups past its limit would return the Alpha resource;
+  - both servers cap a filter at 32 groups, so the 422 path runs.
+- **Page links:** `type-search-unrecognized-page-link` (MUST, `expired-page-404-410`):
+  - a test cannot make a link expire, so it alters a search's rel=first link and expects 404
+    or 410;
+  - an altered link is one the server "no longer recognizes" in the plainest sense, though it
+    was never issued as such. The comment says so.
+- **Grammar:** `type-search-bad-element-rejected` gains an object element, the shape an
+  extension would take, and cites `grammar-not-extended`.
+
+**The reference server follows.** Its search indexes descriptive relations from Link headers
+on create and update, and from the resource's linkset, treated alike. Structural and protocol
+relations (up, type, linkset, acl, the paging relations, storage) are never indexed. A
+linkset target that is no URI matches nothing; this was found when a malformed draft
+definition made it answer 500.
+
+**Against our deployments** (2026-10-02): Halcyon (`c6435d0`) and lws-server (`e65a4dc`) each
+pass 36 of the 38 index tests. Each fails `type-search-relation-from-link-header`, and
+`type-search-next-page` is inapplicable. Both servers store a create's descriptive Link
+headers in the linkset only when the request also says `Prefer: set-linkset`. That is a
+deliberate design: lws-server's comment calls it the way a client replaces its whole metadata
+document from headers. It records `rel="type"` regardless. So the failure reflects a reading
+of the draft, not an accident. If the working group meant only `type` to come from Link
+headers, this test should be withdrawn.
+
+Drafted by an agent; waits on branch `index-round3`.
