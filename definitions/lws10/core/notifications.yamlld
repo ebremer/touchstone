@@ -6,11 +6,12 @@ id: "#manifest"
 type: Manifest
 label: "LWS 1.0 core: notifications"
 comment: >-
-  A storage MAY support notifications. Only discovery is defined here. Subscription and
-  delivery need a subscription type's own fields (the notification suites that define
-  them are not yet published) and a delivery sink the target can reach; their
-  authorization MUSTs deserve a negative matrix of their own. See README.md, "Not yet
-  defined".
+  A storage MAY support notifications. Defined here: discovery, and creating a
+  subscription (request and response fields, and the subscribe-time authorization MUST).
+  The subscription tests use WebhookSubscription, the one subscription type with a
+  defined request shape, and apply only where it is advertised. Delivery is not yet
+  defined: it needs a sink the target can reach, and its authorization MUSTs deserve a
+  negative matrix of their own. See README.md, "Not yet defined".
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
 entries:
@@ -65,3 +66,300 @@ entries:
                   every:
                     - pointer: ""
                       jsonType: string
+
+  - id: "#subscription-create"
+    type: ValidationTest
+    name: subscription-create
+    label: An authenticated lws+json POST to the NotificationService creates a subscription
+    comment: >-
+      alice subscribes to her test container with the fields 10.3.1 requires (type, one
+      of the advertised subscription types, and topic, an array of URIs) plus the inbox a
+      WebhookSubscription carries. The response is application/lws+json with type equal
+      to the requested type and a subscription URL. The inbox is the storage URI: a
+      public HTTPS URL the target will accept as a delivery target, and nothing in the
+      topic changes while the subscription lives, so nothing is delivered to it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-response
+    traits: [Post, Notifications]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-create-post-lws-json
+      - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-request-type
+      - https://example.org/touchstone/req/lws10-core/subscription-request-topic
+      - https://example.org/touchstone/req/lws10-core/subscription-request-additional-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-response-lws-json
+      - https://example.org/touchstone/req/lws10-core/subscription-response-type
+      - https://example.org/touchstone/req/lws10-core/subscription-response-subscription-url
+      - https://example.org/touchstone/req/lws10-core/notification-suite-subscription-type-identifier
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "2xx"
+          contentType: application/lws+json
+          json:
+            - pointer: /type
+              equals: WebhookSubscription
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#subscription-missing-type-refused"
+    type: NegativeTest
+    name: subscription-missing-type-refused
+    label: A subscription request without a type is refused
+    comment: >-
+      type is REQUIRED. Without it the server cannot know which subscription suite's
+      rules apply, so the request is refused with a client error.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+    traits: [Post, Notifications]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-request-type
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: a request with every field but type is refused
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            topic: ["${test.container}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"
+
+  - id: "#subscription-unadvertised-type-refused"
+    type: NegativeTest
+    name: subscription-unadvertised-type-refused
+    label: A subscription request whose type the NotificationService does not advertise is refused
+    comment: >-
+      "The value MUST be one of the types listed in the subscriptionType array of the
+      NotificationService." A server that accepted any type would promise deliveries no
+      suite defines.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+    traits: [Post, Notifications]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-request-type
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: a type no NotificationService advertises is refused
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: TouchstoneUnadvertisedSubscription
+            topic: ["${test.container}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"
+
+  - id: "#subscription-missing-topic-refused"
+    type: NegativeTest
+    name: subscription-missing-topic-refused
+    label: A subscription request without a topic is refused
+    comment: >-
+      topic is REQUIRED: without it there is nothing to authorize at subscribe time and
+      nothing to notify about.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+    traits: [Post, Notifications]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-request-topic
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: a request with every field but topic is refused
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"
+
+  - id: "#subscription-unreadable-topic-refused"
+    type: NegativeTest
+    name: subscription-unreadable-topic-refused
+    label: A subscription naming any resource the subscriber cannot read is refused
+    comment: >-
+      "If a subscriber does not have the equivalent of read access to all resources listed
+      in the topic array, the server MUST reject the subscription request." bob may read
+      one resource and nothing else. First, as a control, he may subscribe to that one
+      resource: a server that refuses him outright makes the refusals below prove
+      nothing, so the test does not apply. Then a topic that adds alice's private test
+      container, and one that names only it, are both refused. Otherwise bob would learn
+      of changes to resources he cannot read.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
+    traits: [Post, Notifications, Authz, Private]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-authorization-on-create
+      - https://example.org/touchstone/req/lws10-core/security-notification-access-control
+    prereqs:
+      hierarchy:
+        - dataResource: shared
+          contentType: text/plain
+          body: bob may read this, and only this
+          authorization:
+            read: [bob]
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: bob may subscribe to the resource he can read (otherwise this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${shared}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: allowed
+      - label: cancel that subscription (tidying up, not judged)
+        as: bob
+        request:
+          method: DELETE
+          url: "${allowed}"
+        response:
+          statusCode: ["2xx", "4xx"]
+      - label: adding alice's private container to the topic is refused
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${shared}", "${test.container}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"
+      - label: and so is a topic naming only that container
+        as: bob
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${storage}"
+        response:
+          statusCode: "4xx"

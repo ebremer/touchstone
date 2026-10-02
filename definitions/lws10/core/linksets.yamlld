@@ -99,6 +99,7 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
       - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-advertised
+      - https://example.org/touchstone/req/lws10-core/metadata-capability-advertising
     supersedes: [core/linkset-discovery-and-patch-advertisement]
     prereqs:
       hierarchy:
@@ -245,6 +246,7 @@ entries:
     traits: [Delete, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
+      - https://example.org/touchstone/req/lws10-core/linkset-server-managed-atomic
     prereqs:
       hierarchy:
         - dataResource: created
@@ -281,6 +283,111 @@ entries:
           accept: application/linkset+json
         response:
           statusCode: [404, 410]
+
+
+  - id: "#linkset-ready-at-create"
+    type: ValidationTest
+    name: linkset-ready-at-create
+    label: The linkset a create names exists as soon as the resource does
+    comment: >-
+      "Updates to the linkset MUST be atomic with associated resource operations", and
+      creation "MUST be atomic" with its metadata. The rel="linkset" on the 201 is
+      followed at once, before anything else touches the resource, and must already be a
+      linkset document. linkset-removed-with-resource checks the other end of the
+      lifecycle.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-server-managed-atomic
+      - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
+    steps:
+      - label: create a data resource and note the linkset the 201 names
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: metadata from the start
+        response:
+          statusCode: 201
+          location:
+            capture: created
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: that linkset is already served
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          contentType: application/linkset+json
+          json:
+            - pointer: /linkset
+              jsonType: array
+
+  - id: "#linkset-up-not-redirected"
+    type: ValidationTest
+    name: linkset-up-not-redirected
+    label: Editing a linkset cannot make a resource's rel="up" name anything but its parent
+    comment: >-
+      Servers MAY restrict modifications to links such as up "to maintain system
+      integrity", and whatever they allow, containment fixes rel="up": it MUST point to
+      the parent container. The test PATCHes the linkset to claim a different parent and
+      accepts either outcome, refusal or acceptance. It then requires the resource's
+      rel="up" to still name its real container, and nothing else.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+    traits: [Patch, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-restricted-links
+      - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: a resource that stays where it is
+    steps:
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: claim a different parent through the linkset (refusal and acceptance are both allowed)
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/merge-patch+json
+          bodyJSON:
+            linkset:
+              - anchor: "${created}"
+                up:
+                  - href: https://linkset.invalid/forged-parent/
+        response:
+          statusCode: ["2xx", "4xx"]
+      - label: rel="up" still names the real container, and only it
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+            - rel: up
+              href: https://linkset.invalid/forged-parent/
+              absent: true
 
   - id: "#linkset-patch-merge"
     type: ValidationTest

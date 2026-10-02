@@ -294,6 +294,66 @@ entries:
         response:
           statusCode: 401
 
+
+  - id: "#access-grant-extra-properties-accepted"
+    type: ValidationTest
+    name: access-grant-extra-properties-accepted
+    label: A grant with an extra property, and without the optional inbox and constraint, is accepted and takes effect
+    comment: >-
+      "Other properties MAY be present on access requests and access grants", and inbox
+      and constraint are OPTIONAL. A server that refuses a grant because it carries a
+      property the server does not know, or lacks one it does not need, rejects a
+      conforming document. The grant must also take effect: bob can then read what it
+      names.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+    traits: [Post, Get, DataResource, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-extra-properties-allowed
+      - https://example.org/touchstone/req/lws10-core/access-inbox-optional
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-optional
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: shared by a grant with an extra property
+    steps:
+      - label: grant bob read access, with a property this specification does not define
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            "urn:touchstone:note": granted by the Touchstone conformance suite
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: the grant takes effect
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: '^shared by a grant with an extra property$'
+
   - id: "#access-request-create"
     type: ValidationTest
     name: access-request-create

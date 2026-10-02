@@ -242,9 +242,8 @@ lws-test-suite's context in ways its test group must agree to:
   MCP server, the Docker image and the GitHub Action (D-0054). It refuses a set of
   definitions that fails the checks of `EXECUTION.md` section 2 before sending anything.
 - **The reference deployment.** `harness-fixtures` holds a reference storage server and a
-  reference authorization server that follow the 21 September draft. Against them 100 of
-  the 101 definitions pass, and the notification test is inapplicable, since the reference
-  offers no notification service. Against their broken twins, the tests that exist to
+  reference authorization server that follow the 21 September draft. Against them all
+  120 definitions pass. Against their broken twins, the tests that exist to
   catch each defect fail.
 - **The retired manifests.** The YAML test manifests Touchstone ran before (schema 1-1-0,
   following the 21 August draft) were retired when the engine replaced them (D-0055).
@@ -292,10 +291,9 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Not yet defined
 
-- **Notification subscriptions and delivery.** The notification suites that define
-  subscription types are unpublished. Delivery needs a sink the target can reach, and
-  the three authorization MUSTs deserve a negative matrix (D-0041). Only discovery is
-  defined.
+- **Notification delivery.** Subscribing is defined (D-0061), for WebhookSubscription.
+  Delivery needs a sink the target can reach, and the delivery-time and revocation
+  authorization MUSTs deserve a negative matrix (D-0041).
 - **Pagination.** The threshold is server-chosen, so a deterministic test needs the
   target to declare a page size.
 - **Access-profile constraints** (client, format, type, purpose, dateTime) and access

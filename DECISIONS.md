@@ -1745,3 +1745,60 @@ Pinned counts move from 104 to 111 tests (110 passed, 1 inapplicable against the
 `core/containers` from 14 to 16. `access-grant-incomplete-refused` and
 `access-grant-constraints-all-satisfied` join the tests that must catch the broken storage, which
 forbids nothing: each fails there at the step where bob, who should be refused, reads with 200. Drafted by an agent; waits on branch `coverage-access-and-misc`.
+
+### D-0061 — coverage: subscriptions, and the access, conditional and linkset MAYs
+Nine definitions for requirements no test cited (catalog coverage 143 → 161 of 219), and two
+existing tests cite requirements they already exercised.
+
+**Subscriptions** (`core/notifications`), the first notification tests beyond discovery (D-0041
+deferred the whole section). They use `WebhookSubscription`, the one subscription type whose request
+shape is known (the draft's own example: `type`, `topic`, `inbox`), and each opens with a
+precondition that the storage advertises it, so a storage without it is inapplicable, not failed.
+- `subscription-create` (MUST): an lws+json POST to the NotificationService with `type`, `topic`
+  (the test container) and `inbox` succeeds (any 2xx) with an lws+json body whose `type` equals the
+  request's and whose `subscription` is a string. The inbox is `${storage}`: a public HTTPS URL that
+  a server's outbound-request guard accepts. The test cancels the subscription before cleanup deletes
+  the container, so nothing is delivered. A final DELETE of the subscription URL tidies up and is not
+  judged (any 2xx or 4xx), because the draft defines no cancel operation and format 0.3.0 can register
+  only a `Location` for cleanup.
+- `subscription-missing-type-refused`, `subscription-unadvertised-type-refused`,
+  `subscription-missing-topic-refused` (MUST): each is refused with 4xx.
+- `subscription-unreadable-topic-refused` (MUST, needs Authentication): bob may read one resource.
+  A control step, as a precondition, shows he may subscribe to it. Without that control a server
+  that refuses bob everything would pass vacuously. Topics adding, or naming only, alice's private
+  test container are then refused with 4xx. Cites the security consideration as well.
+
+**Batch 2**:
+- `access-grant-extra-properties-accepted` (MAY): a grant carrying an IRI-named property the draft
+  does not define, with neither `inbox` nor `constraint`, is created and gives bob read access.
+- `conditional-delete-stale-if-match-412` (SHOULD): a DELETE whose If-Match went stale after a PUT is
+  refused with 412, and the resource survives.
+- `linkset-ready-at-create` (MUST): the linkset named on the 201 is served at once (atomicity of
+  metadata with creation). `linkset-removed-with-resource` now also cites
+  `linkset-server-managed-atomic`.
+- `linkset-up-not-redirected` (MUST, ValidationTest): a merge patch claiming a different parent
+  may be refused or accepted (servers MAY restrict links), but afterwards `rel="up"` still names
+  the real container and not the forged one, since containment fixes it.
+- `linkset-advertises-patch` now also cites `metadata-capability-advertising`, the umbrella clause
+  of the two headers it checks.
+
+**Not defined, on purpose**:
+- `policy-target-optional`: a grant without a target has no defined meaning (the whole storage?
+  nothing?), so refusing one is defensible and accepting one is a guess.
+- `prefer-link-relations-filtering`: the draft gives the Prefer URI but no syntax for naming
+  relations.
+- `authz-challenge-extra-params` and `read-container-listing-authz-filtered`: permissions a server
+  cannot fail.
+
+**The reference server follows.** `RefLwsServer` advertises a NotificationService with
+`subscriptionType: ["WebhookSubscription"]` and implements it:
+- POST validates the request (415 unless lws+json, 400 for a missing or unadvertised type, a missing
+  or empty topic, or a non-URI inbox), refuses with 403 any topic the subscriber cannot read, and
+  answers 201 with `Location` and the subscription document.
+- The subscriber or the owner may GET or DELETE a subscription; to anyone else it is a 404.
+- Nothing is delivered.
+
+The run's residue includes subscriptions. Against the reference all 120 tests pass, including
+`notification-service-advertised`, which was inapplicable. Pinned counts move from 111 to 120. The
+broken storage subscribes anyone to anything, so `subscription-unreadable-topic-refused` joins the
+tests that must catch it. Drafted by an agent; waits on branch `tests/subscriptions-and-metadata`.

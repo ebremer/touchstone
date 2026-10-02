@@ -38,7 +38,6 @@ import org.junit.jupiter.api.Test;
  */
 class DefinitionsSelfTest {
 
-    private static final String NOTIFICATIONS = "core/notifications#notification-service-advertised";
     private static Definitions definitions;
 
     @BeforeAll
@@ -54,8 +53,7 @@ class DefinitionsSelfTest {
             RunResult run = run(scenario);
 
             assertThat(run.results()).hasSize(definitions.tests().size());
-            assertThat(notPassed(run)).as(details(run)).containsOnlyKeys(NOTIFICATIONS);
-            assertThat(outcome(run, NOTIFICATIONS)).isEqualTo(Outcome.INAPPLICABLE);
+            assertThat(notPassed(run)).as(details(run)).isEmpty();
             assertThat(run.conformant()).isTrue();
             // Every test container, grant and access request is gone, and the run root with them.
             assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
@@ -70,9 +68,7 @@ class DefinitionsSelfTest {
             Set<String> needAuthentication = definitions.tests().stream()
                     .filter(t -> t.requires().contains("Authentication"))
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
-            Set<String> expected = new TreeSet<>(needAuthentication);
-            expected.add(NOTIFICATIONS);
-            assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(expected);
+            assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(needAuthentication);
             assertThat(notPassed(run).values()).containsOnly(Outcome.INAPPLICABLE);
             assertThat(scenario.storage().residue()).isEmpty();
         }
@@ -116,7 +112,8 @@ class DefinitionsSelfTest {
                     "core/access_grants#access-grant-revoke",
                     "core/access_grants#access-grant-authenticated-agent",
                     "core/access_grants#access-grant-incomplete-refused",
-                    "core/access_grants#access-grant-constraints-all-satisfied");
+                    "core/access_grants#access-grant-constraints-all-satisfied",
+                    "core/notifications#subscription-unreadable-topic-refused");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
@@ -139,10 +136,6 @@ class DefinitionsSelfTest {
     private static Set<String> failed(RunResult run) {
         return run.results().stream().filter(r -> r.outcome() == Outcome.FAILED)
                 .map(TestResult::testId).collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    private static Outcome outcome(RunResult run, String id) {
-        return run.results().stream().filter(r -> r.testId().equals(id)).findFirst().orElseThrow().outcome();
     }
 
     private static String details(RunResult run) {

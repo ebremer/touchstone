@@ -336,8 +336,10 @@ today (no manifest, no `RefLwsServer` implementation).
         access is revoked;
       - envelope/activity data model: `type: "Notification"`, `storage`, `activity`,
         Activity Streams 2.0 activity objects, required activity types, optional batching.
-- [ ] **Deferred (D-0041):** catalogued only, as SAML is (D-0024). Manifests and reference-server
-      support still to do. The authorization MUSTs are the ones worth a negative matrix —
+- [x] **Subscriptions (D-0061):** five definitions for creating a WebhookSubscription, its
+      required fields and the subscribe-time authorization MUST; `RefLwsServer` offers the service.
+- [ ] **Delivery deferred (D-0041):** envelope, activities, delivery-time and revocation
+      authorization. Needs a delivery sink the target can reach. The authorization MUSTs are the ones worth a negative matrix —
       they are where a plausible implementation leaks data.
 
 ### 7. Authentication suites are published; realign

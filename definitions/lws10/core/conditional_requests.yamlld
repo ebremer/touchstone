@@ -222,6 +222,66 @@ entries:
           statusCode: 200
           bodyMatches: '^second content$'
 
+
+  - id: "#conditional-delete-stale-if-match-412"
+    type: NegativeTest
+    name: conditional-delete-stale-if-match-412
+    label: A DELETE carrying a stale entity tag is refused with 412 and deletes nothing
+    comment: >-
+      "Clients MAY include an If-Match header with an ETag for concurrency checks", and
+      servers SHOULD support conditional requests (RFC 9110). When they do, a DELETE whose
+      If-Match no longer matches is refused with 412 and the resource survives: RFC 9110
+      forbids performing the method when the precondition fails.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.1
+    traits: [Delete, Put, DataResource, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-if-match-optional
+      - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
+      - https://example.org/touchstone/req/lws10-core/conditional-requests-supported
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: original content
+    steps:
+      - label: read it and keep the validator that is about to go stale
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              present: true
+              capture: stale
+      - label: change it, so the validator goes stale
+        request:
+          method: PUT
+          url: "${created}"
+          contentType: text/plain
+          body: changed content
+          ifMatch: "${stale}"
+        response:
+          statusCode: [200, 204]
+      - label: a DELETE with the stale validator is refused
+        request:
+          method: DELETE
+          url: "${created}"
+          ifMatch: "${stale}"
+        response:
+          statusCode: 412
+      - label: the refused DELETE left the resource in place
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          bodyMatches: '^changed content$'
+
   - id: "#update-changes-strong-etag"
     type: ValidationTest
     name: update-changes-strong-etag

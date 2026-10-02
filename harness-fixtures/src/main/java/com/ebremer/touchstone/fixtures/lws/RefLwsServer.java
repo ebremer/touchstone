@@ -50,13 +50,15 @@ import org.eclipse.jetty.util.Callback;
  *   <li>a linkset per resource, stored, with its own ETag, patchable with merge patch and
  *       refusing PUT with 405, removed with its resource;</li>
  *   <li>access grants and access requests (section 11) as LWS containers, and authorization
- *       by ownership or grant: {@code foaf:Agent} is the public.</li>
+ *       by ownership or grant: {@code foaf:Agent} is the public;</li>
+ *   <li>a NotificationService offering {@code WebhookSubscription}: subscriptions are
+ *       created (section 10.3, with read access to every topic enforced), read and cancelled.</li>
  * </ul>
  *
  * <p>Container representations name their context by IRI, as the draft's example and every
- * real server do (D-0026/D-0040). Notifications are not implemented (D-0041), so no
- * notification service is advertised: a reference that advertised a service it does not
- * provide would be lying to the tests that check it.
+ * real server do (D-0026/D-0040). Notification delivery is not implemented (D-0041): the
+ * definitions test subscribing, not delivery, and a subscription here records what would be
+ * delivered without sending anything.
  *
  * <p>Three auth modes (D-0017): {@link AuthMode#OPEN} (no authentication), {@link
  * AuthMode#SECURED} (validates Bearer tokens against the reference authorization server; 401
@@ -79,6 +81,9 @@ public final class RefLwsServer implements AutoCloseable {
     /** The access grant and access request services: containers outside the storage root's listing. */
     private static final String GRANTS = "/_grants/";
     private static final String REQUESTS = "/_requests/";
+    /** The NotificationService endpoint, and its one subscription type. */
+    private static final String SUBSCRIPTIONS = "/_subscriptions/";
+    private static final String WEBHOOK = "WebhookSubscription";
     private static final Set<String> ACTIONS = Set.of("read", "modify", "create", "delete");
 
     private final AuthMode authMode;
@@ -87,6 +92,7 @@ public final class RefLwsServer implements AutoCloseable {
     private final ConcurrentMap<String, Node> store = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Record> grants = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Record> requests = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Subscription> subscriptions = new ConcurrentHashMap<>();
     private final ObjectMapper mapper = new ObjectMapper();
     private volatile String grantsEtag = newEtag();
     private volatile String requestsEtag = newEtag();
@@ -112,6 +118,10 @@ public final class RefLwsServer implements AutoCloseable {
 
     /** A stored access grant or access request: its document, its policies, who made it. */
     private record Record(String id, ObjectNode document, List<Policy> policies, String author, String etag) {
+    }
+
+    /** A webhook subscription: who made it, what it covers, where it would deliver. */
+    private record Subscription(String id, String subscriber, List<String> topics, String inbox) {
     }
 
     /** One AccessPolicy: actions, an assignee, and the resources it covers. */
@@ -244,14 +254,16 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     /**
-     * What a run left behind: every stored resource but the root, and every access grant and
-     * access request. The self-test loop checks it is empty once a run has cleaned up.
+     * What a run left behind: every stored resource but the root, and every access grant,
+     * access request and subscription. The self-test loop checks it is empty once a run has
+     * cleaned up.
      */
     public List<String> residue() {
         List<String> out = new ArrayList<>();
         store.keySet().stream().filter(p -> !p.equals(STORAGE_PATH)).sorted().forEach(out::add);
         grants.keySet().forEach(id -> out.add(GRANTS + id));
         requests.keySet().forEach(id -> out.add(REQUESTS + id));
+        subscriptions.keySet().forEach(id -> out.add(SUBSCRIPTIONS + id));
         return out;
     }
 
@@ -300,6 +312,10 @@ public final class RefLwsServer implements AutoCloseable {
                 }
             }
 
+            if (path.startsWith(SUBSCRIPTIONS)) {
+                subscriptions(request, response, callback, path, method, subject, client);
+                return true;
+            }
             if (path.startsWith(GRANTS) || path.startsWith(REQUESTS)) {
                 new Registry(path.startsWith(GRANTS)).handle(request, response, callback, path, method, subject);
                 return true;
@@ -896,6 +912,8 @@ public final class RefLwsServer implements AutoCloseable {
                     .putArray("conformsTo").add(LWS_NS + "AccessProfile");
             service(services, storage + "#access-requests", "AccessRequestService", absolute(request, REQUESTS))
                     .putArray("conformsTo").add(LWS_NS + "AccessProfile");
+            service(services, storage + "#notifications", "NotificationService", absolute(request, SUBSCRIPTIONS))
+                    .putArray("subscriptionType").add(WEBHOOK);
             return bytes(root);
         }
 
@@ -1010,6 +1028,127 @@ public final class RefLwsServer implements AutoCloseable {
             response.setStatus(405);
             response.getHeaders().put(HttpHeader.ALLOW, allow);
             callback.succeeded();
+        }
+
+        // ---- subscriptions ----
+
+        /**
+         * The NotificationService (section 10.3). POST creates a subscription from an
+         * application/lws+json request whose type is one advertised, whose topic is a non-empty
+         * array of URIs, and, as a WebhookSubscription, an inbox URI. The subscriber must be able
+         * to read every topic, or the request is refused. Its subscriber and the storage owner may
+         * read and cancel it.
+         */
+        private void subscriptions(Request request, Response response, Callback callback, String path,
+                                   String method, String subject, String client) throws Exception {
+            boolean secured = authMode == AuthMode.SECURED;
+            String id = path.substring(SUBSCRIPTIONS.length());
+            if (id.isEmpty()) {
+                if (!method.equals("POST")) {
+                    methodNotAllowed(response, callback, "POST");
+                    return;
+                }
+                if (secured && subject == null) {
+                    challenge(request, response, callback, null);
+                    return;
+                }
+                subscribe(request, response, callback, subject, client);
+                return;
+            }
+            Subscription sub = subscriptions.get(id);
+            boolean mine = sub != null && (!secured || (subject != null
+                    && (subject.equals(sub.subscriber()) || subject.equals(storageOwner))));
+            if (!mine) {
+                // A subscription discloses its topics and inbox; to anyone else it does not exist.
+                if (secured && subject == null) {
+                    challenge(request, response, callback, null);
+                } else {
+                    status(request, response, callback, 404);
+                }
+                return;
+            }
+            switch (method) {
+                case "GET", "HEAD" -> {
+                    response.setStatus(200);
+                    response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
+                    send(response, callback, bytes(subscriptionDocument(request, sub)), method.equals("GET"));
+                }
+                case "DELETE" -> {
+                    subscriptions.remove(id);
+                    status(request, response, callback, 204);
+                }
+                default -> methodNotAllowed(response, callback, "GET, HEAD, DELETE");
+            }
+        }
+
+        private void subscribe(Request request, Response response, Callback callback, String subject, String client)
+                throws Exception {
+            // "The request body MUST conform to the application/lws+json media type."
+            String contentType = request.getHeaders().get("Content-Type");
+            if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(LWS_JSON)) {
+                status(request, response, callback, 415);
+                return;
+            }
+            JsonNode body;
+            try (InputStream in = Content.Source.asInputStream(request)) {
+                body = mapper.readTree(in.readAllBytes());
+            } catch (Exception e) {
+                status(request, response, callback, 400);
+                return;
+            }
+            // type and topic are REQUIRED, type one of the advertised subscription types, topic an
+            // array of URIs; a WebhookSubscription also needs the inbox it delivers to.
+            JsonNode topic = body == null ? null : body.path("topic");
+            if (body == null || !body.isObject() || !WEBHOOK.equals(body.path("type").asText(null))
+                    || !topic.isArray() || topic.isEmpty() || !isUri(body.path("inbox"))) {
+                status(request, response, callback, 400);
+                return;
+            }
+            List<String> topics = new ArrayList<>();
+            for (JsonNode t : topic) {
+                if (!isUri(t)) {
+                    status(request, response, callback, 400);
+                    return;
+                }
+                topics.add(t.asText());
+            }
+            // "If a subscriber does not have the equivalent of read access to all resources
+            // listed in the topic array, the server MUST reject the subscription request." The
+            // broken twin forbids nothing, so it subscribes anyone to anything.
+            if (authMode == AuthMode.SECURED) {
+                for (String t : topics) {
+                    String topicPath = URI.create(t).getRawPath();
+                    Node node = topicPath == null ? null : store.get(topicPath);
+                    if (node == null || !absolute(request, topicPath).equals(t)
+                            || !allowed("read", node, t, subject, client)) {
+                        status(request, response, callback, 403);
+                        return;
+                    }
+                }
+            }
+            String id = UUID.randomUUID().toString();
+            Subscription sub = new Subscription(id, subject, List.copyOf(topics), body.path("inbox").asText());
+            subscriptions.put(id, sub);
+            response.setStatus(201);
+            response.getHeaders().put(HttpHeader.LOCATION, absolute(request, SUBSCRIPTIONS + id));
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
+            response.write(true, ByteBuffer.wrap(bytes(subscriptionDocument(request, sub))), callback);
+        }
+
+        /** The subscription response: type and subscription are REQUIRED; topic and inbox echo the request. */
+        private ObjectNode subscriptionDocument(Request request, Subscription sub) {
+            ObjectNode doc = mapper.createObjectNode();
+            doc.putArray("@context").add(LWS_CONTEXT);
+            doc.put("type", WEBHOOK);
+            doc.put("subscription", absolute(request, SUBSCRIPTIONS + sub.id()));
+            ArrayNode topics = doc.putArray("topic");
+            sub.topics().forEach(topics::add);
+            doc.put("inbox", sub.inbox());
+            return doc;
+        }
+
+        private static boolean isUri(JsonNode v) {
+            return v.isTextual() && v.asText().matches("^[A-Za-z][A-Za-z0-9+.-]*:.+");
         }
 
         /**
@@ -1218,10 +1357,6 @@ public final class RefLwsServer implements AutoCloseable {
                     out.add(new Constraint(left, op, c.get("rightOperand")));
                 }
                 return out;
-            }
-
-            private boolean isUri(JsonNode v) {
-                return v.isTextual() && v.asText().matches("^[A-Za-z][A-Za-z0-9+.-]*:.+");
             }
 
             private boolean hasType(JsonNode type, String wanted) {

@@ -152,7 +152,7 @@ class TouchstoneMcpEndToEndTest {
             assertThat(detail.get("clauseText").asText()).contains("Content-Type response header");
 
             JsonNode tests = call(client, "list_tests", Map.of());
-            assertThat(tests.size()).isEqualTo(111);
+            assertThat(tests.size()).isEqualTo(120);
             JsonNode containerTests = call(client, "list_tests", Map.of("module", "core/containers", "level", "MUST"));
             assertThat(containerTests.size()).isEqualTo(10);
             assertThat(containerTests.get(0).get("id").asText()).isEqualTo("core/containers#getContainer");

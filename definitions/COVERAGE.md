@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **111 tests**: 90 MUST, 19 SHOULD, 2 MAY; 62 validation tests, 49 negative tests.
-- **143 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **120 tests**: 97 MUST, 20 SHOULD, 3 MAY; 66 validation tests, 54 negative tests.
+- **161 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -16,14 +16,14 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/cid/manifest` | 14 | 14 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
-| `core/access_grants` | 10 | 9 | 1 | 0 |
+| `core/access_grants` | 11 | 9 | 1 | 1 |
 | `core/authorization_server` | 8 | 6 | 2 | 0 |
-| `core/conditional_requests` | 8 | 4 | 4 | 0 |
+| `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 16 | 10 | 5 | 1 |
 | `core/data_resources` | 15 | 9 | 5 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
-| `core/linksets` | 6 | 5 | 1 | 0 |
-| `core/notifications` | 1 | 1 | 0 | 0 |
+| `core/linksets` | 8 | 7 | 1 | 0 |
+| `core/notifications` | 6 | 6 | 0 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 
 ## 1. lws-test-suite → definitions
@@ -150,6 +150,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `getContainer-public-read` | Validation | MUST | Authentication | getContainer |
 | `readDataResource-public-read` | Validation | MUST | Authentication | readDataResource |
 | `access-grant-authenticated-agent` | Validation | MUST | Authentication |  |
+| `access-grant-extra-properties-accepted` | Validation | MAY | Authentication |  |
 | `access-request-create` | Validation | MUST | Authentication |  |
 | `access-grant-document-shape` | Validation | MUST | Authentication |  |
 | `access-grant-incomplete-refused` | Negative | MUST | Authentication |  |
@@ -176,6 +177,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `conditional-get-container-304` | Validation | SHOULD |  |  |
 | `conditional-get-stale-validator-200` | Validation | MUST |  |  |
 | `conditional-put-stale-if-match-412` | Negative | MUST |  |  |
+| `conditional-delete-stale-if-match-412` | Negative | SHOULD |  |  |
 | `update-changes-strong-etag` | Validation | MUST |  |  |
 | `delete-updates-parent-strong-etag` | Validation | MUST |  |  |
 | `conditional-get-if-modified-since-304` | Validation | SHOULD |  |  |
@@ -243,6 +245,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `linkset-conditional-412` | Negative | MUST |  |  |
 | `linkset-put-405-when-unsupported` | Negative | MUST |  |  |
 | `linkset-removed-with-resource` | Validation | MUST |  |  |
+| `linkset-ready-at-create` | Validation | MUST |  |  |
+| `linkset-up-not-redirected` | Validation | MUST |  |  |
 | `linkset-patch-merge` | Validation | SHOULD |  |  |
 
 ### `core/notifications`
@@ -250,6 +254,11 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | Test | Type | Level | Requires | Mirrors |
 |---|---|---|---|---|
 | `notification-service-advertised` | Validation | MUST |  |  |
+| `subscription-create` | Validation | MUST |  |  |
+| `subscription-missing-type-refused` | Negative | MUST |  |  |
+| `subscription-unadvertised-type-refused` | Negative | MUST |  |  |
+| `subscription-missing-topic-refused` | Negative | MUST |  |  |
+| `subscription-unreadable-topic-refused` | Negative | MUST | Authentication |  |
 
 ### `core/storage_authorization`
 
