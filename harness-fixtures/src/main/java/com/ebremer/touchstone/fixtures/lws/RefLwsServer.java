@@ -115,7 +115,66 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     /** One AccessPolicy: actions, an assignee, and the resources it covers. */
-    private record Policy(Set<String> actions, String assignee, Set<String> targets) {
+    private record Policy(Set<String> actions, String assignee, Set<String> targets, List<Constraint> constraints) {
+    }
+
+    /** The leftOperands the Access Profile obliges a server advertising it to support. */
+    private static final Set<String> LEFT_OPERANDS = Set.of("client", "format", "type", "purpose", "dateTime");
+    private static final Set<String> OPERATORS = Set.of("eq", "isAnyOf", "gt", "gteq", "lt", "lteq");
+
+    /**
+     * An ODRL constraint of the Access Profile. {@code dateTime} compares the current time;
+     * {@code client} the access token's {@code client_id}; {@code format} and {@code type} the
+     * resource's media type and LWS type. The draft does not say how a request states its
+     * {@code purpose}, so a purpose constraint is accepted and never satisfied (fail closed), as
+     * is any operator that makes no sense for its operand.
+     */
+    private record Constraint(String leftOperand, String operator, JsonNode rightOperand) {
+        boolean satisfied(Node node, String client) {
+            return switch (leftOperand) {
+                case "dateTime" -> compare(Instant.now());
+                case "client" -> matches(client);
+                case "format" -> matches(node.container ? LWS_JSON : node.contentType);
+                case "type" -> matches(LWS_NS + (node.container ? "Container" : "DataResource"));
+                default -> false;
+            };
+        }
+
+        private boolean matches(String actual) {
+            if (actual == null) {
+                return false;
+            }
+            return switch (operator) {
+                case "eq" -> rightOperand.isTextual() && rightOperand.asText().equals(actual);
+                case "isAnyOf" -> {
+                    for (JsonNode v : rightOperand) {
+                        if (v.isTextual() && v.asText().equals(actual)) {
+                            yield true;
+                        }
+                    }
+                    yield false;
+                }
+                default -> false;
+            };
+        }
+
+        private boolean compare(Instant now) {
+            Instant bound;
+            try {
+                bound = Instant.parse(rightOperand.asText());
+            } catch (RuntimeException e) {
+                return false;
+            }
+            int c = now.compareTo(bound);
+            return switch (operator) {
+                case "eq" -> c == 0;
+                case "gt" -> c > 0;
+                case "gteq" -> c >= 0;
+                case "lt" -> c < 0;
+                case "lteq" -> c <= 0;
+                default -> false;
+            };
+        }
     }
 
     private RefLwsServer(AuthMode authMode) {
@@ -225,11 +284,15 @@ public final class RefLwsServer implements AutoCloseable {
             String method = request.getMethod();
 
             String subject = null;
+            String client = null;
             if (authMode == AuthMode.SECURED) {
                 String bearer = bearerToken(request);
                 if (bearer != null) {
                     try {
-                        subject = validator.validate(bearer);
+                        com.nimbusds.jwt.JWTClaimsSet claims = validator.claims(bearer);
+                        subject = claims.getSubject();
+                        Object c = claims.getClaim("client_id");
+                        client = c == null ? null : c.toString();
                     } catch (TokenValidator.InvalidTokenException e) {
                         challenge(request, response, callback, "invalid_token");
                         return true;
@@ -253,11 +316,11 @@ public final class RefLwsServer implements AutoCloseable {
                     default -> "modify";
                 };
                 Node node = store.get(target);
-                if (node == null ? subject == null : !allowed(action, node, absolute(request, target), subject)) {
+                if (node == null ? subject == null : !allowed(action, node, absolute(request, target), subject, client)) {
                     if (subject == null) {
                         challenge(request, response, callback, null);
                     } else {
-                        status(response, callback, 403);
+                        status(request, response, callback, 403);
                     }
                     return true;
                 }
@@ -295,14 +358,16 @@ public final class RefLwsServer implements AutoCloseable {
          * what a grant gives them. A grant names the resource itself (whether a grant on a
          * container reaches its members is an open question, definitions/README.md).
          */
-        private boolean allowed(String action, Node node, String uri, String subject) {
+        private boolean allowed(String action, Node node, String uri, String subject, String client) {
             if (subject != null && (subject.equals(storageOwner) || subject.equals(node.owner))) {
                 return true;
             }
             for (Record grant : grants.values()) {
                 for (Policy p : grant.policies()) {
                     boolean assignee = p.assignee().equals(FOAF_AGENT) || p.assignee().equals(subject);
-                    if (assignee && p.actions().contains(action) && p.targets().contains(uri)) {
+                    // "When multiple constraint objects are present, all of them MUST be satisfied."
+                    if (assignee && p.actions().contains(action) && p.targets().contains(uri)
+                            && p.constraints().stream().allMatch(c -> c.satisfied(node, client))) {
                         return true;
                     }
                 }
@@ -324,7 +389,7 @@ public final class RefLwsServer implements AutoCloseable {
             // The storage link on a 401 is a SHOULD (section 9.2 notes): it is how a client that
             // was refused still finds the storage description, and with it the services.
             response.getHeaders().add("Link", storageLink(request));
-            status(response, callback, 401);
+            status(request, response, callback, 401);
         }
 
         private String storageLink(Request request) {
@@ -336,7 +401,7 @@ public final class RefLwsServer implements AutoCloseable {
         private void read(Request request, Response response, Callback callback, String path, boolean withBody) {
             Node node = store.get(path);
             if (node == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             // "Servers SHOULD support conditional requests as defined in [RFC9110], including
@@ -347,7 +412,7 @@ public final class RefLwsServer implements AutoCloseable {
             if (request.getHeaders().get("If-Match") == null) {
                 Instant unmodifiedSince = httpDate(request.getHeaders().get("If-Unmodified-Since"));
                 if (unmodifiedSince != null && lastModified.isAfter(unmodifiedSince)) {
-                    status(response, callback, 412);
+                    status(request, response, callback, 412);
                     return;
                 }
             }
@@ -359,7 +424,7 @@ public final class RefLwsServer implements AutoCloseable {
                 response.getHeaders().put(HttpHeader.ETAG, node.etag);
                 response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
                 addResourceLinks(request, response, path, node);
-                status(response, callback, 304);
+                status(request, response, callback, 304);
                 return;
             }
             byte[] body;
@@ -370,7 +435,7 @@ public final class RefLwsServer implements AutoCloseable {
                 // application/lws+cid, unless content negotiation requires a different format."
                 contentType = negotiateStorage(request.getHeaders().get("Accept"));
                 if (contentType == null) {
-                    status(response, callback, 406);
+                    status(request, response, callback, 406);
                     return;
                 }
                 response.getHeaders().put(HttpHeader.VARY, "Accept");
@@ -378,7 +443,7 @@ public final class RefLwsServer implements AutoCloseable {
             } else if (node.container) {
                 contentType = negotiate(request.getHeaders().get("Accept"));
                 if (contentType == null) {
-                    status(response, callback, 406);
+                    status(request, response, callback, 406);
                     return;
                 }
                 // "Because the Content-Type of a container response depends on the request's
@@ -398,7 +463,7 @@ public final class RefLwsServer implements AutoCloseable {
                     if (r == null) {
                         response.getHeaders().put("Content-Range", "bytes */" + body.length);
                         addResourceLinks(request, response, path, node);
-                        status(response, callback, 416);
+                        status(request, response, callback, 416);
                         return;
                     }
                     int from = (int) r[0];
@@ -522,7 +587,7 @@ public final class RefLwsServer implements AutoCloseable {
                 throws Exception {
             Node node = store.get(path);
             if (node == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             response.getHeaders().put(HttpHeader.ALLOW, "GET, HEAD, PATCH");
@@ -538,30 +603,30 @@ public final class RefLwsServer implements AutoCloseable {
                 case "PATCH" -> {
                     String contentType = request.getHeaders().get("Content-Type");
                     if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MERGE_PATCH)) {
-                        status(response, callback, 415);
+                        status(request, response, callback, 415);
                         return;
                     }
                     String ifMatch = request.getHeaders().get("If-Match");
                     if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.linksetEtag)) {
-                        status(response, callback, 412);
+                        status(request, response, callback, 412);
                         return;
                     }
                     JsonNode patch;
                     try (InputStream in = Content.Source.asInputStream(request)) {
                         patch = mapper.readTree(in.readAllBytes());
                     } catch (Exception e) {
-                        status(response, callback, 400);
+                        status(request, response, callback, 400);
                         return;
                     }
                     JsonNode merged = mergePatch(linksetDocument(request, path, node), patch);
                     if (!merged.isObject() || !merged.path("linkset").isArray()) {
-                        status(response, callback, 422);
+                        status(request, response, callback, 422);
                         return;
                     }
                     node.linkset = (ObjectNode) merged;
                     node.linksetEtag = newEtag();
                     response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
-                    status(response, callback, 204);
+                    status(request, response, callback, 204);
                 }
                 default -> methodNotAllowed(response, callback, "GET, HEAD, PATCH");
             }
@@ -582,7 +647,7 @@ public final class RefLwsServer implements AutoCloseable {
                 throws Exception {
             Node parent = store.get(path);
             if (parent == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             if (!parent.container) {
@@ -631,7 +696,7 @@ public final class RefLwsServer implements AutoCloseable {
         private void update(Request request, Response response, Callback callback, String path) throws Exception {
             Node node = store.get(path);
             if (node == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             if (node.container) {
@@ -640,7 +705,7 @@ public final class RefLwsServer implements AutoCloseable {
             }
             String ifMatch = request.getHeaders().get("If-Match");
             if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.etag)) {
-                status(response, callback, 412);
+                status(request, response, callback, 412);
                 return;
             }
             try (InputStream in = Content.Source.asInputStream(request)) {
@@ -676,7 +741,7 @@ public final class RefLwsServer implements AutoCloseable {
         private void patch(Request request, Response response, Callback callback, String path) throws Exception {
             Node node = store.get(path);
             if (node == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             if (node.container) {
@@ -686,12 +751,12 @@ public final class RefLwsServer implements AutoCloseable {
             String contentType = request.getHeaders().get("Content-Type");
             if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MERGE_PATCH)) {
                 response.getHeaders().put("Accept-Patch", MERGE_PATCH);
-                status(response, callback, 415);
+                status(request, response, callback, 415);
                 return;
             }
             String ifMatch = request.getHeaders().get("If-Match");
             if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.etag)) {
-                status(response, callback, 412);
+                status(request, response, callback, 412);
                 return;
             }
             byte[] body;
@@ -706,7 +771,7 @@ public final class RefLwsServer implements AutoCloseable {
                 patch = mapper.readTree(body);
             } catch (Exception e) {
                 // The stored representation is not JSON, or the patch itself is malformed.
-                status(response, callback, 415);
+                status(request, response, callback, 415);
                 return;
             }
             node.bytes = mapper.writeValueAsBytes(mergePatch(target, patch));
@@ -742,7 +807,7 @@ public final class RefLwsServer implements AutoCloseable {
         private void delete(Request request, Response response, Callback callback, String path) {
             Node node = store.get(path);
             if (node == null) {
-                status(response, callback, 404);
+                status(request, response, callback, 404);
                 return;
             }
             if (path.equals(STORAGE_PATH)) {
@@ -751,13 +816,13 @@ public final class RefLwsServer implements AutoCloseable {
             }
             String ifMatch = request.getHeaders().get("If-Match");
             if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.etag)) {
-                status(response, callback, 412);
+                status(request, response, callback, 412);
                 return;
             }
             if (node.container && !node.children.isEmpty()) {
                 String depth = request.getHeaders().get("Depth");
                 if (!"infinity".equalsIgnoreCase(depth)) {
-                    status(response, callback, 409);
+                    status(request, response, callback, 409);
                     return;
                 }
             }
@@ -768,7 +833,7 @@ public final class RefLwsServer implements AutoCloseable {
                 parent.etag = newEtag();
                 parent.modified = now();
             }
-            status(response, callback, 204);
+            status(request, response, callback, 204);
         }
 
         private void removeRecursively(String path) {
@@ -827,16 +892,19 @@ public final class RefLwsServer implements AutoCloseable {
             root.put("type", "Storage");
             ArrayNode services = root.putArray("service");
             service(services, storage + "#storage-root", "StorageRoot", storage);
-            service(services, storage + "#access-grants", "AccessGrantService", absolute(request, GRANTS));
-            service(services, storage + "#access-requests", "AccessRequestService", absolute(request, REQUESTS));
+            service(services, storage + "#access-grants", "AccessGrantService", absolute(request, GRANTS))
+                    .putArray("conformsTo").add(LWS_NS + "AccessProfile");
+            service(services, storage + "#access-requests", "AccessRequestService", absolute(request, REQUESTS))
+                    .putArray("conformsTo").add(LWS_NS + "AccessProfile");
             return bytes(root);
         }
 
-        private void service(ArrayNode services, String id, String type, String endpoint) {
+        private ObjectNode service(ArrayNode services, String id, String type, String endpoint) {
             ObjectNode s = services.addObject();
             s.put("id", id);
             s.put("type", type);
             s.put("serviceEndpoint", endpoint);
+            return s;
         }
 
         private void addResourceLinks(Request request, Response response, String path, Node node) {
@@ -919,9 +987,23 @@ public final class RefLwsServer implements AutoCloseable {
             }
         }
 
-        private void status(Response response, Callback callback, int code) {
+        /**
+         * A bodiless status, or for an error RFC 9457 problem details: "Servers SHOULD use the
+         * standard format defined in [RFC9457] for structured error responses". HEAD never
+         * carries a body.
+         */
+        private void status(Request request, Response response, Callback callback, int code) {
             response.setStatus(code);
-            callback.succeeded();
+            if (code < 400 || "HEAD".equals(request.getMethod())) {
+                callback.succeeded();
+                return;
+            }
+            ObjectNode problem = mapper.createObjectNode();
+            problem.put("type", "about:blank");
+            problem.put("title", org.eclipse.jetty.http.HttpStatus.getMessage(code));
+            problem.put("status", code);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/problem+json");
+            response.write(true, ByteBuffer.wrap(bytes(problem)), callback);
         }
 
         private void methodNotAllowed(Response response, Callback callback, String allow) {
@@ -980,7 +1062,7 @@ public final class RefLwsServer implements AutoCloseable {
                     if (secured && subject == null) {
                         challenge(request, response, callback, null);
                     } else {
-                        status(response, callback, 404);
+                        status(request, response, callback, 404);
                     }
                     return;
                 }
@@ -1001,7 +1083,7 @@ public final class RefLwsServer implements AutoCloseable {
                     case "DELETE" -> {
                         records.remove(id);
                         bump();
-                        status(response, callback, 204);
+                        status(request, response, callback, 204);
                     }
                     default -> methodNotAllowed(response, callback, "GET, HEAD, DELETE");
                 }
@@ -1011,7 +1093,7 @@ public final class RefLwsServer implements AutoCloseable {
                 if (subject == null) {
                     challenge(request, response, callback, null);
                 } else {
-                    status(response, callback, 403);
+                    status(request, response, callback, 403);
                 }
             }
 
@@ -1042,13 +1124,18 @@ public final class RefLwsServer implements AutoCloseable {
                 try (InputStream in = Content.Source.asInputStream(request)) {
                     body = mapper.readTree(in.readAllBytes());
                 } catch (Exception e) {
-                    status(response, callback, 400);
+                    status(request, response, callback, 400);
                     return;
                 }
+                // The access data model: type, storage and access are REQUIRED, and an inbox,
+                // when given, MUST be a URI. A document that breaks them is refused, since
+                // storing it would serve a grant or request that does not conform.
                 List<Policy> policies = body == null || !body.isObject() || !hasType(body.path("type"), type)
+                        || !body.path("storage").isTextual()
+                        || (body.has("inbox") && !isUri(body.path("inbox")))
                         ? null : policies(body.path("access"));
                 if (policies == null) {
-                    status(response, callback, 400);
+                    status(request, response, callback, 400);
                     return;
                 }
                 String id = UUID.randomUUID().toString();
@@ -1076,6 +1163,16 @@ public final class RefLwsServer implements AutoCloseable {
                 }
                 List<Policy> out = new ArrayList<>();
                 for (JsonNode p : access) {
+                    // type is REQUIRED and MUST include AccessPolicy; target, when given, MUST
+                    // be an object.
+                    if (!hasType(p.path("type"), "AccessPolicy")
+                            || (p.has("target") && !p.path("target").isObject())) {
+                        return null;
+                    }
+                    List<Constraint> constraints = constraints(p.path("constraint"));
+                    if (constraints == null) {
+                        return null;
+                    }
                     Set<String> actions = new LinkedHashSet<>();
                     for (JsonNode a : p.path("action").isArray() ? p.path("action") : List.of(p.path("action"))) {
                         if (!ACTIONS.contains(a.asText())) {
@@ -1094,9 +1191,37 @@ public final class RefLwsServer implements AutoCloseable {
                     if (actions.isEmpty() || assignee.isEmpty() || targets.isEmpty()) {
                         return null;
                     }
-                    out.add(new Policy(Set.copyOf(actions), assignee, Set.copyOf(targets)));
+                    out.add(new Policy(Set.copyOf(actions), assignee, Set.copyOf(targets), constraints));
                 }
                 return out;
+            }
+
+            /**
+             * The constraint objects of a policy, or null when they are malformed: each MUST have
+             * a leftOperand, an operator and a rightOperand, and a leftOperand this profile
+             * does not define is refused rather than silently ignored.
+             */
+            private List<Constraint> constraints(JsonNode constraint) {
+                if (constraint.isMissingNode()) {
+                    return List.of();
+                }
+                if (!constraint.isArray()) {
+                    return null;
+                }
+                List<Constraint> out = new ArrayList<>();
+                for (JsonNode c : constraint) {
+                    String left = c.path("leftOperand").asText("");
+                    String op = c.path("operator").asText("");
+                    if (!LEFT_OPERANDS.contains(left) || !OPERATORS.contains(op) || !c.has("rightOperand")) {
+                        return null;
+                    }
+                    out.add(new Constraint(left, op, c.get("rightOperand")));
+                }
+                return out;
+            }
+
+            private boolean isUri(JsonNode v) {
+                return v.isTextual() && v.asText().matches("^[A-Za-z][A-Za-z0-9+.-]*:.+");
             }
 
             private boolean hasType(JsonNode type, String wanted) {

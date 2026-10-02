@@ -1695,3 +1695,53 @@ engine and the Java lint already resolved any type, as EXECUTION.md section 3 sa
 No catalog change: both requirements were already in it. The counts pinned in
 `DefinitionLoaderTest`, `RunCommandTest` and `TouchstoneMcpEndToEndTest` move from 101 to 104.
 Drafted by an agent; per the authoring rules it waits on branch `lws-net-tests` for review.
+
+### D-0060 — coverage: the access data model, constraints, containment, problem details, the LWS JSON-LD profile
+Seven definitions for requirements no test cited (catalog coverage 120 → 143 of 219: core MUST 82 → 102, core SHOULD 8 → 11), in two groups.
+
+**The access data model** (`core/access_grants`):
+- `access-grant-document-shape` (MUST): a stored grant has an `@context` ordered set including the
+  LWS context, `type`, `storage`, and an `access` collection whose every policy has a type including
+  `AccessPolicy`, an `action` collection, an `assignee` and a `target` object with `type` and `value`.
+- `access-grant-incomplete-refused` (MUST): ten defective grants are each refused with 4xx: no type,
+  no storage, no access, an empty access, a policy with no type or without `AccessPolicy`, no action,
+  no assignee, a target that is not an object, an inbox that is not a URI.
+  *The draft says nothing of the response to such a document*: it makes the properties REQUIRED
+  and constrains their values, and the access protocol only says what a successful POST returns.
+  A server that accepted one would then serve a grant that does not conform, so refusing it is the
+  only conforming outcome; that is the reading this test enforces. It proves the refusals took no
+  effect (each would otherwise give bob read access, and after them bob has none) and were not
+  vacuous (a complete grant then gives it).
+- `access-grant-constraints-all-satisfied` (MUST): two `dateTime` constraints, one met and one not,
+  refuse bob; both met, permit him. Gated by a precondition on the grant service's `conformsTo`
+  naming `lws#AccessProfile`, because the leftOperand obligation is conditional: "a server
+  advertising support for this profile MUST support the following leftOperand values".
+
+**Elsewhere in core**:
+- `discovery-storage-description-ids-are-uris` (MUST): optional service and capability ids are URIs
+  (a scheme is required, so a bare fragment fails), and `capability`, when present, is an array.
+- `containment-hierarchy-consistent` (MUST): two containers deep, each child's `up` names its
+  container and each container lists the child, back to the test container. `containment-no-cycles`
+  stays uncovered on purpose: the draft defines no operation that moves a resource, so a client
+  cannot even attempt a cycle, and a test that could not fail would prove nothing.
+- `container-ld-json-lws-profile` (SHOULD): `application/ld+json; profile="https://www.w3.org/ns/lws/v1"`
+  yields the container representation. The Content-Type is not asserted: answering lws+json or
+  the profiled ld+json both treat the types as equivalent. (Not `connegEquivalent`, whose
+  Content-Type check would demand the profiled type back.)
+- `error-problem-details` (SHOULD): a 404 for an absent resource is `application/problem+json`, a
+  JSON object whose optional `status`, if present, is 404. No new trait: the trait vocabulary is
+  part of the frozen format, and `Get, DataResource` describes the exchange.
+
+**The reference server follows.** `RefLwsServer` refuses access documents missing `storage`, with a
+policy type lacking `AccessPolicy`, a non-object target or a non-URI inbox; advertises `conformsTo`
+`lws#AccessProfile` on both access services; and evaluates constraints, all of which must hold:
+`dateTime` against the clock, `client` against the access token's `client_id`, `format` and `type`
+against the resource. The draft does not say how a request states its purpose, so a `purpose`
+constraint is accepted and never satisfied: fail closed. An unknown leftOperand or operator is
+refused at creation. Error responses carry RFC 9457 problem details (never on HEAD).
+`TokenValidator.claims` exposes the validated claims for the client.
+
+Pinned counts move from 104 to 111 tests (110 passed, 1 inapplicable against the reference) and
+`core/containers` from 14 to 16. `access-grant-incomplete-refused` and
+`access-grant-constraints-all-satisfied` join the tests that must catch the broken storage, which
+forbids nothing: each fails there at the step where bob, who should be refused, reads with 200. Drafted by an agent; waits on branch `coverage-access-and-misc`.

@@ -57,6 +57,11 @@ public final class TokenValidator {
 
     /** @return the validated subject (sub claim) */
     public String validate(String bearerToken) {
+        return claims(bearerToken).getSubject();
+    }
+
+    /** @return the validated token's claims, for the subject and the client it names */
+    public JWTClaimsSet claims(String bearerToken) {
         JWTClaimsSet claims;
         try {
             claims = processor.process(bearerToken, null);
@@ -72,7 +77,7 @@ public final class TokenValidator {
                 && claims.getIssueTime().toInstant().isAfter(java.time.Instant.now().plusSeconds(60))) {
             throw new InvalidTokenException("iat lies in the future");
         }
-        return claims.getSubject();
+        return claims;
     }
 
     public String realm() {

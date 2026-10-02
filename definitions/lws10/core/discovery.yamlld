@@ -263,3 +263,42 @@ entries:
           json:
             - pointer: /type
               hasValue: Container
+
+  - id: "#discovery-storage-description-ids-are-uris"
+    type: ValidationTest
+    name: discovery-storage-description-ids-are-uris
+    label: Optional service and capability ids in the storage description are URIs
+    comment: >-
+      A service or capability id is OPTIONAL, but "if present, its value MUST be a URI", and
+      capability, also optional, "MUST be a set of capabilities". A URI has a scheme, so a
+      bare fragment or a relative reference is not one.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model
+    traits: [Get, Discovery, StorageDescription]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/storage-service-id-optional
+      - https://example.org/touchstone/req/lws10-core/storage-capability-id-optional
+      - https://example.org/touchstone/req/lws10-core/storage-capability-property
+    request:
+      method: GET
+      url: "${storage}"
+      accept: application/lws+cid
+    response:
+      statusCode: 200
+      json:
+        - pointer: /service
+          every:
+            - pointer: /id
+              optional: true
+              matches: '^[A-Za-z][A-Za-z0-9+.-]*:'
+        - pointer: /capability
+          optional: true
+          jsonType: array
+        - pointer: /capability
+          optional: true
+          every:
+            - pointer: /id
+              optional: true
+              matches: '^[A-Za-z][A-Za-z0-9+.-]*:'

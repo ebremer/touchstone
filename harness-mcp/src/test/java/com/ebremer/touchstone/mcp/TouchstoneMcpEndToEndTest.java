@@ -152,9 +152,9 @@ class TouchstoneMcpEndToEndTest {
             assertThat(detail.get("clauseText").asText()).contains("Content-Type response header");
 
             JsonNode tests = call(client, "list_tests", Map.of());
-            assertThat(tests.size()).isEqualTo(104);
+            assertThat(tests.size()).isEqualTo(111);
             JsonNode containerTests = call(client, "list_tests", Map.of("module", "core/containers", "level", "MUST"));
-            assertThat(containerTests.size()).isEqualTo(9);
+            assertThat(containerTests.size()).isEqualTo(10);
             assertThat(containerTests.get(0).get("id").asText()).isEqualTo("core/containers#getContainer");
 
             // start an async run with a progress token, then watch it to completion
@@ -174,9 +174,9 @@ class TouchstoneMcpEndToEndTest {
             }
             assertThat(run).isNotNull();
             assertThat(run.get("status").asText()).isEqualTo("COMPLETE");
-            assertThat(run.get("completed").asInt()).isEqualTo(14);
-            assertThat(run.get("total").asInt()).isEqualTo(14);
-            assertThat(run.get("passed").asInt()).isEqualTo(13);
+            assertThat(run.get("completed").asInt()).isEqualTo(16);
+            assertThat(run.get("total").asInt()).isEqualTo(16);
+            assertThat(run.get("passed").asInt()).isEqualTo(15);
             assertThat(run.get("failed").asInt()).isEqualTo(1);
             assertThat(run.get("conformant").asBoolean()).isFalse();
             assertThat(run.get("byLevel").get(0).get("level").asText()).isEqualTo("MUST");
@@ -215,7 +215,7 @@ class TouchstoneMcpEndToEndTest {
             }
             JsonNode diff = call(client, "diff_runs", Map.of("before", runId, "after", runId2));
             assertThat(diff.get("hasRegressions").asBoolean()).isFalse();
-            assertThat(diff.get("unchanged").asInt()).isEqualTo(14);
+            assertThat(diff.get("unchanged").asInt()).isEqualTo(16);
 
             // the EARL report is available as an MCP resource
             ReadResourceResult earl = client.readResource(new ReadResourceRequest("report://" + runId + "/earl"));

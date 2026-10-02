@@ -345,3 +345,452 @@ entries:
           json:
             - pointer: /type
               hasValue: AccessRequest
+
+  - id: "#access-grant-document-shape"
+    type: ValidationTest
+    name: access-grant-document-shape
+    label: An access grant reads back in the access data model, with every required property
+    comment: >-
+      access-grant-create checks the type, the storage and that access is an array. This
+      checks the rest of the model a stored grant must keep: an @context ordered set including
+      the LWS context, and an access collection whose every policy has a type including
+      AccessPolicy, an action collection, an assignee and a target object with a type and a
+      value collection.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#json-ld-serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+    traits: [Post, Get, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-jsonld-context-lws-v1
+      - https://example.org/touchstone/req/lws10-core/access-type-required
+      - https://example.org/touchstone/req/lws10-core/access-storage-required
+      - https://example.org/touchstone/req/lws10-core/access-access-required
+      - https://example.org/touchstone/req/lws10-core/access-access-collection
+      - https://example.org/touchstone/req/lws10-core/policy-type-required
+      - https://example.org/touchstone/req/lws10-core/policy-type-access-policy
+      - https://example.org/touchstone/req/lws10-core/policy-action-required
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-required
+      - https://example.org/touchstone/req/lws10-core/policy-target-object
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: the target of a grant
+    steps:
+      - label: grant bob read access to it
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: the grant reads back in the access data model
+        request:
+          method: GET
+          url: "${grant}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /@context
+              jsonType: array
+            - pointer: /@context
+              hasValue: https://www.w3.org/ns/lws/v1
+            - pointer: /type
+              hasValue: AccessGrant
+            - pointer: /storage
+              equalsIri: "${storage}"
+            - pointer: /access
+              jsonType: array
+            - pointer: /access
+              some:
+                - pointer: /assignee
+                  equalsIri: "${identity.bob.webid}"
+            - pointer: /access
+              every:
+                - pointer: /type
+                  hasValue: AccessPolicy
+                - pointer: /action
+                  jsonType: array
+                - pointer: /assignee
+                  jsonType: string
+                - pointer: /target
+                  jsonType: object
+                - pointer: /target/type
+                  jsonType: string
+                - pointer: /target/value
+                  jsonType: array
+
+  - id: "#access-grant-incomplete-refused"
+    type: NegativeTest
+    name: access-grant-incomplete-refused
+    label: An access grant missing a required property, or with a malformed one, is refused and grants nothing
+    comment: >-
+      The draft makes type, storage and access REQUIRED on a grant, and type, action and
+      assignee REQUIRED on each policy, and constrains their values, but says nothing of the
+      response to a document that breaks them. A server that accepted one would then serve
+      a grant that does not conform, so refusing it is the only conforming outcome (D-0060).
+      Each defective grant would otherwise give bob read access; after them all, bob still
+      has none. A complete grant then does give it, which shows the refusals were not just
+      a server that grants nothing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-type-required
+      - https://example.org/touchstone/req/lws10-core/access-storage-required
+      - https://example.org/touchstone/req/lws10-core/access-access-required
+      - https://example.org/touchstone/req/lws10-core/access-access-collection
+      - https://example.org/touchstone/req/lws10-core/access-inbox-uri
+      - https://example.org/touchstone/req/lws10-core/policy-type-required
+      - https://example.org/touchstone/req/lws10-core/policy-type-access-policy
+      - https://example.org/touchstone/req/lws10-core/policy-action-required
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-required
+      - https://example.org/touchstone/req/lws10-core/policy-target-object
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: not for bob
+    steps:
+      - label: a grant without its type is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a grant without storage is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a grant without access is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+        response:
+          statusCode: "4xx"
+      - label: a grant whose access is empty is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access: []
+        response:
+          statusCode: "4xx"
+      - label: a policy without its type is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a policy whose type lacks AccessPolicy is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: ["urn:touchstone:not-an-access-policy"]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a policy without action is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a policy without assignee is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: a policy whose target is not an object is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target: "${created}"
+        response:
+          statusCode: "4xx"
+      - label: a grant whose inbox is not a URI is refused
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            inbox: "not a uri"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: "4xx"
+      - label: none of them gave bob access
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: [403, 404]
+      - label: a complete grant is accepted
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: and does give bob access
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+
+  - id: "#access-grant-constraints-all-satisfied"
+    type: ValidationTest
+    name: access-grant-constraints-all-satisfied
+    label: A grant's constraints must all be satisfied before it permits access
+    comment: >-
+      "When multiple constraint objects are present, all of them MUST be satisfied." A grant
+      to bob with two dateTime constraints, one met (on or after 2000-01-01) and one not (on
+      or before 2000-01-02), must not let him read; a server treating the list as "any of"
+      would. A second grant whose constraints are both met then must: that shows the server
+      evaluates dateTime at all, rather than refusing everything constrained. Applies only
+      where the grant service advertises the Access Profile, which is what obliges a server to
+      support the dateTime leftOperand.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-combining
+    traits: [Post, Get, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraints-all-satisfied
+      - https://example.org/touchstone/req/lws10-core/policy-constraints-conjunction-semantics
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-left-operands
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-objects
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: only within the window
+    steps:
+      - label: the grant service advertises the Access Profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: AccessGrantService
+                - pointer: /conformsTo
+                  hasValue: https://www.w3.org/ns/lws#AccessProfile
+      - label: grant bob read, constrained to a window that has closed
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: dateTime
+                    operator: gteq
+                    rightOperand: "2000-01-01T00:00:00Z"
+                  - leftOperand: dateTime
+                    operator: lteq
+                    rightOperand: "2000-01-02T00:00:00Z"
+        response:
+          statusCode: 201
+          location:
+            capture: closed
+            cleanup: true
+      - label: one constraint met is not enough, so bob cannot read
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: [403, 404]
+      - label: grant bob read again, constrained to a window that is open
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${created}"]
+                constraint:
+                  - leftOperand: dateTime
+                    operator: gteq
+                    rightOperand: "2000-01-01T00:00:00Z"
+                  - leftOperand: dateTime
+                    operator: lteq
+                    rightOperand: "2999-12-31T23:59:59Z"
+        response:
+          statusCode: 201
+          location:
+            capture: open
+            cleanup: true
+      - label: with both met, bob can read
+        as: bob
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200

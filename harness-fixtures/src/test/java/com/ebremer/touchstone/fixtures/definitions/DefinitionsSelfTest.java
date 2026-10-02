@@ -114,7 +114,9 @@ class DefinitionsSelfTest {
                     "core/storage_authorization#authz-token-alg-none-rejected",
                     "core/storage_authorization#authz-token-unknown-key-rejected",
                     "core/access_grants#access-grant-revoke",
-                    "core/access_grants#access-grant-authenticated-agent");
+                    "core/access_grants#access-grant-authenticated-agent",
+                    "core/access_grants#access-grant-incomplete-refused",
+                    "core/access_grants#access-grant-constraints-all-satisfied");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);

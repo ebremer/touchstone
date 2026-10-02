@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **104 tests**: 85 MUST, 17 SHOULD, 2 MAY; 56 validation tests, 48 negative tests.
-- **120 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **111 tests**: 90 MUST, 19 SHOULD, 2 MAY; 62 validation tests, 49 negative tests.
+- **143 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -16,12 +16,12 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/cid/manifest` | 14 | 14 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
-| `core/access_grants` | 7 | 6 | 1 | 0 |
+| `core/access_grants` | 10 | 9 | 1 | 0 |
 | `core/authorization_server` | 8 | 6 | 2 | 0 |
 | `core/conditional_requests` | 8 | 4 | 4 | 0 |
-| `core/containers` | 14 | 9 | 4 | 1 |
-| `core/data_resources` | 14 | 9 | 4 | 1 |
-| `core/discovery` | 6 | 5 | 1 | 0 |
+| `core/containers` | 16 | 10 | 5 | 1 |
+| `core/data_resources` | 15 | 9 | 5 | 1 |
+| `core/discovery` | 7 | 6 | 1 | 0 |
 | `core/linksets` | 6 | 5 | 1 | 0 |
 | `core/notifications` | 1 | 1 | 0 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
@@ -151,6 +151,9 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `readDataResource-public-read` | Validation | MUST | Authentication | readDataResource |
 | `access-grant-authenticated-agent` | Validation | MUST | Authentication |  |
 | `access-request-create` | Validation | MUST | Authentication |  |
+| `access-grant-document-shape` | Validation | MUST | Authentication |  |
+| `access-grant-incomplete-refused` | Negative | MUST | Authentication |  |
+| `access-grant-constraints-all-satisfied` | Validation | MUST | Authentication |  |
 
 ### `core/authorization_server`
 
@@ -196,6 +199,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `delete-empty-container` | Validation | MUST |  |  |
 | `delete-non-empty-container-409` | Negative | MUST |  |  |
 | `delete-container-recursive` | Validation | MAY |  |  |
+| `containment-hierarchy-consistent` | Validation | MUST |  |  |
+| `container-ld-json-lws-profile` | Validation | SHOULD |  |  |
 
 ### `core/data_resources`
 
@@ -215,6 +220,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `patch-merge-patch-baseline` | Validation | MUST |  |  |
 | `deleteDataResource` | Validation | MUST |  | deleteDataResource |
 | `post-to-non-container-405` | Negative | SHOULD |  |  |
+| `error-problem-details` | Validation | SHOULD |  |  |
 
 ### `core/discovery`
 
@@ -226,6 +232,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `discovery-storage-description-default-media-type` | Validation | MUST |  |  |
 | `discovery-unauthorized-response-headers` | Negative | SHOULD | Authentication | discovery-unauthorized-response-headers |
 | `discovery-storage-root-is-container` | Validation | MUST |  |  |
+| `discovery-storage-description-ids-are-uris` | Validation | MUST |  |  |
 
 ### `core/linksets`
 

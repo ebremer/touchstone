@@ -705,3 +705,117 @@ entries:
           url: "${occupant}"
         response:
           statusCode: [404, 410]
+
+  - id: "#containment-hierarchy-consistent"
+    type: ValidationTest
+    name: containment-hierarchy-consistent
+    label: Down a nested chain, each resource's up link names its container and each container lists it
+    comment: >-
+      Containment integrity, and "every non-root resource MUST be reachable from the storage
+      root through the containment hierarchy". A data resource two containers deep is
+      followed upward to the test container: at every level the child's rel="up" names the
+      container it was created in, and that container's listing contains the child, so no
+      resource on the chain is an orphan. (No cycle can be attempted: the draft defines no
+      operation that moves a resource, D-0060.)
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+    traits: [Get, Container, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/containment-integrity
+      - https://example.org/touchstone/req/lws10-core/containment-no-orphans
+    prereqs:
+      hierarchy:
+        - container: outer
+        - container: inner
+          in: outer
+        - dataResource: leaf
+          in: inner
+          contentType: text/plain
+          body: two containers deep
+    steps:
+      - label: the leaf's container is inner
+        request:
+          method: HEAD
+          url: "${leaf}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${inner}"
+      - label: inner lists the leaf, and its container is outer
+        request:
+          method: GET
+          url: "${inner}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${outer}"
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${leaf}"
+      - label: outer lists inner, and its container is the test container
+        request:
+          method: GET
+          url: "${outer}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${inner}"
+      - label: and the test container lists outer
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${outer}"
+
+  - id: "#container-ld-json-lws-profile"
+    type: ValidationTest
+    name: container-ld-json-lws-profile
+    label: A container asked for as JSON-LD with the LWS profile answers as it does for application/lws+json
+    comment: >-
+      "Implementations SHOULD consider the application/ld+json; profile=
+      "https://www.w3.org/ns/lws/v1" media type as equivalent to application/lws+json." A
+      container asked for that way answers 200 with the container representation. The
+      Content-Type is left open: answering application/lws+json or the profiled
+      application/ld+json both treat the two as equivalent.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#iana-media-type-registry
+    traits: [Get, Container, Conneg]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/lws-profile-equivalence
+      - https://example.org/touchstone/req/lws10-core/iana-ld-json-profile-equivalence
+    request:
+      method: GET
+      url: "${test.container}"
+      accept: 'application/ld+json; profile="https://www.w3.org/ns/lws/v1"'
+    response:
+      statusCode: 200
+      json:
+        - pointer: /id
+          equalsIri: "${test.container}"
+        - pointer: /type
+          hasValue: Container
+        - pointer: /items
+          jsonType: array

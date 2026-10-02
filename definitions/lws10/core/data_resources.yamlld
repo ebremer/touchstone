@@ -587,3 +587,37 @@ entries:
           json:
             - pointer: /items
               count: 1
+
+  - id: "#error-problem-details"
+    type: ValidationTest
+    name: error-problem-details
+    label: An error response carries RFC 9457 problem details
+    comment: >-
+      "Servers SHOULD use the standard format defined in [RFC9457] for structured error
+      responses." Asked as the owner for a resource that does not exist, the 404 is
+      application/problem+json, a JSON object, and its status member, which RFC 9457 makes
+      optional, agrees with the response when present.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings
+      - https://www.rfc-editor.org/rfc/rfc9457#section-3
+    traits: [Get, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/error-rfc9457-problem-details
+    prereqs:
+      hierarchy:
+        - dataResource: missing
+          absent: true
+    request:
+      method: GET
+      url: "${missing}"
+    response:
+      statusCode: 404
+      contentType: application/problem+json
+      json:
+        - pointer: ""
+          jsonType: object
+        - pointer: /status
+          optional: true
+          equals: 404
