@@ -1,12 +1,14 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.4.0 (2026-10-02, DECISIONS.md D-0065; 0.3.0 was frozen on
-2026-09-30, D-0058, and 0.2.0 on 2026-09-23, D-0053).** This is the contract an engine that
-runs `definitions/` must implement. 0.4.0 adds what testing notification delivery needs, and
-changes nothing a 0.3.0 definition relies on: a step may `poll` (section 4.4), the variable
+**Status: frozen, format 0.5.0 (2026-10-02, DECISIONS.md D-0066; 0.4.0 was frozen the same
+day, D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on 2026-09-23, D-0053).** This is the contract
+an engine that runs `definitions/` must implement. 0.5.0 adds two things and changes nothing a
+0.4.0 definition relies on: the inbox record carries what the fixture host finds in a
+delivery's HTTP Message Signature and Content-Digest (section 5.4), and a `source` or
+`specification` may name an editor's draft W3C has not published (schema). 0.4.0 added what
+testing notification delivery needs: a step may `poll` (section 4.4), the variable
 `test.inbox` names a per-test inbox (section 3), and the fixture host records what is POSTed
-to it, with what it finds in the delivery's signature and Content-Digest (section 5.4,
-D-0066). 0.3.0 differed from 0.2.0 only in section 5.3: W3C discontinued the did:key
+to it (section 5.4). 0.3.0 differed from 0.2.0 only in section 5.3: W3C discontinued the did:key
 authentication suite, so a did:key subject is now a CID-suite credential. 0.2.0 merged two strengths of lws-test-suite's format into it: the
 one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something

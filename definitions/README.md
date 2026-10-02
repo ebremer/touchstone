@@ -1,13 +1,14 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.4.0, frozen on 2026-10-02 (DECISIONS.md D-0065).** The
+**Status: format version 0.5.0, frozen on 2026-10-02 (DECISIONS.md D-0066).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
 
 0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changed
 only how a did:key subject's credential is made, since W3C discontinued the did:key suite;
-0.4.0 adds what testing notification delivery needs (a polled step, a per-test inbox). A test that is one
+0.4.0 added what testing notification delivery needs (a polled step, a per-test inbox); 0.5.0
+records delivery signatures and admits editor's-draft sources. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -311,6 +312,12 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.5.0 (2026-10-02, D-0066) adds two things and changes nothing a 0.4.0
+definition relies on: the inbox record gains `signature` and `contentDigest`, what the fixture
+host finds in a delivery's HTTP Message Signature (RFC 9421) and Content-Digest (RFC 9530)
+(`EXECUTION.md` section 5.4); and the schema admits an editor's draft that W3C has not
+published (`https://w3c.github.io/lws-protocol/lws10-…/`) as a `source` or `specification`.
 
 Format version 0.4.0 (2026-10-02, D-0065) adds three things and changes nothing a 0.3.0
 definition relies on: a step may `poll` until its expectations hold (`EXECUTION.md` section

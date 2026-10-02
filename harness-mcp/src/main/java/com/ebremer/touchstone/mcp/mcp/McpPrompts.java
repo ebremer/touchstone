@@ -49,7 +49,7 @@ public class McpPrompts {
                 %s
 
                 Rules:
-                - Emit one entry for a definitions/lws10 manifest, in YAML-LD format 0.4.0 (frozen): \
+                - Emit one entry for a definitions/lws10 manifest, in YAML-LD format 0.5.0 (frozen): \
                 definitions/schema/definitions.schema.json is its syntax and definitions/EXECUTION.md \
                 what every key means. list_tests shows existing definitions to follow.
                 - id is "#" + name; give exactly one level (MUST, SHOULD or MAY) and a dated source; \

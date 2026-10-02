@@ -1993,7 +1993,7 @@ stays inapplicable.
 
 Drafted by an agent; waits on branch `format-0.4.0-delivery`.
 
-### D-0066 — the webhook notification suite: catalogued from an editor's draft, tested through the inbox
+### D-0066 — the webhook notification suite: catalogued from an editor's draft, tested through the inbox (format 0.5.0)
 `lws10-notifications-webhook` defines the one subscription type our servers implement, and how a
 delivery is sent and signed. It is an editor's draft, "an unofficial proposal", which W3C has not
 published (`/TR/lws10-notifications-webhook/` is 404 on 2026-10-02).
@@ -2016,8 +2016,7 @@ published (`/TR/lws10-notifications-webhook/` is 404 on 2026-10-02).
   The schema's `source` and `specification` patterns admit that form, and `anchors.json` records
   its anchors from the snapshot.
 
-**Format 0.4.0, extended before it was pushed.** D-0065 froze 0.4.0 the same day, and it had not
-left this machine, so the additions below are part of 0.4.0 rather than a 0.5.0.
+**Format 0.5.0.** Two additions, neither changing anything a 0.4.0 definition relies on:
 1. The inbox record (EXECUTION.md section 5.4) gains `contentDigest` and `signature`: what the
    fixture host finds in the delivery's Content-Digest (RFC 9530) and HTTP Message Signature
    (RFC 9421).
@@ -2033,6 +2032,10 @@ left this machine, so the additions below are part of 0.4.0 rather than a 0.5.0.
    - Algorithms: `ecdsa-p256-sha256` (Halcyon), `ed25519` (lws-server), `rsa-pss-sha512` and
      `rsa-v1_5-sha256`.
 2. The schema admits the editor's-draft URL form in `source` and `specification`.
+
+They were first folded into 0.4.0, which D-0065 had frozen the same day and which had not been
+pushed when this work began; it was pushed while the work was in progress, so the additions
+became 0.5.0 before they left this machine: schema `$id` `…/0-5-0`, `FORMAT_VERSION` 0.5.0.
 
 **Nine definitions** (`notifications/webhook/manifest`):
 - `webhook-subscription-response`, `webhook-subscription-expires-supported`,
