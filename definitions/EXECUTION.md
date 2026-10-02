@@ -5,7 +5,8 @@
 runs `definitions/` must implement. 0.4.0 adds what testing notification delivery needs, and
 changes nothing a 0.3.0 definition relies on: a step may `poll` (section 4.4), the variable
 `test.inbox` names a per-test inbox (section 3), and the fixture host records what is POSTed
-to it (section 5.4). 0.3.0 differed from 0.2.0 only in section 5.3: W3C discontinued the did:key
+to it, with what it finds in the delivery's signature and Content-Digest (section 5.4,
+D-0066). 0.3.0 differed from 0.2.0 only in section 5.3: W3C discontinued the did:key
 authentication suite, so a did:key subject is now a CID-suite credential. 0.2.0 merged two strengths of lws-test-suite's format into it: the
 one-exchange short form and declared prerequisites (`COMPARISON.md`). It is written for that engine's authors, human or AI: where a definition
 relies on a behaviour, the behaviour is specified here, and an engine that does something
@@ -332,6 +333,30 @@ delivery target.
     sent an array (a batched notification), a one-element array when it sent an object, and
     `[]` when the body has no `activity`. It spares a test from depending on whether a
     server batches, which the notification data model leaves to the server.
+  - `contentDigest` is what the fixture host found in the `Content-Digest` header (RFC
+    9530): `present`, the `algorithms` named, and `valid`, true when every `sha-256` or
+    `sha-512` digest given matches the body and at least one was given (null when absent).
+  - `signature` is what it found in `Signature-Input` and `Signature` (RFC 9421), for the
+    first label present in both:
+    - `present`, `label`, the `covered` component identifiers in order, and the `created`,
+      `keyid` and `alg` parameters (null when absent);
+    - `keyResolved`, `keyInAuthentication` and `storageDescriptionIdMatches`: the keyid, a URL
+      with a fragment, is split at the `#`; the part before it is fetched anonymously as the
+      storage description (`Accept: application/lws+cid, application/ld+json;q=0.9,
+      application/json;q=0.8`). These say whether its `verificationMethod` has an `id` equal
+      to the keyid or its fragment, whether `authentication` references that method, and
+      whether the document's top-level `id` equals the URL fetched. Only a URL on the target's
+      own host is fetched (section 10); anything else leaves the key unresolved;
+    - `verified`: the signature base is rebuilt (RFC 9421 section 2.5) with `@method`,
+      `@scheme`, `@authority`, `@path`, `@target-uri` and `@query` taken from `${test.inbox}`
+      as the server was given it (not from the request as a proxy in front of the fixture host
+      delivered it), header components from the request, and `@signature-params` verbatim. It
+      is then verified with the method's `publicKeyJwk` under `alg`, or under the algorithm
+      the key's type implies when `alg` is absent: `ecdsa-p256-sha256`, `ed25519`,
+      `rsa-pss-sha512` or `rsa-v1_5-sha256`;
+    - `reason`: why `verified` is false, or null.
+
+  The fixture host records these facts and judges none of them; tests do.
 - The record exists while the test runs and is discarded when it ends.
 
 ## 6. Building a request
@@ -495,4 +520,5 @@ passes:
   responses are resolved only from the bundled set, never fetched (D-0026). Only
   pre-registered targets are addressed (DESIGN.md 7.1). The fixture host serves only the
   documents section 5's identities define and the inboxes of the tests that are running
-  (section 5.4).
+  (section 5.4). The only request it makes on its own is the storage-description fetch of
+  section 5.4, and only to the target's host.

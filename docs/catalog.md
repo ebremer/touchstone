@@ -26,7 +26,7 @@ links are all computed from those citations.
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
-The catalog holds 219 requirements in total: 173 MUST, 24 SHOULD and 22 MAY.
+The catalog holds 239 requirements in total: 187 MUST, 25 SHOULD and 27 MAY, twenty of them from the webhook notification suite, an editor's draft (D-0066).
 
 ## A requirement
 

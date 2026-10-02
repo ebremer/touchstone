@@ -132,8 +132,9 @@ class DefinitionsSelfTest {
     }
 
     /**
-     * A storage that delivers notifications to subscribers who may not read the resource: the
-     * delivery-time authorization tests notice, and nothing else does.
+     * A storage that delivers notifications to subscribers who may not read the resource, and
+     * signs them with a key it does not publish: the delivery-time authorization tests and the
+     * signature verification test notice, and nothing else does.
      */
     @Test
     void theDeliveryAuthorizationTestsFailAgainstALeakingStorage() {
@@ -142,7 +143,8 @@ class DefinitionsSelfTest {
 
             assertThat(failed(run)).as(details(run)).containsExactlyInAnyOrder(
                     "core/notifications#notification-not-delivered-for-unreadable-resource",
-                    "core/notifications#notification-stops-after-revocation");
+                    "core/notifications#notification-stops-after-revocation",
+                    "notifications/webhook/manifest#webhook-signature-verifies");
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
         }
     }

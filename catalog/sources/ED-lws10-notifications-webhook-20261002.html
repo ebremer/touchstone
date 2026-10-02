@@ -1,0 +1,1076 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="generator" content="ReSpec 37.4.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<style>
+span.example-title{text-transform:none}
+:is(aside,div).example,div.illegal-example{padding:.5em;margin:1em 0;position:relative;clear:both}
+div.illegal-example{color:red}
+div.illegal-example p{color:#000}
+aside.example div.example{border-left-width:.1em;border-color:#999;background:#fff}
+</style>
+<style>
+dfn{cursor:pointer}
+.dfn-panel{position:absolute;z-index:35;min-width:300px;max-width:500px;padding:.5em .75em;margin-top:.6em;font-family:"Helvetica Neue",sans-serif;font-size:small;background:#fff;background:var(--indextable-hover-bg,#fff);color:#000;color:var(--text,#000);box-shadow:0 1em 3em -.4em rgba(0,0,0,.3),0 0 1px 1px rgba(0,0,0,.05);box-shadow:0 1em 3em -.4em var(--tocsidebar-shadow,rgba(0,0,0,.3)),0 0 1px 1px var(--tocsidebar-shadow,rgba(0,0,0,.05));border-radius:2px}
+.dfn-panel:not(.docked)>.caret{position:absolute;top:-9px}
+.dfn-panel:not(.docked)>.caret::after,.dfn-panel:not(.docked)>.caret::before{content:"";position:absolute;border:10px solid transparent;border-top:0;border-bottom:10px solid #fff;border-bottom-color:var(--indextable-hover-bg,#fff);top:0}
+.dfn-panel:not(.docked)>.caret::before{border-bottom:9px solid #a2a9b1;border-bottom-color:var(--indextable-hover-bg,#a2a9b1)}
+.dfn-panel *{margin:0}
+.dfn-panel b{display:block;color:#000;color:var(--text,#000);margin-top:.25em}
+.dfn-panel ul a[href]{color:#333;color:var(--text,#333)}
+.dfn-panel>div{display:flex}
+.dfn-panel a.self-link{font-weight:700;margin-right:auto}
+.dfn-panel .marker{padding:.1em;margin-left:.5em;border-radius:.2em;text-align:center;white-space:nowrap;font-size:90%;color:#040b1c}
+.dfn-panel .marker.dfn-exported{background:#d1edfd;box-shadow:0 0 0 .125em #1ca5f940}
+.dfn-panel .marker.idl-block{background:#8ccbf2;box-shadow:0 0 0 .125em #0670b161}
+.dfn-panel .marker.cddl-block{background:#8ccbf2;box-shadow:0 0 0 .125em #0670b161}
+.dfn-panel a:not(:hover){text-decoration:none!important;border-bottom:none!important}
+.dfn-panel a[href]:hover{border-bottom-width:1px}
+.dfn-panel ul{padding:0}
+.dfn-panel li{margin-left:1em}
+.dfn-panel.docked{position:fixed;left:.5em;top:unset;bottom:2em;margin:0 auto;max-width:calc(100vw - .75em * 2 - .5em - .2em * 2);max-height:30vh;overflow:auto}
+</style>
+    
+    
+<title>LWS 1.0 Notification Suite: Webhooks</title>
+    
+<style id="respec-mainstyle">
+@keyframes pop{
+0%{transform:scale(1,1)}
+25%{transform:scale(1.25,1.25);opacity:.75}
+100%{transform:scale(1,1)}
+}
+a.internalDFN{color:inherit;border-bottom:1px solid #99c;text-decoration:none}
+a.externalDFN{color:inherit;border-bottom:1px dotted #ccc;text-decoration:none}
+a.bibref{text-decoration:none}
+.respec-offending-element:target{animation:pop .25s ease-in-out 0s 1}
+.respec-offending-element,a[href].respec-offending-element{text-decoration:red wavy underline}
+@supports not (text-decoration:red wavy underline){
+.respec-offending-element:not(pre){display:inline-block}
+.respec-offending-element{background:url(data:image/gif;base64,R0lGODdhBAADAPEAANv///8AAP///wAAACwAAAAABAADAEACBZQjmIAFADs=) bottom repeat-x}
+}
+#references :target{background:#eaf3ff;animation:pop .4s ease-in-out 0s 1}
+@media (prefers-color-scheme:dark){
+#references :target{background:color-mix(in srgb, #eaf3ff 15%, transparent)}
+}
+body:has(input[name=color-scheme][value=dark]:checked) #references :target{background:color-mix(in srgb, #eaf3ff 15%, transparent)}
+cite .bibref{font-style:italic}
+a[href].orcid{padding-left:4px;padding-right:4px}
+a[href].orcid>svg{margin-bottom:-2px}
+ol.tof,ul.tof{list-style:none outside none}
+.caption{margin-top:.5em;font-style:italic}
+#issue-summary>ul{column-count:2}
+#issue-summary li{list-style:none}
+details.respec-tests-details{margin-left:1em;display:inline-block;vertical-align:top}
+details.respec-tests-details>*{padding-right:2em}
+details.respec-tests-details[open]{z-index:999999;position:absolute;border:thin solid #cad3e2;border-radius:.3em;background-color:#fff;padding-bottom:.5em}
+details.respec-tests-details[open]>summary{border-bottom:thin solid #cad3e2;padding-left:1em;margin-bottom:1em;line-height:2em}
+details.respec-tests-details>ul{width:100%;margin-top:-.3em}
+details.respec-tests-details>li{padding-left:1em}
+.self-link:hover{opacity:1;text-decoration:none;background-color:transparent}
+aside.example .marker>a.self-link{color:inherit}
+.header-wrapper{display:flex;align-items:baseline}
+:is(h2,h3,h4,h5,h6):not(:where(#toc>h2,#abstract>h2,#sotd>h2,.head>h2)):has(+a.self-link){position:relative;left:-.5em}
+:is(h2,h3,h4,h5,h6):not(:where(#toch2))+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.8;text-decoration:none}
+:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§"}
+:is(h2,h3)+a.self-link{top:-.2em}
+:is(h2,h3)+a.self-link::before{color:var(--heading-text)}
+@media (max-width:767px){
+dd{margin-left:0}
+}
+@media print{
+.removeOnSave{display:none}
+}
+body:has(input[name=color-scheme][value=light]:checked),head:not(:has(meta[name=color-scheme][content~=dark]))+body{color-scheme:light}
+body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
+</style>
+    
+<link rel="stylesheet" href="../lws10-core/local.css">
+    
+  
+<meta name="color-scheme" content="light">
+<meta name="description" content="This document defines a Webhook-based notification suite for the Linked Web Storage (LWS)
+        protocol, enabling LWS servers to deliver resource change notifications to registered
+        endpoints via HTTP POST.">
+<style>
+.hljs,body:has(input[name=color-scheme][value=light]:checked) .hljs,head:not(:has(meta[name=color-scheme][content~=dark]))+body .hljs{--base:#fafafa;--mono-1:#383a42;--mono-2:#686b77;--mono-3:#717277;--hue-1:#0b76c5;--hue-2:#336ae3;--hue-3:#a626a4;--hue-4:#42803c;--hue-5:#ca4706;--hue-5-2:#c91243;--hue-6:#986801;--hue-6-2:#9a6a01}
+@media (prefers-color-scheme:dark){
+.hljs{
+  --base: #282c34;
+  --mono-1: #abb2bf;
+  --mono-2: #818896;
+  --mono-3: #5c6370;
+  --hue-1: #56b6c2;
+  --hue-2: #61aeee;
+  --hue-3: #c678dd;
+  --hue-4: #98c379;
+  --hue-5: #e06c75;
+  --hue-5-2: #be5046;
+  --hue-6: #d19a66;
+  --hue-6-2: #e6c07b;
+}
+}
+body:has(input[name=color-scheme][value=dark]:checked) .hljs{
+  --base: #282c34;
+  --mono-1: #abb2bf;
+  --mono-2: #818896;
+  --mono-3: #5c6370;
+  --hue-1: #56b6c2;
+  --hue-2: #61aeee;
+  --hue-3: #c678dd;
+  --hue-4: #98c379;
+  --hue-5: #e06c75;
+  --hue-5-2: #be5046;
+  --hue-6: #d19a66;
+  --hue-6-2: #e6c07b;
+}
+.hljs{display:block;overflow-x:auto;padding:.5em;color:#383a42;color:var(--mono-1,#383a42);background:#fafafa;background:var(--base,#fafafa)}
+.hljs-comment,.hljs-quote{color:#717277;color:var(--mono-3,#717277);font-style:italic}
+.hljs-doctag,.hljs-formula,.hljs-keyword{color:#a626a4;color:var(--hue-3,#a626a4)}
+.hljs-deletion,.hljs-name,.hljs-section,.hljs-selector-tag,.hljs-subst{color:#ca4706;color:var(--hue-5,#ca4706);font-weight:700}
+.hljs-literal{color:#0b76c5;color:var(--hue-1,#0b76c5)}
+.hljs-addition,.hljs-attribute,.hljs-meta-string,.hljs-regexp,.hljs-string{color:#42803c;color:var(--hue-4,#42803c)}
+.hljs-built_in,.hljs-class .hljs-title{color:#9a6a01;color:var(--hue-6-2,#9a6a01)}
+.hljs-attr,.hljs-number,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-pseudo,.hljs-template-variable,.hljs-type,.hljs-variable{color:#986801;color:var(--hue-6,#986801)}
+.hljs-bullet,.hljs-link,.hljs-meta,.hljs-selector-id,.hljs-symbol,.hljs-title{color:#336ae3;color:var(--hue-2,#336ae3)}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
+.hljs-link{text-decoration:underline}
+</style>
+<style>
+var:hover{text-decoration:underline;cursor:pointer}
+var.respec-hl{color:var(--color,#000);background-color:var(--bg-color);box-shadow:0 0 0 2px var(--bg-color)}
+@media (prefers-color-scheme:dark){
+var.respec-hl{filter:saturate(.9) brightness(.9)}
+}
+var.respec-hl-c1{--bg-color:#f4d200}
+var.respec-hl-c2{--bg-color:#ff87a2}
+var.respec-hl-c3{--bg-color:#96e885}
+var.respec-hl-c4{--bg-color:#3eeed2}
+var.respec-hl-c5{--bg-color:#eacfb6}
+var.respec-hl-c6{--bg-color:#82ddff}
+var.respec-hl-c7{--bg-color:#ffbcf2}
+@media print{
+var.respec-hl{background:0 0;color:#000;box-shadow:unset}
+}
+</style>
+<style>
+var[data-type]{position:relative}
+var[data-type]::after,var[data-type]::before{position:absolute;left:50%;top:-6px;opacity:0;transition:opacity .4s;pointer-events:none}
+var[data-type]::before{content:"";transform:translateX(-50%);border-width:4px 6px 0 6px;border-style:solid;border-color:transparent;border-top-color:#222}
+var[data-type]::after{content:attr(data-type);transform:translateX(-50%) translateY(-100%);background:#222;text-align:center;font-family:"Dank Mono","Fira Code",monospace;font-style:normal;padding:6px;border-radius:3px;color:#daca88;text-indent:0;font-weight:400}
+var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
+</style>
+<script id="initialUserConfig" type="application/json">{
+  "specStatus": "ED",
+  "shortName": "lws10-notifications-webhook",
+  "editors": [
+    {
+      "name": "Jesse Wright",
+      "w3cid": "132252",
+      "company": "University of Oxford",
+      "companyURL": "https://www.ox.ac.uk/"
+    },
+    {
+      "name": "Erich Bremer",
+      "w3cid": "45759",
+      "company": "Stony Brook University",
+      "companyURL": "https://www.stonybrook.edu/"
+    }
+  ],
+  "authors": [
+    {
+      "name": "Laurens Debackere"
+    },
+    {
+      "name": "Aaron Coburn"
+    }
+  ],
+  "github": "w3c/lws-protocol",
+  "xref": [
+    "web-platform"
+  ],
+  "group": "lws",
+  "maxTocLevel": 3,
+  "localBiblio": {
+    "LWS10-CORE": {
+      "title": "Linked Web Storage Protocol 1.0",
+      "href": "https://www.w3.org/TR/lws10-core/",
+      "publisher": "W3C",
+      "status": "FPWD",
+      "id": "lws10-core"
+    },
+    "RFC9421": {
+      "title": "HTTP Message Signatures",
+      "href": "https://www.rfc-editor.org/rfc/rfc9421",
+      "publisher": "IETF",
+      "status": "Proposed Standard",
+      "id": "rfc9421"
+    },
+    "RFC9530": {
+      "title": "Digest Fields",
+      "href": "https://www.rfc-editor.org/rfc/rfc9530",
+      "publisher": "IETF",
+      "status": "Proposed Standard",
+      "id": "rfc9530"
+    },
+    "CID-1.0": {
+      "title": "Controlled Identifiers 1.0",
+      "href": "https://www.w3.org/TR/cid-1.0/",
+      "publisher": "W3C",
+      "status": "REC",
+      "id": "cid-1.0"
+    }
+  },
+  "publishDate": "2026-10-02",
+  "publishISODate": "2026-10-02T00:00:00.000Z",
+  "generatedSubtitle": "W3C Editor's Draft 02 October 2026"
+}</script>
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-ED">
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/dark.css" disabled=""></head>
+  <body class="h-entry" data-cite="web-platform"><div class="head">
+    <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
+  </a></p>
+    <h1 id="title" class="title">LWS 1.0 Notification Suite: Webhooks</h1> 
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#ED">W3C Editor's Draft</a> <time class="dt-published" datetime="2026-10-02">02 October 2026</time></p>
+    <details open="">
+      <summary>More details about this document</summary>
+      <dl>
+        <dt>This version:</dt><dd>
+                  <a class="u-url" href="https://w3c.github.io/lws-protocol/">https://w3c.github.io/lws-protocol/</a>
+                </dd>
+        <dt>Latest published version:</dt><dd>
+                  <a href="https://www.w3.org/TR/lws10-notifications-webhook/">https://www.w3.org/TR/lws10-notifications-webhook/</a>
+                </dd>
+        <dt>Latest editor's draft:</dt><dd><a href="https://w3c.github.io/lws-protocol/">https://w3c.github.io/lws-protocol/</a></dd>
+        <dt>History:</dt><dd>
+                        <a href="https://www.w3.org/standards/history/lws10-notifications-webhook/">https://www.w3.org/standards/history/lws10-notifications-webhook/</a>
+                      </dd><dd>
+                        <a href="https://github.com/w3c/lws-protocol/commits/">Commit history</a>
+                      </dd>
+        
+        
+        
+        
+        
+        <dt>
+                  Editors:
+                </dt><dd class="editor p-author h-card vcard" data-editor-id="132252">
+    <span class="p-name fn">Jesse Wright</span> (<a class="p-org org h-org" href="https://www.ox.ac.uk/">University of Oxford</a>)
+  </dd><dd class="editor p-author h-card vcard" data-editor-id="45759">
+    <span class="p-name fn">Erich Bremer</span> (<a class="p-org org h-org" href="https://www.stonybrook.edu/">Stony Brook University</a>)
+  </dd>
+        
+        <dt>
+                  Authors:
+                </dt><dd class="editor p-author h-card vcard">
+    <span class="p-name fn">Laurens Debackere</span>
+  </dd><dd class="editor p-author h-card vcard">
+    <span class="p-name fn">Aaron Coburn</span>
+  </dd>
+        <dt>Feedback:</dt><dd>
+        <a href="https://github.com/w3c/lws-protocol/">GitHub w3c/lws-protocol</a>
+        (<a href="https://github.com/w3c/lws-protocol/pulls/">pull requests</a>,
+        <a href="https://github.com/w3c/lws-protocol/issues/new/choose">new issue</a>,
+        <a href="https://github.com/w3c/lws-protocol/issues/">open issues</a>)
+      </dd>
+        
+        
+      </dl>
+    </details>
+    
+    
+    <p class="copyright">
+    <a href="https://www.w3.org/policies/#copyright">Copyright</a>
+    ©
+    2026
+    
+    <a href="https://www.w3.org/">World Wide Web Consortium</a>.
+    <abbr title="World Wide Web Consortium">W3C</abbr><sup>®</sup>
+    <a href="https://www.w3.org/policies/#Legal_Disclaimer">liability</a>,
+    <a href="https://www.w3.org/policies/#W3C_Trademarks">trademark</a> and
+    <a rel="license" href="https://www.w3.org/copyright/software-license-2023/" title="W3C Software and Document Notice and License">permissive document license</a> rules apply.
+  </p>
+    <hr title="Separator for header">
+  </div>
+    <section id="abstract" class="introductory"><h2>Abstract</h2>
+      <p>
+        This document defines a Webhook-based notification suite for the Linked Web Storage (LWS)
+        protocol, enabling LWS servers to deliver resource change notifications to registered
+        endpoints via HTTP POST.
+      </p>
+    </section>
+    <section id="sotd" class="introductory"><h2>Status of This Document</h2><p><em>This section describes the status of this
+      document at the time of its publication. A list of current <abbr title="World Wide Web Consortium">W3C</abbr>
+      publications and the latest revision of this technical report can be found
+      in the
+      <a href="https://www.w3.org/TR/"><abbr title="World Wide Web Consortium">W3C</abbr> standards and drafts index</a>.</em></p>
+      <p>
+        This is an unofficial proposal.
+      </p>
+    <p>
+    This document was published by the <a href="https://www.w3.org/groups/wg/lws">Linked Web Storage Working Group</a> as
+    an Editor's Draft. 
+  </p><p>Publication as
+  an Editor's Draft does not imply endorsement
+  by <abbr title="World Wide Web Consortium">W3C</abbr> and its Members. </p><p>
+    This is a draft document and may be updated, replaced, or obsoleted by other
+    documents at any time. It is inappropriate to cite this document as other
+    than a work in progress.
+    
+  </p><p>
+    
+        This document was produced by a group
+        operating under the
+        <a href="https://www.w3.org/policies/patent-policy/"><abbr title="World Wide Web Consortium">W3C</abbr> Patent
+          Policy</a>.
+      
+    
+                    <abbr title="World Wide Web Consortium">W3C</abbr> maintains a
+                    <a rel="disclosure" href="https://www.w3.org/groups/wg/lws/ipr">public list of any patent disclosures</a>
+            made in connection with the deliverables of
+            the group; that page also includes
+            instructions for disclosing a patent. An individual who has actual
+            knowledge of a patent that the individual believes contains
+            <a href="https://www.w3.org/policies/patent-policy/#def-essential">Essential Claim(s)</a>
+            must disclose the information in accordance with
+            <a href="https://www.w3.org/policies/patent-policy/#sec-Disclosure">section 6 of the <abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>.
+          
+  </p><p>
+                          This document is governed by the
+                          <a id="w3c_process_revision" href="https://www.w3.org/policies/process/20250818/">18 August 2025 <abbr title="World Wide Web Consortium">W3C</abbr> Process Document</a>.
+                        </p></section><nav id="toc"><h2 class="introductory" id="table-of-contents">Table of Contents</h2><ol class="toc"><li class="tocline"><a class="tocxref" href="#abstract">Abstract</a></li><li class="tocline"><a class="tocxref" href="#sotd">Status of This Document</a></li><li class="tocline"><a class="tocxref" href="#introduction"><bdi class="secno">1. </bdi>Introduction</a></li><li class="tocline"><a class="tocxref" href="#conformance"><bdi class="secno">2. </bdi>Conformance</a></li><li class="tocline"><a class="tocxref" href="#terminology"><bdi class="secno">3. </bdi>Terminology</a></li><li class="tocline"><a class="tocxref" href="#webhook-subscription"><bdi class="secno">4. </bdi>Creating a Webhook Subscription</a></li><li class="tocline"><a class="tocxref" href="#webhook-authentication"><bdi class="secno">5. </bdi>Webhook Authentication</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#signature-requirements"><bdi class="secno">5.1 </bdi>Signature Requirements</a></li><li class="tocline"><a class="tocxref" href="#signature-verification"><bdi class="secno">5.2 </bdi>Signature Verification</a></li></ol></li><li class="tocline"><a class="tocxref" href="#webhook-subscription-management"><bdi class="secno">6. </bdi>Subscription Management</a></li><li class="tocline"><a class="tocxref" href="#webhook-delivery"><bdi class="secno">7. </bdi>Notification Delivery</a></li><li class="tocline"><a class="tocxref" href="#subscription-type"><bdi class="secno">8. </bdi>Subscription Type Identifier</a></li><li class="tocline"><a class="tocxref" href="#security-considerations"><bdi class="secno">9. </bdi>Security Considerations</a></li><li class="tocline"><a class="tocxref" href="#privacy-considerations"><bdi class="secno">10. </bdi>Privacy Considerations</a></li><li class="tocline"><a class="tocxref" href="#references"><bdi class="secno">A. </bdi>References</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#normative-references"><bdi class="secno">A.1 </bdi>Normative references</a></li></ol></li></ol></nav>
+
+    <section id="introduction"><div class="header-wrapper"><h2 id="x1-introduction"><bdi class="secno">1. </bdi>Introduction</h2><a class="self-link" href="#introduction" aria-label="Permalink for Section 1."></a></div>
+      
+
+      <p>
+        The <cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">Linked Web Storage</a></cite> protocol defines a notification mechanism that
+        allows clients to subscribe to resource changes and receive updates through various
+        delivery channels. This document describes the Webhook notification suite — a
+        server-to-server mechanism whereby the LWS storage server delivers change events to a
+        registered endpoint via HTTP POST.
+      </p>
+    </section>
+
+    <section id="conformance"><div class="header-wrapper"><h2 id="x2-conformance"><bdi class="secno">2. </bdi>Conformance</h2><a class="self-link" href="#conformance" aria-label="Permalink for Section 2."></a></div><p>As well as sections marked as non-normative, all authoring guidelines, diagrams, examples, and notes in this specification are non-normative. Everything else in this specification is normative.</p><p>
+        The key words <em class="rfc2119">MAY</em>, <em class="rfc2119">MUST</em>, <em class="rfc2119">OPTIONAL</em>, <em class="rfc2119">REQUIRED</em>, and <em class="rfc2119">SHOULD</em> in this document
+        are to be interpreted as described in
+        <a href="https://www.rfc-editor.org/info/bcp14">BCP 14</a>
+        [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc2119" title="Key words for use in RFCs to Indicate Requirement Levels">RFC2119</a></cite>] [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8174" title="Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words">RFC8174</a></cite>]
+        when, and only when, they appear in all
+        capitals, as shown here.
+      </p></section>
+
+    <section id="terminology"><div class="header-wrapper"><h2 id="x3-terminology"><bdi class="secno">3. </bdi>Terminology</h2><a class="self-link" href="#terminology" aria-label="Permalink for Section 3."></a></div>
+      
+
+      <p>
+        The terms "<dfn id="dfn-notification" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-notification">notification</a></dfn>",
+        "<dfn id="dfn-subscription" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-subscription">subscription</a></dfn>",
+        "<dfn data-plurals="subscribers" id="dfn-subscriber" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">subscriber</a></dfn>",
+        "<dfn id="dfn-notification-suite" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-notification-suite">notification suite</a></dfn>",
+        "<dfn id="dfn-storage-description-resource" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a></dfn>",
+        and "<dfn id="dfn-agent" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a></dfn>"
+        are defined by the Linked Web Storage Protocol [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>].
+      </p>
+
+      <p>
+        The terms "controlled identifier document", "verification method", and "verification
+        relationship" are defined by Controlled Identifiers 1.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers 1.0">CID-1.0</a></cite>].
+      </p>
+
+      <p>
+        This specification defines the following additional terms:
+      </p>
+
+      <ul>
+        <li>
+          <dfn id="dfn-inbox" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">Inbox</dfn> — a URL controlled by a <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">subscriber</a> or other agent
+          to which a server delivers notifications via HTTP <code>POST</code>. An inbox is
+          used whenever the recipient of a notification is a server rather than a client
+          holding an open connection.
+        </li>
+      </ul>
+    </section>
+
+    <section id="webhook-subscription"><div class="header-wrapper"><h2 id="x4-creating-a-webhook-subscription"><bdi class="secno">4. </bdi>Creating a Webhook Subscription</h2><a class="self-link" href="#webhook-subscription" aria-label="Permalink for Section 4."></a></div>
+      
+
+      <p>
+        When a client creates a webhook notification <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscription">subscription</a>, the subscription body <em class="rfc2119">MUST</em>
+        include a <code>type</code> field equal to <code>WebhookSubscription</code>. In
+        addition, a server <em class="rfc2119">MUST</em> support the following fields:
+      </p>
+
+      <ul>
+        <li>
+          <code>inbox</code> — <em class="rfc2119">REQUIRED</em>. The URI of the <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-1">inbox</a> to which
+          notification messages are delivered.
+        </li>
+        <li>
+          <code>expires</code> — <em class="rfc2119">OPTIONAL</em>. A datetime value indicating when the
+          subscription expires.
+        </li>
+      </ul>
+
+      <div class="example" id="example-webhook-subscription-request">
+        <div class="marker">
+    <a class="self-link" href="#example-webhook-subscription-request">Example<bdi> 1</bdi></a><span class="example-title">: Webhook subscription request</span>
+  </div> <pre aria-busy="false"><code class="hljs http"><span class="hljs-keyword">POST</span> <span class="hljs-string">/subscriptions</span> <span class="hljs-meta">HTTP/2</span>
+<span class="hljs-attribute">Host</span><span class="hljs-punctuation">: </span>notification.example
+<span class="hljs-attribute">Authorization</span><span class="hljs-punctuation">: </span>Bearer &lt;access-token&gt;
+<span class="hljs-attribute">Content-Type</span><span class="hljs-punctuation">: </span>application/lws+json
+
+<span class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"@context"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"WebhookSubscription"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"topic"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-string">"https://storage.example/alice/notes/"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-string">"https://storage.example/alice/profile"</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inbox"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://receiver.example/hooks/lws"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"expires"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2026-06-09T12:00:00Z"</span>
+<span class="hljs-punctuation">}</span></span></code></pre>
+      </div>
+
+      <p>
+        A successful response body has these additional requirements:
+      </p>
+
+      <ul>
+        <li>
+          <code>type</code> — the value of this property <em class="rfc2119">MUST</em> be a string equal to
+          <code>WebhookSubscription</code>.
+        </li>
+        <li>
+          <code>subscription</code> — a URL that can be used to manage the lifecycle of
+          the subscription.
+        </li>
+        <li>
+          <code>expires</code> — <em class="rfc2119">OPTIONAL</em>. A datetime value indicating when the
+          subscription expires.
+        </li>
+      </ul>
+
+      <div class="example" id="example-webhook-subscription-response">
+        <div class="marker">
+    <a class="self-link" href="#example-webhook-subscription-response">Example<bdi> 2</bdi></a><span class="example-title">: Webhook subscription response</span>
+  </div> <pre aria-busy="false"><code class="hljs http"><span class="hljs-meta">HTTP/2</span> <span class="hljs-number">200</span> OK
+<span class="hljs-attribute">Content-Type</span><span class="hljs-punctuation">: </span>application/lws+json
+<span class="hljs-attribute">Location</span><span class="hljs-punctuation">: </span>https://notification.example/subscriptions/9e8d7c6b5a4f
+
+<span class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"@context"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"WebhookSubscription"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"subscription"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://notification.example/subscriptions/9e8d7c6b5a4f"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"expires"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2026-06-09T12:00:00Z"</span>
+<span class="hljs-punctuation">}</span></span></code></pre>
+      </div>
+    </section>
+
+    <section id="webhook-authentication"><div class="header-wrapper"><h2 id="x5-webhook-authentication"><bdi class="secno">5. </bdi>Webhook Authentication</h2><a class="self-link" href="#webhook-authentication" aria-label="Permalink for Section 5."></a></div>
+      
+
+      <p>
+        When a server delivers a <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-notification">notification</a> to an <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-2">inbox</a>, the
+        <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">subscriber</a> needs to verify that the request is authentic.
+      </p>
+
+      <p>
+        A server <em class="rfc2119">SHOULD</em> sign each outbound request using HTTP Message Signatures
+        [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9421" title="HTTP Message Signatures">RFC9421</a></cite>]. When an <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-3">inbox</a> receives a signed message, it <em class="rfc2119">MUST</em>
+        verify the signature using the notification server's public key, discoverable via
+        the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a>.
+      </p>
+
+      <p>
+        A server that supports HTTP Message Signatures <em class="rfc2119">MUST</em> include the signing key in the
+        <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a>. The key <em class="rfc2119">MUST</em> be expressed as a verification method
+        in a <code>verificationMethod</code> array, and <em class="rfc2119">MUST</em> be referenced from an
+        <code>authentication</code> verification relationship, following the Controlled
+        Identifiers 1.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers 1.0">CID-1.0</a></cite>] data model.
+      </p>
+
+      <div class="example" id="example-storage-description-with-verification-method-and-authentication-relationship">
+        <div class="marker">
+    <a class="self-link" href="#example-storage-description-with-verification-method-and-authentication-relationship">Example<bdi> 3</bdi></a><span class="example-title">: Storage description with verification method and authentication relationship</span>
+  </div> <pre aria-busy="false"><code class="hljs json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"@context"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-string">"https://www.w3.org/ns/cid/v1"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://storage.example/"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Storage"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"verificationMethod"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://storage.example/#key-20260320"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"JsonWebKey"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"controller"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://storage.example/"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"publicKeyJwk"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"kid"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"key-20260320"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"kty"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"EC"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"crv"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"P-256"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"alg"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"ES256"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"x"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"y"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"authentication"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"https://storage.example/#key-20260320"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"service"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"NotificationService"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"serviceEndpoint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://notification.example/subscriptions"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"subscriptionType"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"WebhookSubscription"</span><span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div>
+
+      <section id="signature-requirements"><div class="header-wrapper"><h3 id="x5-1-signature-requirements"><bdi class="secno">5.1 </bdi>Signature Requirements</h3><a class="self-link" href="#signature-requirements" aria-label="Permalink for Section 5.1"></a></div>
+        
+
+        <p>
+          A server that signs webhook delivery requests <em class="rfc2119">MUST</em> include at least the following
+          components in the signature base:
+        </p>
+
+        <ul>
+          <li><code>@method</code> — the HTTP method of the request (always POST).</li>
+          <li><code>@scheme</code> — prevents downgrade from https to http.</li>
+          <li>
+            <code>@authority</code> — the host of the <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-4">inbox</a>,
+            preventing delivery to an unintended endpoint.
+          </li>
+          <li>
+            <code>@path</code> — the path component of the <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-5">inbox</a> URL.
+          </li>
+          <li>
+            <code>content-type</code> — the media type of the request body.
+          </li>
+          <li>
+            <code>content-digest</code> — a digest of the request body, computed
+            according to [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9530" title="Digest Fields">RFC9530</a></cite>].
+          </li>
+        </ul>
+
+        <p>
+          The <code>Signature-Input</code> field <em class="rfc2119">MUST</em> include the <code>created</code> and
+          <code>keyid</code> parameters. The <code>keyid</code> value <em class="rfc2119">MUST</em> correspond to
+          the <code>id</code> of a key in the <code>verificationMethod</code> array of the
+          <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a>.
+        </p>
+      </section>
+
+      <section id="signature-verification"><div class="header-wrapper"><h3 id="x5-2-signature-verification"><bdi class="secno">5.2 </bdi>Signature Verification</h3><a class="self-link" href="#signature-verification" aria-label="Permalink for Section 5.2"></a></div>
+        
+
+        <p>
+          To verify a webhook signature, a receiver <em class="rfc2119">MUST</em> perform the following steps:
+        </p>
+
+        <ol>
+          <li>
+            Extract the <code>keyid</code> value from the <code>Signature-Input</code>
+            field. The <code>keyid</code> value <em class="rfc2119">MUST</em> be a URL with a fragment component.
+          </li>
+          <li>
+            Remove the fragment component from the <code>keyid</code> URL. The resulting
+            URL is the storage identifier.
+          </li>
+          <li>
+            Dereference the storage identifier to retrieve the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a>.
+            The <code>id</code> property of the top-level document map <em class="rfc2119">MUST</em> match the
+            storage identifier.
+          </li>
+          <li>
+            Find the object in the <code>verificationMethod</code> array whose
+            <code>id</code> property matches either the full <code>keyid</code> URL or the
+            fragment component of the <code>keyid</code> URL.
+          </li>
+          <li>
+            Verify the HTTP Message Signature using the located verification method.
+          </li>
+        </ol>
+      </section>
+    </section>
+
+    <section id="webhook-subscription-management"><div class="header-wrapper"><h2 id="x6-subscription-management"><bdi class="secno">6. </bdi>Subscription Management</h2><a class="self-link" href="#webhook-subscription-management" aria-label="Permalink for Section 6."></a></div>
+      
+
+      <p>
+        The value of the <code>serviceEndpoint</code> property for a
+        <code>NotificationService</code> that supports <code>WebhookSubscription</code>
+        <em class="rfc2119">MUST</em> be a URL that supports <code>GET</code> operations to list a <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">subscriber</a>'s
+        active webhook subscriptions. The resulting serialization <em class="rfc2119">MUST</em> conform to the requirements
+        for LWS Containers [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>]. The response <em class="rfc2119">SHOULD</em> support LWS Paging.
+      </p>
+
+      <p>
+        Each subscription resource listed in this container <em class="rfc2119">MUST</em> support <code>GET</code>
+        and <code>DELETE</code> operations. A <code>GET</code> request returns the current
+        state of the subscription. A <code>DELETE</code> request cancels the subscription.
+      </p>
+    </section>
+
+    <section id="webhook-delivery"><div class="header-wrapper"><h2 id="x7-notification-delivery"><bdi class="secno">7. </bdi>Notification Delivery</h2><a class="self-link" href="#webhook-delivery" aria-label="Permalink for Section 7."></a></div>
+      
+
+      <p>
+        The server sends an HTTP <code>POST</code> request to the registered
+        <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-6">inbox</a> with the notification envelope as the request body. The
+        request body <em class="rfc2119">MUST</em> conform to the <code>application/lws+json</code> media type.
+      </p>
+
+      <ul>
+        <li>
+          <strong>Acknowledgment</strong>: A 2xx response indicates successful receipt.
+        </li>
+        <li>
+          <strong>Retry</strong>: On failure, the server <em class="rfc2119">MAY</em> retry delivery.
+        </li>
+        <li>
+          <strong>Expiration</strong>: After repeated failures, the server <em class="rfc2119">MAY</em> deactivate
+          the subscription.
+        </li>
+      </ul>
+    </section>
+
+    <section id="subscription-type"><div class="header-wrapper"><h2 id="x8-subscription-type-identifier"><bdi class="secno">8. </bdi>Subscription Type Identifier</h2><a class="self-link" href="#subscription-type" aria-label="Permalink for Section 8."></a></div>
+      
+
+      <p>
+        A Webhook <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscription">subscription</a> <em class="rfc2119">MUST</em> use the <code>WebhookSubscription</code> string
+        as its subscription type when interacting with the <code>NotificationService</code>.
+      </p>
+    </section>
+
+    <section id="security-considerations" class="informative"><div class="header-wrapper"><h2 id="x9-security-considerations"><bdi class="secno">9. </bdi>Security Considerations</h2><a class="self-link" href="#security-considerations" aria-label="Permalink for Section 9."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <ul>
+        <li>
+          <strong>Webhook Verification</strong>: Without proper authentication on webhook
+          deliveries, an attacker could spoof notifications. <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">Subscribers</a> are strongly
+          encouraged to validate HTTP Message Signatures on all incoming notification requests
+          using the public key published in the associated <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-storage-description-resource">storage description resource</a>.
+        </li>
+        <li>
+          <strong>Subscription Abuse</strong>: Rate limiting and endpoint verification are
+          suggested to prevent abuse of the subscription mechanism.
+        </li>
+        <li>
+          <strong>Signature Replay</strong>: A signed webhook request could be captured and
+          replayed by an attacker. <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">Subscribers</a> are encouraged to check the
+          <code>created</code> parameter in the <code>Signature-Input</code> field and reject
+          signatures whose timestamp falls outside a reasonable clock-skew window.
+        </li>
+      </ul>
+    </section>
+
+    <section id="privacy-considerations" class="informative"><div class="header-wrapper"><h2 id="x10-privacy-considerations"><bdi class="secno">10. </bdi>Privacy Considerations</h2><a class="self-link" href="#privacy-considerations" aria-label="Permalink for Section 10."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <ul>
+        <li>
+          <strong>Inbox Disclosure</strong>: The <a href="#dfn-inbox" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-inbox-7">inbox</a> URL is shared with the
+          notification server, revealing the existence and location of the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">subscriber</a>'s
+          receiving endpoint. <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-subscriber">Subscribers</a> <em class="rfc2119">MAY</em> use unique per-subscription inbox URLs
+          to limit correlation.
+        </li>
+      </ul>
+    </section>
+  
+
+<section id="references" class="appendix"><div class="header-wrapper"><h2 id="a-references"><bdi class="secno">A. </bdi>References</h2><a class="self-link" href="#references" aria-label="Permalink for Appendix A."></a></div><section id="normative-references"><div class="header-wrapper"><h3 id="a-1-normative-references"><bdi class="secno">A.1 </bdi>Normative references</h3><a class="self-link" href="#normative-references" aria-label="Permalink for Appendix A.1"></a></div>
+    
+    <dl class="bibliography"><dt id="bib-cid-1-0">[CID-1.0]</dt><dd>
+      <a href="https://www.w3.org/TR/cid-1.0/"><cite>Controlled Identifiers 1.0</cite></a>.  W3C. W3C Recommendation. URL: <a href="https://www.w3.org/TR/cid-1.0/">https://www.w3.org/TR/cid-1.0/</a>
+    </dd><dt id="bib-lws10-core">[LWS10-CORE]</dt><dd>
+      <a href="https://www.w3.org/TR/lws10-core/"><cite>Linked Web Storage Protocol 1.0</cite></a>.  W3C. FPWD. URL: <a href="https://www.w3.org/TR/lws10-core/">https://www.w3.org/TR/lws10-core/</a>
+    </dd><dt id="bib-rfc2119">[RFC2119]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc2119/"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. S. Bradner.  IETF. March 1997. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc2119/">https://www.rfc-editor.org/info/rfc2119/</a>
+    </dd><dt id="bib-rfc8174">[RFC8174]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc8174/"><cite>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</cite></a>. B. Leiba.  IETF. May 2017. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc8174/">https://www.rfc-editor.org/info/rfc8174/</a>
+    </dd><dt id="bib-rfc9421">[RFC9421]</dt><dd>
+      <a href="https://www.rfc-editor.org/rfc/rfc9421"><cite>HTTP Message Signatures</cite></a>.  IETF. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9421">https://www.rfc-editor.org/rfc/rfc9421</a>
+    </dd><dt id="bib-rfc9530">[RFC9530]</dt><dd>
+      <a href="https://www.rfc-editor.org/rfc/rfc9530"><cite>Digest Fields</cite></a>.  IETF. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9530">https://www.rfc-editor.org/rfc/rfc9530</a>
+    </dd></dl>
+  </section></section><p role="navigation" id="back-to-top">
+    <a href="#title"><abbr title="Back to Top">↑</abbr></a>
+  </p><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-inbox" aria-label="Links in this document to definition: Inbox">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-inbox" aria-label="Permalink for definition: Inbox. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+    <li>
+      <a href="#ref-for-dfn-inbox-1" title="§ 4. Creating a Webhook Subscription">§ 4. Creating a Webhook Subscription</a> 
+    </li><li>
+      <a href="#ref-for-dfn-inbox-2" title="§ 5. Webhook Authentication">§ 5. Webhook Authentication</a> <a href="#ref-for-dfn-inbox-3" title="Reference 2">(2)</a> 
+    </li><li>
+      <a href="#ref-for-dfn-inbox-4" title="§ 5.1 Signature Requirements">§ 5.1 Signature Requirements</a> <a href="#ref-for-dfn-inbox-5" title="Reference 2">(2)</a> 
+    </li><li>
+      <a href="#ref-for-dfn-inbox-6" title="§ 7. Notification Delivery">§ 7. Notification Delivery</a> 
+    </li><li>
+      <a href="#ref-for-dfn-inbox-7" title="§ 10. Privacy Considerations">§ 10. Privacy Considerations</a> 
+    </li>
+  </ul>
+    </div><script id="respec-highlight-vars">(() => {
+// @ts-check
+
+if (document.respec) {
+  document.respec.ready.then(setupVarHighlighter);
+} else {
+  setupVarHighlighter();
+}
+
+function setupVarHighlighter() {
+  document
+    .querySelectorAll("var")
+    .forEach(varElem => varElem.addEventListener("click", highlightListener));
+}
+
+/**
+ * @param {MouseEvent} ev
+ */
+function highlightListener(ev) {
+  ev.stopPropagation();
+  const varElem = /** @type {HTMLElement} */ (ev.target);
+  const hightligtedElems = highlightVars(varElem);
+  const resetListener = () => {
+    const hlColor = getHighlightColor(varElem);
+    hightligtedElems.forEach(el => removeHighlight(el, hlColor));
+    [...HL_COLORS.keys()].forEach(key => HL_COLORS.set(key, true));
+  };
+  if (hightligtedElems.length) {
+    document.body.addEventListener("click", resetListener, { once: true });
+  }
+}
+
+// availability of highlight colors. colors from var.css
+const HL_COLORS = new Map([
+  ["respec-hl-c1", true],
+  ["respec-hl-c2", true],
+  ["respec-hl-c3", true],
+  ["respec-hl-c4", true],
+  ["respec-hl-c5", true],
+  ["respec-hl-c6", true],
+  ["respec-hl-c7", true],
+]);
+
+/**
+ * @param {HTMLElement} target
+ */
+function getHighlightColor(target) {
+  // return current colors if applicable
+  const { value } = target.classList;
+  const re = /respec-hl-\w+/;
+  const activeClass = re.test(value) && value.match(re);
+  if (activeClass) return activeClass[0];
+
+  // first color preference
+  if (HL_COLORS.get("respec-hl-c1") === true) return "respec-hl-c1";
+
+  // otherwise get some other available color
+  return [...HL_COLORS.keys()].find(c => HL_COLORS.get(c)) || "respec-hl-c1";
+}
+
+/**
+ * @param {HTMLElement} varElem
+ */
+function highlightVars(varElem) {
+  const textContent = norm(varElem.textContent);
+  const parent = /** @type {HTMLElement} */ (
+    varElem.closest(".algorithm, section")
+  );
+  if (!parent) return [];
+  const highlightColor = getHighlightColor(varElem);
+
+  const varsToHighlight = [...parent.querySelectorAll("var")].filter(
+    el =>
+      norm(el.textContent) === textContent &&
+      el.closest(".algorithm, section") === parent
+  );
+
+  // update availability of highlight color
+  const colorStatus = varsToHighlight[0].classList.contains("respec-hl");
+  HL_COLORS.set(highlightColor, colorStatus);
+
+  // highlight vars
+  if (colorStatus) {
+    varsToHighlight.forEach(el => removeHighlight(el, highlightColor));
+    return [];
+  } else {
+    varsToHighlight.forEach(el => addHighlight(el, highlightColor));
+  }
+  return varsToHighlight;
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {string} highlightColor
+ */
+function removeHighlight(el, highlightColor) {
+  el.classList.remove("respec-hl", highlightColor);
+  // clean up empty class attributes so they don't come in export
+  if (!el.classList.length) el.removeAttribute("class");
+}
+
+/**
+ * @param {HTMLElement} elem
+ * @param {string} highlightColor
+ */
+function addHighlight(elem, highlightColor) {
+  elem.classList.add("respec-hl", highlightColor);
+}
+
+/**
+ * Same as `norm` from src/core/utils, but our build process doesn't allow
+ * imports in runtime scripts, so duplicated here.
+ * @param {string} str
+ */
+function norm(str) {
+  return str.trim().replace(/\s+/g, " ");
+}
+})()</script><script id="respec-dfn-panel">(() => {
+// @ts-check
+if (document.respec) {
+  document.respec.ready.then(setupPanel);
+} else {
+  setupPanel();
+}
+
+function setupPanel() {
+  const listener = panelListener();
+  document.body.addEventListener("keydown", listener);
+  document.body.addEventListener("click", listener);
+}
+
+function panelListener() {
+  /** @type {HTMLElement | null} */
+  let panel = null;
+  /**
+   * @param {KeyboardEvent|MouseEvent} event
+   */
+  return event => {
+    const { target, type } = event;
+
+    if (!(target instanceof HTMLElement)) return;
+
+    // For keys, we only care about Enter key to activate the panel
+    // otherwise it's activated via a click.
+    if (
+      type === "keydown" &&
+      /** @type {KeyboardEvent} */ (event).key !== "Enter"
+    )
+      return;
+
+    const action = deriveAction(event);
+
+    switch (action) {
+      case "show": {
+        hidePanel(panel);
+        /** @type {HTMLElement | null} */
+        const dfn = target.closest("dfn, .index-term");
+        if (!dfn?.id) break;
+        panel = document.getElementById(`dfn-panel-for-${dfn.id}`);
+        if (!panel) break;
+        const coords = deriveCoordinates(
+          /** @type {MouseEvent|KeyboardEvent} */ (event)
+        );
+        displayPanel(dfn, panel, coords);
+        break;
+      }
+      case "dock": {
+        if (panel) {
+          panel.style.left = "";
+          panel.style.top = "";
+          panel.classList.add("docked");
+        }
+        break;
+      }
+      case "hide": {
+        hidePanel(panel);
+        panel = null;
+        break;
+      }
+    }
+  };
+}
+
+/**
+ * @param {MouseEvent|KeyboardEvent} event
+ */
+function deriveCoordinates(event) {
+  const target = /** @type HTMLElement */ (event.target);
+
+  // We prevent synthetic AT clicks from putting
+  // the dialog in a weird place. The AT events sometimes
+  // lack coordinates, so they have clientX/Y = 0
+  const rect = target.getBoundingClientRect();
+  if (
+    event instanceof MouseEvent &&
+    event.clientX >= rect.left &&
+    event.clientY >= rect.top
+  ) {
+    // The event probably happened inside the bounding rect...
+    return { x: event.clientX, y: event.clientY };
+  }
+
+  // Offset to the middle of the element
+  const x = rect.x + rect.width / 2;
+  // Placed at the bottom of the element
+  const y = rect.y + rect.height;
+  return { x, y };
+}
+
+/**
+ * @param {Event} event
+ */
+function deriveAction(event) {
+  const target = /** @type {HTMLElement} */ (event.target);
+  const hitALink = !!target.closest("a");
+  if (target.closest("dfn:not([data-cite]), .index-term")) {
+    return hitALink ? "none" : "show";
+  }
+  if (target.closest(".dfn-panel")) {
+    if (hitALink) {
+      return target.classList.contains("self-link") ? "hide" : "dock";
+    }
+
+    const panel = /** @type {HTMLElement} */ (target.closest(".dfn-panel"));
+    return panel.classList.contains("docked") ? "hide" : "none";
+  }
+  if (document.querySelector(".dfn-panel:not([hidden])")) {
+    return "hide";
+  }
+  return "none";
+}
+
+/**
+ * @param {HTMLElement} dfn
+ * @param {HTMLElement} panel
+ * @param {{ x: number, y: number }} clickPosition
+ */
+function displayPanel(dfn, panel, { x, y }) {
+  panel.hidden = false;
+  // distance (px) between edge of panel and the pointing triangle (caret)
+  const MARGIN = 20;
+
+  const dfnRects = dfn.getClientRects();
+  // Find the `top` offset when the `dfn` can be spread across multiple lines
+  let closestTop = 0;
+  let minDiff = Infinity;
+  for (const rect of dfnRects) {
+    const { top, bottom } = rect;
+    const diffFromClickY = Math.abs((top + bottom) / 2 - y);
+    if (diffFromClickY < minDiff) {
+      minDiff = diffFromClickY;
+      closestTop = top;
+    }
+  }
+
+  const top = window.scrollY + closestTop + dfnRects[0].height;
+  const left = x - MARGIN;
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+
+  // Find if the panel is flowing out of the window
+  const panelRect = panel.getBoundingClientRect();
+  const SCREEN_WIDTH = Math.min(window.innerWidth, window.screen.width);
+  if (panelRect.right > SCREEN_WIDTH) {
+    const newLeft = Math.max(MARGIN, x + MARGIN - panelRect.width);
+    const newCaretOffset = left - newLeft;
+    panel.style.left = `${newLeft}px`;
+    /** @type {HTMLElement | null} */
+    const caret = panel.querySelector(".caret");
+    if (caret) caret.style.left = `${newCaretOffset}px`;
+  }
+
+  // As it's a dialog, we trap focus.
+  // TODO: when <dialog> becomes a implemented, we should really
+  // use that.
+  trapFocus(panel, dfn);
+}
+
+/**
+ * @param {HTMLElement} panel
+ * @param {HTMLElement} dfn
+ * @returns
+ */
+function trapFocus(panel, dfn) {
+  /** @type NodeListOf<HTMLAnchorElement> elements */
+  const anchors = panel.querySelectorAll("a[href]");
+  // No need to trap focus
+  if (!anchors.length) return;
+
+  // Move focus to first anchor element
+  const first = anchors.item(0);
+  first.focus();
+
+  const trapListener = createTrapListener(anchors, panel, dfn);
+  panel.addEventListener("keydown", trapListener);
+
+  // Hiding the panel releases the trap
+  const mo = new MutationObserver(records => {
+    const [record] = records;
+    const target = /** @type HTMLElement */ (record.target);
+    if (target.hidden) {
+      panel.removeEventListener("keydown", trapListener);
+      mo.disconnect();
+    }
+  });
+  mo.observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+}
+
+/**
+ *
+ * @param {NodeListOf<HTMLAnchorElement>} anchors
+ * @param {HTMLElement} panel
+ * @param {HTMLElement} dfn
+ * @returns
+ */
+function createTrapListener(anchors, panel, dfn) {
+  const lastIndex = anchors.length - 1;
+  let currentIndex = 0;
+  /**
+   * @param {KeyboardEvent} event
+   */
+  return event => {
+    switch (event.key) {
+      // Hitting "Tab" traps us in a nice loop around elements.
+      case "Tab": {
+        event.preventDefault();
+        currentIndex += event.shiftKey ? -1 : +1;
+        if (currentIndex < 0) {
+          currentIndex = lastIndex;
+        } else if (currentIndex > lastIndex) {
+          currentIndex = 0;
+        }
+        anchors.item(currentIndex).focus();
+        break;
+      }
+
+      // Hitting "Enter" on an anchor releases the trap.
+      case "Enter":
+        hidePanel(panel);
+        break;
+
+      // Hitting "Escape" returns focus to dfn.
+      case "Escape":
+        hidePanel(panel);
+        dfn.focus();
+        return;
+    }
+  };
+}
+
+/** @param {HTMLElement | null} panel */
+function hidePanel(panel) {
+  if (!panel) return;
+  panel.hidden = true;
+  panel.classList.remove("docked");
+}
+})()</script><script src="https://www.w3.org/scripts/TR/2021/fixup.js"></script></body></html>

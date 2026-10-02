@@ -18,6 +18,7 @@ specification:
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
   - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
+  - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
 include:
   - core/discovery.yamlld
   - core/containers.yamlld
@@ -32,4 +33,5 @@ include:
   - auth/oidc/manifest.yamlld
   - auth/cid/manifest.yamlld
   - auth/saml/manifest.yamlld
+  - notifications/webhook/manifest.yamlld
 entries: []

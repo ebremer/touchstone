@@ -23,6 +23,12 @@ WD and the four editor's-draft auth snapshots; the 2026-09-30 one (D-0057) retir
 | `WD-lws10-authn-ssi-cid-20260921.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/ | 2026-09-30 |
 | `WD-lws10-authn-ssi-did-key-20260803.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/ | 2026-09-02 |
 | `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-09-02 (CID: 2026-09-30) |
+| `ED-lws10-notifications-webhook-20261002.html` | https://w3c.github.io/lws-protocol/lws10-notifications-webhook/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `4e9481c`) | 2026-10-02 |
+| `ED-lws10-notifications-webhook-20261002.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-02 |
+
+The webhook suite has no published version, so its snapshot is the editor's draft rendered by
+W3C's own spec generator, which expands the ReSpec macros as publication would (D-0066). An
+editor's draft is undated, so the file is named for the day it was rendered.
 
 The auth snapshots are the **published** documents, not the ReSpec source pages the
 July extraction used: the source page spells cross-references as `[[!CID-1.0]]` macros,

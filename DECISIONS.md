@@ -1992,3 +1992,83 @@ stays inapplicable.
   read access on a container reaches its members.
 
 Drafted by an agent; waits on branch `format-0.4.0-delivery`.
+
+### D-0066 — the webhook notification suite: catalogued from an editor's draft, tested through the inbox
+`lws10-notifications-webhook` defines the one subscription type our servers implement, and how a
+delivery is sent and signed. It is an editor's draft, "an unofficial proposal", which W3C has not
+published (`/TR/lws10-notifications-webhook/` is 404 on 2026-10-02).
+
+**The catalog** (`catalog/lws10-notifications-webhook.ttl`): 20 requirements, 14 MUST, 1 SHOULD,
+5 MAY, all Draft. The catalog grows from 219 to 239.
+- *Snapshot.* `catalog/sources/ED-lws10-notifications-webhook-20261002.html` is the editor's draft
+  rendered by W3C's spec generator. That renderer expands the ReSpec macros as publication would,
+  which D-0042 requires of catalog text. Its normative sentences are those of `w3c/lws-protocol`
+  `4e9481c` (2026-09-21), checked against the local source.
+- *Extraction.* `extract_clauses.py` found 20 blocks. The BCP 14 boilerplate is skipped, and the
+  block that pairs the server's SHOULD sign with the inbox's MUST verify is split into two entries.
+  Three entries are receiver or subscriber obligations, and no server test cites them except as
+  context: `inbox-verifies-signature`, `receiver-verification-steps` and
+  `per-subscription-inbox-urls`.
+- *Drift.* The header names `editors-draft:` and `shortname:` instead of a `this-version`.
+  `check_published.py` now reports such a catalog as moved the moment `/TR/<shortname>/` exists,
+  and otherwise re-renders the editor's draft and runs `check_drift.py` against it.
+- *Sources.* Definitions cite `https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#…`.
+  The schema's `source` and `specification` patterns admit that form, and `anchors.json` records
+  its anchors from the snapshot.
+
+**Format 0.4.0, extended before it was pushed.** D-0065 froze 0.4.0 the same day, and it had not
+left this machine, so the additions below are part of 0.4.0 rather than a 0.5.0.
+1. The inbox record (EXECUTION.md section 5.4) gains `contentDigest` and `signature`: what the
+   fixture host finds in the delivery's Content-Digest (RFC 9530) and HTTP Message Signature
+   (RFC 9421).
+   - The signature fields: label, covered components, `created`, `keyid` and `alg`; whether the
+     keyid's key is published and referenced from `authentication`; whether the description's
+     `id` matches; and whether the signature verifies.
+   - The signature base is rebuilt from `${test.inbox}` as the server was given it, not from the
+     proxied request.
+   - The fixture host fetches a storage description only from the target's own host, since a
+     keyid is whatever the sender wrote (section 10).
+   - It records facts and judges none, so tests assert on them with ordinary `json`
+     expectations, and no new expectation type was needed.
+   - Algorithms: `ecdsa-p256-sha256` (Halcyon), `ed25519` (lws-server), `rsa-pss-sha512` and
+     `rsa-v1_5-sha256`.
+2. The schema admits the editor's-draft URL form in `source` and `specification`.
+
+**Nine definitions** (`notifications/webhook/manifest`):
+- `webhook-subscription-response`, `webhook-subscription-expires-supported`,
+  `webhook-subscription-listed` and `webhook-subscription-get-delete` (MUST);
+- `webhook-delivery-lws-json` (MUST);
+- `webhook-delivery-signed` (SHOULD);
+- `webhook-signature-components`, `webhook-signing-key-published` and
+  `webhook-signature-verifies` (MUST). These three apply only to a signed delivery: signing is a
+  SHOULD, and the MUSTs bind a server that signs.
+
+**The reference server follows.**
+- It signs every delivery with ES256 over the six required components, with `created` and
+  `keyid` `<storage>#notify-key`, and publishes that key as a JsonWebKey verification method
+  referenced from `authentication`.
+- It lists a caller's subscriptions as an LWS container at the NotificationService endpoint, and
+  accepts and echoes `expires`.
+- It serves the `application/lws+cid` storage description anonymously when it is asked for
+  explicitly, as a third-party receiver must be able to fetch it. Halcyon and lws-server already
+  do. The root container's listing, and a request with no Accept, still meet the challenge.
+- The BROKEN_NOTIFICATIONS twin also signs with a key it does not publish. The self-test requires
+  exactly the two delivery-authorization tests and `webhook-signature-verifies` to fail against it.
+
+Pinned counts move from 145 to 154.
+
+**Against our deployments** (run from ebremer.com, 2026-10-02):
+- **Halcyon** passes all nine.
+- **lws-server** passed eight, and failed `webhook-signature-verifies` because no delivery
+  arrived. Its log says why: "Dropping delivery … already 4 in flight to ebremer.com
+  (`lws.webhook.max-in-flight-per-host`)".
+  - Touchstone runs tests in parallel, and every inbox is on the one fixture host, so a fifth
+    concurrent delivery to it is discarded, not queued.
+  - The suite allows retries and deactivation (MAYs), and no clause promises delivery under
+    load, so dropping is not itself a conformance failure.
+  - But a test cannot tell a dropped delivery from a broken one, and lws-server's ed25519
+    signatures verified in the other tests that received one.
+  - Left for a decision, not worked around in the definitions: raise the limit on the test
+    deployment, or have lws-server queue past the limit instead of dropping.
+
+Drafted by an agent; waits on branch `webhook-suite`.

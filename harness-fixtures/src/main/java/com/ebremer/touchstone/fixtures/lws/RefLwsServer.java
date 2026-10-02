@@ -113,8 +113,23 @@ public final class RefLwsServer implements AutoCloseable {
     private volatile TokenValidator validator;
     private volatile String asUri;
     private volatile String storageOwner;
-    /** The notification twin's one defect: delivery skips the subscriber's read check. */
+    /**
+     * The notification twin's defects: delivery skips the subscriber's read check, and is signed
+     * with a key the storage description does not publish.
+     */
     private volatile boolean deliverToAnyone;
+    /** Signs deliveries (lws10-notifications-webhook); its public half is in the storage description. */
+    private final com.nimbusds.jose.jwk.ECKey signingKey = newSigningKey("notify-key");
+    /** What the notification twin signs with instead, and never publishes. */
+    private final com.nimbusds.jose.jwk.ECKey unpublishedKey = newSigningKey("notify-key");
+
+    private static com.nimbusds.jose.jwk.ECKey newSigningKey(String kid) {
+        try {
+            return new com.nimbusds.jose.jwk.gen.ECKeyGenerator(com.nimbusds.jose.jwk.Curve.P_256).keyID(kid).generate();
+        } catch (com.nimbusds.jose.JOSEException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private static final class Node {
         final boolean container;
@@ -137,7 +152,8 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     /** A webhook subscription: who made it, what it covers, where it would deliver. */
-    private record Subscription(String id, String subscriber, String client, List<String> topics, String inbox) {
+    private record Subscription(String id, String subscriber, String client, List<String> topics, String inbox,
+                                String expires) {
     }
 
     /** One AccessPolicy: actions, an assignee, and the resources it covers. */
@@ -351,7 +367,16 @@ public final class RefLwsServer implements AutoCloseable {
             String resourcePath = linksetSubject(path);
             boolean linkset = resourcePath != null;
             String target = linkset ? resourcePath : path;
-            if (authMode == AuthMode.SECURED) {
+            // The storage description is public: a client refused with a 401 finds the services
+            // through it, and a webhook receiver finds the delivery signing key in it. The root
+            // container's listing, served at the same URI for the LWS container types, is not.
+            // Only on an explicit request for it, so an anonymous probe of the root without an
+            // Accept still meets the challenge the engine discovers the authorization server by.
+            String accept = request.getHeaders().get("Accept");
+            boolean description = target.equals(STORAGE_PATH) && !linkset
+                    && (method.equals("GET") || method.equals("HEAD"))
+                    && accept != null && accept.contains(LWS_CID);
+            if (authMode == AuthMode.SECURED && !description) {
                 String action = switch (method) {
                     case "GET", "HEAD", "OPTIONS" -> "read";
                     case "POST" -> linkset ? "modify" : "create";
@@ -1008,6 +1033,18 @@ public final class RefLwsServer implements AutoCloseable {
                     .putArray("conformsTo").add(LWS_NS + "AccessProfile");
             service(services, storage + "#notifications", "NotificationService", absolute(request, SUBSCRIPTIONS))
                     .putArray("subscriptionType").add(WEBHOOK);
+            // The key deliveries are signed with, as the webhook suite requires: a verification
+            // method in verificationMethod, referenced from authentication.
+            ObjectNode vm = root.putArray("verificationMethod").addObject();
+            vm.put("id", storage + "#notify-key");
+            vm.put("type", "JsonWebKey");
+            vm.put("controller", storage);
+            try {
+                vm.set("publicKeyJwk", mapper.readTree(signingKey.toPublicJWK().toJSONString()));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            root.putArray("authentication").add(storage + "#notify-key");
             return bytes(root);
         }
 
@@ -1172,14 +1209,47 @@ public final class RefLwsServer implements AutoCloseable {
             envelope.put("storage", absolute(request, STORAGE_PATH));
             envelope.set("activity", activity);
             try {
-                java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(URI.create(inbox))
+                URI target = URI.create(inbox);
+                byte[] body = bytes(envelope);
+                Signed signed = sign(target, body, absolute(request, STORAGE_PATH) + "#notify-key");
+                java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(target)
                         .timeout(java.time.Duration.ofSeconds(10))
                         .header("Content-Type", LWS_JSON)
-                        .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(bytes(envelope)))
+                        .header("Content-Digest", signed.contentDigest())
+                        .header("Signature-Input", signed.signatureInput())
+                        .header("Signature", signed.signature())
+                        .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(body))
                         .build();
                 DELIVERY.sendAsync(post, java.net.http.HttpResponse.BodyHandlers.discarding());
             } catch (RuntimeException e) {
                 // best-effort: an inbox that cannot be reached loses the notification
+            }
+        }
+
+        private record Signed(String contentDigest, String signatureInput, String signature) {
+        }
+
+        /**
+         * An RFC 9421 signature over the components the webhook suite requires (@method, @scheme,
+         * @authority, @path, content-type, content-digest), with created and keyid, ES256.
+         */
+        private Signed sign(URI target, byte[] body, String keyid) {
+            try {
+                String digest = "sha-256=:" + java.util.Base64.getEncoder().encodeToString(
+                        java.security.MessageDigest.getInstance("SHA-256").digest(body)) + ":";
+                String params = "(\"@method\" \"@scheme\" \"@authority\" \"@path\" \"content-type\" \"content-digest\")"
+                        + ";created=" + Instant.now().getEpochSecond() + ";keyid=\"" + keyid + "\";alg=\"ecdsa-p256-sha256\"";
+                String path = target.getRawPath() == null || target.getRawPath().isEmpty() ? "/" : target.getRawPath();
+                String base = "\"@method\": POST\n\"@scheme\": " + target.getScheme() + "\n\"@authority\": "
+                        + target.getRawAuthority() + "\n\"@path\": " + path + "\n\"content-type\": " + LWS_JSON
+                        + "\n\"content-digest\": " + digest + "\n\"@signature-params\": " + params;
+                java.security.Signature s = java.security.Signature.getInstance("SHA256withECDSAinP1363Format");
+                s.initSign((deliverToAnyone ? unpublishedKey : signingKey).toECPrivateKey());
+                s.update(base.getBytes(StandardCharsets.UTF_8));
+                return new Signed(digest, "sig1=" + params,
+                        "sig1=:" + java.util.Base64.getEncoder().encodeToString(s.sign()) + ":");
+            } catch (Exception e) {
+                throw new IllegalStateException("cannot sign a delivery", e);
             }
         }
 
@@ -1197,8 +1267,16 @@ public final class RefLwsServer implements AutoCloseable {
             boolean secured = authMode == AuthMode.SECURED;
             String id = path.substring(SUBSCRIPTIONS.length());
             if (id.isEmpty()) {
+                if (method.equals("GET") || method.equals("HEAD")) {
+                    if (secured && subject == null) {
+                        challenge(request, response, callback, null);
+                        return;
+                    }
+                    listSubscriptions(request, response, callback, subject, method.equals("GET"));
+                    return;
+                }
                 if (!method.equals("POST")) {
-                    methodNotAllowed(response, callback, "POST");
+                    methodNotAllowed(response, callback, "GET, HEAD, POST");
                     return;
                 }
                 if (secured && subject == null) {
@@ -1280,12 +1358,41 @@ public final class RefLwsServer implements AutoCloseable {
                 }
             }
             String id = UUID.randomUUID().toString();
-            Subscription sub = new Subscription(id, subject, client, List.copyOf(topics), body.path("inbox").asText());
+            Subscription sub = new Subscription(id, subject, client, List.copyOf(topics), body.path("inbox").asText(),
+                    body.path("expires").isTextual() ? body.path("expires").asText() : null);
             subscriptions.put(id, sub);
             response.setStatus(201);
             response.getHeaders().put(HttpHeader.LOCATION, absolute(request, SUBSCRIPTIONS + id));
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
             response.write(true, ByteBuffer.wrap(bytes(subscriptionDocument(request, sub))), callback);
+        }
+
+        /**
+         * The webhook suite's subscription listing: the caller's active subscriptions (all of them
+         * for the storage owner) as an LWS container whose members are the subscription URLs.
+         */
+        private void listSubscriptions(Request request, Response response, Callback callback, String subject,
+                                       boolean withBody) {
+            boolean owner = authMode != AuthMode.SECURED || (subject != null && subject.equals(storageOwner));
+            ObjectNode root = mapper.createObjectNode();
+            root.put("@context", LWS_CONTEXT);
+            root.put("id", absolute(request, SUBSCRIPTIONS));
+            root.put("type", "Container");
+            ArrayNode items = root.putArray("items");
+            subscriptions.values().stream()
+                    .filter(s -> owner || (subject != null && subject.equals(s.subscriber())))
+                    .map(Subscription::id).sorted()
+                    .forEach(id -> {
+                        ObjectNode item = items.addObject();
+                        item.put("id", absolute(request, SUBSCRIPTIONS + id));
+                        item.put("type", "DataResource");
+                        item.put("format", LWS_JSON);
+                    });
+            root.put("totalItems", items.size());
+            response.setStatus(200);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
+            response.getHeaders().add("Link", "<" + LWS_NS + "Container>; rel=\"type\"");
+            send(response, callback, bytes(root), withBody);
         }
 
         /** The subscription response: type and subscription are REQUIRED; topic and inbox echo the request. */
@@ -1297,6 +1404,9 @@ public final class RefLwsServer implements AutoCloseable {
             ArrayNode topics = doc.putArray("topic");
             sub.topics().forEach(topics::add);
             doc.put("inbox", sub.inbox());
+            if (sub.expires() != null) {
+                doc.put("expires", sub.expires());
+            }
             return doc;
         }
 

@@ -37,6 +37,10 @@ final class Inboxes {
         return id;
     }
 
+    boolean isOpen(String id) {
+        return open.containsKey(id);
+    }
+
     /** Discards an inbox and its record; later deliveries to it are 404. */
     void close(String id) {
         open.remove(id);
@@ -47,6 +51,14 @@ final class Inboxes {
      * The caller has already refused an oversized body.
      */
     int record(String id, String method, Map<String, List<String>> headers, byte[] body) {
+        return record(id, method, headers, body, null);
+    }
+
+    /**
+     * Records one delivery with what the fixture host learned about its signature and
+     * Content-Digest ({@link HttpSignatures#inspect}), when it inspected them.
+     */
+    int record(String id, String method, Map<String, List<String>> headers, byte[] body, ObjectNode inspection) {
         List<ObjectNode> deliveries = open.get(id);
         if (deliveries == null) {
             return 404;
@@ -85,6 +97,9 @@ final class Inboxes {
             activity.forEach(activities::add);
         } else if (activity.isObject()) {
             activities.add(activity);
+        }
+        if (inspection != null) {
+            d.setAll(inspection);
         }
         d.put("receivedAt", Instant.now().toString());
         synchronized (deliveries) {

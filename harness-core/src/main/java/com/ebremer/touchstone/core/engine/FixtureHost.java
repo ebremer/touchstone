@@ -79,7 +79,7 @@ final class FixtureHost implements AutoCloseable {
             String method = exchange.getRequestMethod();
             String requested = exchange.getRequestURI().getRawPath();
             if (requested.startsWith(basePath + "inbox/")) {
-                inbox(exchange, requested.substring((basePath + "inbox/").length()), run.inboxes());
+                inbox(exchange, requested.substring((basePath + "inbox/").length()), run, basePath);
                 return;
             }
             if (!method.equals("GET") && !method.equals("HEAD")) {
@@ -121,7 +121,8 @@ final class FixtureHost implements AutoCloseable {
      * {@code inbox/<id>/}: POST records a delivery, GET and HEAD return the record (section 5.4).
      * Only the inbox URL itself is served, and only while its test runs.
      */
-    private static void inbox(HttpExchange exchange, String rest, Inboxes inboxes) throws IOException {
+    private static void inbox(HttpExchange exchange, String rest, RunSession run, String basePath) throws IOException {
+        Inboxes inboxes = run.inboxes();
         String method = exchange.getRequestMethod();
         String id = rest.endsWith("/") ? rest.substring(0, rest.length() - 1) : rest;
         if (id.isEmpty() || id.contains("/")) {
@@ -135,7 +136,16 @@ final class FixtureHost implements AutoCloseable {
                     exchange.sendResponseHeaders(413, -1);
                     return;
                 }
-                exchange.sendResponseHeaders(inboxes.record(id, method, exchange.getRequestHeaders(), body), -1);
+                if (!inboxes.isOpen(id)) {
+                    exchange.sendResponseHeaders(404, -1);
+                    return;
+                }
+                // The signature is checked against the inbox URL the server was given: the public
+                // fixtures.baseUrl, not the request as it reached this host through a proxy.
+                URI inbox = URI.create(run.fixturesBaseUrl() + "inbox/" + id + "/");
+                var inspection = HttpSignatures.inspect(inbox, method, exchange.getRequestHeaders(), body,
+                        storage -> storageDescription(run, storage));
+                exchange.sendResponseHeaders(inboxes.record(id, method, exchange.getRequestHeaders(), body, inspection), -1);
             }
             case "GET", "HEAD" -> {
                 JsonNode view = inboxes.view(id);
@@ -160,6 +170,27 @@ final class FixtureHost implements AutoCloseable {
                 exchange.getResponseHeaders().set("Allow", "GET, HEAD, POST");
                 exchange.sendResponseHeaders(405, -1);
             }
+        }
+    }
+
+    /**
+     * The storage description a delivery's keyid names, fetched anonymously, but only from the
+     * target's own host: the keyid is whatever the sender wrote, and the fixture host must not be
+     * made to fetch arbitrary URLs (section 10).
+     */
+    private static JsonNode storageDescription(RunSession run, URI storage) {
+        URI base = run.target().baseUrl();
+        if (!"https".equalsIgnoreCase(storage.getScheme()) && !"http".equalsIgnoreCase(storage.getScheme())
+                || storage.getHost() == null || !storage.getHost().equalsIgnoreCase(base.getHost())) {
+            return null;
+        }
+        try {
+            Http.Resp resp = run.send(new Http.Req("GET", storage,
+                    java.util.List.of(Http.header("Accept", "application/lws+cid, application/ld+json;q=0.9, application/json;q=0.8")),
+                    null, null));
+            return resp.status() == 200 ? Templates.JSON.readTree(resp.body()) : null;
+        } catch (IOException | RuntimeException e) {
+            return null;
         }
     }
 

@@ -1,0 +1,313 @@
+[
+ {
+  "i": 1,
+  "section": "conformance",
+  "heading": "2. Conformance",
+  "path": [
+   "conformance"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "OPTIONAL",
+   "REQUIRED",
+   "SHOULD"
+  ],
+  "text": "The key words MAY, MUST, OPTIONAL, REQUIRED, and SHOULD in this document are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals, as shown here."
+ },
+ {
+  "i": 2,
+  "section": "webhook-subscription",
+  "heading": "4. Creating a Webhook Subscription",
+  "path": [
+   "webhook-subscription"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "When a client creates a webhook notification subscription, the subscription body MUST include a type field equal to WebhookSubscription. In addition, a server MUST support the following fields:"
+ },
+ {
+  "i": 3,
+  "section": "webhook-subscription",
+  "heading": "4. Creating a Webhook Subscription",
+  "path": [
+   "webhook-subscription"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "REQUIRED"
+  ],
+  "text": "inbox — REQUIRED. The URI of the inbox to which notification messages are delivered."
+ },
+ {
+  "i": 4,
+  "section": "webhook-subscription",
+  "heading": "4. Creating a Webhook Subscription",
+  "path": [
+   "webhook-subscription"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "expires — OPTIONAL. A datetime value indicating when the subscription expires."
+ },
+ {
+  "i": 5,
+  "section": "webhook-subscription",
+  "heading": "4. Creating a Webhook Subscription",
+  "path": [
+   "webhook-subscription"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "type — the value of this property MUST be a string equal to WebhookSubscription."
+ },
+ {
+  "i": 6,
+  "section": "webhook-subscription",
+  "heading": "4. Creating a Webhook Subscription",
+  "path": [
+   "webhook-subscription"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "expires — OPTIONAL. A datetime value indicating when the subscription expires."
+ },
+ {
+  "i": 7,
+  "section": "webhook-authentication",
+  "heading": "5. Webhook Authentication",
+  "path": [
+   "webhook-authentication"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "A server SHOULD sign each outbound request using HTTP Message Signatures [RFC9421]. When an inbox receives a signed message, it MUST verify the signature using the notification server's public key, discoverable via the storage description resource."
+ },
+ {
+  "i": 8,
+  "section": "webhook-authentication",
+  "heading": "5. Webhook Authentication",
+  "path": [
+   "webhook-authentication"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A server that supports HTTP Message Signatures MUST include the signing key in the storage description resource. The key MUST be expressed as a verification method in a verificationMethod array, and MUST be referenced from an authentication verification relationship, following the Controlled Identifiers 1.0 [CID-1.0] data model."
+ },
+ {
+  "i": 9,
+  "section": "signature-requirements",
+  "heading": "5.1 Signature Requirements",
+  "path": [
+   "webhook-authentication",
+   "signature-requirements"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A server that signs webhook delivery requests MUST include at least the following components in the signature base:"
+ },
+ {
+  "i": 10,
+  "section": "signature-requirements",
+  "heading": "5.1 Signature Requirements",
+  "path": [
+   "webhook-authentication",
+   "signature-requirements"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The Signature-Input field MUST include the created and keyid parameters. The keyid value MUST correspond to the id of a key in the verificationMethod array of the storage description resource."
+ },
+ {
+  "i": 11,
+  "section": "signature-verification",
+  "heading": "5.2 Signature Verification",
+  "path": [
+   "webhook-authentication",
+   "signature-verification"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "To verify a webhook signature, a receiver MUST perform the following steps:"
+ },
+ {
+  "i": 12,
+  "section": "signature-verification",
+  "heading": "5.2 Signature Verification",
+  "path": [
+   "webhook-authentication",
+   "signature-verification"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Extract the keyid value from the Signature-Input field. The keyid value MUST be a URL with a fragment component."
+ },
+ {
+  "i": 13,
+  "section": "signature-verification",
+  "heading": "5.2 Signature Verification",
+  "path": [
+   "webhook-authentication",
+   "signature-verification"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Dereference the storage identifier to retrieve the storage description resource. The id property of the top-level document map MUST match the storage identifier."
+ },
+ {
+  "i": 14,
+  "section": "webhook-subscription-management",
+  "heading": "6. Subscription Management",
+  "path": [
+   "webhook-subscription-management"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "The value of the serviceEndpoint property for a NotificationService that supports WebhookSubscription MUST be a URL that supports GET operations to list a subscriber's active webhook subscriptions. The resulting serialization MUST conform to the requirements for LWS Containers [LWS10-CORE]. The response SHOULD support LWS Paging."
+ },
+ {
+  "i": 15,
+  "section": "webhook-subscription-management",
+  "heading": "6. Subscription Management",
+  "path": [
+   "webhook-subscription-management"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Each subscription resource listed in this container MUST support GET and DELETE operations. A GET request returns the current state of the subscription. A DELETE request cancels the subscription."
+ },
+ {
+  "i": 16,
+  "section": "webhook-delivery",
+  "heading": "7. Notification Delivery",
+  "path": [
+   "webhook-delivery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The server sends an HTTP POST request to the registered inbox with the notification envelope as the request body. The request body MUST conform to the application/lws+json media type."
+ },
+ {
+  "i": 17,
+  "section": "webhook-delivery",
+  "heading": "7. Notification Delivery",
+  "path": [
+   "webhook-delivery"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Retry: On failure, the server MAY retry delivery."
+ },
+ {
+  "i": 18,
+  "section": "webhook-delivery",
+  "heading": "7. Notification Delivery",
+  "path": [
+   "webhook-delivery"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Expiration: After repeated failures, the server MAY deactivate the subscription."
+ },
+ {
+  "i": 19,
+  "section": "subscription-type",
+  "heading": "8. Subscription Type Identifier",
+  "path": [
+   "subscription-type"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A Webhook subscription MUST use the WebhookSubscription string as its subscription type when interacting with the NotificationService."
+ },
+ {
+  "i": 20,
+  "section": "privacy-considerations",
+  "heading": "10. Privacy Considerations",
+  "path": [
+   "privacy-considerations"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "Inbox Disclosure: The inbox URL is shared with the notification server, revealing the existence and location of the subscriber's receiving endpoint. Subscribers MAY use unique per-subscription inbox URLs to limit correlation."
+ }
+]

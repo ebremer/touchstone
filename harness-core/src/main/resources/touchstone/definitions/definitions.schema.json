@@ -22,7 +22,7 @@
     },
     "datedSpec": {
       "type": "string",
-      "pattern": "^https://www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}/$"
+      "pattern": "^https://(www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}|w3c\\.github\\.io/lws-protocol/lws10-[a-z-]+)/$"
     },
     "identityName": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
     "capture": {"type": "string", "pattern": "^[a-z][A-Za-z0-9]*$"},
@@ -78,7 +78,7 @@
           "type": "array", "minItems": 1, "uniqueItems": true,
           "items": {
             "type": "string",
-            "pattern": "^https://(www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}/#[A-Za-z0-9-]+|www\\.rfc-editor\\.org/rfc/rfc[0-9]+#section-[0-9.]+)$"
+            "pattern": "^https://(www\\.w3\\.org/TR/20[0-9]{2}/WD-lws10-[a-z-]+-[0-9]{8}/#[A-Za-z0-9-]+|w3c\\.github\\.io/lws-protocol/lws10-[a-z-]+/#[A-Za-z0-9-]+|www\\.rfc-editor\\.org/rfc/rfc[0-9]+#section-[0-9.]+)$"
           }
         },
         "traits": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/trait"}},

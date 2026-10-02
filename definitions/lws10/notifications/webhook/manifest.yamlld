@@ -1,0 +1,842 @@
+# The webhook notification suite (lws10-notifications-webhook) (YAML-LD).
+"@context":
+  - ../../context.jsonld
+  - ../../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 Notification Suite: Webhooks"
+comment: >-
+  The webhook suite is an editor's draft that W3C has not published; its requirements are
+  catalogued as Draft from a snapshot rendered on 2026-10-02 (D-0066). It fixes how a
+  WebhookSubscription is made and managed, and how a delivery is sent and signed. The
+  delivery tests read what reached the per-test inbox, including what the fixture host
+  found in the delivery's HTTP Message Signature and Content-Digest (EXECUTION.md section
+  5.4), so they need a fixture host the target can reach. Signing is a SHOULD; the
+  signature tests apply only to a delivery that is signed.
+specification:
+  - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
+entries:
+
+  - id: "#webhook-subscription-response"
+    type: ValidationTest
+    name: webhook-subscription-response
+    label: A webhook subscription is answered with type WebhookSubscription and a subscription URL
+    comment: >-
+      The request carries type WebhookSubscription and the REQUIRED inbox; the response
+      "type ... MUST be a string equal to WebhookSubscription", with the subscription URL.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#subscription-type
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-type-and-fields
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-inbox-required
+      - https://example.org/touchstone/req/lws10-notifications-webhook/response-type-webhook
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-type-identifier
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+            - pointer: /type
+              equals: WebhookSubscription
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-subscription-expires-supported"
+    type: ValidationTest
+    name: webhook-subscription-expires-supported
+    label: A webhook subscription request with an expires datetime is accepted
+    comment: >-
+      The server "MUST support the following fields", and expires is one of them (OPTIONAL
+      for the client). A request naming an expiry far in the future is accepted; a response
+      that echoes expires gives a string.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-type-and-fields
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-expires-optional
+      - https://example.org/touchstone/req/lws10-notifications-webhook/response-expires-optional
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+            expires: "2999-12-31T23:59:59Z"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+            - pointer: /expires
+              optional: true
+              jsonType: string
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-subscription-listed"
+    type: ValidationTest
+    name: webhook-subscription-listed
+    label: The NotificationService endpoint lists the subscriber's webhook subscriptions as an LWS container
+    comment: >-
+      The serviceEndpoint "MUST be a URL that supports GET operations to list a
+      subscriber's active webhook subscriptions", serialized as an LWS container. A new
+      subscription appears among its items.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management
+    traits: [Post, Get, Notifications, Container]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-listing-container
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: the endpoint lists it, as a container
+        request:
+          method: GET
+          url: "${service.NotificationService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /type
+              hasValue: Container
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${subscription}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-subscription-get-delete"
+    type: ValidationTest
+    name: webhook-subscription-get-delete
+    label: A webhook subscription supports GET for its state and DELETE to cancel it
+    comment: >-
+      "Each subscription resource listed in this container MUST support GET and DELETE
+      operations." GET returns the subscription; DELETE cancels it, after which it is gone
+      from the listing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management
+    traits: [Post, Get, Delete, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-get-delete
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-listing-container
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: GET returns the subscription
+        request:
+          method: GET
+          url: "${subscription}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+      - label: DELETE cancels it
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: "2xx"
+      - label: it is gone
+        request:
+          method: GET
+          url: "${subscription}"
+          accept: application/lws+json
+        response:
+          statusCode: [404, 410]
+      - label: and no longer listed
+        request:
+          method: GET
+          url: "${service.NotificationService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${subscription}"
+
+  - id: "#webhook-delivery-lws-json"
+    type: ValidationTest
+    name: webhook-delivery-lws-json
+    label: A delivery is a POST to the inbox with an application/lws+json body
+    comment: >-
+      "The server sends an HTTP POST request to the registered inbox with the notification
+      envelope as the request body. The request body MUST conform to the
+      application/lws+json media type."
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/delivery-lws-json
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to deliver
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the delivery announcing it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: it was a POST of application/lws+json
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /method
+                  equals: POST
+                - pointer: /contentType
+                  matches: '(?i)^application/lws\+json\s*(;|$)'
+                - pointer: /body/type
+                  equals: Notification
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-delivery-signed"
+    type: ValidationTest
+    name: webhook-delivery-signed
+    label: Deliveries are signed with HTTP Message Signatures
+    comment: >-
+      "A server SHOULD sign each outbound request using HTTP Message Signatures
+      [RFC9421]." The delivery carries Signature-Input and Signature.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/delivery-signed
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to deliver
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the delivery announcing it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: it carries a signature
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/present
+                  equals: true
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-signature-components"
+    type: ValidationTest
+    name: webhook-signature-components
+    label: A signed delivery covers the required components and names created and keyid
+    comment: >-
+      A server that signs "MUST include at least the following components in the signature
+      base": @method, @scheme, @authority, @path, content-type and content-digest; and
+      "The Signature-Input field MUST include the created and keyid parameters."
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signature-covered-components
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signature-input-created-keyid
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to deliver
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the delivery announcing it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: the delivery is signed (otherwise this test does not apply; signing is a SHOULD)
+        precondition: true
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/present
+                  equals: true
+      - label: the signature covers every required component and carries created and keyid
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/covered
+                  hasValue: "@method"
+                - pointer: /signature/covered
+                  hasValue: "@scheme"
+                - pointer: /signature/covered
+                  hasValue: "@authority"
+                - pointer: /signature/covered
+                  hasValue: "@path"
+                - pointer: /signature/covered
+                  hasValue: content-type
+                - pointer: /signature/covered
+                  hasValue: content-digest
+                - pointer: /signature/created
+                  jsonType: number
+                - pointer: /signature/keyid
+                  jsonType: string
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-signing-key-published"
+    type: ValidationTest
+    name: webhook-signing-key-published
+    label: The keyid of a signed delivery resolves to a published key in the storage description
+    comment: >-
+      The keyid "MUST be a URL with a fragment component"; without the fragment it is the
+      storage identifier, whose description's top-level id "MUST match". There "the
+      signing key" is "a verification method in a verificationMethod array" with the keyid
+      as its id, "referenced from an authentication verification relationship".
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+    traits: [Post, Notifications, StorageDescription]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signing-key-published
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signature-input-created-keyid
+      - https://example.org/touchstone/req/lws10-notifications-webhook/keyid-url-with-fragment
+      - https://example.org/touchstone/req/lws10-notifications-webhook/storage-description-id-matches
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to deliver
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the delivery announcing it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: the delivery is signed (otherwise this test does not apply; signing is a SHOULD)
+        precondition: true
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/present
+                  equals: true
+      - label: the keyid names a published, authentication-referenced key of this storage
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/keyid
+                  matches: '^https?://[^#\s]+#.+$'
+                - pointer: /signature/storageDescriptionIdMatches
+                  equals: true
+                - pointer: /signature/keyResolved
+                  equals: true
+                - pointer: /signature/keyInAuthentication
+                  equals: true
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-signature-verifies"
+    type: ValidationTest
+    name: webhook-signature-verifies
+    label: A signed delivery verifies with the published key, and its Content-Digest matches the body
+    comment: >-
+      An inbox "MUST verify the signature using the notification server's public key,
+      discoverable via the storage description resource", and a signature that cannot be
+      verified that way is worthless to it. The signature base is rebuilt from the inbox
+      URL the server was given (EXECUTION.md section 5.4) and verified with the key the
+      keyid names, and the Content-Digest the signature covers must match the body.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+    traits: [Post, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signing-key-published
+      - https://example.org/touchstone/req/lws10-notifications-webhook/signature-covered-components
+      - https://example.org/touchstone/req/lws10-notifications-webhook/inbox-verifies-signature
+      - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in it
+        request:
+          method: POST
+          url: "${test.container}"
+          contentType: text/plain
+          body: something to deliver
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: the delivery announcing it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: the delivery is signed (otherwise this test does not apply; signing is a SHOULD)
+        precondition: true
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/present
+                  equals: true
+      - label: the signature verifies and the digest matches
+        as: anonymous
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /signature/verified
+                  equals: true
+                - pointer: /contentDigest/valid
+                  equals: true
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]

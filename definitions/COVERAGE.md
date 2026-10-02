@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **145 tests**: 117 MUST, 24 SHOULD, 4 MAY; 85 validation tests, 60 negative tests.
-- **196 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **154 tests**: 125 MUST, 25 SHOULD, 4 MAY; 94 validation tests, 60 negative tests.
+- **213 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -26,6 +26,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/notifications` | 13 | 12 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
+| `notifications/webhook/manifest` | 9 | 8 | 1 | 0 |
 
 ## 1. lws-test-suite → definitions
 
@@ -312,3 +313,17 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authz-token-not-yet-valid-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-issued-in-future-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-multiple-audiences-rejected` | Negative | MUST | Authentication |  |
+
+### `notifications/webhook/manifest`
+
+| Test | Type | Level | Requires | Mirrors |
+|---|---|---|---|---|
+| `webhook-subscription-response` | Validation | MUST | ReachableFixtures |  |
+| `webhook-subscription-expires-supported` | Validation | MUST | ReachableFixtures |  |
+| `webhook-subscription-listed` | Validation | MUST | ReachableFixtures |  |
+| `webhook-subscription-get-delete` | Validation | MUST | ReachableFixtures |  |
+| `webhook-delivery-lws-json` | Validation | MUST | ReachableFixtures |  |
+| `webhook-delivery-signed` | Validation | SHOULD | ReachableFixtures |  |
+| `webhook-signature-components` | Validation | MUST | ReachableFixtures |  |
+| `webhook-signing-key-published` | Validation | MUST | ReachableFixtures |  |
+| `webhook-signature-verifies` | Validation | MUST | ReachableFixtures |  |

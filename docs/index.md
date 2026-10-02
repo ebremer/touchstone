@@ -64,9 +64,10 @@ As of September 2026:
 
 - **Implemented:** the engine, the reporting, the reference servers, the CLI, the MCP server,
   the Docker image and the GitHub Action.
-- **Requirements catalog:** 219 requirements (173 MUST, 24 SHOULD, 22 MAY) from all four
-  current LWS 1.0 documents: the core protocol and the OpenID Connect, SAML 2.0 and
-  Controlled Identifier authentication suites.
+- **Requirements catalog:** 239 requirements (187 MUST, 25 SHOULD, 27 MAY) from the four
+  current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
+  Controlled Identifier authentication suites) and the webhook notification suite's
+  editor's draft.
 - **Tests:** 101 [YAML-LD definitions](definitions.md) (84 MUST, 15 SHOULD, 2 MAY),
   format 0.4.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cite 120 of the 219 catalogued requirements.
