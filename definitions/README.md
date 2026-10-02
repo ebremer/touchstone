@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.6.0, frozen on 2026-10-02 (DECISIONS.md D-0067).** The
+**Status: format version 0.7.0, frozen on 2026-10-02 (DECISIONS.md D-0070).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
@@ -8,7 +8,8 @@ every test is `status: Proposed`.
 0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changed
 only how a did:key subject's credential is made, since W3C discontinued the did:key suite;
 0.4.0 added what testing notification delivery needs (a polled step, a per-test inbox); 0.5.0
-records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QUERY method and Link headers on prerequisites. A test that is one
+records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QUERY method and Link headers on prerequisites; 0.7.0 lets a test script
+its inbox's answers. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -312,6 +313,12 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.7.0 (2026-10-02, D-0070) adds one thing and changes nothing a 0.6.0
+definition relies on: a PUT of `{"respond": [...]}` to `${test.inbox}` scripts the statuses
+the inbox answers the following deliveries with, and each delivery record gains `status`
+(`EXECUTION.md` section 5.4). It is what testing a webhook server's retry and deactivation
+needs.
 
 Format version 0.6.0 (2026-10-02, D-0067) adds two things and changes nothing a 0.5.0
 definition relies on: a request may be a `QUERY` (RFC 10008), the method the Type Search

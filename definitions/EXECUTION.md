@@ -1,9 +1,12 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.6.0 (2026-10-02, DECISIONS.md D-0067; 0.5.0 and 0.4.0 were frozen
-the same day, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on 2026-09-23, D-0053).**
-This is the contract an engine that runs `definitions/` must implement. 0.6.0 adds two things
-and changes nothing a 0.5.0 definition relies on: a request may use `QUERY` (RFC 10008), which
+**Status: frozen, format 0.7.0 (2026-10-02, DECISIONS.md D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
+2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
+0.7.0 adds one thing and changes nothing a 0.6.0 definition relies on: a test can script the
+statuses its inbox answers deliveries with, and each delivery record says which it got
+(section 5.4), so a server's retry and deactivation can be observed. 0.6.0 added two things
+and changed nothing a 0.5.0 definition relies on: a request may use `QUERY` (RFC 10008), which
 the Type Search Service is reached by (section 6), and a data-resource prerequisite may carry
 `linkHeaders`, sent on the POST that creates it (section 4.3), so it can declare its types the
 way the Type Index draft says servers SHOULD read them. 0.5.0 added two things and changed nothing a
@@ -316,10 +319,16 @@ For a target that declares ReachableFixtures, the fixture host also serves one i
 running test, at `${test.inbox}`: the URL a test gives a server as a notification
 delivery target.
 
-- **POST** to the inbox URL is recorded and answered `202 Accepted` with no body. Only the
-  inboxes of tests that are running are open; any other path under `inbox/` is `404`. A
-  body over 1 MiB is answered `413` and not recorded, and once an inbox holds 100
-  deliveries further ones are answered `429`.
+- **POST** to the inbox URL is recorded and answered `202 Accepted` with no body, or with
+  the status the test scripted (below). Only the inboxes of tests that are running are open;
+  any other path under `inbox/` is `404`. A body over 1 MiB is answered `413` and not
+  recorded, and once an inbox holds 100 deliveries further ones are answered `429`.
+- **PUT** to the inbox URL with a JSON body `{"respond": [s1, s2, ...]}` scripts the
+  deliveries that follow (since 0.7.0): the next is answered `s1`, the one after `s2`, and
+  so on, the last status answering every later delivery. Statuses are integers from 200 to
+  599, at most 10 of them; anything else is `400`, and a PUT to an inbox that is not open is
+  `404`. The answer is `204`. A scripted delivery is recorded like any other. Tests send
+  this PUT as `anonymous`, before giving the server the inbox.
 - **GET** returns the record as `application/json`:
 
   ```json
@@ -327,7 +336,7 @@ delivery target.
                    "headers": {"content-type": ["application/lws+json"], "...": ["..."]},
                    "body": {"type": "Notification", "...": "..."},
                    "activities": [{"type": ["Create"], "...": "..."}],
-                   "receivedAt": "2026-10-02T14:00:00Z"}]}
+                   "status": 202, "receivedAt": "2026-10-02T14:00:00Z"}]}
   ```
 
   - `deliveries` lists what arrived, oldest first.
@@ -340,6 +349,7 @@ delivery target.
     sent an array (a batched notification), a one-element array when it sent an object, and
     `[]` when the body has no `activity`. It spares a test from depending on whether a
     server batches, which the notification data model leaves to the server.
+  - `status` is the status the inbox answered the delivery with (since 0.7.0).
   - `contentDigest` is what the fixture host found in the `Content-Digest` header (RFC
     9530): `present`, the `algorithms` named, and `valid`, true when every `sha-256` or
     `sha-512` digest given matches the body and at least one was given (null when absent).

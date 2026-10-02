@@ -69,7 +69,7 @@ As of September 2026:
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
 - **Tests:** 101 [YAML-LD definitions](definitions.md) (84 MUST, 15 SHOULD, 2 MAY),
-  format 0.6.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
+  format 0.7.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cite 120 of the 219 catalogued requirements.
   Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access

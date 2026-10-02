@@ -28,7 +28,12 @@ final class Inboxes {
 
     private static final Set<String> REDACTED = Set.of("authorization", "cookie", "proxy-authorization");
 
+    /** The most statuses a test may script an inbox to answer with (section 5.4). */
+    static final int MAX_SCRIPTED = 10;
+
     private final Map<String, List<ObjectNode>> open = new ConcurrentHashMap<>();
+    /** Per inbox, the statuses still to answer deliveries with, the last repeating; absent: 202. */
+    private final Map<String, List<Integer>> scripts = new ConcurrentHashMap<>();
 
     /** Opens a fresh inbox and returns its id, the path segment after {@code inbox/}. */
     String open() {
@@ -44,11 +49,37 @@ final class Inboxes {
     /** Discards an inbox and its record; later deliveries to it are 404. */
     void close(String id) {
         open.remove(id);
+        scripts.remove(id);
     }
 
     /**
-     * Records one delivery. Returns the status to answer: 202 recorded, 404 no such inbox, 429 full.
-     * The caller has already refused an oversized body.
+     * Scripts how an inbox answers the deliveries that follow (section 5.4): {@code {"respond":
+     * [503, 202]}} answers the next delivery 503 and every later one 202. Returns the status for
+     * the PUT that asked: 204 done, 400 not such a document, 404 no such inbox.
+     */
+    int script(String id, JsonNode document) {
+        if (!open.containsKey(id)) {
+            return 404;
+        }
+        JsonNode respond = document == null ? null : document.get("respond");
+        if (respond == null || !respond.isArray() || respond.isEmpty() || respond.size() > MAX_SCRIPTED) {
+            return 400;
+        }
+        List<Integer> statuses = new ArrayList<>();
+        for (JsonNode s : respond) {
+            if (!s.isInt() || s.asInt() < 200 || s.asInt() > 599) {
+                return 400;
+            }
+            statuses.add(s.asInt());
+        }
+        scripts.put(id, statuses);
+        return 204;
+    }
+
+    /**
+     * Records one delivery. Returns the status to answer: 202 recorded (or what the inbox was
+     * scripted to answer), 404 no such inbox, 429 full. The caller has already refused an
+     * oversized body.
      */
     int record(String id, String method, Map<String, List<String>> headers, byte[] body) {
         return record(id, method, headers, body, null);
@@ -106,9 +137,17 @@ final class Inboxes {
             if (deliveries.size() >= MAX_DELIVERIES) {
                 return 429;
             }
+            int status = 202;
+            List<Integer> script = scripts.get(id);
+            if (script != null) {
+                synchronized (script) {
+                    status = script.size() > 1 ? script.removeFirst() : script.getFirst();
+                }
+            }
+            d.put("status", status);
             deliveries.add(d);
+            return status;
         }
-        return 202;
     }
 
     /** The record of an open inbox as the GET answers it, or null when there is no such inbox. */

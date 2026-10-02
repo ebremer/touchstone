@@ -120,6 +120,13 @@ public final class RefLwsServer implements AutoCloseable {
     private final ConcurrentMap<String, Record> grants = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Record> requests = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Subscription> subscriptions = new ConcurrentHashMap<>();
+    /** Consecutive failed deliveries per subscription; at MAX_DELIVERY_FAILURES it is deactivated. */
+    private final ConcurrentMap<String, java.util.concurrent.atomic.AtomicInteger> deliveryFailures =
+            new ConcurrentHashMap<>();
+    /** Attempts at one delivery: a 5xx or an unreachable inbox is tried again, a second later. */
+    static final int DELIVERY_ATTEMPTS = 3;
+    /** Consecutive failed deliveries before a subscription is deactivated (the webhook MAYs). */
+    static final int MAX_DELIVERY_FAILURES = 5;
     private final ObjectMapper mapper = new ObjectMapper();
     private volatile String grantsEtag = newEtag();
     private volatile String requestsEtag = newEtag();
@@ -1569,7 +1576,7 @@ public final class RefLwsServer implements AutoCloseable {
                 if (relation != null) {
                     activity.put(relation, absolute(request, related));
                 }
-                deliver(request, s.inbox(), activity);
+                deliver(request, s.inbox(), activity, s.id());
             }
         }
 
@@ -1578,7 +1585,15 @@ public final class RefLwsServer implements AutoCloseable {
          * the LWS and Activity Streams contexts, the storage, and an id and published time on the
          * activity (section 10.2). No actor: "The actor property SHOULD be omitted by default."
          */
-        private void deliver(Request request, String inbox, ObjectNode activity) {
+        /**
+         * Sends one notification. The webhook suite lets a server retry a failed delivery and
+         * deactivate a subscription after repeated failures (both MAY), and the reference does
+         * both: a 5xx or an unreachable inbox is tried up to DELIVERY_ATTEMPTS times, re-signed
+         * each time; 410 Gone deactivates the subscription at once, and MAX_DELIVERY_FAILURES
+         * failed deliveries in a row do too. {@code subscription} is null for a notification
+         * that is not a subscription's (an access request's).
+         */
+        private void deliver(Request request, String inbox, ObjectNode activity, String subscription) {
             activity.put("id", "urn:uuid:" + UUID.randomUUID());
             activity.put("published", DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.SECONDS)));
             ObjectNode envelope = mapper.createObjectNode();
@@ -1589,19 +1604,46 @@ public final class RefLwsServer implements AutoCloseable {
             try {
                 URI target = URI.create(inbox);
                 byte[] body = bytes(envelope);
-                Signed signed = sign(target, body, absolute(request, STORAGE_PATH) + "#notify-key");
-                java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(target)
-                        .timeout(java.time.Duration.ofSeconds(10))
-                        .header("Content-Type", LWS_JSON)
-                        .header("Content-Digest", signed.contentDigest())
-                        .header("Signature-Input", signed.signatureInput())
-                        .header("Signature", signed.signature())
-                        .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(body))
-                        .build();
-                DELIVERY.sendAsync(post, java.net.http.HttpResponse.BodyHandlers.discarding());
+                attempt(target, body, absolute(request, STORAGE_PATH) + "#notify-key", subscription, 1);
             } catch (RuntimeException e) {
                 // best-effort: an inbox that cannot be reached loses the notification
             }
+        }
+
+        private void attempt(URI target, byte[] body, String keyid, String subscription, int attempt) {
+            Signed signed = sign(target, body, keyid);
+            java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(target)
+                    .timeout(java.time.Duration.ofSeconds(10))
+                    .header("Content-Type", LWS_JSON)
+                    .header("Content-Digest", signed.contentDigest())
+                    .header("Signature-Input", signed.signatureInput())
+                    .header("Signature", signed.signature())
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build();
+            DELIVERY.sendAsync(post, java.net.http.HttpResponse.BodyHandlers.discarding()).whenComplete((resp, error) -> {
+                int status = resp == null ? 0 : resp.statusCode();
+                if (status / 100 == 2) {
+                    if (subscription != null) {
+                        deliveryFailures.remove(subscription);
+                    }
+                    return;
+                }
+                boolean retryable = status == 0 || status / 100 == 5;
+                if (retryable && attempt < DELIVERY_ATTEMPTS) {
+                    java.util.concurrent.CompletableFuture.delayedExecutor(1, java.util.concurrent.TimeUnit.SECONDS)
+                            .execute(() -> attempt(target, body, keyid, subscription, attempt + 1));
+                    return;
+                }
+                if (subscription == null) {
+                    return;
+                }
+                int failures = deliveryFailures.computeIfAbsent(subscription,
+                        k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+                if (status == 410 || failures >= MAX_DELIVERY_FAILURES) {
+                    subscriptions.remove(subscription);
+                    deliveryFailures.remove(subscription);
+                }
+            });
         }
 
         private record Signed(String contentDigest, String signatureInput, String signature) {
@@ -1931,7 +1973,7 @@ public final class RefLwsServer implements AutoCloseable {
                     ObjectNode object = activity.putObject("object");
                     object.put("id", absolute(request, base + id));
                     object.putArray("type").add("AccessGrant");
-                    deliver(request, body.path("inbox").asText(), activity);
+                    deliver(request, body.path("inbox").asText(), activity, null);
                 }
                 response.setStatus(201);
                 response.getHeaders().put(HttpHeader.LOCATION, absolute(request, base + id));

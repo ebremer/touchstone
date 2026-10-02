@@ -840,3 +840,254 @@ entries:
           url: "${subscription}"
         response:
           statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-delivery-retried"
+    type: ValidationTest
+    name: webhook-delivery-retried
+    label: A delivery the inbox answers with 503 is tried again
+    comment: >-
+      "Retry: On failure, the server MAY retry delivery." The inbox answers the first delivery
+      503 and later ones 202. After one update to the subscribed resource, the inbox records
+      the Update answered 503 and then again answered 202. A server that does not retry fails
+      this MAY.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery
+    traits: [Put, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/delivery-retry-optional
+    prereqs:
+      hierarchy:
+        - dataResource: watched
+          contentType: text/plain
+          body: watched for changes
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: script the inbox to answer 503 once, then 202
+        as: anonymous
+        request:
+          method: PUT
+          url: "${test.inbox}"
+          contentType: application/json
+          bodyJSON:
+            respond: [503, 202]
+        response:
+          statusCode: 204
+      - label: subscribe to the resource, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${watched}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: update the resource (1)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 1
+        response:
+          statusCode: [200, 204]
+      - label: the Update arrives twice, refused with 503 and then accepted
+        as: anonymous
+        poll: {within: 60, every: 3}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /status
+                  equals: 503
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${watched}"
+            - pointer: /deliveries
+              some:
+                - pointer: /status
+                  equals: 202
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${watched}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#webhook-subscription-deactivated"
+    type: ValidationTest
+    name: webhook-subscription-deactivated
+    label: A subscription whose inbox keeps refusing deliveries is deactivated
+    comment: >-
+      "Expiration: After repeated failures, the server MAY deactivate the subscription." The
+      inbox answers every delivery 410 Gone. After five updates to the subscribed resource,
+      each a delivery the inbox refuses, the subscription comes to be gone or inactive: its URL
+      answers 404 or 410 (a problem document saying so), or 200 with "active": false, the two
+      ways our servers show it; the suite does not say how deactivation shows. A server that
+      keeps the subscription active fails this MAY.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery
+    traits: [Put, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/delivery-deactivation-optional
+    prereqs:
+      hierarchy:
+        - dataResource: watched
+          contentType: text/plain
+          body: watched for changes
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: script the inbox to answer 410 Gone to every delivery
+        as: anonymous
+        request:
+          method: PUT
+          url: "${test.inbox}"
+          contentType: application/json
+          bodyJSON:
+            respond: [410]
+        response:
+          statusCode: 204
+      - label: subscribe to the resource, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${watched}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: update the resource (1)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 1
+        response:
+          statusCode: [200, 204]
+      - label: update the resource (2)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 2
+        response:
+          statusCode: [200, 204]
+      - label: update the resource (3)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 3
+        response:
+          statusCode: [200, 204]
+      - label: update the resource (4)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 4
+        response:
+          statusCode: [200, 204]
+      - label: update the resource (5)
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: update 5
+        response:
+          statusCode: [200, 204]
+      - label: the inbox refused at least one delivery
+        as: anonymous
+        poll: {within: 60, every: 3}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /status
+                  equals: 410
+      - label: the subscription comes to be gone or inactive
+        poll: {within: 60, every: 3}
+        request:
+          method: GET
+          url: "${subscription}"
+          accept: application/lws+json
+        response:
+          statusCode: [200, 404, 410]
+          bodyMatches: '"active"\s*:\s*false|"status"\s*:\s*(404|410)'
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]

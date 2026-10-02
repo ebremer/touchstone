@@ -22,7 +22,8 @@ import com.sun.net.httpserver.HttpServer;
  * Provider and of the rogue one. A target that declares ReachableFixtures dereferences these,
  * so the harness owns the parties it must be able to make misbehave (DESIGN.md section 1).
  *
- * <p>It also serves the inboxes of running tests (section 5.4): POST records a delivery, GET
+ * <p>It also serves the inboxes of running tests (section 5.4): POST records a delivery, PUT
+ * scripts how the inbox answers, GET
  * returns the record. It serves nothing else (section 10), answers only GET and HEAD outside
  * the inboxes, and runs only while a run does. Bound to the loopback interface when {@code fixtures.baseUrl} names a loopback host,
  * otherwise to every interface on its port, unless {@code fixtures.bind} ({@code host:port})
@@ -118,7 +119,8 @@ final class FixtureHost implements AutoCloseable {
     }
 
     /**
-     * {@code inbox/<id>/}: POST records a delivery, GET and HEAD return the record (section 5.4).
+     * {@code inbox/<id>/}: POST records a delivery, PUT scripts the statuses it is answered with,
+     * GET and HEAD return the record (section 5.4).
      * Only the inbox URL itself is served, and only while its test runs.
      */
     private static void inbox(HttpExchange exchange, String rest, RunSession run, String basePath) throws IOException {
@@ -147,6 +149,19 @@ final class FixtureHost implements AutoCloseable {
                         storage -> storageDescription(run, storage));
                 exchange.sendResponseHeaders(inboxes.record(id, method, exchange.getRequestHeaders(), body, inspection), -1);
             }
+            case "PUT" -> {
+                // The test scripts how its inbox answers the deliveries that follow (section 5.4).
+                byte[] body = exchange.getRequestBody().readNBytes(64 * 1024 + 1);
+                JsonNode document = null;
+                if (body.length <= 64 * 1024) {
+                    try {
+                        document = Templates.JSON.readTree(body);
+                    } catch (IOException e) {
+                        document = null;
+                    }
+                }
+                exchange.sendResponseHeaders(inboxes.script(id, document), -1);
+            }
             case "GET", "HEAD" -> {
                 JsonNode view = inboxes.view(id);
                 if (view == null) {
@@ -167,7 +182,7 @@ final class FixtureHost implements AutoCloseable {
                 }
             }
             default -> {
-                exchange.getResponseHeaders().set("Allow", "GET, HEAD, POST");
+                exchange.getResponseHeaders().set("Allow", "GET, HEAD, POST, PUT");
                 exchange.sendResponseHeaders(405, -1);
             }
         }

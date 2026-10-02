@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **192 tests**: 153 MUST, 31 SHOULD, 8 MAY; 122 validation tests, 70 negative tests.
-- **259 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **194 tests**: 153 MUST, 31 SHOULD, 10 MAY; 124 validation tests, 70 negative tests.
+- **261 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -27,7 +27,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 | `index/manifest` | 38 | 28 | 6 | 4 |
-| `notifications/webhook/manifest` | 9 | 8 | 1 | 0 |
+| `notifications/webhook/manifest` | 11 | 8 | 1 | 2 |
 
 ## 1. lws-test-suite → definitions
 
@@ -371,3 +371,5 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `webhook-signature-components` | Validation | MUST | ReachableFixtures |  |
 | `webhook-signing-key-published` | Validation | MUST | ReachableFixtures |  |
 | `webhook-signature-verifies` | Validation | MUST | ReachableFixtures |  |
+| `webhook-delivery-retried` | Validation | MAY | ReachableFixtures |  |
+| `webhook-subscription-deactivated` | Validation | MAY | ReachableFixtures |  |

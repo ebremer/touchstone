@@ -2241,3 +2241,43 @@ of the draft, not an accident. If the working group meant only `type` to come fr
 headers, this test should be withdrawn.
 
 Drafted by an agent; waits on branch `index-round3`.
+
+### D-0070 — format 0.7.0: a scripted inbox, for webhook retry and deactivation
+The webhook suite's two remaining server MAYs, "Retry: On failure, the server MAY retry
+delivery" and "Expiration: After repeated failures, the server MAY deactivate the
+subscription", need an inbox that fails on purpose. Until now every inbox answered 202.
+
+**Format 0.7.0.** One addition, changing nothing a 0.6.0 definition relies on:
+- A PUT of `{"respond": [s1, s2, ...]}` to `${test.inbox}` scripts the deliveries that follow.
+  The next is answered s1, then s2, and the last status answers every later delivery.
+  Statuses are integers 200–599, at most 10; anything else is 400, and an inbox not open is
+  404 (EXECUTION.md section 5.4).
+- Each delivery record gains `status`, the status it was answered with.
+- Tests send the PUT as `anonymous`, before they give the server the inbox. A server under test
+  could PUT to the inbox it was given, but that only disturbs its own test.
+
+**Two definitions** (`notifications/webhook/manifest`), both MAY:
+- `webhook-delivery-retried`: the inbox answers 503 once and 202 after. One update to the
+  subscribed resource must reach the inbox twice: answered 503, then 202.
+- `webhook-subscription-deactivated`: the inbox answers 410 to everything, and the resource is
+  updated five times. The subscription must come to be gone or inactive: 404 or 410 (a problem
+  document saying so), or 200 with `"active": false`.
+  - The suite does not say how deactivation shows, and our servers differ. Halcyon removes the
+    subscription after five consecutive failures; lws-server keeps it with `"active": false`,
+    at once on 410.
+  - A first draft accepted only 404/410, and so failed lws-server for a deactivation it had
+    made.
+  - Five updates is Halcyon's threshold. A server with a higher one, lws-server's own default
+    of 10 failures for statuses other than 410 for instance, would need more; 410 is what
+    makes the test reach it.
+
+**The reference server follows.**
+- It retries a 5xx or an unreachable inbox up to three times, a second apart, re-signing each
+  attempt.
+- It deactivates a subscription at once on 410, or after five consecutive failed deliveries,
+  by removing it.
+
+**Against our deployments** (2026-10-02): Halcyon (`c6435d0`) and lws-server (`e65a4dc`) both
+pass both tests, and all 11 webhook tests.
+
+Drafted by an agent; waits on branch `webhook-retry`.
