@@ -155,6 +155,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
         precondition: true
@@ -255,6 +256,7 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/alg-not-none
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-reject-alg-none
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
         precondition: true
@@ -429,6 +431,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     mirrors: lws10/auth/did_key/manifest.jsonld#authn-didkey-invalid-signature
     steps:
       - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
@@ -479,6 +482,7 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/alg-not-none
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-all-claims
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
         precondition: true
@@ -626,6 +630,7 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/aud-includes-as
       - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-all-claims
+      - https://example.org/touchstone/req/lws10-core/authn-audience-restriction-recommended
     steps:
       - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
         precondition: true
@@ -749,6 +754,165 @@ entries:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
             resource: "${as.realm}"
             subject_token: "${credential.didkey-missing-iat}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-didkey-missing-subject"
+    type: NegativeTest
+    name: authn-cid-didkey-missing-subject
+    label: A did:key credential without a sub claim is refused
+    comment: >-
+      The core authentication data model makes the sub (subject) claim REQUIRED in every
+      authentication credential. The CID suite then requires sub, iss and client_id to
+      share one URI, which a credential lacking one of them cannot do. Either rule refuses
+      it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authn-subject-claim-uri
+      - https://example.org/touchstone/req/lws10-core/authn-credential-tamper-evident-claims
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-missing-sub}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-didkey-missing-issuer"
+    type: NegativeTest
+    name: authn-cid-didkey-missing-issuer
+    label: A did:key credential without an iss claim is refused
+    comment: >-
+      The core authentication data model makes the iss (issuer) claim REQUIRED in every
+      authentication credential. The CID suite then requires sub, iss and client_id to
+      share one URI, which a credential lacking one of them cannot do. Either rule refuses
+      it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authn-issuer-claim-uri
+      - https://example.org/touchstone/req/lws10-core/authn-credential-tamper-evident-claims
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-missing-iss}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-didkey-missing-client-id"
+    type: NegativeTest
+    name: authn-cid-didkey-missing-client-id
+    label: A did:key credential without a client_id claim is refused
+    comment: >-
+      The core authentication data model makes the client_id (client) claim REQUIRED in every
+      authentication credential. The CID suite then requires sub, iss and client_id to
+      share one URI, which a credential lacking one of them cannot do. Either rule refuses
+      it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authn-client-claim
+      - https://example.org/touchstone/req/lws10-core/authn-credential-tamper-evident-claims
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+    steps:
+      - label: the authorization server accepts did:key subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_identifier_types_supported
+              hasValue: did:key
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+      - label: exchange the defective credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.didkey-missing-client-id}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
           statusCode: 400

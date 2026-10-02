@@ -1,0 +1,397 @@
+# Pagination of container listings (LWS 1.0 core section 12.1.2).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: pagination"
+comment: >-
+  The threshold above which a server paginates is its own choice, and format 0.3.0 can
+  neither read a page size from the target nor create members in bulk. So each test
+  builds a container with five members. The multi-page tests apply only when the server
+  splits it into pages (its first page carries rel="next"); pagination-single-page covers
+  a server that presents the five as one paginated page. A server that does neither is
+  inapplicable here, not failed (D-0062). Page URIs are opaque: every page is reached
+  through a link the server gave.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+
+  - id: "#pagination-first-page"
+    type: ValidationTest
+    name: pagination-first-page
+    label: The first page of a container split into pages has rel="first" and no rel="prev"
+    comment: >-
+      Requesting the container's own URI yields the first page, with 200. rel="first" MUST
+      be present on a paginated response and rel="prev" MUST be omitted on the first page.
+      The body is the container's: its id and type reflect the whole container.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-link-first
+      - https://example.org/touchstone/req/lws10-core/pagination-link-prev
+      - https://example.org/touchstone/req/lws10-core/pagination-200-totalitems-all-pages
+      - https://example.org/touchstone/req/lws10-core/pagination-first-page-flow
+    prereqs:
+      hierarchy:
+        - container: paged
+        - dataResource: m1
+          in: paged
+          contentType: text/plain
+          body: member 1
+        - dataResource: m2
+          in: paged
+          contentType: text/plain
+          body: member 2
+        - dataResource: m3
+          in: paged
+          contentType: text/plain
+          body: member 3
+        - dataResource: m4
+          in: paged
+          contentType: text/plain
+          body: member 4
+        - dataResource: m5
+          in: paged
+          contentType: text/plain
+          body: member 5
+    steps:
+      - label: the server splits a five-member container into pages (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+            - rel: next
+      - label: the first page does not link back
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          linkHeaders:
+            - rel: first
+            - rel: prev
+              absent: true
+          json:
+            - pointer: /id
+              equalsIri: "${paged}"
+            - pointer: /type
+              hasValue: Container
+            - pointer: /items
+              jsonType: array
+
+  - id: "#pagination-next-page"
+    type: ValidationTest
+    name: pagination-next-page
+    label: Following rel="next" yields a further page of the same container, without the first page's members
+    comment: >-
+      The next page is reached only through the URI the server gave. It is 200, still
+      carries rel="first", describes the same container, and does not repeat the first
+      member of page one.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-link-first
+      - https://example.org/touchstone/req/lws10-core/pagination-200-totalitems-all-pages
+    prereqs:
+      hierarchy:
+        - container: paged
+        - dataResource: m1
+          in: paged
+          contentType: text/plain
+          body: member 1
+        - dataResource: m2
+          in: paged
+          contentType: text/plain
+          body: member 2
+        - dataResource: m3
+          in: paged
+          contentType: text/plain
+          body: member 3
+        - dataResource: m4
+          in: paged
+          contentType: text/plain
+          body: member 4
+        - dataResource: m5
+          in: paged
+          contentType: text/plain
+          body: member 5
+    steps:
+      - label: the server splits a five-member container into pages (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+            - rel: next
+      - label: read the first page, keeping its next link and its first member
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+              capture: next
+          json:
+            - pointer: /items/0/id
+              capture: firstMember
+      - label: the next page is another page of the same container
+        request:
+          method: GET
+          url: "${next}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+          json:
+            - pointer: /id
+              equalsIri: "${paged}"
+            - pointer: /items
+              jsonType: array
+            - pointer: /items
+              none:
+                - pointer: /id
+                  equalsIri: "${firstMember}"
+
+  - id: "#pagination-single-page"
+    type: ValidationTest
+    name: pagination-single-page
+    label: A paginated listing that holds every member on one page has neither rel="next" nor rel="prev"
+    comment: >-
+      A server may present a container as paginated (rel="first") even when all its
+      members fit on one page. That page is both the first and the last, so rel="prev"
+      ("MUST be omitted on the first page") and rel="next" ("MUST be omitted on the last
+      page") are both absent. Applies when the five-member container's paginated listing
+      carries all five.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-link-next
+      - https://example.org/touchstone/req/lws10-core/pagination-link-prev
+      - https://example.org/touchstone/req/lws10-core/pagination-link-first
+    prereqs:
+      hierarchy:
+        - container: paged
+        - dataResource: m1
+          in: paged
+          contentType: text/plain
+          body: member 1
+        - dataResource: m2
+          in: paged
+          contentType: text/plain
+          body: member 2
+        - dataResource: m3
+          in: paged
+          contentType: text/plain
+          body: member 3
+        - dataResource: m4
+          in: paged
+          contentType: text/plain
+          body: member 4
+        - dataResource: m5
+          in: paged
+          contentType: text/plain
+          body: member 5
+    steps:
+      - label: the listing is paginated and holds all five members on its page (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+          json:
+            - pointer: /items/4
+              exists: true
+      - label: the one page links neither forward nor back
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+              absent: true
+            - rel: prev
+              absent: true
+
+  - id: "#pagination-last-page"
+    type: ValidationTest
+    name: pagination-last-page
+    label: The last page has rel="first" and no rel="next"
+    comment: >-
+      rel="last" is a MAY, so the test applies only when the first page offers it. The
+      last page is 200, keeps rel="first", and omits rel="next", which "MUST be omitted on
+      the last page".
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-link-last
+      - https://example.org/touchstone/req/lws10-core/pagination-link-next
+      - https://example.org/touchstone/req/lws10-core/pagination-link-first
+    prereqs:
+      hierarchy:
+        - container: paged
+        - dataResource: m1
+          in: paged
+          contentType: text/plain
+          body: member 1
+        - dataResource: m2
+          in: paged
+          contentType: text/plain
+          body: member 2
+        - dataResource: m3
+          in: paged
+          contentType: text/plain
+          body: member 3
+        - dataResource: m4
+          in: paged
+          contentType: text/plain
+          body: member 4
+        - dataResource: m5
+          in: paged
+          contentType: text/plain
+          body: member 5
+    steps:
+      - label: the server splits a five-member container into pages (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+            - rel: next
+      - label: the first page names the last one (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: last
+              capture: last
+      - label: the last page links to the first and to no next page
+        request:
+          method: GET
+          url: "${last}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+            - rel: next
+              absent: true
+
+  - id: "#pagination-totalitems-all-pages"
+    type: ValidationTest
+    name: pagination-totalitems-all-pages
+    label: totalItems counts the whole container on every page
+    comment: >-
+      "The totalItems property in the response body SHOULD reflect the total number of
+      items across all pages, not just the current page." Five members: totalItems is 5
+      on the first page and on the next.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+    traits: [Get, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-200-totalitems-all-pages
+    prereqs:
+      hierarchy:
+        - container: paged
+        - dataResource: m1
+          in: paged
+          contentType: text/plain
+          body: member 1
+        - dataResource: m2
+          in: paged
+          contentType: text/plain
+          body: member 2
+        - dataResource: m3
+          in: paged
+          contentType: text/plain
+          body: member 3
+        - dataResource: m4
+          in: paged
+          contentType: text/plain
+          body: member 4
+        - dataResource: m5
+          in: paged
+          contentType: text/plain
+          body: member 5
+    steps:
+      - label: the server splits a five-member container into pages (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: first
+            - rel: next
+      - label: the first page counts all five members
+        request:
+          method: GET
+          url: "${paged}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+              capture: next
+          json:
+            - pointer: /totalItems
+              equals: 5
+      - label: and so does the next page
+        request:
+          method: GET
+          url: "${next}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /totalItems
+              equals: 5

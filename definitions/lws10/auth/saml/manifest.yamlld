@@ -92,6 +92,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-saml/validation-signature
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     mirrors: lws10/auth/saml/manifest.jsonld#authn-saml-invalid-signature
     steps:
       - label: the authorization server takes SAML 2.0 assertions (otherwise this test does not apply)
@@ -138,6 +139,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-saml/signed-and-required-assertions
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server takes SAML 2.0 assertions (otherwise this test does not apply)
         precondition: true

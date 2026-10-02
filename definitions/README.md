@@ -243,7 +243,8 @@ lws-test-suite's context in ways its test group must agree to:
   definitions that fails the checks of `EXECUTION.md` section 2 before sending anything.
 - **The reference deployment.** `harness-fixtures` holds a reference storage server and a
   reference authorization server that follow the 21 September draft. Against them all
-  120 definitions pass. Against their broken twins, the tests that exist to
+  definitions pass except `pagination-single-page`, which does not apply: the reference splits the
+  test container into pages (D-0062). Against their broken twins, the tests that exist to
   catch each defect fail.
 - **The retired manifests.** The YAML test manifests Touchstone ran before (schema 1-1-0,
   following the 21 August draft) were retired when the engine replaced them (D-0055).
@@ -294,8 +295,10 @@ These affect how tests are written, and are worth raising with the WG:
 - **Notification delivery.** Subscribing is defined (D-0061), for WebhookSubscription.
   Delivery needs a sink the target can reach, and the delivery-time and revocation
   authorization MUSTs deserve a negative matrix (D-0041).
-- **Pagination.** The threshold is server-chosen, so a deterministic test needs the
-  target to declare a page size.
+- **Pagination thresholds.** Pagination is defined (D-0062), but only for a server that
+  paginates a five-member container: format 0.3.0 cannot read a page size from the target
+  or create members in bulk, so a server with a larger threshold is inapplicable.
+  Deferred to a later format version: a target-declared page size.
 - **Access-profile constraints** (client, format, type, purpose, dateTime) and access
   notifications (section 11.6).
 - **Optional behaviours:** RFC 9457 problem details (SHOULD), `Prefer: set-linkset`

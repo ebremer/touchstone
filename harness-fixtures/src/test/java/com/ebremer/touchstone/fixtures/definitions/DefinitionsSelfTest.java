@@ -38,6 +38,11 @@ import org.junit.jupiter.api.Test;
  */
 class DefinitionsSelfTest {
 
+    /**
+     * The reference splits the five-member container into pages, so the test for a server that
+     * presents it as one page does not apply to it; every other definition does.
+     */
+    private static final String SINGLE_PAGE = "core/pagination#pagination-single-page";
     private static Definitions definitions;
 
     @BeforeAll
@@ -53,7 +58,7 @@ class DefinitionsSelfTest {
             RunResult run = run(scenario);
 
             assertThat(run.results()).hasSize(definitions.tests().size());
-            assertThat(notPassed(run)).as(details(run)).isEmpty();
+            assertThat(notPassed(run)).as(details(run)).containsExactly(Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE));
             assertThat(run.conformant()).isTrue();
             // Every test container, grant and access request is gone, and the run root with them.
             assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
@@ -68,7 +73,9 @@ class DefinitionsSelfTest {
             Set<String> needAuthentication = definitions.tests().stream()
                     .filter(t -> t.requires().contains("Authentication"))
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
-            assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(needAuthentication);
+            Set<String> expected = new TreeSet<>(needAuthentication);
+            expected.add(SINGLE_PAGE);
+            assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(expected);
             assertThat(notPassed(run).values()).containsOnly(Outcome.INAPPLICABLE);
             assertThat(scenario.storage().residue()).isEmpty();
         }
@@ -85,7 +92,7 @@ class DefinitionsSelfTest {
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
             expected.add("core/authorization_server#authz-token-exchange-invalid-resource");
             assertThat(failed(run)).as(details(run)).isEqualTo(expected);
-            assertThat(expected).hasSize(20);
+            assertThat(expected).hasSize(23);
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
         }
     }

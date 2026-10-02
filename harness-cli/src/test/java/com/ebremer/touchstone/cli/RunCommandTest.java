@@ -33,7 +33,7 @@ class RunCommandTest {
             int exit = run(out, targetsFile(scenario), Path.of("../definitions"), "all");
 
             assertThat(out.toString())
-                    .contains("120 passed, 0 failed, 0 cantTell, 0 inapplicable")
+                    .contains("128 passed, 0 failed, 0 cantTell, 1 inapplicable")
                     .contains("conformant: no MUST test failed or ended cantTell")
                     .contains("[passed      ] MUST   core/containers#getContainer")
                     .contains("[passed      ] MUST   core/notifications#subscription-unreadable-topic-refused");
@@ -58,7 +58,7 @@ class RunCommandTest {
             org.apache.jena.riot.RDFDataMgr.read(earl, runDir.resolve("earl.ttl").toUri().toString());
             assertThat(earl.listResourcesWithProperty(
                     org.apache.jena.vocabulary.RDF.type,
-                    earl.createResource("http://www.w3.org/ns/earl#Assertion")).toList()).hasSize(120);
+                    earl.createResource("http://www.w3.org/ns/earl#Assertion")).toList()).hasSize(129);
             assertThat(earl.containsResource(earl.createResource(
                     "https://example.org/touchstone/test/lws10/core/containers#getContainer"))).isTrue();
 
@@ -70,7 +70,7 @@ class RunCommandTest {
                     .contains("CONFORMANT &mdash; no MUST test failed");
 
             String junit = Files.readString(runDir.resolve("junit.xml"));
-            assertThat(junit).contains("tests=\"120\"").contains("failures=\"0\"")
+            assertThat(junit).contains("tests=\"129\"").contains("failures=\"0\"")
                     .contains("classname=\"core/containers\" name=\"getContainer\"");
         }
     }

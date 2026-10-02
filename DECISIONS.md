@@ -1802,3 +1802,53 @@ The run's residue includes subscriptions. Against the reference all 120 tests pa
 `notification-service-advertised`, which was inapplicable. Pinned counts move from 111 to 120. The
 broken storage subscribes anyone to anything, so `subscription-unreadable-topic-refused` joins the
 tests that must catch it. Drafted by an agent; waits on branch `tests/subscriptions-and-metadata`.
+
+### D-0062 — coverage: the core authentication data model, and pagination
+Nine definitions and new citations on existing tests (catalog coverage 161 → 174 of 219).
+
+**The core authentication data model.** Core 7.1 makes `sub`, `iss` and `client_id` REQUIRED in
+every authentication credential, and requires credentials to be signed.
+- `authn-cid-didkey-missing-subject`, `-missing-issuer`, `-missing-client-id` (MUST, `auth/cid`):
+  each presents the did:key credential without one of the three claims at the token endpoint and
+  expects 400 `invalid_request`. The CID suite's sub = iss = client_id rule refuses them as well; the
+  test proves the refusal, whichever rule produces it.
+  *No new fault term.* The fault vocabulary is part of the frozen format (0.3.0), so the identities
+  `didkey-missing-sub`, `didkey-missing-iss` and `didkey-missing-client-id` are standalone CID
+  identities. Their claims are written out in full, minus the one missing claim. They sign with the
+  run's did:key key, as `didkey` does.
+- `authz-metadata-subject-token-types-are-uris` (MUST): every advertised subject token type is a
+  URI, since "each authentication suite MUST be associated with a token type URI".
+- Citations only, for clauses those tests already proved:
+  - `authn-credential-signed` on the eight bad-signature, `alg: none` and unsigned tests of the
+    three suites;
+  - `authn-client-claim` on `authn-oidc-missing-azp`;
+  - `authn-audience-restriction-recommended` on `authn-cid-didkey-audience-excludes-as`.
+
+**Pagination** (`core/pagination`, a new module). The threshold is the server's, and format 0.3.0
+can neither read a page size from the target nor create members in bulk. Each test therefore builds
+a container with five members and reaches every page through links the server gave.
+- When the first page carries `rel="next"`, the container really spans pages, and four tests apply:
+  - `pagination-first-page` (MUST): `first` present, `prev` absent, and `id`/`type` describe the
+    container;
+  - `pagination-next-page` (MUST): the next page is 200, keeps `first`, describes the same container,
+    and does not repeat page one's first member;
+  - `pagination-last-page` (MUST, also needs the optional `last`): `first` present, `next` absent;
+  - `pagination-totalitems-all-pages` (SHOULD): `totalItems` is 5 on the first and the next page.
+- `pagination-single-page` (MUST): a server may present the whole container as one paginated page,
+  with `rel="first"` and all five members. That page is first and last, so `next` and `prev` are
+  both absent. The first draft of these tests treated `rel="first"` alone as "spans pages" and
+  failed Halcyon, which marks every listing with `first`. That reading was wrong, so the gate is
+  `next`.
+- Not defined: `pagination-over-threshold` (needs the threshold) and `pagination-uris-opaque` (an
+  obligation on clients).
+
+**The reference server follows.** `RefLwsServer` pages container listings at four members:
+`?page=N`, links `first`, `prev`, `next` and `last`, an entity tag per page, and `totalItems` for
+the whole container. No other definition lists more than four members. Against the reference
+128 of 129 pass; `pagination-single-page` is inapplicable there by construction. The broken
+authorization server exchanges anything, so the three new credential tests join the auth negative
+tests that must catch it (20 → 23). Pinned counts move from 120 to 129.
+
+Against our deployments, Halcyon (fixed page size 100) passes `pagination-single-page`. lws-server
+(page size 1000) lists the five members without pagination links, so pagination does not apply
+to it. Drafted by an agent; waits on branch `tests/authn-and-pagination`.

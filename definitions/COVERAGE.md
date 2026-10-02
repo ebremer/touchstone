@@ -6,24 +6,25 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **120 tests**: 97 MUST, 20 SHOULD, 3 MAY; 66 validation tests, 54 negative tests.
-- **161 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **129 tests**: 105 MUST, 21 SHOULD, 3 MAY; 72 validation tests, 57 negative tests.
+- **174 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
-| `auth/cid/manifest` | 14 | 14 | 0 | 0 |
+| `auth/cid/manifest` | 17 | 17 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
 | `core/access_grants` | 11 | 9 | 1 | 1 |
-| `core/authorization_server` | 8 | 6 | 2 | 0 |
+| `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 16 | 10 | 5 | 1 |
 | `core/data_resources` | 15 | 9 | 5 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
 | `core/linksets` | 8 | 7 | 1 | 0 |
 | `core/notifications` | 6 | 6 | 0 | 0 |
+| `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 
 ## 1. lws-test-suite → definitions
@@ -120,6 +121,9 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authn-cid-didkey-audience-excludes-as` | Negative | MUST | Authentication |  |
 | `authn-cid-didkey-missing-exp` | Negative | MUST | Authentication |  |
 | `authn-cid-didkey-missing-iat` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-missing-subject` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-missing-issuer` | Negative | MUST | Authentication |  |
+| `authn-cid-didkey-missing-client-id` | Negative | MUST | Authentication |  |
 
 ### `auth/oidc/manifest`
 
@@ -162,6 +166,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 |---|---|---|---|---|
 | `authz-server-metadata-well-known` | Validation | MUST | Authentication | authz-server-metadata-well-known |
 | `authz-metadata-subject-token-types` | Validation | SHOULD | Authentication |  |
+| `authz-metadata-subject-token-types-are-uris` | Validation | MUST | Authentication |  |
 | `authz-metadata-subject-identifier-types` | Validation | SHOULD | Authentication |  |
 | `authz-token-exchange-valid` | Validation | MUST | Authentication | authz-token-exchange-valid |
 | `authz-token-exchange-invalid-resource` | Negative | MUST | Authentication | authz-token-exchange-invalid-resource |
@@ -259,6 +264,16 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `subscription-unadvertised-type-refused` | Negative | MUST |  |  |
 | `subscription-missing-topic-refused` | Negative | MUST |  |  |
 | `subscription-unreadable-topic-refused` | Negative | MUST | Authentication |  |
+
+### `core/pagination`
+
+| Test | Type | Level | Requires | Mirrors |
+|---|---|---|---|---|
+| `pagination-first-page` | Validation | MUST |  |  |
+| `pagination-next-page` | Validation | MUST |  |  |
+| `pagination-single-page` | Validation | MUST |  |  |
+| `pagination-last-page` | Validation | MUST |  |  |
+| `pagination-totalitems-all-pages` | Validation | SHOULD |  |  |
 
 ### `core/storage_authorization`
 

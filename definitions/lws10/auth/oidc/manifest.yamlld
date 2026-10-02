@@ -149,6 +149,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-openid/id-token-alg-not-none
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
         precondition: true
@@ -198,6 +199,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-openid/validation-locate-issuer-service-and-verify
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
     steps:
       - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
         precondition: true
@@ -299,6 +301,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-authn-openid/id-token-azp-claim
+      - https://example.org/touchstone/req/lws10-core/authn-client-claim
     steps:
       - label: the authorization server takes ID Tokens for https subjects (otherwise this test does not apply)
         precondition: true

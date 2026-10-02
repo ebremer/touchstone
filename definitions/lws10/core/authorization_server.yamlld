@@ -82,6 +82,38 @@ entries:
         - pointer: /subject_token_types_supported
           jsonType: array
 
+  - id: "#authz-metadata-subject-token-types-are-uris"
+    type: ValidationTest
+    name: authz-metadata-subject-token-types-are-uris
+    label: Every subject token type the metadata advertises is a URI
+    comment: >-
+      "Each authentication suite MUST be associated with a token type URI", the value a
+      client sends as subject_token_type. So every entry of subject_token_types_supported,
+      when the metadata has it, names a suite's token type and must be a URI (the suites
+      use the IANA OAuth URI registry's urn:ietf:params:oauth:token-type values).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-type-identifier
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+    traits: [Get, Discovery, TokenExchange]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authn-suite-token-type-uri
+    request:
+      method: GET
+      url: "${as.metadataUrl}"
+      accept: application/json
+    response:
+      statusCode: 200
+      json:
+        - pointer: /subject_token_types_supported
+          optional: true
+          every:
+            - pointer: ""
+              matches: '^[A-Za-z][A-Za-z0-9+.-]*:\S+$'
+
   - id: "#authz-metadata-subject-identifier-types"
     type: ValidationTest
     name: authz-metadata-subject-identifier-types

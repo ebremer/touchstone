@@ -210,6 +210,75 @@ identities:
     basis: didkey
     fault: MissingIssuedAt
 
+  - id: "#didkey-missing-sub"
+    type: Identity
+    label: did:key credential without a sub claim
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    comment: >-
+      The did:key credential with no sub claim, otherwise intact and signed with the
+      run's did:key key. The subject claim is REQUIRED (core 7.1). No fault term
+      expresses a missing claim of the core data model, and the fault vocabulary is part
+      of the frozen format, so the claims are written out (D-0062).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+
+  - id: "#didkey-missing-iss"
+    type: Identity
+    label: did:key credential without an iss claim
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    comment: >-
+      The did:key credential with no iss claim, otherwise intact and signed with the
+      run's did:key key. The issuer claim is REQUIRED (core 7.1). No fault term
+      expresses a missing claim of the core data model, and the fault vocabulary is part
+      of the frozen format, so the claims are written out (D-0062).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+
+  - id: "#didkey-missing-client-id"
+    type: Identity
+    label: did:key credential without a client_id claim
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    comment: >-
+      The did:key credential with no client_id claim, otherwise intact and signed with the
+      run's did:key key. The client claim is REQUIRED (core 7.1). No fault term
+      expresses a missing claim of the core data model, and the fault vocabulary is part
+      of the frozen format, so the claims are written out (D-0062).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+
   # ---------------------------------------------------- OpenID Connect ID Tokens
 
   - id: "#oidc"

@@ -28,6 +28,7 @@ include:
   - core/authorization_server.yamlld
   - core/access_grants.yamlld
   - core/notifications.yamlld
+  - core/pagination.yamlld
   - auth/oidc/manifest.yamlld
   - auth/cid/manifest.yamlld
   - auth/saml/manifest.yamlld

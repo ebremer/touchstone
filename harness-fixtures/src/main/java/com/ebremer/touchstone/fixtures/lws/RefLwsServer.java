@@ -51,6 +51,8 @@ import org.eclipse.jetty.util.Callback;
  *       refusing PUT with 405, removed with its resource;</li>
  *   <li>access grants and access requests (section 11) as LWS containers, and authorization
  *       by ownership or grant: {@code foaf:Agent} is the public;</li>
+ *   <li>container listings paginated above {@value #PAGE_SIZE} members (section 12.1.2), each
+ *       page reached through {@code first}/{@code prev}/{@code next}/{@code last} links;</li>
  *   <li>a NotificationService offering {@code WebhookSubscription}: subscriptions are
  *       created (section 10.3, with read access to every topic enforced), read and cancelled.</li>
  * </ul>
@@ -85,6 +87,11 @@ public final class RefLwsServer implements AutoCloseable {
     private static final String SUBSCRIPTIONS = "/_subscriptions/";
     private static final String WEBHOOK = "WebhookSubscription";
     private static final Set<String> ACTIONS = Set.of("read", "modify", "create", "delete");
+    /**
+     * Members per page of a container listing. Small, so that the pagination definitions'
+     * five-member container spans two pages; no other definition lists more than four.
+     */
+    static final int PAGE_SIZE = 4;
 
     private final AuthMode authMode;
     private final Server server;
@@ -443,6 +450,12 @@ public final class RefLwsServer implements AutoCloseable {
                 status(request, response, callback, 304);
                 return;
             }
+            int pages = node.container ? Math.max(1, (node.children.size() + PAGE_SIZE - 1) / PAGE_SIZE) : 1;
+            int page = node.container ? requestedPage(request) : 1;
+            if (page < 1 || page > pages) {
+                status(request, response, callback, 404);
+                return;
+            }
             byte[] body;
             String contentType;
             if (STORAGE_PATH.equals(path)) {
@@ -455,7 +468,7 @@ public final class RefLwsServer implements AutoCloseable {
                     return;
                 }
                 response.getHeaders().put(HttpHeader.VARY, "Accept");
-                body = LWS_CID.equals(contentType) ? storageDescription(request) : listing(request, path, node);
+                body = LWS_CID.equals(contentType) ? storageDescription(request) : listing(request, path, node, page);
             } else if (node.container) {
                 contentType = negotiate(request.getHeaders().get("Accept"));
                 if (contentType == null) {
@@ -465,7 +478,7 @@ public final class RefLwsServer implements AutoCloseable {
                 // "Because the Content-Type of a container response depends on the request's
                 // Accept header, these responses SHOULD include a Vary: Accept header."
                 response.getHeaders().put(HttpHeader.VARY, "Accept");
-                body = listing(request, path, node);
+                body = listing(request, path, node, page);
             } else {
                 contentType = node.contentType;
                 body = node.bytes;
@@ -498,10 +511,52 @@ public final class RefLwsServer implements AutoCloseable {
             }
             response.setStatus(200);
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, contentType);
-            response.getHeaders().put(HttpHeader.ETAG, node.etag);
+            // Each page is its own representation, so a later page has its own entity tag.
+            response.getHeaders().put(HttpHeader.ETAG, page == 1 ? node.etag
+                    : node.etag.substring(0, node.etag.length() - 1) + "-page" + page + '"');
             response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
             addResourceLinks(request, response, path, node);
+            if (pages > 1) {
+                addPageLinks(request, response, path, page, pages);
+            }
             send(response, callback, body, withBody);
+        }
+
+        /** The page a container read asks for: 1 without a page parameter, 0 for a malformed one. */
+        private static int requestedPage(Request request) {
+            String query = request.getHttpURI().getQuery();
+            if (query == null) {
+                return 1;
+            }
+            for (String param : query.split("&")) {
+                if (param.startsWith("page=")) {
+                    try {
+                        return Integer.parseInt(param.substring("page=".length()));
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * "rel=first ... MUST be present on paginated responses", next "MUST be omitted on the
+         * last page", prev "MUST be omitted on the first page"; last is a MAY, given here.
+         */
+        private void addPageLinks(Request request, Response response, String path, int page, int pages) {
+            response.getHeaders().add("Link", "<" + pageUri(request, path, 1) + ">; rel=\"first\"");
+            if (page > 1) {
+                response.getHeaders().add("Link", "<" + pageUri(request, path, page - 1) + ">; rel=\"prev\"");
+            }
+            if (page < pages) {
+                response.getHeaders().add("Link", "<" + pageUri(request, path, page + 1) + ">; rel=\"next\"");
+            }
+            response.getHeaders().add("Link", "<" + pageUri(request, path, pages) + ">; rel=\"last\"");
+        }
+
+        private String pageUri(Request request, String path, int page) {
+            return absolute(request, path) + "?page=" + page;
         }
 
         /** True unless {@code since} is a date and {@code modified} is no later than it. */
@@ -863,7 +918,11 @@ public final class RefLwsServer implements AutoCloseable {
 
         // ---- representations ----
 
-        private byte[] listing(Request request, String path, Node node) {
+        /**
+         * One page of a container's listing: id, type and totalItems describe the whole
+         * container, items only the members on this page (section 12.1.2.1).
+         */
+        private byte[] listing(Request request, String path, Node node, int page) {
             ObjectNode root = mapper.createObjectNode();
             // The context is sent by IRI, as the draft's own example does and as a real server
             // does; harness-core resolves it from its bundled copy, offline (D-0026).
@@ -872,8 +931,18 @@ public final class RefLwsServer implements AutoCloseable {
             root.put("type", "Container");
             List<String> children = new ArrayList<>(node.children);
             children.sort(String::compareTo);
-            ArrayNode items = mapper.createArrayNode();
+            int total = 0;
+            List<String> onPage = new ArrayList<>();
             for (String childPath : children) {
+                if (store.containsKey(childPath)) {
+                    if (total >= (page - 1) * PAGE_SIZE && total < page * PAGE_SIZE) {
+                        onPage.add(childPath);
+                    }
+                    total++;
+                }
+            }
+            ArrayNode items = mapper.createArrayNode();
+            for (String childPath : onPage) {
                 Node child = store.get(childPath);
                 if (child == null) {
                     continue;
@@ -889,7 +958,7 @@ public final class RefLwsServer implements AutoCloseable {
                 }
                 item.put("modified", child.modified.toString());
             }
-            root.put("totalItems", items.size());
+            root.put("totalItems", total);
             root.set("items", items);
             return bytes(root);
         }
