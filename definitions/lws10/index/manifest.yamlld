@@ -2939,3 +2939,89 @@ entries:
           accept: application/lws+json
         response:
           statusCode: [404, 410]
+
+  - id: "#type-search-content-location-protected"
+    type: ValidationTest
+    name: type-search-content-location-protected
+    label: A search result resource named by Content-Location does not hand alice's results to bob
+    comment: >-
+      RFC 10008 lets a QUERY response name, with Content-Location, a resource that represents its
+      results. lws10-index defines no such resource, but "a server that nonetheless exposes one MUST
+      subject it to the same authorization filtering on every access and MUST prevent its reuse
+      across clients". alice searches for a type only her private resource has. If her answer
+      carries a Content-Location, bob fetching it must not see her resource: he may be refused,
+      or answered with what he may read, but alice's result set must not reach him. Applies only
+      when the search response carries Content-Location. The check reads bob's body for the path
+      of this test's container, which every one of alice's results contains (a precondition makes
+      sure), so it holds whether bob's answer is a refusal, empty, or a filtered page.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+      - https://w3c.github.io/lws-protocol/lws10-index/#security-authorization
+    traits: [Discovery, Authz, Private]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/content-location-protected
+    prereqs:
+      hierarchy:
+        - dataResource: secret
+          contentType: text/turtle
+          body: "<> a <${test.container}#Secret> ."
+          linkHeaders:
+            - rel: type
+              href: "${test.container}#Secret"
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: alice's search finds her resource, under this test's container (otherwise this test does not apply)
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Secret"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${secret}"
+                - pointer: /id
+                  matches: 'type-search-content-location-protected/'
+      - label: the search response names a result resource (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Secret"]
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: Content-Location
+              present: true
+              capture: results
+      - label: bob, another client, does not get alice's results from it
+        as: bob
+        request:
+          method: GET
+          url: "${results}"
+        response:
+          statusCode: ["2xx", "4xx"]
+          bodyMatches: '^(?![\s\S]*type-search-content-location-protected/)'

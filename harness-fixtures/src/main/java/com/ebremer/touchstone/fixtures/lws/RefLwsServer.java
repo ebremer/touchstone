@@ -1446,6 +1446,14 @@ public final class RefLwsServer implements AutoCloseable {
                     String token = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(filterBytes);
                     String base = absolute(request, TYPE_SEARCH) + "?q=" + token + "&page=";
                     response.getHeaders().add("Link", "<" + base + 1 + ">; rel=\"first\"");
+                    if (!pageLink) {
+                        // RFC 10008 lets a QUERY response name a resource representing its results.
+                        // lws10-index defines none, but one that is exposed "MUST subject it to the
+                        // same authorization filtering on every access and MUST prevent its reuse
+                        // across clients": the first page link is such a resource, since every GET
+                        // of it re-runs the filter for whoever asks, and so it is named here.
+                        response.getHeaders().put("Content-Location", base + 1);
+                    }
                     if (page < pages) {
                         response.getHeaders().add("Link", "<" + base + (page + 1) + ">; rel=\"next\"");
                     }

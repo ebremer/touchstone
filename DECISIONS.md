@@ -2281,3 +2281,35 @@ subscription", need an inbox that fails on purpose. Until now every inbox answer
 pass both tests, and all 11 webhook tests.
 
 Drafted by an agent; waits on branch `webhook-retry`.
+
+### D-0071 — a protected Content-Location for search results; 401 discoverability cited
+One definition and two citations (catalog coverage 261 → 263 requirements cited):
+- `type-search-content-location-protected` (MUST, `index`). RFC 10008 lets a QUERY response name
+  a resource representing its results with Content-Location. lws10-index defines none, but "a
+  server that nonetheless exposes one MUST subject it to the same authorization filtering on every
+  access and MUST prevent its reuse across clients". alice searches for a type only her private
+  resource has. If the response carries Content-Location (otherwise inapplicable), bob fetching it
+  must not see her resource. He may be refused, answered empty, or given what he may read.
+  *How bob's answer is read.* A refusal may carry any body, or none, so the step does not parse
+  JSON (a non-JSON 404 would fail every `json` expectation). Instead `bodyMatches` requires the
+  body to lack this test's container path segment, `type-search-content-location-protected/`.
+  A precondition makes sure every one of alice's results contains that segment, so the check cannot
+  pass vacuously on a server that ignores the container's Slug hint.
+- `getContainer-private-unauthorized` now also cites `read-401-www-authenticate-discoverability`
+  (SHOULD), whose "WWW-Authenticate ... parameters to guide clients without hardcoded URIs" are the
+  `as_uri` and `realm` it already checks. `discovery-unauthorized-response-headers` cites it for the
+  clause's "metadata links SHOULD be included", the storage link on a 401.
+
+**The reference server follows.** Its Type Search now names its first page link as the
+Content-Location of a QUERY response. That link is stateless, the filter encoded in it, and every
+GET re-runs the filter for whoever asks, which is the same filtering on every access. The broken
+storage filters nothing, so bob reads alice's resource there, and the new test joins those that
+must catch it. Pinned counts move from 194 to 195.
+
+**Not defined:**
+- The access notifications: the draft does not say how a grant is associated with the access
+  request whose inbox it names, nor where the storage controller's inbox is.
+- Notification batching (a MAY a server cannot fail).
+
+The README's "Not yet defined" no longer says the webhook suite is uncatalogued or problem details
+undefined. Drafted by an agent; waits on branch `tests/small-batch`.

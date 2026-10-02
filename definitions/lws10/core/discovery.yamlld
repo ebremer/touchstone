@@ -205,6 +205,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-401-storage-link
+      - https://example.org/touchstone/req/lws10-core/read-401-www-authenticate-discoverability
     mirrors: lws10/manifest.jsonld#discovery-unauthorized-response-headers
     note: >-
       lws-test-suite's version also asserted the challenge (a MUST) and used

@@ -39,6 +39,7 @@ entries:
       - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
       - https://example.org/touchstone/req/lws10-core/authz-challenge-as-uri-param
       - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
+      - https://example.org/touchstone/req/lws10-core/read-401-www-authenticate-discoverability
     mirrors:
       - lws10/manifest.jsonld#getContainer-private-unauthorized
       - lws10/manifest.jsonld#discovery-unauthorized-response-headers

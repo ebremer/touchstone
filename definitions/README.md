@@ -297,17 +297,20 @@ These affect how tests are written, and are worth raising with the WG:
 
 - **Notification delivery to a server without a reachable fixture host.** Delivery is defined
   (D-0065, format 0.4.0) through the per-test inbox, which the target must be able to reach
-  (ReachableFixtures). Signature checks on deliveries belong to the webhook notification suite,
-  which is not catalogued.
+  (ReachableFixtures). Signature checks on deliveries are in the webhook notification suite
+  (`notifications/webhook`).
 - **Pagination thresholds.** Pagination is defined (D-0062), but only for a server that
   paginates a five-member container: the format cannot read a page size from the target
   or create members in bulk, so a server with a larger threshold is inapplicable.
   Deferred to a later format version: a target-declared page size.
-- **Access notifications** (section 11.6), with notification delivery. The access-profile
+- **Access notifications** (section 11.6). The grant-created notification is possible through
+  the per-test inbox, but the draft does not say how a grant is associated with the access
+  request whose inbox it names, nor where the storage controller's inbox is for request-created. The access-profile
   constraints are defined (D-0060, D-0063), except how a request states its purpose: the draft
   does not say, so purpose can be tested only as accepted.
-- **Optional behaviours:** RFC 9457 problem details (SHOULD), `Prefer: set-linkset`
-  (optional), `lws#PreferLinkRelations` (MAY).
+- **Optional behaviours:** `Prefer: set-linkset` (optional) and `lws#PreferLinkRelations`
+  (MAY), whose syntax for naming relations the draft leaves open. (RFC 9457 problem details are
+  `error-problem-details`.)
 - **Key rotation mid-session.** It needs the harness to control the authorization
   server's keys during a run, which a definition cannot ask for, so it stays a
   fixture-level test in `harness-fixtures`.
