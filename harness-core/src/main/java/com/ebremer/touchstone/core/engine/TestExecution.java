@@ -132,6 +132,14 @@ final class TestExecution {
         }
         List<Map.Entry<String, String>> headers = new ArrayList<>();
         headers.add(Http.header("Content-Type", entry.path("contentType").asText()));
+        if (entry.has("linkHeaders")) {
+            List<String[]> links = new ArrayList<>();
+            for (JsonNode l : entry.get("linkHeaders")) {
+                String type = l.path("mediaType").isMissingNode() ? null : l.path("mediaType").asText();
+                links.add(new String[] {Templates.expand(l.path("href").asText(), scope), l.path("rel").asText(), type});
+            }
+            headers.add(Http.header("Link", LinkValues.serialize(links)));
+        }
         scope.authorization("alice").forEach((k, v) -> headers.add(Http.header(k, v)));
         byte[] body;
         String text;

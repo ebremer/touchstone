@@ -124,7 +124,9 @@ class DefinitionsSelfTest {
                     "core/access_grants#access-grant-constraint-format",
                     "core/access_grants#access-grant-constraint-type",
                     "core/access_grants#access-grant-constraint-client",
-                    "core/notifications#subscription-unreadable-topic-refused");
+                    "core/notifications#subscription-unreadable-topic-refused",
+                    "index/manifest#type-index-omits-unreadable-type",
+                    "index/manifest#type-search-authorization-filtered");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);

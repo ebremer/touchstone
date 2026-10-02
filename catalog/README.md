@@ -14,11 +14,12 @@ requirement IRIs they verify; coverage = requirements × tests.
 | `lws10-authn-ssi-cid.ttl` | Self-signed Identity using Controlled Identifiers (WD 2026-09-21) — 14 |
 | `lws10-authn-saml.ttl` | SAML 2.0 authentication suite (WD 2026-08-03) — 7 |
 | `lws10-notifications-webhook.ttl` | Webhook notification suite (editor's draft, not on /TR; snapshot rendered 2026-10-02) — 20 |
+| `lws10-index.ttl` | Search and Type Index Services (editor's draft, not on /TR; snapshot rendered 2026-10-02) — 57 |
 | `sources/` | archived spec snapshots + raw extraction output (provenance) |
 
-239 requirements across five spec modules: 187 MUST, 25 SHOULD, 27 MAY. The webhook
-notification suite (D-0066) is the only one baselined on an editor's draft: W3C has not
-published it, so its entries are Draft and `check_published.py` watches for publication. The
+296 requirements across six spec modules: 228 MUST, 30 SHOULD, 38 MAY. The webhook
+notification suite (D-0066) and the search and type index services (D-0067) are baselined on
+editor's drafts: W3C has not published them, so their entries are Draft and `check_published.py` watches for publication. The
 did:key suite, discontinued by W3C on 2026-09-29, is retired (D-0058).
 
 Tooling lives in `tools/extractor/`. `check_drift.py` is the "spec moved" alarm — it

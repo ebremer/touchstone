@@ -1,0 +1,477 @@
+[
+ {
+  "i": 1,
+  "section": "conformance",
+  "heading": "2. Conformance",
+  "path": [
+   "conformance"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "MUST NOT",
+   "OPTIONAL",
+   "SHOULD"
+  ],
+  "text": "The key words MAY, MUST, MUST NOT, OPTIONAL, and SHOULD in this document are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals, as shown here."
+ },
+ {
+  "i": 2,
+  "section": "discovery",
+  "heading": "4. Discovery",
+  "path": [
+   "discovery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "A storage MAY support the Type Index Service, the Type Search Service, or both. A storage that supports one of these services MUST advertise it with a service object in the service array of its storage description resource: the entry for the Type Index Service MUST have a type equal to TypeIndexService, and the entry for the Type Search Service MUST have a type equal to TypeSearchService."
+ },
+ {
+  "i": 3,
+  "section": "discovery",
+  "heading": "4. Discovery",
+  "path": [
+   "discovery"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Each service object MUST include a serviceEndpoint property whose value is the URI of the corresponding service endpoint. Additional properties MAY be present on a service object."
+ },
+ {
+  "i": 4,
+  "section": "type-derivation",
+  "heading": "5. Type and Relation Derivation",
+  "path": [
+   "type-derivation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "SHOULD"
+  ],
+  "text": "To prevent inadvertent or malicious corruption by clients, these services are strictly populated and managed by the server. To mitigate security and performance risks associated with deep-parsing arbitrary resource bodies, servers are not required to parse resource content to discover types. Instead, servers SHOULD derive resource types from HTTP Link headers provided by the client during resource creation or modification, combined with the server's intrinsic knowledge of the resource's state (such as native LWS classes like https://www.w3.org/ns/lws#Container)."
+ },
+ {
+  "i": 5,
+  "section": "type-derivation",
+  "heading": "5. Type and Relation Derivation",
+  "path": [
+   "type-derivation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Servers MAY additionally derive types from the resource representation itself when they are able to parse it. Implementations are encouraged to do so where feasible, as richer type discovery improves the utility of the Type Index and Type Search services. When a server enriches the type index from resource content, the types it surfaces MUST be treated identically to those derived from Link headers for the purposes of indexing, search, and authorization filtering."
+ },
+ {
+  "i": 6,
+  "section": "type-derivation",
+  "heading": "5. Type and Relation Derivation",
+  "path": [
+   "type-derivation"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST NOT",
+   "SHOULD"
+  ],
+  "text": "Type and indexed-relation membership in these services MAY be eventually consistent. Following a write that changes a resource's derivable types or relation targets (creation, update, or deletion), a server SHOULD reflect the change within a bounded, implementation-defined interval; until it does, a response MAY omit a newly matching resource or briefly retain one that no longer matches. Clients MUST NOT assume read-your-writes consistency and SHOULD tolerate transient staleness. This allowance applies only to derivation and MUST NOT be applied to authorization filtering (see 8. Security and Authorization)."
+ },
+ {
+  "i": 7,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "A client searches by sending an HTTP QUERY request [RFC10008] to the service endpoint, carrying the filter in the request body. The query format is identified by the request's Content-Type header field, which MUST be present; per [RFC10008], a server fails the request if the Content-Type is missing or inconsistent with the body (see 7.2 Errors). Every server MUST support the application/lws-query+json filter format defined here as its baseline query format; a server MAY additionally accept other query formats, each identified by its own media type, and the authorization requirements of 8. Security and Authorization apply regardless of the format used. The QUERY method is both safe and idempotent [RFC10008], in the sense of those terms as defined by [RFC9110]: a search never alters server state, and it MAY be repeated, retried, and/or cached. Because the filter travels in the body rather than the request URI, it is not subject to the request-URI length limits that constrain a query string."
+ },
+ {
+  "i": 8,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "The baseline filter format is identified by the media type application/lws-query+json, registered in 13. IANA Considerations. A filter document is a single JSON object [RFC8259] whose members express constraints: the type member and, optionally, one member per filtered link relation, each carrying the conjunctive-normal-form value grammar defined below. Unlike the application/lws+json representations defined by [LWS10-CORE] — which this service still uses for its responses — a filter document is plain JSON rather than JSON-LD: it carries no @context, its member names are not JSON-LD terms, and its nested-array groups are not subject to JSON-LD constraints on @type values. A member whose name begins with @ (a JSON-LD keyword such as @context) MUST be ignored; it is neither a constraint nor a relation key."
+ },
+ {
+  "i": 9,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST NOT",
+   "SHOULD"
+  ],
+  "text": "A server SHOULD advertise the query formats it accepts using the Accept-Query response header field [RFC10008] — for example in response to an OPTIONS request on the service endpoint, whose Allow header also signals that the QUERY method is supported. Accept-Query enumerates only the query-format media types the server understands; it MUST NOT be used to disclose which indexed relations or filter capabilities a server supports, which remain deliberately unobservable (see 8. Security and Authorization). A client that receives a 415 (Unsupported Media Type) response MAY consult its Accept-Query value to select a supported format."
+ },
+ {
+  "i": 10,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "OPTIONAL"
+  ],
+  "text": "The type key is OPTIONAL and selects resources by their rdf:type (as declared via rel=\"type\" Link headers, server-intrinsic classes, or content; see 5. Type and Relation Derivation). Its value is an array whose elements are combined with logical AND; each element is either a single type IRI [RFC3987] or an array of type IRIs combined with logical OR. The example above selects resources matching (schema:Person OR foaf:Person) AND lws:DataResource — the filter is a conjunction of disjunctions; that is, conjunctive normal form. A request whose body has no type key and no relation keys (or all of whose keys have values of empty arrays) matches all resources visible to the client."
+ },
+ {
+  "i": 11,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "This conjunctive-normal-form filter is the complete query expressiveness the service is required to provide. It is also the complete expressiveness of the application/lws-query+json format itself: a server MUST NOT extend this grammar. Richer expressiveness — such as nesting, negation, comparison, ordering, or text matching — is offered only through an alternate query format identified by its own media type and advertised in Accept-Query, and a portable client MUST NOT rely on any query format beyond this baseline. A type IRI that matches no resource yields no results and MUST NOT be treated as an error, and duplicate groups MUST be ignored. An empty group — an empty array appearing as an element of a filter key's value — MUST be rejected with 400 (Bad Request): an empty disjunction can match nothing, so ignoring it would silently broaden the query beyond its logical meaning (see 7.2 Errors). A filter key whose entire value is an empty array expresses no constraint and is treated as if the key were absent."
+ },
+ {
+  "i": 12,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "The type key is the mandatory baseline and MUST be supported by every server that implements the TypeSearchService. A server MAY additionally index other descriptive link relations. Such a relation is filtered by using the relation itself as a key alongside type — a registered relation name per [RFC8288] or, for an extension relation, its URI — with exactly the same conjunctive-normal-form semantics as type (a nested array is an OR group, sibling array elements form AND groups, target values matched against the link targets the resource declares for that relation). Groups belonging to different relations are combined with logical AND. Relation targets are derived by the server in the same way as types (HTTP Link headers, server-intrinsic state, or parsed content) and all sources MUST be treated identically."
+ },
+ {
+  "i": 13,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "A server MUST NOT enumerate its set of additional indexed relations — not in the storage description nor elsewhere. A relation the server does not index, like a target value that matches nothing, yields no results for that constraint: this MUST NOT be treated as an error, and the two cases MUST be indistinguishable to the client (consistent with the type-matching rule above). Only descriptive relations are eligible for indexing; servers MUST NOT index structural or protocol relations."
+ },
+ {
+  "i": 14,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "A successful search returns 200 (OK). The default response is an application/lws+json ContainerPage whose items describe the matching Storage Resources, and every server MUST be able to produce it: a request that sends no Accept header field, or one that admits application/lws+json, receives this representation. A server MAY honor an Accept header field that requests a different response media type and return the result set in that format instead [RFC10008]; if it can satisfy none of the media types the request finds acceptable, it responds 406 (Not Acceptable) (see 7.2 Errors)."
+ },
+ {
+  "i": 15,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST"
+  ],
+  "text": "Each item in a ContainerPage result MUST carry at least the matched resource's id and its type, mirroring a container member; a server MAY include additional descriptive metadata (such as format, size, or modified) but is not required to."
+ },
+ {
+  "i": 16,
+  "section": "type-search-query",
+  "heading": "7.1 QUERY [TypeSearchService]",
+  "path": [
+   "type-search-service",
+   "type-search-query"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "[RFC10008] permits a response to carry a Content-Location header field identifying a resource that represents the query results. Because a Type Search result set is synthetic and client-specific (see the note above and 8. Security and Authorization), this specification does not define such a resource; a server that nonetheless exposes one MUST subject it to the same authorization filtering on every access and MUST prevent its reuse across clients."
+ },
+ {
+  "i": 17,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A request body that is not well-formed application/lws-query+json, or whose type is not an array, or any of whose elements is neither a string nor a non-empty array of strings, MUST be rejected with 400 (Bad Request). In particular, an empty group is rejected, not ignored (see 7.1 QUERY [TypeSearchService])."
+ },
+ {
+  "i": 18,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "A request whose Content-Type identifies a query format the server does not support MUST be rejected with 415 (Unsupported Media Type), and such a response SHOULD include an Accept-Query header field [RFC10008] listing the query formats the server does accept; every server supports at least application/lws-query+json (see 7.1 QUERY [TypeSearchService]). A request that omits the Content-Type header field, which [RFC10008] requires a server to reject, MUST be rejected with 400 (Bad Request)."
+ },
+ {
+  "i": 19,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A request whose Accept header field excludes every response media type the server can produce for the result set MUST be rejected with 406 (Not Acceptable) [RFC10008]. Because every server can produce the application/lws+json ContainerPage, a request that omits Accept or admits that media type never results in 406."
+ },
+ {
+  "i": 20,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A type value, or any relation target value, that does not match the IRI production of [RFC3987] — an absolute IRI, optionally carrying a fragment identifier, the form of every IRI in the RDF abstract syntax [rdf11-concepts] — MUST be rejected with 400 (Bad Request). This is distinct from a well-formed IRI that matches no resource, and from a relation the server does not index, both of which yield no results and are not errors (see above)."
+ },
+ {
+  "i": 21,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "A filter that is well-formed but exceeds the complexity a server chooses to support (consistent with the expressiveness ceiling above) MUST be rejected with 422 (Unprocessable Content), the status [RFC9110] defines and [RFC10008] suggests for a query that is understood but cannot be processed due to its actual contents. A server MUST NOT silently truncate or otherwise narrow such a filter, as doing so could return a superset of the intended results."
+ },
+ {
+  "i": 22,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "li",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "SHOULD"
+  ],
+  "text": "A pagination reference (a previously issued page link) that the server no longer recognizes or that has expired MUST result in 404 (Not Found) or 410 (Gone). This rule applies to the pages of both services: those of a Type Search Service result set and those of a Type Index Service listing alike. Clients SHOULD restart — a search by re-sending the QUERY request, a type index listing by re-requesting the service endpoint."
+ },
+ {
+  "i": 23,
+  "section": "type-search-errors",
+  "heading": "7.2 Errors",
+  "path": [
+   "type-search-service",
+   "type-search-errors"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "A QUERY response is cacheable [RFC10008]. Because the filter travels in the request body, it forms part of the cache key itself ([RFC10008], Section 2.7) and cannot be conveyed through the Vary header field, which names only request header fields. A server that negotiates the response representation on Accept (see 7.1 QUERY [TypeSearchService]) MUST list Accept in Vary so that caches do not reuse a representation across response formats. Because every result set is authorization-filtered and therefore client-specific, the cross-client caching requirements in 8. Security and Authorization also apply."
+ },
+ {
+  "i": 24,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Servers MUST enforce authorization. Responses from the TypeIndexService (a GET) and the TypeSearchService (a QUERY) include only types and resource URIs that the authenticated client is explicitly authorized to read."
+ },
+ {
+  "i": 25,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "Unauthorized entries MUST be omitted entirely. A server MUST NOT allow a client to discover, from the responses of these services, the existence of a specific resource instance, or that a specific type exists in the storage at all, without the required authorization. This implicit filtering yields a dynamically generated, client-specific type index and search result."
+ },
+ {
+  "i": 26,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Any count a response exposes, including totalItems, MUST be computed over this client-specific, authorization-filtered view: it is the number of entries the requesting client is authorized to see, never a count of the types or resources present in the storage as a whole. A count that included unauthorized entries would itself reveal their existence and is therefore prohibited."
+ },
+ {
+  "i": 27,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY",
+   "MUST",
+   "MUST NOT"
+  ],
+  "text": "Authorization filtering MUST be evaluated against the requesting client's current access at the time the request is served, not against any cached or precomputed view. Once an authorization (such as an access grant) is revoked or narrowed, the affected types and resource URIs MUST NOT appear in any subsequent response; the eventual-consistency allowance for type and relation derivation MUST NOT be extended to authorization. A server MAY maintain a derived index for performance, but it MUST apply current authorization as a filter over that index on every request."
+ },
+ {
+  "i": 28,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Responses from both services are authorization-filtered and therefore client-specific, yet both are cacheable by default: a TypeIndexService response under the ordinary HTTP caching rules for GET [RFC9110], and a TypeSearchService response per [RFC10008], whose cache key is computed over the request body rather than the requesting client. A server MUST ensure that an authorization-filtered response from either service is never served from a shared cache to a different client. A server MUST mark such responses so that they are not reused across clients (for example with Cache-Control: private or no-store) and MUST vary any cached entry on the credential that scopes the result."
+ },
+ {
+  "i": 29,
+  "section": "security-authorization",
+  "heading": "8. Security and Authorization",
+  "path": [
+   "security-authorization"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MUST"
+  ],
+  "text": "Any extension query mechanism a server exposes over the storage — for example an alternative query format accepted by the TypeSearchService, or a separate query service — MUST uphold these authorization-filtering requirements and the indistinguishability requirements of this specification, so that no extension can become a discovery oracle for resources or types the client is not authorized to read."
+ }
+]

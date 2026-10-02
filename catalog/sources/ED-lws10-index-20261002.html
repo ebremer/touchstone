@@ -1,0 +1,1565 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="generator" content="ReSpec 37.4.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<style>
+span.example-title{text-transform:none}
+:is(aside,div).example,div.illegal-example{padding:.5em;margin:1em 0;position:relative;clear:both}
+div.illegal-example{color:red}
+div.illegal-example p{color:#000}
+aside.example div.example{border-left-width:.1em;border-color:#999;background:#fff}
+</style>
+<style>
+.issue-label{text-transform:initial}
+.warning>p:first-child{margin-top:0}
+.warning{padding:.5em;border-left-width:.5em;border-left-style:solid}
+span.warning{padding:.1em .5em .15em}
+.issue.closed span.issue-number{text-decoration:line-through}
+.issue.closed span.issue-number::after{content:" (Closed)";font-size:smaller}
+.warning{border-color:#f11;border-color:var(--warning-border,#f11);border-width:.2em;border-style:solid;background:#fbe9e9;background:var(--warning-bg,#fbe9e9);color:#000;color:var(--text,#000)}
+.warning-title:before{content:"⚠";font-size:1.3em;float:left;padding-right:.3em;margin-top:-.3em}
+li.task-list-item{list-style:none}
+input.task-list-item-checkbox{margin:0 .35em .25em -1.6em;vertical-align:middle}
+.issue a.respec-gh-label{padding:5px;margin:0 2px 0 2px;font-size:10px;text-transform:none;text-decoration:none;font-weight:700;border-radius:4px;position:relative;bottom:2px;border:none;display:inline-block}
+</style>
+<style>
+dfn{cursor:pointer}
+.dfn-panel{position:absolute;z-index:35;min-width:300px;max-width:500px;padding:.5em .75em;margin-top:.6em;font-family:"Helvetica Neue",sans-serif;font-size:small;background:#fff;background:var(--indextable-hover-bg,#fff);color:#000;color:var(--text,#000);box-shadow:0 1em 3em -.4em rgba(0,0,0,.3),0 0 1px 1px rgba(0,0,0,.05);box-shadow:0 1em 3em -.4em var(--tocsidebar-shadow,rgba(0,0,0,.3)),0 0 1px 1px var(--tocsidebar-shadow,rgba(0,0,0,.05));border-radius:2px}
+.dfn-panel:not(.docked)>.caret{position:absolute;top:-9px}
+.dfn-panel:not(.docked)>.caret::after,.dfn-panel:not(.docked)>.caret::before{content:"";position:absolute;border:10px solid transparent;border-top:0;border-bottom:10px solid #fff;border-bottom-color:var(--indextable-hover-bg,#fff);top:0}
+.dfn-panel:not(.docked)>.caret::before{border-bottom:9px solid #a2a9b1;border-bottom-color:var(--indextable-hover-bg,#a2a9b1)}
+.dfn-panel *{margin:0}
+.dfn-panel b{display:block;color:#000;color:var(--text,#000);margin-top:.25em}
+.dfn-panel ul a[href]{color:#333;color:var(--text,#333)}
+.dfn-panel>div{display:flex}
+.dfn-panel a.self-link{font-weight:700;margin-right:auto}
+.dfn-panel .marker{padding:.1em;margin-left:.5em;border-radius:.2em;text-align:center;white-space:nowrap;font-size:90%;color:#040b1c}
+.dfn-panel .marker.dfn-exported{background:#d1edfd;box-shadow:0 0 0 .125em #1ca5f940}
+.dfn-panel .marker.idl-block{background:#8ccbf2;box-shadow:0 0 0 .125em #0670b161}
+.dfn-panel .marker.cddl-block{background:#8ccbf2;box-shadow:0 0 0 .125em #0670b161}
+.dfn-panel a:not(:hover){text-decoration:none!important;border-bottom:none!important}
+.dfn-panel a[href]:hover{border-bottom-width:1px}
+.dfn-panel ul{padding:0}
+.dfn-panel li{margin-left:1em}
+.dfn-panel.docked{position:fixed;left:.5em;top:unset;bottom:2em;margin:0 auto;max-width:calc(100vw - .75em * 2 - .5em - .2em * 2);max-height:30vh;overflow:auto}
+</style>
+    
+    
+<title>LWS Search and Type Index Services</title>
+    
+<style id="respec-mainstyle">
+@keyframes pop{
+0%{transform:scale(1,1)}
+25%{transform:scale(1.25,1.25);opacity:.75}
+100%{transform:scale(1,1)}
+}
+a.internalDFN{color:inherit;border-bottom:1px solid #99c;text-decoration:none}
+a.externalDFN{color:inherit;border-bottom:1px dotted #ccc;text-decoration:none}
+a.bibref{text-decoration:none}
+.respec-offending-element:target{animation:pop .25s ease-in-out 0s 1}
+.respec-offending-element,a[href].respec-offending-element{text-decoration:red wavy underline}
+@supports not (text-decoration:red wavy underline){
+.respec-offending-element:not(pre){display:inline-block}
+.respec-offending-element{background:url(data:image/gif;base64,R0lGODdhBAADAPEAANv///8AAP///wAAACwAAAAABAADAEACBZQjmIAFADs=) bottom repeat-x}
+}
+#references :target{background:#eaf3ff;animation:pop .4s ease-in-out 0s 1}
+@media (prefers-color-scheme:dark){
+#references :target{background:color-mix(in srgb, #eaf3ff 15%, transparent)}
+}
+body:has(input[name=color-scheme][value=dark]:checked) #references :target{background:color-mix(in srgb, #eaf3ff 15%, transparent)}
+cite .bibref{font-style:italic}
+a[href].orcid{padding-left:4px;padding-right:4px}
+a[href].orcid>svg{margin-bottom:-2px}
+ol.tof,ul.tof{list-style:none outside none}
+.caption{margin-top:.5em;font-style:italic}
+#issue-summary>ul{column-count:2}
+#issue-summary li{list-style:none}
+details.respec-tests-details{margin-left:1em;display:inline-block;vertical-align:top}
+details.respec-tests-details>*{padding-right:2em}
+details.respec-tests-details[open]{z-index:999999;position:absolute;border:thin solid #cad3e2;border-radius:.3em;background-color:#fff;padding-bottom:.5em}
+details.respec-tests-details[open]>summary{border-bottom:thin solid #cad3e2;padding-left:1em;margin-bottom:1em;line-height:2em}
+details.respec-tests-details>ul{width:100%;margin-top:-.3em}
+details.respec-tests-details>li{padding-left:1em}
+.self-link:hover{opacity:1;text-decoration:none;background-color:transparent}
+aside.example .marker>a.self-link{color:inherit}
+.header-wrapper{display:flex;align-items:baseline}
+:is(h2,h3,h4,h5,h6):not(:where(#toc>h2,#abstract>h2,#sotd>h2,.head>h2)):has(+a.self-link){position:relative;left:-.5em}
+:is(h2,h3,h4,h5,h6):not(:where(#toch2))+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.8;text-decoration:none}
+:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§"}
+:is(h2,h3)+a.self-link{top:-.2em}
+:is(h2,h3)+a.self-link::before{color:var(--heading-text)}
+@media (max-width:767px){
+dd{margin-left:0}
+}
+@media print{
+.removeOnSave{display:none}
+}
+body:has(input[name=color-scheme][value=light]:checked),head:not(:has(meta[name=color-scheme][content~=dark]))+body{color-scheme:light}
+body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
+</style>
+    
+  
+<meta name="color-scheme" content="light">
+<meta name="description" content="This document extends the Linked Web Storage (LWS) protocol with server-managed
+        services for type-based discovery: a Type Index Service that enumerates the distinct
+        resource types present within a storage, and a Type Search Service that returns the
+        resources matching a type filter. The specification defines how servers derive types,
+        the query model and its error handling, and the authorization requirements that keep
+        responses client-specific. Both services are discoverable via the storage description
+        resource.">
+<style>
+.hljs,body:has(input[name=color-scheme][value=light]:checked) .hljs,head:not(:has(meta[name=color-scheme][content~=dark]))+body .hljs{--base:#fafafa;--mono-1:#383a42;--mono-2:#686b77;--mono-3:#717277;--hue-1:#0b76c5;--hue-2:#336ae3;--hue-3:#a626a4;--hue-4:#42803c;--hue-5:#ca4706;--hue-5-2:#c91243;--hue-6:#986801;--hue-6-2:#9a6a01}
+@media (prefers-color-scheme:dark){
+.hljs{
+  --base: #282c34;
+  --mono-1: #abb2bf;
+  --mono-2: #818896;
+  --mono-3: #5c6370;
+  --hue-1: #56b6c2;
+  --hue-2: #61aeee;
+  --hue-3: #c678dd;
+  --hue-4: #98c379;
+  --hue-5: #e06c75;
+  --hue-5-2: #be5046;
+  --hue-6: #d19a66;
+  --hue-6-2: #e6c07b;
+}
+}
+body:has(input[name=color-scheme][value=dark]:checked) .hljs{
+  --base: #282c34;
+  --mono-1: #abb2bf;
+  --mono-2: #818896;
+  --mono-3: #5c6370;
+  --hue-1: #56b6c2;
+  --hue-2: #61aeee;
+  --hue-3: #c678dd;
+  --hue-4: #98c379;
+  --hue-5: #e06c75;
+  --hue-5-2: #be5046;
+  --hue-6: #d19a66;
+  --hue-6-2: #e6c07b;
+}
+.hljs{display:block;overflow-x:auto;padding:.5em;color:#383a42;color:var(--mono-1,#383a42);background:#fafafa;background:var(--base,#fafafa)}
+.hljs-comment,.hljs-quote{color:#717277;color:var(--mono-3,#717277);font-style:italic}
+.hljs-doctag,.hljs-formula,.hljs-keyword{color:#a626a4;color:var(--hue-3,#a626a4)}
+.hljs-deletion,.hljs-name,.hljs-section,.hljs-selector-tag,.hljs-subst{color:#ca4706;color:var(--hue-5,#ca4706);font-weight:700}
+.hljs-literal{color:#0b76c5;color:var(--hue-1,#0b76c5)}
+.hljs-addition,.hljs-attribute,.hljs-meta-string,.hljs-regexp,.hljs-string{color:#42803c;color:var(--hue-4,#42803c)}
+.hljs-built_in,.hljs-class .hljs-title{color:#9a6a01;color:var(--hue-6-2,#9a6a01)}
+.hljs-attr,.hljs-number,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-pseudo,.hljs-template-variable,.hljs-type,.hljs-variable{color:#986801;color:var(--hue-6,#986801)}
+.hljs-bullet,.hljs-link,.hljs-meta,.hljs-selector-id,.hljs-symbol,.hljs-title{color:#336ae3;color:var(--hue-2,#336ae3)}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
+.hljs-link{text-decoration:underline}
+</style>
+<style>
+var:hover{text-decoration:underline;cursor:pointer}
+var.respec-hl{color:var(--color,#000);background-color:var(--bg-color);box-shadow:0 0 0 2px var(--bg-color)}
+@media (prefers-color-scheme:dark){
+var.respec-hl{filter:saturate(.9) brightness(.9)}
+}
+var.respec-hl-c1{--bg-color:#f4d200}
+var.respec-hl-c2{--bg-color:#ff87a2}
+var.respec-hl-c3{--bg-color:#96e885}
+var.respec-hl-c4{--bg-color:#3eeed2}
+var.respec-hl-c5{--bg-color:#eacfb6}
+var.respec-hl-c6{--bg-color:#82ddff}
+var.respec-hl-c7{--bg-color:#ffbcf2}
+@media print{
+var.respec-hl{background:0 0;color:#000;box-shadow:unset}
+}
+</style>
+<style>
+var[data-type]{position:relative}
+var[data-type]::after,var[data-type]::before{position:absolute;left:50%;top:-6px;opacity:0;transition:opacity .4s;pointer-events:none}
+var[data-type]::before{content:"";transform:translateX(-50%);border-width:4px 6px 0 6px;border-style:solid;border-color:transparent;border-top-color:#222}
+var[data-type]::after{content:attr(data-type);transform:translateX(-50%) translateY(-100%);background:#222;text-align:center;font-family:"Dank Mono","Fira Code",monospace;font-style:normal;padding:6px;border-radius:3px;color:#daca88;text-indent:0;font-weight:400}
+var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
+</style>
+<script id="initialUserConfig" type="application/json">{
+  "specStatus": "ED",
+  "shortName": "lws10-index",
+  "editors": [
+    {
+      "name": "Jesse Wright",
+      "w3cid": "132252",
+      "company": "University of Oxford",
+      "companyURL": "https://www.ox.ac.uk/"
+    },
+    {
+      "name": "Erich Bremer",
+      "w3cid": "45759",
+      "company": "Stony Brook University",
+      "companyURL": "https://www.stonybrook.edu/"
+    }
+  ],
+  "github": "w3c/lws-protocol",
+  "xref": [
+    "web-platform"
+  ],
+  "group": "lws",
+  "maxTocLevel": 3,
+  "localBiblio": {
+    "LWS10-CORE": {
+      "title": "Linked Web Storage Protocol 1.0",
+      "href": "https://www.w3.org/TR/lws10-core/",
+      "publisher": "W3C",
+      "status": "FPWD",
+      "id": "lws10-core"
+    },
+    "RFC10008": {
+      "title": "The HTTP QUERY Method",
+      "href": "https://www.rfc-editor.org/rfc/rfc10008",
+      "authors": [
+        "J. Reschke",
+        "J. M. Snell",
+        "M. Bishop"
+      ],
+      "publisher": "IETF",
+      "status": "Proposed Standard",
+      "date": "June 2026",
+      "id": "rfc10008"
+    }
+  },
+  "publishDate": "2026-10-02",
+  "publishISODate": "2026-10-02T00:00:00.000Z",
+  "generatedSubtitle": "W3C Editor's Draft 02 October 2026"
+}</script>
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-ED">
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/dark.css" disabled=""></head>
+  <body class="h-entry" data-cite="web-platform"><div class="head">
+    <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
+  </a></p>
+    <h1 id="title" class="title">LWS Search and Type Index Services</h1> 
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#ED">W3C Editor's Draft</a> <time class="dt-published" datetime="2026-10-02">02 October 2026</time></p>
+    <details open="">
+      <summary>More details about this document</summary>
+      <dl>
+        <dt>This version:</dt><dd>
+                  <a class="u-url" href="https://w3c.github.io/lws-protocol/">https://w3c.github.io/lws-protocol/</a>
+                </dd>
+        <dt>Latest published version:</dt><dd>
+                  <a href="https://www.w3.org/TR/lws10-index/">https://www.w3.org/TR/lws10-index/</a>
+                </dd>
+        <dt>Latest editor's draft:</dt><dd><a href="https://w3c.github.io/lws-protocol/">https://w3c.github.io/lws-protocol/</a></dd>
+        <dt>History:</dt><dd>
+                        <a href="https://www.w3.org/standards/history/lws10-index/">https://www.w3.org/standards/history/lws10-index/</a>
+                      </dd><dd>
+                        <a href="https://github.com/w3c/lws-protocol/commits/">Commit history</a>
+                      </dd>
+        
+        
+        
+        
+        
+        <dt>
+                  Editors:
+                </dt><dd class="editor p-author h-card vcard" data-editor-id="132252">
+    <span class="p-name fn">Jesse Wright</span> (<a class="p-org org h-org" href="https://www.ox.ac.uk/">University of Oxford</a>)
+  </dd><dd class="editor p-author h-card vcard" data-editor-id="45759">
+    <span class="p-name fn">Erich Bremer</span> (<a class="p-org org h-org" href="https://www.stonybrook.edu/">Stony Brook University</a>)
+  </dd>
+        
+        
+        <dt>Feedback:</dt><dd>
+        <a href="https://github.com/w3c/lws-protocol/">GitHub w3c/lws-protocol</a>
+        (<a href="https://github.com/w3c/lws-protocol/pulls/">pull requests</a>,
+        <a href="https://github.com/w3c/lws-protocol/issues/new/choose">new issue</a>,
+        <a href="https://github.com/w3c/lws-protocol/issues/">open issues</a>)
+      </dd>
+        
+        
+      </dl>
+    </details>
+    
+    
+    <p class="copyright">
+    <a href="https://www.w3.org/policies/#copyright">Copyright</a>
+    ©
+    2026
+    
+    <a href="https://www.w3.org/">World Wide Web Consortium</a>.
+    <abbr title="World Wide Web Consortium">W3C</abbr><sup>®</sup>
+    <a href="https://www.w3.org/policies/#Legal_Disclaimer">liability</a>,
+    <a href="https://www.w3.org/policies/#W3C_Trademarks">trademark</a> and
+    <a rel="license" href="https://www.w3.org/copyright/software-license-2023/" title="W3C Software and Document Notice and License">permissive document license</a> rules apply.
+  </p>
+    <hr title="Separator for header">
+  </div>
+    <section id="abstract" class="introductory"><h2>Abstract</h2>
+      <p>
+        This document extends the Linked Web Storage (LWS) protocol with server-managed
+        services for type-based discovery: a Type Index Service that enumerates the distinct
+        resource types present within a storage, and a Type Search Service that returns the
+        resources matching a type filter. The specification defines how servers derive types,
+        the query model and its error handling, and the authorization requirements that keep
+        responses client-specific. Both services are discoverable via the storage description
+        resource.
+      </p>
+    </section>
+    <section id="sotd" class="introductory"><h2>Status of This Document</h2><p><em>This section describes the status of this
+      document at the time of its publication. A list of current <abbr title="World Wide Web Consortium">W3C</abbr>
+      publications and the latest revision of this technical report can be found
+      in the
+      <a href="https://www.w3.org/TR/"><abbr title="World Wide Web Consortium">W3C</abbr> standards and drafts index</a>.</em></p>
+      <p>
+        This is an unofficial proposal.
+      </p>
+    <p>
+    This document was published by the <a href="https://www.w3.org/groups/wg/lws">Linked Web Storage Working Group</a> as
+    an Editor's Draft. 
+  </p><p>Publication as
+  an Editor's Draft does not imply endorsement
+  by <abbr title="World Wide Web Consortium">W3C</abbr> and its Members. </p><p>
+    This is a draft document and may be updated, replaced, or obsoleted by other
+    documents at any time. It is inappropriate to cite this document as other
+    than a work in progress.
+    
+  </p><p>
+    
+        This document was produced by a group
+        operating under the
+        <a href="https://www.w3.org/policies/patent-policy/"><abbr title="World Wide Web Consortium">W3C</abbr> Patent
+          Policy</a>.
+      
+    
+                    <abbr title="World Wide Web Consortium">W3C</abbr> maintains a
+                    <a rel="disclosure" href="https://www.w3.org/groups/wg/lws/ipr">public list of any patent disclosures</a>
+            made in connection with the deliverables of
+            the group; that page also includes
+            instructions for disclosing a patent. An individual who has actual
+            knowledge of a patent that the individual believes contains
+            <a href="https://www.w3.org/policies/patent-policy/#def-essential">Essential Claim(s)</a>
+            must disclose the information in accordance with
+            <a href="https://www.w3.org/policies/patent-policy/#sec-Disclosure">section 6 of the <abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>.
+          
+  </p><p>
+                          This document is governed by the
+                          <a id="w3c_process_revision" href="https://www.w3.org/policies/process/20250818/">18 August 2025 <abbr title="World Wide Web Consortium">W3C</abbr> Process Document</a>.
+                        </p></section><nav id="toc"><h2 class="introductory" id="table-of-contents">Table of Contents</h2><ol class="toc"><li class="tocline"><a class="tocxref" href="#abstract">Abstract</a></li><li class="tocline"><a class="tocxref" href="#sotd">Status of This Document</a></li><li class="tocline"><a class="tocxref" href="#introduction"><bdi class="secno">1. </bdi>Introduction</a></li><li class="tocline"><a class="tocxref" href="#conformance"><bdi class="secno">2. </bdi>Conformance</a></li><li class="tocline"><a class="tocxref" href="#terminology"><bdi class="secno">3. </bdi>Terminology</a></li><li class="tocline"><a class="tocxref" href="#discovery"><bdi class="secno">4. </bdi>Discovery</a></li><li class="tocline"><a class="tocxref" href="#type-derivation"><bdi class="secno">5. </bdi>Type and Relation Derivation</a></li><li class="tocline"><a class="tocxref" href="#type-index-service"><bdi class="secno">6. </bdi>Type Index Service</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#type-index-get"><bdi class="secno">6.1 </bdi>GET [TypeIndexService]</a></li></ol></li><li class="tocline"><a class="tocxref" href="#type-search-service"><bdi class="secno">7. </bdi>Type Search Service</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#type-search-query"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a></li><li class="tocline"><a class="tocxref" href="#type-search-errors"><bdi class="secno">7.2 </bdi>Errors</a></li></ol></li><li class="tocline"><a class="tocxref" href="#security-authorization"><bdi class="secno">8. </bdi>Security and Authorization</a></li><li class="tocline"><a class="tocxref" href="#examples"><bdi class="secno">9. </bdi>Examples</a></li><li class="tocline"><a class="tocxref" href="#security-considerations"><bdi class="secno">10. </bdi>Security Considerations</a></li><li class="tocline"><a class="tocxref" href="#privacy-considerations"><bdi class="secno">11. </bdi>Privacy Considerations</a></li><li class="tocline"><a class="tocxref" href="#vocabulary"><bdi class="secno">12. </bdi>Vocabulary</a></li><li class="tocline"><a class="tocxref" href="#iana-considerations"><bdi class="secno">13. </bdi>IANA Considerations</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#media-type-lws-query-json"><bdi class="secno">13.1 </bdi>The <code>application/lws-query+json</code> Media Type</a></li></ol></li><li class="tocline"><a class="tocxref" href="#references"><bdi class="secno">A. </bdi>References</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#normative-references"><bdi class="secno">A.1 </bdi>Normative references</a></li></ol></li></ol></nav>
+
+    <section id="introduction"><div class="header-wrapper"><h2 id="x1-introduction"><bdi class="secno">1. </bdi>Introduction</h2><a class="self-link" href="#introduction" aria-label="Permalink for Section 1."></a></div>
+      
+
+      <p>
+        The <cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">Linked Web Storage</a></cite> protocol defines a resource-centric storage
+        system built on HTTP. While the core protocol supports creating, reading, updating,
+        and deleting resources, and containers enumerate the resources they contain, it does
+        not define a mechanism for a client to learn which kinds of resources exist within a
+        storage, or to locate the resources of a given kind, other than by traversing the
+        containment hierarchy one resource at a time.
+      </p>
+
+      <p>
+        This specification extends LWS with two server-managed services, discoverable via
+        the storage description resource. The <code>TypeIndexService</code> provides a
+        server-managed discovery mechanism to query the distinct resource types available
+        within a storage, while the <code>TypeSearchService</code> allows clients to retrieve
+        the specific resource URIs matching those types.
+      </p>
+    </section>
+
+    <section id="conformance"><div class="header-wrapper"><h2 id="x2-conformance"><bdi class="secno">2. </bdi>Conformance</h2><a class="self-link" href="#conformance" aria-label="Permalink for Section 2."></a></div><p>As well as sections marked as non-normative, all authoring guidelines, diagrams, examples, and notes in this specification are non-normative. Everything else in this specification is normative.</p><p>
+        The key words <em class="rfc2119">MAY</em>, <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">OPTIONAL</em>, and <em class="rfc2119">SHOULD</em> in this document
+        are to be interpreted as described in
+        <a href="https://www.rfc-editor.org/info/bcp14">BCP 14</a>
+        [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc2119" title="Key words for use in RFCs to Indicate Requirement Levels">RFC2119</a></cite>] [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8174" title="Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words">RFC8174</a></cite>]
+        when, and only when, they appear in all
+        capitals, as shown here.
+      </p></section>
+
+    <section id="terminology"><div class="header-wrapper"><h2 id="x3-terminology"><bdi class="secno">3. </bdi>Terminology</h2><a class="self-link" href="#terminology" aria-label="Permalink for Section 3."></a></div>
+      
+
+      <p>
+        The terms "storage", "storage description resource", "container", "data resource",
+        "resource manager", and "requesting agent" are defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>].
+      </p>
+
+      <p>
+        This specification defines the following additional terms:
+      </p>
+
+      <ul>
+        <li>
+          <dfn id="dfn-type-index-service" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">Type Index Service</dfn> — a server-managed service, identified by the
+          <code>TypeIndexService</code> service type, that enumerates the distinct resource
+          types present within a storage as visible to the requesting client.
+        </li>
+        <li>
+          <dfn id="dfn-type-search-service" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">Type Search Service</dfn> — a server-managed service, identified by the
+          <code>TypeSearchService</code> service type, that returns descriptions of the
+          resources within a storage matching a filter over types and
+          <a href="#dfn-indexed-relations" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-indexed-relations-1">indexed relations</a>, as visible to the requesting client.
+        </li>
+        <li>
+          <dfn data-lt="indexed relations|indexed relation" id="dfn-indexed-relations" tabindex="0" aria-haspopup="dialog" data-dfn-type="dfn">indexed relation</dfn> — a descriptive link
+          relation that a server has chosen to index, making it available as a filter in
+          <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-1">Type Search Service</a> requests in addition to <code>type</code>.
+        </li>
+      </ul>
+    </section>
+
+    <section id="discovery"><div class="header-wrapper"><h2 id="x4-discovery"><bdi class="secno">4. </bdi>Discovery</h2><a class="self-link" href="#discovery" aria-label="Permalink for Section 4."></a></div>
+      
+
+      <p>
+        A storage <em class="rfc2119">MAY</em> support the <a href="#dfn-type-index-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-index-service-1">Type Index Service</a>, the
+        <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-2">Type Search Service</a>, or both. A storage that supports one of these services
+        <em class="rfc2119">MUST</em> advertise it with a service object in the <code>service</code> array of its
+        storage description resource: the entry for the <a href="#dfn-type-index-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-index-service-2">Type Index Service</a> <em class="rfc2119">MUST</em> have
+        a <code>type</code> equal to <code>TypeIndexService</code>, and the entry for the
+        <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-3">Type Search Service</a> <em class="rfc2119">MUST</em> have a <code>type</code> equal to
+        <code>TypeSearchService</code>.
+      </p>
+
+      <p>
+        Each service object <em class="rfc2119">MUST</em> include a <code>serviceEndpoint</code> property whose value
+        is the URI of the corresponding service endpoint. Additional properties <em class="rfc2119">MAY</em> be
+        present on a service object.
+      </p>
+
+      <div class="example" id="example-services-advertised-in-storage-description">
+        <div class="marker">
+    <a class="self-link" href="#example-services-advertised-in-storage-description">Example<bdi> 1</bdi></a><span class="example-title">: Services advertised in storage description</span>
+  </div> <pre aria-busy="false"><code class="hljs json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"@context"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://example.org/storage/alice/"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Storage"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"service"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"TypeIndexService"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"serviceEndpoint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://example.org/types/index"</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"TypeSearchService"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"serviceEndpoint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://example.org/types/search"</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div>
+
+      <div class="note" role="note" id="issue-container-generatedID"><div class="note-title marker" id="h-note"><span>Note</span></div><p class="">
+        The storage description advertises only the service endpoints. In particular, the
+        set of additional <a href="#dfn-indexed-relations" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-indexed-relations-2">indexed relations</a> a server supports is deliberately not
+        enumerated there or anywhere else; see <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>.
+      </p></div>
+    </section>
+
+    <section id="type-derivation"><div class="header-wrapper"><h2 id="x5-type-and-relation-derivation"><bdi class="secno">5. </bdi>Type and Relation Derivation</h2><a class="self-link" href="#type-derivation" aria-label="Permalink for Section 5."></a></div>
+      
+
+      <p>
+        To prevent inadvertent or malicious corruption by clients, these services are
+        strictly populated and managed by the server. To mitigate security and performance
+        risks associated with deep-parsing arbitrary resource bodies, servers are not
+        required to parse resource content to discover types. Instead, servers <em class="rfc2119">SHOULD</em> derive
+        resource types from HTTP Link headers provided by the client during resource creation
+        or modification, combined with the server's intrinsic knowledge of the resource's
+        state (such as native LWS classes like
+        <code>https://www.w3.org/ns/lws#Container</code>).
+      </p>
+
+      <p>
+        Servers <em class="rfc2119">MAY</em> additionally derive types from the resource representation itself when
+        they are able to parse it. Implementations are encouraged to do so where feasible,
+        as richer type discovery improves the utility of the Type Index and Type Search
+        services. When a server enriches the type index from resource content, the types it
+        surfaces <em class="rfc2119">MUST</em> be treated identically to those derived from Link headers for the
+        purposes of indexing, search, and authorization filtering.
+      </p>
+
+      <p>
+        Type and indexed-relation membership in these services <em class="rfc2119">MAY</em> be eventually consistent.
+        Following a write that changes a resource's derivable types or relation targets
+        (creation, update, or deletion), a server <em class="rfc2119">SHOULD</em> reflect the change within a bounded,
+        implementation-defined interval; until it does, a response <em class="rfc2119">MAY</em> omit a newly matching
+        resource or briefly retain one that no longer matches. Clients <em class="rfc2119">MUST NOT</em> assume
+        read-your-writes consistency and <em class="rfc2119">SHOULD</em> tolerate transient staleness. This allowance
+        applies only to derivation and <em class="rfc2119">MUST NOT</em> be applied to authorization filtering (see
+        <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a>).
+      </p>
+
+      <div class="note" role="note" id="issue-container-generatedID-0"><div class="note-title marker" id="h-note-0"><span>Note</span></div><p class="">
+        Because servers are not required to parse the resource body, the Type Search Service
+        relies heavily on the types explicitly declared via HTTP headers or managed by the
+        server. If a client includes a type exclusively within a resource's internal graph
+        but fails to provide the corresponding <code>Link</code> header, that type may not
+        be discoverable via these services.
+      </p></div>
+    </section>
+
+    <section id="type-index-service"><div class="header-wrapper"><h2 id="x6-type-index-service"><bdi class="secno">6. </bdi>Type Index Service</h2><a class="self-link" href="#type-index-service" aria-label="Permalink for Section 6."></a></div>
+      
+
+      <p>
+        The <a href="#dfn-type-index-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-index-service-3">Type Index Service</a> provides a server-managed discovery mechanism to query
+        the distinct resource types available within a storage.
+      </p>
+
+      <section id="type-index-get"><div class="header-wrapper"><h3 id="x6-1-get-typeindexservice"><bdi class="secno">6.1 </bdi>GET [TypeIndexService]</h3><a class="self-link" href="#type-index-get" aria-label="Permalink for Section 6.1"></a></div>
+        
+
+        <p>Returns a paginated <code>TypeIndex</code> as <code>application/lws+json</code>,
+          following the standard LWS pagination model defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>]: page URIs
+          are conveyed in <code>Link</code> headers—not in the response body—and
+          are opaque to the client. The body lists the unique types of resources that
+          currently exist within the storage and that the authenticated user is authorized to
+          see. This specification defines no query parameters for the endpoint: a client
+          requests the advertised <code>serviceEndpoint</code> URI as-is, and any parameters
+          appearing in server-issued pagination URIs (such as <code>?page=</code> in the
+          example below) are server-internal parts of those opaque URIs, not part of this
+          interface. A page reference may expire or cease to be recognized; the
+          pagination-expiry rule of <a href="#type-search-errors" class="sec-ref"><bdi class="secno">7.2 </bdi>Errors</a> applies to
+          <code>TypeIndex</code> pages as it does to search result pages.</p>
+        <div class="note" role="note" id="issue-container-generatedID-1"><div class="note-title marker" id="h-note-1"><span>Note</span></div><p class="">
+          The Type Index takes no filter, so it is retrieved with a <code>GET</code>. The
+          <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-4">Type Search Service</a>, which carries a filter, instead uses the HTTP
+          <code>QUERY</code> method [<cite class="respec-offending-element" title="Normative references in informative sections are not allowed. " id="respec-offender-normative-references-in-informative-sections-are-not-allowed"><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] (see <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>).
+        </p></div>
+        <div class="example" id="example-2">
+        <div class="marker">
+    <a class="self-link" href="#example-2">Example<bdi> 2</bdi></a>
+  </div> <pre aria-busy="false"><code class="hljs yaml"><span class="hljs-string">Request</span>
+<span class="hljs-string">GET</span> <span class="hljs-string">/types/index</span>
+<span class="hljs-attr">Authorization:</span> <span class="hljs-string">Bearer</span> <span class="hljs-string">&lt;token&gt;</span>
+
+<span class="hljs-string">Response</span>
+<span class="hljs-string">HTTP/1.1</span> <span class="hljs-number">200</span> <span class="hljs-string">OK</span>
+<span class="hljs-attr">Content-Type:</span> <span class="hljs-string">application/lws+json</span>
+<span class="hljs-attr">Cache-Control:</span> <span class="hljs-string">private</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=1&gt;;</span> <span class="hljs-string">rel="first"</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=2&gt;;</span> <span class="hljs-string">rel="next"</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=4&gt;;</span> <span class="hljs-string">rel="last"</span>
+
+{
+  <span class="hljs-attr">"@context":</span> <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-attr">"type":</span> <span class="hljs-string">"TypeIndex"</span>,
+  <span class="hljs-attr">"totalItems":</span> <span class="hljs-number">142</span>,
+  <span class="hljs-attr">"items":</span> [
+    { <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://schema.org/Person"</span> },
+    { <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://schema.org/Event"</span> },
+    { <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://schema.org/Message"</span> }
+  ]
+}</code></pre>
+      </div>
+      </section>
+    </section>
+
+    <section id="type-search-service"><div class="header-wrapper"><h2 id="x7-type-search-service"><bdi class="secno">7. </bdi>Type Search Service</h2><a class="self-link" href="#type-search-service" aria-label="Permalink for Section 7."></a></div>
+      
+
+      <p>
+        The <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-5">Type Search Service</a> allows clients to retrieve descriptions of the
+        resources within a storage matching a filter over types and
+        <a href="#dfn-indexed-relations" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-indexed-relations-3">indexed relations</a>.
+      </p>
+
+      <section id="type-search-query"><div class="header-wrapper"><h3 id="x7-1-query-typesearchservice"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</h3><a class="self-link" href="#type-search-query" aria-label="Permalink for Section 7.1"></a></div>
+        
+
+        <p>
+          A client searches by sending an HTTP <code>QUERY</code> request [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] to the
+          service endpoint, carrying the filter in the request body. The query format is identified
+          by the request's <code>Content-Type</code> header field, which <em class="rfc2119">MUST</em> be present; per
+          [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>], a server fails the request if the <code>Content-Type</code> is missing or
+          inconsistent with the body (see <a href="#type-search-errors" class="sec-ref"><bdi class="secno">7.2 </bdi>Errors</a>). Every server <em class="rfc2119">MUST</em>
+          support the <code>application/lws-query+json</code> filter format defined here as its baseline query
+          format; a server <em class="rfc2119">MAY</em> additionally accept other query formats, each identified by its own
+          media type, and the authorization requirements of <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a>
+          apply regardless of the format used. The <code>QUERY</code> method is both safe and
+          idempotent [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>], in the sense of those terms as defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>]: a
+          search never alters server state, and it <em class="rfc2119">MAY</em> be repeated, retried, and/or cached.
+          Because the filter travels in the body rather than the request URI, it is not subject to the
+          request-URI length limits that constrain a query string.
+        </p>
+
+        <p>
+          The baseline filter format is identified by the media type
+          <code>application/lws-query+json</code>, registered in
+          <a href="#iana-considerations" class="sec-ref"><bdi class="secno">13. </bdi>IANA Considerations</a>. A filter document is a single JSON object
+          [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8259" title="The JavaScript Object Notation (JSON) Data Interchange Format">RFC8259</a></cite>] whose members express constraints: the <code>type</code> member and,
+          optionally, one member per filtered link relation, each carrying the
+          conjunctive-normal-form value grammar defined below. Unlike the
+          <code>application/lws+json</code> representations defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>] —
+          which this service still uses for its <em>responses</em> — a filter document is
+          plain JSON rather than JSON-LD: it carries no <code>@context</code>, its member names
+          are not JSON-LD terms, and its nested-array groups are not subject to JSON-LD
+          constraints on <code>@type</code> values. A member whose name begins with
+          <code>@</code> (a JSON-LD keyword such as <code>@context</code>) <em class="rfc2119">MUST</em> be ignored; it
+          is neither a constraint nor a relation key.
+        </p>
+
+        <p>
+          A server <em class="rfc2119">SHOULD</em> advertise the query formats it accepts using the
+          <code>Accept-Query</code> response header field [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] — for example in
+          response to an <code>OPTIONS</code> request on the service endpoint, whose <code>Allow</code>
+          header also signals that the <code>QUERY</code> method is supported. <code>Accept-Query</code>
+          enumerates only the query-format media types the server understands; it <em class="rfc2119">MUST NOT</em> be used to
+          disclose which <a href="#dfn-indexed-relations" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-indexed-relations-4">indexed relations</a> or filter capabilities a server supports, which
+          remain deliberately unobservable (see <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a>). A client that
+          receives a <code>415</code> (Unsupported Media Type) response <em class="rfc2119">MAY</em> consult its
+          <code>Accept-Query</code> value to select a supported format.
+        </p>
+
+        <div class="example" id="example-query-request-body-application-lws-query-json">
+        <div class="marker">
+    <a class="self-link" href="#example-query-request-body-application-lws-query-json">Example<bdi> 3</bdi></a><span class="example-title">: QUERY request body (application/lws-query+json)</span>
+  </div> <pre aria-busy="false"><code class="hljs json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">[</span><span class="hljs-string">"https://schema.org/Person"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"http://xmlns.com/foaf/0.1/Person"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-string">"https://www.w3.org/ns/lws#DataResource"</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div>
+
+        <p>
+          The <code>type</code> key is <em class="rfc2119">OPTIONAL</em> and selects resources by their <code>rdf:type</code>
+          (as declared via <code>rel="type"</code> <code>Link</code> headers, server-intrinsic
+          classes, or content; see <a href="#type-derivation" class="sec-ref"><bdi class="secno">5. </bdi>Type and Relation Derivation</a>). Its value is an array whose
+          elements are combined with logical <strong>AND</strong>; each element is either a single
+          type IRI [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc3987" title="Internationalized Resource Identifiers (IRIs)">RFC3987</a></cite>] or an array of type IRIs combined with logical <strong>OR</strong>. The example
+          above selects resources matching
+          <code>(schema:Person OR foaf:Person) AND lws:DataResource</code> — the filter is a
+          conjunction of disjunctions; that is, conjunctive normal form. A request whose body has no
+          <code>type</code> key and no relation keys (or all of whose keys have values of empty arrays)
+          matches all resources visible to the client.
+        </p>
+        <p>
+          A single-type query — a <code>type</code> value containing one IRI and no OR group,
+          for example <code>{"type": ["https://schema.org/Person"]}</code> — matches every
+          resource that declares that type, even if the resource also declares other types.
+        </p>
+        <p>A <code>type</code> filter always denotes the <code>type</code> the matched resource itself bears; it never denotes the types of a container's members. The native LWS classes <code>https://www.w3.org/ns/lws#DataResource</code> and <code>https://www.w3.org/ns/lws#Container</code> are ordinary <code>type</code> values: filtering on them selects resources that are themselves data resources or containers, respectively (for example, a <code>type</code> of <code>https://www.w3.org/ns/lws#Container</code> matches container resources, and a filter of <code>https://schema.org/Person</code> AND <code>https://www.w3.org/ns/lws#DataResource</code> matches data resources that are also <code>schema:Person</code>).</p>
+        <p>
+          This conjunctive-normal-form filter is the complete query expressiveness the service is
+          required to provide. It is also the complete expressiveness of the
+          <code>application/lws-query+json</code> format itself: a server <em class="rfc2119">MUST NOT</em> extend this
+          grammar. Richer expressiveness — such as nesting, negation, comparison, ordering, or
+          text matching — is offered only through an alternate query format identified by its
+          own media type and advertised in <code>Accept-Query</code>, and a portable client <em class="rfc2119">MUST NOT</em>
+          rely on any query format beyond this baseline. A type IRI that matches no
+          resource yields no results and <em class="rfc2119">MUST NOT</em> be treated as an error, and duplicate groups <em class="rfc2119">MUST</em>
+          be ignored. An empty group — an empty array appearing as an element of a filter
+          key's value — <em class="rfc2119">MUST</em> be rejected with <code>400</code> (Bad Request): an empty
+          disjunction can match nothing, so ignoring it would silently broaden the query beyond its
+          logical meaning (see <a href="#type-search-errors" class="sec-ref"><bdi class="secno">7.2 </bdi>Errors</a>). A filter key whose entire value
+          is an empty array expresses no constraint and is treated as if the key were absent.
+        </p>
+        <p>
+          The <code>type</code> key is the mandatory baseline and <em class="rfc2119">MUST</em> be supported by every server
+          that implements the <code>TypeSearchService</code>. A server <em class="rfc2119">MAY</em> additionally index other
+          <em>descriptive</em> link relations. Such a relation is filtered by using the relation
+          itself as a key alongside <code>type</code> — a registered relation name per
+          [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8288" title="Web Linking">RFC8288</a></cite>] or, for an extension relation, its URI — with exactly the same
+          conjunctive-normal-form semantics as <code>type</code> (a nested array is an OR group,
+          sibling array elements form AND groups, target values matched against the link targets the
+          resource declares for that relation). Groups belonging to different relations are combined
+          with logical AND. Relation targets are derived by the server in the same way as types (HTTP
+          <code>Link</code> headers, server-intrinsic state, or parsed content) and all sources <em class="rfc2119">MUST</em>
+          be treated identically.
+        </p>
+        <p>
+          A server <em class="rfc2119">MUST NOT</em> enumerate its set of additional <a href="#dfn-indexed-relations" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-indexed-relations-5">indexed relations</a> — not in
+          the storage description nor elsewhere. A relation the server does not index, like a target
+          value that matches nothing, yields no results for that constraint: this <em class="rfc2119">MUST NOT</em> be treated
+          as an error, and the two cases <em class="rfc2119">MUST</em> be indistinguishable to the client (consistent with the
+          type-matching rule above). Only <em>descriptive</em> relations are eligible for indexing;
+          servers <em class="rfc2119">MUST NOT</em> index structural or protocol relations.
+        </p>
+        <div class="note" role="note" id="issue-container-generatedID-2"><div class="note-title marker" id="h-note-2"><span>Note</span></div><p class="">
+          Withholding the set of indexed relations keeps the filter interface from serving as a
+          discovery oracle for the server's configuration; see
+          <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a>.
+        </p></div>
+        <p>
+          A successful search returns <code>200</code> (OK). The default response is an
+          <code>application/lws+json</code> <code>ContainerPage</code> whose items describe the
+          matching Storage Resources, and every server <em class="rfc2119">MUST</em> be able to produce it: a request that sends
+          no <code>Accept</code> header field, or one that admits <code>application/lws+json</code>,
+          receives this representation. A server <em class="rfc2119">MAY</em> honor an <code>Accept</code> header field that
+          requests a different response media type and return the result set in that format instead
+          [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>]; if it can satisfy none of the media types the request finds acceptable, it
+          responds <code>406</code> (Not Acceptable) (see <a href="#type-search-errors" class="sec-ref"><bdi class="secno">7.2 </bdi>Errors</a>).
+        </p>
+        <p>
+          Each item in a <code>ContainerPage</code> result <em class="rfc2119">MUST</em> carry at least the matched
+          resource's <code>id</code> and its <code>type</code>, mirroring a container member; a
+          server <em class="rfc2119">MAY</em> include additional descriptive metadata (such as <code>format</code>,
+          <code>size</code>, or <code>modified</code>) but is not required to.
+        </p>
+        <p>
+          Whatever the response format, the result set is paginated according to the standard LWS
+          pagination model defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>]: page URIs are conveyed in <code>Link</code>
+          headers (not in the response body), are opaque to the client, and are
+          dereferenced to retrieve subsequent pages. Aside from <code>type</code> and any additional
+          relation keys described above, no other filter inputs are defined.
+        </p>
+        <div class="note" role="note" id="issue-container-generatedID-3"><div class="note-title marker" id="h-note-3"><span>Note</span></div><p class="">A <code>ContainerPage</code> returned by the <code>TypeSearchService</code> is a <em>synthetic</em> result set, not a representation of a container resource. The <code>ContainerPage</code> media type and pagination model are reused only for client convenience; the response does not identify a container, has no containment relationship to its members, is not retrievable or mutable as a resource, and its membership reflects the query rather than any stored hierarchy.</p></div>
+        <p>
+          [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] permits a response to carry a <code>Content-Location</code> header field
+          identifying a resource that represents the query results. Because a Type Search result set
+          is synthetic and client-specific (see the note above and
+          <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a>), this specification does not define such a resource;
+          a server that nonetheless exposes one <em class="rfc2119">MUST</em> subject it to the same authorization filtering on
+          every access and <em class="rfc2119">MUST</em> prevent its reuse across clients.
+        </p>
+      </section>
+
+      <section id="type-search-errors"><div class="header-wrapper"><h3 id="x7-2-errors"><bdi class="secno">7.2 </bdi>Errors</h3><a class="self-link" href="#type-search-errors" aria-label="Permalink for Section 7.2"></a></div>
+        
+
+        <p>
+          Servers indicate request outcomes using standard HTTP status codes [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>]. In particular:
+        </p>
+        <ul>
+          <li>
+            A request body that is not well-formed <code>application/lws-query+json</code>, or whose
+            <code>type</code> is not an array, or any of whose elements is neither a string nor a non-empty array of strings, <em class="rfc2119">MUST</em> be rejected with <code>400</code> (Bad Request). In particular, an empty group is rejected, not ignored (see <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>).
+          </li>
+          <li>
+            A request whose <code>Content-Type</code> identifies a query format the server does not support <em class="rfc2119">MUST</em> be rejected with <code>415</code> (Unsupported Media Type), and such a response <em class="rfc2119">SHOULD</em> include an <code>Accept-Query</code> header field [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] listing the query formats the server does accept; every server supports at least <code>application/lws-query+json</code> (see <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>). A request that omits the <code>Content-Type</code> header field, which [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] requires a server to reject, <em class="rfc2119">MUST</em> be rejected with <code>400</code> (Bad Request).
+          </li>
+          <li>
+            A request whose <code>Accept</code> header field excludes every response media type the server can produce for the result set <em class="rfc2119">MUST</em> be rejected with <code>406</code> (Not Acceptable) [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>]. Because every server can produce the <code>application/lws+json</code> <code>ContainerPage</code>, a request that omits <code>Accept</code> or admits that media type never results in <code>406</code>.
+          </li>
+          <li>
+            A <code>type</code> value, or any relation target value, that does not match the
+            <code>IRI</code> production of [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc3987" title="Internationalized Resource Identifiers (IRIs)">RFC3987</a></cite>] — an absolute IRI, optionally carrying
+            a fragment identifier, the form of every IRI in the RDF abstract syntax
+            [<cite><a class="bibref" data-link-type="biblio" href="#bib-rdf11-concepts" title="RDF 1.1 Concepts and Abstract Syntax">rdf11-concepts</a></cite>] — <em class="rfc2119">MUST</em> be rejected with <code>400</code> (Bad Request). This is distinct from a
+            well-formed IRI that matches no resource, and from a relation the server does not index, both of which yield no results and are not errors (see above).
+          </li>
+          <li>
+            A filter that is well-formed but exceeds the complexity a server chooses to support
+            (consistent with the expressiveness ceiling above) <em class="rfc2119">MUST</em> be rejected with <code>422</code> (Unprocessable Content), the status [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>] defines and [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>] suggests for a query that is understood but cannot be processed due to its actual contents. A server <em class="rfc2119">MUST NOT</em> silently truncate or otherwise narrow such a filter, as doing so could return a superset of the intended results.
+          </li>
+          <li>
+            A pagination reference (a previously issued page link) that the server no longer
+            recognizes or that has expired <em class="rfc2119">MUST</em> result in <code>404</code> (Not Found) or
+            <code>410</code> (Gone). This rule applies to the pages of both services: those of a
+            <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-6">Type Search Service</a> result set and those of a <a href="#dfn-type-index-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-index-service-4">Type Index Service</a> listing
+            alike. Clients <em class="rfc2119">SHOULD</em> restart — a search by re-sending the <code>QUERY</code>
+            request, a type index listing by re-requesting the service endpoint.
+          </li>
+        </ul>
+        <div class="note" role="note" id="issue-container-generatedID-4"><div class="note-title marker" id="h-note-4"><span>Note</span></div><p class="">
+          Error responses may include a representation describing the problem; this specification does
+          not define its format.
+        </p></div>
+        <p>
+          A <code>QUERY</code> response is cacheable [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>]. Because the filter travels in the
+          request body, it forms part of the cache key itself ([<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>], Section 2.7) and cannot
+          be conveyed through the <code>Vary</code> header field, which names only request header
+          fields. A server that negotiates the response representation on <code>Accept</code> (see
+          <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>) <em class="rfc2119">MUST</em> list <code>Accept</code> in <code>Vary</code> so that
+          caches do not reuse a representation across response formats. Because every result set is
+          authorization-filtered and therefore client-specific, the cross-client caching requirements
+          in <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a> also apply.
+        </p>
+      </section>
+    </section>
+
+    <section id="security-authorization"><div class="header-wrapper"><h2 id="x8-security-and-authorization"><bdi class="secno">8. </bdi>Security and Authorization</h2><a class="self-link" href="#security-authorization" aria-label="Permalink for Section 8."></a></div>
+      
+
+      <p>
+        Servers <em class="rfc2119">MUST</em> enforce authorization. Responses from the <code>TypeIndexService</code> (a
+        <code>GET</code>) and the <code>TypeSearchService</code> (a <code>QUERY</code>) include only
+        types and resource URIs that the authenticated client is explicitly authorized to read.
+      </p>
+      <p>
+        Unauthorized entries <em class="rfc2119">MUST</em> be omitted entirely. A server <em class="rfc2119">MUST NOT</em> allow a client to discover, from the responses of these services, the existence of a specific resource instance, or that a specific type exists in the storage at all, without the required authorization. This implicit filtering yields a dynamically generated, client-specific type index and search result.
+      </p>
+      <p>
+        Any count a response exposes, including <code>totalItems</code>, <em class="rfc2119">MUST</em> be computed over this
+        client-specific, authorization-filtered view: it is the number of entries the requesting client
+        is authorized to see, never a count of the types or resources present in the storage as a whole.
+        A count that included unauthorized entries would itself reveal their existence and is therefore
+        prohibited.
+      </p>
+      <p>
+        Authorization filtering <em class="rfc2119">MUST</em> be evaluated against the requesting client's <em>current</em> access at the time the request is served, not against any cached or precomputed view. Once an authorization (such as an access grant) is revoked or narrowed, the affected types and resource URIs <em class="rfc2119">MUST NOT</em> appear in any subsequent response; the eventual-consistency allowance for type and relation derivation <em class="rfc2119">MUST NOT</em> be extended to authorization. A server <em class="rfc2119">MAY</em> maintain a derived index for performance, but it <em class="rfc2119">MUST</em> apply current authorization as a filter over that index on every request.
+      </p>
+      <p>
+        Responses from both services are authorization-filtered and therefore client-specific, yet
+        both are cacheable by default: a <code>TypeIndexService</code> response under the ordinary
+        HTTP caching rules for <code>GET</code> [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>], and a <code>TypeSearchService</code>
+        response per [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>], whose cache key is computed over the request body rather than
+        the requesting client. A server <em class="rfc2119">MUST</em> ensure that an authorization-filtered response from
+        either service is never served from a shared cache to a different client. A server <em class="rfc2119">MUST</em> mark
+        such responses so that they are not reused across clients (for example with
+        <code>Cache-Control: private</code> or <code>no-store</code>) and <em class="rfc2119">MUST</em> vary any cached entry
+        on the credential that scopes the result.
+      </p>
+      <p>
+        Any extension query mechanism a server exposes over the storage — for example an
+        alternative query format accepted by the <code>TypeSearchService</code>, or a separate query
+        service — <em class="rfc2119">MUST</em> uphold these authorization-filtering requirements and the
+        indistinguishability requirements of this specification, so that no extension can become a
+        discovery oracle for resources or types the client is not authorized to read.
+      </p>
+    </section>
+
+    <section id="examples" class="informative"><div class="header-wrapper"><h2 id="x9-examples"><bdi class="secno">9. </bdi>Examples</h2><a class="self-link" href="#examples" aria-label="Permalink for Section 9."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <div class="example" id="example-get-typeindex-discovering-available-types">
+        <div class="marker">
+    <a class="self-link" href="#example-get-typeindex-discovering-available-types">Example<bdi> 4</bdi></a><span class="example-title">: GET TypeIndex (Discovering available types)</span>
+  </div> <pre aria-busy="false"><code class="hljs yaml"><span class="hljs-string">Request</span>
+<span class="hljs-string">GET</span> <span class="hljs-string">/types/index</span>
+<span class="hljs-attr">Authorization:</span> <span class="hljs-string">Bearer</span> <span class="hljs-string">&lt;token&gt;</span>
+
+<span class="hljs-string">Response</span>
+<span class="hljs-string">HTTP/1.1</span> <span class="hljs-number">200</span> <span class="hljs-string">OK</span>
+<span class="hljs-attr">Content-Type:</span> <span class="hljs-string">application/lws+json</span>
+<span class="hljs-attr">Cache-Control:</span> <span class="hljs-string">private</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=1&gt;;</span> <span class="hljs-string">rel="first"</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=2&gt;;</span> <span class="hljs-string">rel="next"</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/index?page=4&gt;;</span> <span class="hljs-string">rel="last"</span>
+
+{
+  <span class="hljs-attr">"@context":</span> <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-attr">"type":</span> <span class="hljs-string">"TypeIndex"</span>,
+  <span class="hljs-attr">"totalItems":</span> <span class="hljs-number">142</span>,
+  <span class="hljs-attr">"items":</span> [
+    { <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://schema.org/Person"</span> },
+    { <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://schema.org/Event"</span> }
+  ]
+}</code></pre>
+      </div>
+
+      <div class="example" id="example-discovering-query-support-and-accepted-formats-options">
+        <div class="marker">
+    <a class="self-link" href="#example-discovering-query-support-and-accepted-formats-options">Example<bdi> 5</bdi></a><span class="example-title">: Discovering QUERY support and accepted formats (OPTIONS)</span>
+  </div> <pre aria-busy="false"><code class="hljs yaml"><span class="hljs-string">Request</span>
+<span class="hljs-string">OPTIONS</span> <span class="hljs-string">/types/search</span>
+
+<span class="hljs-string">Response</span>
+<span class="hljs-string">HTTP/1.1</span> <span class="hljs-number">204</span> <span class="hljs-literal">No</span> <span class="hljs-string">Content</span>
+<span class="hljs-attr">Allow:</span> <span class="hljs-string">OPTIONS,</span> <span class="hljs-string">QUERY</span>
+<span class="hljs-attr">Accept-Query:</span> <span class="hljs-string">application/lws-query+json</span>
+
+<span class="hljs-string">A</span> <span class="hljs-string">server</span> <span class="hljs-string">that</span> <span class="hljs-string">also</span> <span class="hljs-string">accepted</span> <span class="hljs-string">other</span> <span class="hljs-string">query</span> <span class="hljs-string">formats</span> <span class="hljs-string">would</span> <span class="hljs-string">list</span> <span class="hljs-string">them</span> <span class="hljs-string">in</span> <span class="hljs-string">Accept-Query,</span>
+<span class="hljs-attr">for example: Accept-Query:</span> <span class="hljs-string">application/lws-query+json,</span> <span class="hljs-string">application/sparql-query</span></code></pre>
+      </div>
+
+      <div class="example" id="example-query-search-for-instances-schema-person-and-lws-dataresource">
+        <div class="marker">
+    <a class="self-link" href="#example-query-search-for-instances-schema-person-and-lws-dataresource">Example<bdi> 6</bdi></a><span class="example-title">: QUERY Search for instances (schema:Person AND lws:DataResource)</span>
+  </div> <pre aria-busy="false"><code class="hljs yaml"><span class="hljs-string">Request</span>
+<span class="hljs-string">QUERY</span> <span class="hljs-string">/types/search</span>
+<span class="hljs-attr">Authorization:</span> <span class="hljs-string">Bearer</span> <span class="hljs-string">&lt;token&gt;</span>
+<span class="hljs-attr">Content-Type:</span> <span class="hljs-string">application/lws-query+json</span>
+
+{
+  <span class="hljs-attr">"type":</span> [
+    <span class="hljs-string">"https://schema.org/Person"</span>,
+    <span class="hljs-string">"https://www.w3.org/ns/lws#DataResource"</span>
+  ]
+}
+
+<span class="hljs-string">Response</span>
+<span class="hljs-string">HTTP/1.1</span> <span class="hljs-number">200</span> <span class="hljs-string">OK</span>
+<span class="hljs-attr">Content-Type:</span> <span class="hljs-string">application/lws+json</span>
+<span class="hljs-attr">Cache-Control:</span> <span class="hljs-string">private</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/search?cursor=8f2a1c&gt;;</span> <span class="hljs-string">rel="first"</span>
+<span class="hljs-attr">Link:</span> <span class="hljs-string">&lt;https://example.org/types/search?cursor=b71e90&gt;;</span> <span class="hljs-string">rel="next"</span>
+
+{
+  <span class="hljs-attr">"@context":</span> <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-attr">"type":</span> <span class="hljs-string">"ContainerPage"</span>,
+  <span class="hljs-attr">"totalItems":</span> <span class="hljs-number">27</span>,
+  <span class="hljs-attr">"items":</span> [
+    { <span class="hljs-attr">"type":</span> [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://example.org/data/person-4872"</span> },
+    { <span class="hljs-attr">"type":</span> [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://example.org/data/person-4873"</span> },
+    { <span class="hljs-attr">"type":</span> [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-attr">"id":</span> <span class="hljs-string">"https://example.org/data/person-5882"</span> }
+  ]
+}</code></pre>
+      </div>
+
+      <div class="example" id="example-query-search-for-container-resources-is-a">
+        <div class="marker">
+    <a class="self-link" href="#example-query-search-for-container-resources-is-a">Example<bdi> 7</bdi></a><span class="example-title">: QUERY Search for container resources (is-a)</span>
+  </div> <pre aria-busy="false"><code class="hljs javascript"><span class="hljs-title class_">Request</span>
+<span class="hljs-variable constant_">QUERY</span> /types/search
+<span class="hljs-title class_">Authorization</span>: <span class="hljs-title class_">Bearer</span> &lt;token&gt;
+<span class="hljs-title class_">Content</span>-<span class="hljs-title class_">Type</span>: application/lws-query+json
+
+{
+  <span class="hljs-string">"type"</span>: [<span class="hljs-string">"https://www.w3.org/ns/lws#Container"</span>]
+}
+
+<span class="hljs-title class_">Matches</span> resources whose type includes <span class="hljs-attr">lws</span>:<span class="hljs-title class_">Container</span>. <span class="hljs-title class_">This</span> does <span class="hljs-variable constant_">NOT</span> mean
+<span class="hljs-string">"containers that contain something"</span> - the service has no containment query.
+<span class="hljs-title class_">The</span> returned <span class="hljs-title class_">URIs</span> are container resources because each is itself a <span class="hljs-attr">lws</span>:<span class="hljs-title class_">Container</span>.
+
+<span class="hljs-title class_">Response</span>
+{
+  <span class="hljs-string">"@context"</span>: <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-string">"type"</span>: <span class="hljs-string">"ContainerPage"</span>,
+  <span class="hljs-string">"totalItems"</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-string">"items"</span>: [
+    { <span class="hljs-string">"type"</span>: <span class="hljs-string">"Container"</span>, <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/people/"</span> },
+    { <span class="hljs-string">"type"</span>: <span class="hljs-string">"Container"</span>, <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/contacts/"</span> }
+  ]
+}</code></pre>
+      </div>
+
+      <div class="example" id="example-cnf-filter-or-within-a-group-and-across-groups">
+        <div class="marker">
+    <a class="self-link" href="#example-cnf-filter-or-within-a-group-and-across-groups">Example<bdi> 8</bdi></a><span class="example-title">: CNF Filter (OR within a group, AND across groups)</span>
+  </div> <pre aria-busy="false"><code class="hljs javascript"><span class="hljs-title class_">Request</span> (nested array = <span class="hljs-variable constant_">OR</span> group, outer array = <span class="hljs-variable constant_">AND</span>)
+<span class="hljs-variable constant_">QUERY</span> /types/search
+<span class="hljs-title class_">Authorization</span>: <span class="hljs-title class_">Bearer</span> &lt;token&gt;
+<span class="hljs-title class_">Content</span>-<span class="hljs-title class_">Type</span>: application/lws-query+json
+
+{
+  <span class="hljs-string">"type"</span>: [
+    [<span class="hljs-string">"https://schema.org/Person"</span>, <span class="hljs-string">"http://xmlns.com/foaf/0.1/Person"</span>],
+    <span class="hljs-string">"https://www.w3.org/ns/lws#DataResource"</span>
+  ]
+}
+
+<span class="hljs-title class_">Selects</span> resources <span class="hljs-title function_">matching</span> (<span class="hljs-attr">schema</span>:<span class="hljs-title class_">Person</span> <span class="hljs-variable constant_">OR</span> <span class="hljs-attr">foaf</span>:<span class="hljs-title class_">Person</span>) <span class="hljs-variable constant_">AND</span> <span class="hljs-attr">lws</span>:<span class="hljs-title class_">DataResource</span>.
+
+<span class="hljs-title class_">Response</span>
+{
+  <span class="hljs-string">"@context"</span>: <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-string">"type"</span>: <span class="hljs-string">"ContainerPage"</span>,
+  <span class="hljs-string">"totalItems"</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-string">"items"</span>: [
+    { <span class="hljs-string">"type"</span>: [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/person-4872"</span> },
+    { <span class="hljs-string">"type"</span>: [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"http://xmlns.com/foaf/0.1/Person"</span>], <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/contact-2208"</span> }
+  ]
+}</code></pre>
+      </div>
+
+      <div class="example" id="example-filtering-on-an-indexed-relation-describedby">
+        <div class="marker">
+    <a class="self-link" href="#example-filtering-on-an-indexed-relation-describedby">Example<bdi> 9</bdi></a><span class="example-title">: Filtering on an indexed relation (describedby)</span>
+  </div> <pre aria-busy="false"><code class="hljs javascript"><span class="hljs-title class_">Request</span> (type <span class="hljs-variable constant_">AND</span> a <span class="hljs-string">'describedby'</span> relation, the relation name used <span class="hljs-keyword">as</span> a key)
+<span class="hljs-variable constant_">QUERY</span> /types/search
+<span class="hljs-title class_">Authorization</span>: <span class="hljs-title class_">Bearer</span> &lt;token&gt;
+<span class="hljs-title class_">Content</span>-<span class="hljs-title class_">Type</span>: application/lws-query+json
+
+{
+  <span class="hljs-string">"type"</span>: [<span class="hljs-string">"https://schema.org/Person"</span>],
+  <span class="hljs-string">"describedby"</span>: [<span class="hljs-string">"https://shapes.example/PersonShape"</span>]
+}
+
+<span class="hljs-title class_">Selects</span> resources that are <span class="hljs-attr">schema</span>:<span class="hljs-title class_">Person</span> <span class="hljs-variable constant_">AND</span> declare a <span class="hljs-string">'describedby'</span> link to the given shape.
+<span class="hljs-title class_">If</span> the server does not index <span class="hljs-string">'describedby'</span>, the constraint yields no <span class="hljs-title function_">results</span> (not an error,
+and indistinguishable <span class="hljs-keyword">from</span> no resource declaring that link).
+
+<span class="hljs-title class_">Response</span>
+{
+  <span class="hljs-string">"@context"</span>: <span class="hljs-string">"https://www.w3.org/ns/lws/v1"</span>,
+  <span class="hljs-string">"type"</span>: <span class="hljs-string">"ContainerPage"</span>,
+  <span class="hljs-string">"totalItems"</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-string">"items"</span>: [
+    { <span class="hljs-string">"type"</span>: [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/person-4872"</span> },
+    { <span class="hljs-string">"type"</span>: [<span class="hljs-string">"DataResource"</span>, <span class="hljs-string">"https://schema.org/Person"</span>], <span class="hljs-string">"id"</span>: <span class="hljs-string">"https://example.org/data/person-5012"</span> }
+  ]
+}</code></pre>
+      </div>
+    </section>
+
+    <section id="security-considerations" class="informative"><div class="header-wrapper"><h2 id="x10-security-considerations"><bdi class="secno">10. </bdi>Security Considerations</h2><a class="self-link" href="#security-considerations" aria-label="Permalink for Section 10."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <ul>
+        <li>
+          <strong>Discovery Oracle</strong>: These services aggregate, in a single response,
+          information that would otherwise require crawling an entire storage. The
+          authorization requirements in <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a> are what keep
+          them from disclosing resources or types a client is not authorized to read.
+          Implementations are encouraged to apply the same filtering to every observable
+          surface, including error messages and any diagnostic detail returned to clients.
+        </li>
+        <li>
+          <strong>Configuration Probing</strong>: If a server's behavior distinguished a
+          relation it does not index from a target value that matches nothing, clients could
+          map the server's indexing configuration. The indistinguishability requirements of
+          this specification extend to observable behavior generally; implementations are
+          encouraged to take care that response timing differences do not become such an
+          oracle.
+        </li>
+        <li>
+          <strong>Resource Exhaustion</strong>: Conjunctive filters across multiple types and
+          indexed relations can be expensive to evaluate. Servers are encouraged to bound
+          filter complexity and page sizes and to apply rate limiting, rejecting over-limit
+          filters with <code>422</code> as required by
+          <a href="#type-search-errors" class="sec-ref"><bdi class="secno">7.2 </bdi>Errors</a> rather than narrowing them.
+        </li>
+        <li>
+          <strong>Shared Caches</strong>: Responses from both services are client-specific by
+          construction, yet both are cacheable by default: a <code>TypeIndexService</code>
+          <code>GET</code> response under the ordinary HTTP caching rules [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9110" title="HTTP Semantics">RFC9110</a></cite>], and a
+          <code>TypeSearchService</code> <code>QUERY</code> response per [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc10008" title="The HTTP QUERY Method">RFC10008</a></cite>], whose cache
+          key is computed over the request body rather than the requesting client. Serving either
+          through a shared cache risks delivering one client's authorization-filtered view to
+          another. The cache requirements in <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a> exist to prevent
+          this, and deserve particular attention when a shared cache sits in front of either
+          service.
+        </li>
+      </ul>
+    </section>
+
+    <section id="privacy-considerations" class="informative"><div class="header-wrapper"><h2 id="x11-privacy-considerations"><bdi class="secno">11. </bdi>Privacy Considerations</h2><a class="self-link" href="#privacy-considerations" aria-label="Permalink for Section 11."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <ul>
+        <li>
+          <strong>Type Fingerprinting</strong>: The distinct types present in a storage can
+          themselves be sensitive (for example, health, financial, or relationship
+          vocabularies), even when resource contents are not exposed. Granting read access
+          to a resource also reveals its types and indexed relation targets through these
+          services.
+        </li>
+        <li>
+          <strong>Profiling and Aggregation</strong>: A single search response can assemble
+          a view of a storage's contents that would otherwise require enumerating containers
+          resource by resource. Resource managers should consider that granting read access
+          to resources also makes them discoverable and aggregable by type.
+        </li>
+        <li>
+          <strong>Observation over Time</strong>: Repeated queries reveal when resources of
+          a given type appear, change, or disappear, exposing activity patterns within the
+          client's authorized view even when contents are not retrieved.
+        </li>
+      </ul>
+    </section>
+
+    <section id="vocabulary"><div class="header-wrapper"><h2 id="x12-vocabulary"><bdi class="secno">12. </bdi>Vocabulary</h2><a class="self-link" href="#vocabulary" aria-label="Permalink for Section 12."></a></div>
+      
+
+      <p>
+        This document defines the following terms in the
+        <code>https://www.w3.org/ns/lws#</code> namespace:
+      </p>
+
+      <table class="simple">
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>URI</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>TypeIndexService</code></td>
+            <td><code>lws:TypeIndexService</code></td>
+            <td>Service type for type index discovery</td>
+          </tr>
+          <tr>
+            <td><code>TypeSearchService</code></td>
+            <td><code>lws:TypeSearchService</code></td>
+            <td>Service type for type search discovery</td>
+          </tr>
+          <tr>
+            <td><code>TypeIndex</code></td>
+            <td><code>lws:TypeIndex</code></td>
+            <td>Document type returned by the Type Index Service</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        This document also uses the terms <code>Storage</code>, <code>ContainerPage</code>,
+        <code>service</code>, <code>serviceEndpoint</code>, <code>totalItems</code>, and
+        <code>items</code> defined by [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>] and the LWS JSON-LD context.
+      </p>
+    </section>
+
+    <section id="iana-considerations" class="informative"><div class="header-wrapper"><h2 id="x13-iana-considerations"><bdi class="secno">13. </bdi>IANA Considerations</h2><a class="self-link" href="#iana-considerations" aria-label="Permalink for Section 13."></a></div><p><em>This section is non-normative.</em></p>
+      
+
+      <section id="media-type-lws-query-json"><div class="header-wrapper"><h3 id="x13-1-the-application-lws-query-json-media-type"><bdi class="secno">13.1 </bdi>The <code>application/lws-query+json</code> Media Type</h3><a class="self-link" href="#media-type-lws-query-json" aria-label="Permalink for Section 13.1"></a></div>
+        
+
+        <p>
+          This specification registers the <code>application/lws-query+json</code> media type,
+          identifying the baseline Type Search filter format defined in
+          <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>.
+        </p>
+
+        <ul>
+          <li>Type name: application</li>
+          <li>Subtype name: lws-query+json</li>
+          <li>Required parameters: N/A</li>
+          <li>Optional parameters: N/A</li>
+          <li>Encoding considerations: Resources that use the <code>application/lws-query+json</code>
+            media type are required to conform to all of the requirements for the
+            <code>application/json</code> media type and are therefore subject to the same encoding
+            considerations specified in Section 11 of [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8259" title="The JavaScript Object Notation (JSON) Data Interchange Format">RFC8259</a></cite>].</li>
+          <li>Security considerations: As defined in this specification. A filter document is a
+            declarative constraint expression and contains no executable content; see
+            <a href="#security-authorization" class="sec-ref"><bdi class="secno">8. </bdi>Security and Authorization</a> and <a href="#security-considerations" class="sec-ref"><bdi class="secno">10. </bdi>Security Considerations</a>.</li>
+          <li>Interoperability considerations: A filter document is plain JSON, not JSON-LD; members
+            whose names begin with <code>@</code> are ignored (see
+            <a href="#type-search-query" class="sec-ref"><bdi class="secno">7.1 </bdi>QUERY [TypeSearchService]</a>).</li>
+          <li>Published specification: This document.</li>
+          <li>Applications that use this media type: Clients and servers implementing the Linked Web
+            Storage <a href="#dfn-type-search-service" class="internalDFN" data-link-type="dfn" id="ref-for-dfn-type-search-service-7">Type Search Service</a>.</li>
+          <li>Fragment identifier considerations: N/A</li>
+          <li>Additional information:
+            <ul>
+              <li>Magic number(s): N/A</li>
+              <li>File extension(s): N/A</li>
+              <li>Macintosh file type code(s): N/A</li>
+            </ul>
+          </li>
+          <li>Person &amp; email address to contact for further information: <abbr title="World Wide Web Consortium">W3C</abbr> Linked Web Storage
+            Working Group &lt;public-lws-wg@w3.org&gt;</li>
+          <li>Intended usage: COMMON</li>
+          <li>Restrictions on usage: N/A. This media type is intended for use as the request content
+            of HTTP <code>QUERY</code> messages, but is not restricted to that context.</li>
+          <li>Author: <abbr title="World Wide Web Consortium">W3C</abbr> Linked Web Storage Working Group</li>
+          <li>Change controller: <abbr title="World Wide Web Consortium">W3C</abbr></li>
+        </ul>
+      </section>
+    </section>
+  
+
+<section id="references" class="appendix"><div class="header-wrapper"><h2 id="a-references"><bdi class="secno">A. </bdi>References</h2><a class="self-link" href="#references" aria-label="Permalink for Appendix A."></a></div><section id="normative-references"><div class="header-wrapper"><h3 id="a-1-normative-references"><bdi class="secno">A.1 </bdi>Normative references</h3><a class="self-link" href="#normative-references" aria-label="Permalink for Appendix A.1"></a></div>
+    
+    <dl class="bibliography"><dt id="bib-lws10-core">[LWS10-CORE]</dt><dd>
+      <a href="https://www.w3.org/TR/lws10-core/"><cite>Linked Web Storage Protocol 1.0</cite></a>.  W3C. FPWD. URL: <a href="https://www.w3.org/TR/lws10-core/">https://www.w3.org/TR/lws10-core/</a>
+    </dd><dt id="bib-rdf11-concepts">[rdf11-concepts]</dt><dd>
+      <a href="https://www.w3.org/TR/rdf11-concepts/"><cite>RDF 1.1 Concepts and Abstract Syntax</cite></a>. Richard Cyganiak; David Wood; Markus Lanthaler.  W3C. 25 February 2014. W3C Recommendation. URL: <a href="https://www.w3.org/TR/rdf11-concepts/">https://www.w3.org/TR/rdf11-concepts/</a>
+    </dd><dt id="bib-rfc10008">[RFC10008]</dt><dd>
+      <a href="https://www.rfc-editor.org/rfc/rfc10008"><cite>The HTTP QUERY Method</cite></a>. J. Reschke; J. M. Snell; M. Bishop.  IETF. June 2026. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc10008">https://www.rfc-editor.org/rfc/rfc10008</a>
+    </dd><dt id="bib-rfc2119">[RFC2119]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc2119/"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. S. Bradner.  IETF. March 1997. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc2119/">https://www.rfc-editor.org/info/rfc2119/</a>
+    </dd><dt id="bib-rfc3987">[RFC3987]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc3987/"><cite>Internationalized Resource Identifiers (IRIs)</cite></a>. M. Duerst; M. Suignard.  IETF. January 2005. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc3987/">https://www.rfc-editor.org/info/rfc3987/</a>
+    </dd><dt id="bib-rfc8174">[RFC8174]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc8174/"><cite>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</cite></a>. B. Leiba.  IETF. May 2017. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc8174/">https://www.rfc-editor.org/info/rfc8174/</a>
+    </dd><dt id="bib-rfc8259">[RFC8259]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc8259/"><cite>The JavaScript Object Notation (JSON) Data Interchange Format</cite></a>. T. Bray, Ed. IETF. December 2017. Internet Standard. URL: <a href="https://www.rfc-editor.org/info/rfc8259/">https://www.rfc-editor.org/info/rfc8259/</a>
+    </dd><dt id="bib-rfc8288">[RFC8288]</dt><dd>
+      <a href="https://httpwg.org/specs/rfc8288.html"><cite>Web Linking</cite></a>. M. Nottingham.  IETF. October 2017. Proposed Standard. URL: <a href="https://httpwg.org/specs/rfc8288.html">https://httpwg.org/specs/rfc8288.html</a>
+    </dd><dt id="bib-rfc9110">[RFC9110]</dt><dd>
+      <a href="https://httpwg.org/specs/rfc9110.html"><cite>HTTP Semantics</cite></a>. R. Fielding, Ed.; M. Nottingham, Ed.; J. Reschke, Ed. IETF. June 2022. Internet Standard. URL: <a href="https://httpwg.org/specs/rfc9110.html">https://httpwg.org/specs/rfc9110.html</a>
+    </dd></dl>
+  </section></section><p role="navigation" id="back-to-top">
+    <a href="#title"><abbr title="Back to Top">↑</abbr></a>
+  </p><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-type-index-service" aria-label="Links in this document to definition: Type Index Service">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-type-index-service" aria-label="Permalink for definition: Type Index Service. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+    <li>
+      <a href="#ref-for-dfn-type-index-service-1" title="§ 4. Discovery">§ 4. Discovery</a> <a href="#ref-for-dfn-type-index-service-2" title="Reference 2">(2)</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-index-service-3" title="§ 6. Type Index Service">§ 6. Type Index Service</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-index-service-4" title="§ 7.2 Errors">§ 7.2 Errors</a> 
+    </li>
+  </ul>
+    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-type-search-service" aria-label="Links in this document to definition: Type Search Service">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-type-search-service" aria-label="Permalink for definition: Type Search Service. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+    <li>
+      <a href="#ref-for-dfn-type-search-service-1" title="§ 3. Terminology">§ 3. Terminology</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-search-service-2" title="§ 4. Discovery">§ 4. Discovery</a> <a href="#ref-for-dfn-type-search-service-3" title="Reference 2">(2)</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-search-service-4" title="§ 6.1 GET [TypeIndexService]">§ 6.1 GET [TypeIndexService]</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-search-service-5" title="§ 7. Type Search Service">§ 7. Type Search Service</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-search-service-6" title="§ 7.2 Errors">§ 7.2 Errors</a> 
+    </li><li>
+      <a href="#ref-for-dfn-type-search-service-7" title="§ 13.1 The application/lws-query+json Media Type">§ 13.1 The application/lws-query+json Media Type</a> 
+    </li>
+  </ul>
+    </div><div class="dfn-panel" hidden="" role="dialog" aria-modal="true" id="dfn-panel-for-dfn-indexed-relations" aria-label="Links in this document to definition: indexed relation">
+      <span class="caret"></span>
+      <div>
+        <a class="self-link" href="#dfn-indexed-relations" aria-label="Permalink for definition: indexed relation. Activate to close this dialog.">Permalink</a>
+         
+        
+      </div>
+      <p><b>Referenced in:</b></p>
+      <ul>
+    <li>
+      <a href="#ref-for-dfn-indexed-relations-1" title="§ 3. Terminology">§ 3. Terminology</a> 
+    </li><li>
+      <a href="#ref-for-dfn-indexed-relations-2" title="§ 4. Discovery">§ 4. Discovery</a> 
+    </li><li>
+      <a href="#ref-for-dfn-indexed-relations-3" title="§ 7. Type Search Service">§ 7. Type Search Service</a> 
+    </li><li>
+      <a href="#ref-for-dfn-indexed-relations-4" title="§ 7.1 QUERY [TypeSearchService]">§ 7.1 QUERY [TypeSearchService]</a> <a href="#ref-for-dfn-indexed-relations-5" title="Reference 2">(2)</a> 
+    </li>
+  </ul>
+    </div><script id="respec-highlight-vars">(() => {
+// @ts-check
+
+if (document.respec) {
+  document.respec.ready.then(setupVarHighlighter);
+} else {
+  setupVarHighlighter();
+}
+
+function setupVarHighlighter() {
+  document
+    .querySelectorAll("var")
+    .forEach(varElem => varElem.addEventListener("click", highlightListener));
+}
+
+/**
+ * @param {MouseEvent} ev
+ */
+function highlightListener(ev) {
+  ev.stopPropagation();
+  const varElem = /** @type {HTMLElement} */ (ev.target);
+  const hightligtedElems = highlightVars(varElem);
+  const resetListener = () => {
+    const hlColor = getHighlightColor(varElem);
+    hightligtedElems.forEach(el => removeHighlight(el, hlColor));
+    [...HL_COLORS.keys()].forEach(key => HL_COLORS.set(key, true));
+  };
+  if (hightligtedElems.length) {
+    document.body.addEventListener("click", resetListener, { once: true });
+  }
+}
+
+// availability of highlight colors. colors from var.css
+const HL_COLORS = new Map([
+  ["respec-hl-c1", true],
+  ["respec-hl-c2", true],
+  ["respec-hl-c3", true],
+  ["respec-hl-c4", true],
+  ["respec-hl-c5", true],
+  ["respec-hl-c6", true],
+  ["respec-hl-c7", true],
+]);
+
+/**
+ * @param {HTMLElement} target
+ */
+function getHighlightColor(target) {
+  // return current colors if applicable
+  const { value } = target.classList;
+  const re = /respec-hl-\w+/;
+  const activeClass = re.test(value) && value.match(re);
+  if (activeClass) return activeClass[0];
+
+  // first color preference
+  if (HL_COLORS.get("respec-hl-c1") === true) return "respec-hl-c1";
+
+  // otherwise get some other available color
+  return [...HL_COLORS.keys()].find(c => HL_COLORS.get(c)) || "respec-hl-c1";
+}
+
+/**
+ * @param {HTMLElement} varElem
+ */
+function highlightVars(varElem) {
+  const textContent = norm(varElem.textContent);
+  const parent = /** @type {HTMLElement} */ (
+    varElem.closest(".algorithm, section")
+  );
+  if (!parent) return [];
+  const highlightColor = getHighlightColor(varElem);
+
+  const varsToHighlight = [...parent.querySelectorAll("var")].filter(
+    el =>
+      norm(el.textContent) === textContent &&
+      el.closest(".algorithm, section") === parent
+  );
+
+  // update availability of highlight color
+  const colorStatus = varsToHighlight[0].classList.contains("respec-hl");
+  HL_COLORS.set(highlightColor, colorStatus);
+
+  // highlight vars
+  if (colorStatus) {
+    varsToHighlight.forEach(el => removeHighlight(el, highlightColor));
+    return [];
+  } else {
+    varsToHighlight.forEach(el => addHighlight(el, highlightColor));
+  }
+  return varsToHighlight;
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {string} highlightColor
+ */
+function removeHighlight(el, highlightColor) {
+  el.classList.remove("respec-hl", highlightColor);
+  // clean up empty class attributes so they don't come in export
+  if (!el.classList.length) el.removeAttribute("class");
+}
+
+/**
+ * @param {HTMLElement} elem
+ * @param {string} highlightColor
+ */
+function addHighlight(elem, highlightColor) {
+  elem.classList.add("respec-hl", highlightColor);
+}
+
+/**
+ * Same as `norm` from src/core/utils, but our build process doesn't allow
+ * imports in runtime scripts, so duplicated here.
+ * @param {string} str
+ */
+function norm(str) {
+  return str.trim().replace(/\s+/g, " ");
+}
+})()</script><script id="respec-dfn-panel">(() => {
+// @ts-check
+if (document.respec) {
+  document.respec.ready.then(setupPanel);
+} else {
+  setupPanel();
+}
+
+function setupPanel() {
+  const listener = panelListener();
+  document.body.addEventListener("keydown", listener);
+  document.body.addEventListener("click", listener);
+}
+
+function panelListener() {
+  /** @type {HTMLElement | null} */
+  let panel = null;
+  /**
+   * @param {KeyboardEvent|MouseEvent} event
+   */
+  return event => {
+    const { target, type } = event;
+
+    if (!(target instanceof HTMLElement)) return;
+
+    // For keys, we only care about Enter key to activate the panel
+    // otherwise it's activated via a click.
+    if (
+      type === "keydown" &&
+      /** @type {KeyboardEvent} */ (event).key !== "Enter"
+    )
+      return;
+
+    const action = deriveAction(event);
+
+    switch (action) {
+      case "show": {
+        hidePanel(panel);
+        /** @type {HTMLElement | null} */
+        const dfn = target.closest("dfn, .index-term");
+        if (!dfn?.id) break;
+        panel = document.getElementById(`dfn-panel-for-${dfn.id}`);
+        if (!panel) break;
+        const coords = deriveCoordinates(
+          /** @type {MouseEvent|KeyboardEvent} */ (event)
+        );
+        displayPanel(dfn, panel, coords);
+        break;
+      }
+      case "dock": {
+        if (panel) {
+          panel.style.left = "";
+          panel.style.top = "";
+          panel.classList.add("docked");
+        }
+        break;
+      }
+      case "hide": {
+        hidePanel(panel);
+        panel = null;
+        break;
+      }
+    }
+  };
+}
+
+/**
+ * @param {MouseEvent|KeyboardEvent} event
+ */
+function deriveCoordinates(event) {
+  const target = /** @type HTMLElement */ (event.target);
+
+  // We prevent synthetic AT clicks from putting
+  // the dialog in a weird place. The AT events sometimes
+  // lack coordinates, so they have clientX/Y = 0
+  const rect = target.getBoundingClientRect();
+  if (
+    event instanceof MouseEvent &&
+    event.clientX >= rect.left &&
+    event.clientY >= rect.top
+  ) {
+    // The event probably happened inside the bounding rect...
+    return { x: event.clientX, y: event.clientY };
+  }
+
+  // Offset to the middle of the element
+  const x = rect.x + rect.width / 2;
+  // Placed at the bottom of the element
+  const y = rect.y + rect.height;
+  return { x, y };
+}
+
+/**
+ * @param {Event} event
+ */
+function deriveAction(event) {
+  const target = /** @type {HTMLElement} */ (event.target);
+  const hitALink = !!target.closest("a");
+  if (target.closest("dfn:not([data-cite]), .index-term")) {
+    return hitALink ? "none" : "show";
+  }
+  if (target.closest(".dfn-panel")) {
+    if (hitALink) {
+      return target.classList.contains("self-link") ? "hide" : "dock";
+    }
+
+    const panel = /** @type {HTMLElement} */ (target.closest(".dfn-panel"));
+    return panel.classList.contains("docked") ? "hide" : "none";
+  }
+  if (document.querySelector(".dfn-panel:not([hidden])")) {
+    return "hide";
+  }
+  return "none";
+}
+
+/**
+ * @param {HTMLElement} dfn
+ * @param {HTMLElement} panel
+ * @param {{ x: number, y: number }} clickPosition
+ */
+function displayPanel(dfn, panel, { x, y }) {
+  panel.hidden = false;
+  // distance (px) between edge of panel and the pointing triangle (caret)
+  const MARGIN = 20;
+
+  const dfnRects = dfn.getClientRects();
+  // Find the `top` offset when the `dfn` can be spread across multiple lines
+  let closestTop = 0;
+  let minDiff = Infinity;
+  for (const rect of dfnRects) {
+    const { top, bottom } = rect;
+    const diffFromClickY = Math.abs((top + bottom) / 2 - y);
+    if (diffFromClickY < minDiff) {
+      minDiff = diffFromClickY;
+      closestTop = top;
+    }
+  }
+
+  const top = window.scrollY + closestTop + dfnRects[0].height;
+  const left = x - MARGIN;
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+
+  // Find if the panel is flowing out of the window
+  const panelRect = panel.getBoundingClientRect();
+  const SCREEN_WIDTH = Math.min(window.innerWidth, window.screen.width);
+  if (panelRect.right > SCREEN_WIDTH) {
+    const newLeft = Math.max(MARGIN, x + MARGIN - panelRect.width);
+    const newCaretOffset = left - newLeft;
+    panel.style.left = `${newLeft}px`;
+    /** @type {HTMLElement | null} */
+    const caret = panel.querySelector(".caret");
+    if (caret) caret.style.left = `${newCaretOffset}px`;
+  }
+
+  // As it's a dialog, we trap focus.
+  // TODO: when <dialog> becomes a implemented, we should really
+  // use that.
+  trapFocus(panel, dfn);
+}
+
+/**
+ * @param {HTMLElement} panel
+ * @param {HTMLElement} dfn
+ * @returns
+ */
+function trapFocus(panel, dfn) {
+  /** @type NodeListOf<HTMLAnchorElement> elements */
+  const anchors = panel.querySelectorAll("a[href]");
+  // No need to trap focus
+  if (!anchors.length) return;
+
+  // Move focus to first anchor element
+  const first = anchors.item(0);
+  first.focus();
+
+  const trapListener = createTrapListener(anchors, panel, dfn);
+  panel.addEventListener("keydown", trapListener);
+
+  // Hiding the panel releases the trap
+  const mo = new MutationObserver(records => {
+    const [record] = records;
+    const target = /** @type HTMLElement */ (record.target);
+    if (target.hidden) {
+      panel.removeEventListener("keydown", trapListener);
+      mo.disconnect();
+    }
+  });
+  mo.observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+}
+
+/**
+ *
+ * @param {NodeListOf<HTMLAnchorElement>} anchors
+ * @param {HTMLElement} panel
+ * @param {HTMLElement} dfn
+ * @returns
+ */
+function createTrapListener(anchors, panel, dfn) {
+  const lastIndex = anchors.length - 1;
+  let currentIndex = 0;
+  /**
+   * @param {KeyboardEvent} event
+   */
+  return event => {
+    switch (event.key) {
+      // Hitting "Tab" traps us in a nice loop around elements.
+      case "Tab": {
+        event.preventDefault();
+        currentIndex += event.shiftKey ? -1 : +1;
+        if (currentIndex < 0) {
+          currentIndex = lastIndex;
+        } else if (currentIndex > lastIndex) {
+          currentIndex = 0;
+        }
+        anchors.item(currentIndex).focus();
+        break;
+      }
+
+      // Hitting "Enter" on an anchor releases the trap.
+      case "Enter":
+        hidePanel(panel);
+        break;
+
+      // Hitting "Escape" returns focus to dfn.
+      case "Escape":
+        hidePanel(panel);
+        dfn.focus();
+        return;
+    }
+  };
+}
+
+/** @param {HTMLElement | null} panel */
+function hidePanel(panel) {
+  if (!panel) return;
+  panel.hidden = true;
+  panel.classList.remove("docked");
+}
+})()</script><script src="https://www.w3.org/scripts/TR/2021/fixup.js"></script></body></html>

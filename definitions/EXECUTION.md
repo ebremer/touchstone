@@ -1,8 +1,12 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.5.0 (2026-10-02, DECISIONS.md D-0066; 0.4.0 was frozen the same
-day, D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on 2026-09-23, D-0053).** This is the contract
-an engine that runs `definitions/` must implement. 0.5.0 adds two things and changes nothing a
+**Status: frozen, format 0.6.0 (2026-10-02, DECISIONS.md D-0067; 0.5.0 and 0.4.0 were frozen
+the same day, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on 2026-09-23, D-0053).**
+This is the contract an engine that runs `definitions/` must implement. 0.6.0 adds two things
+and changes nothing a 0.5.0 definition relies on: a request may use `QUERY` (RFC 10008), which
+the Type Search Service is reached by (section 6), and a data-resource prerequisite may carry
+`linkHeaders`, sent on the POST that creates it (section 4.3), so it can declare its types the
+way the Type Index draft says servers SHOULD read them. 0.5.0 added two things and changed nothing a
 0.4.0 definition relies on: the inbox record carries what the fixture host finds in a
 delivery's HTTP Message Signature and Content-Digest (section 5.4), and a `source` or
 `specification` may name an editor's draft W3C has not published (schema). 0.4.0 added what
@@ -174,8 +178,9 @@ exchanges it examines. Entries are processed in order, always as alice:
 3. **Create.** POST to the parent:
    - `container`: with `Link: <https://www.w3.org/ns/lws#Container>; rel="type"`, no
      body and no Content-Type;
-   - `dataResource`: with `Content-Type` from `contentType`, and the body from `body`,
-     `bodyURL` or `bodyJSON` as in section 6.
+   - `dataResource`: with `Content-Type` from `contentType`, the body from `body`,
+     `bodyURL` or `bodyJSON` as in section 6, and, when the entry has `linkHeaders`
+     (since 0.6.0), a `Link` built from them as in section 6.
 
    The response must be 201 with a `Location`, which, resolved against the request URL,
    is bound to the variable that `container` or `dataResource` names. Anything else
@@ -363,9 +368,12 @@ delivery target.
 
 ## 6. Building a request
 
-1. **URL.** Expand the `url` template. A relative reference resolves against
+1. **Method.** `method` as written, one of GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS and
+   QUERY (RFC 10008, since 0.6.0). A QUERY carries its body like a POST; it is safe, so a
+   QUERY step may be polled.
+2. **URL.** Expand the `url` template. A relative reference resolves against
    `${target.baseUrl}`.
-2. **Headers.** Send only these:
+3. **Headers.** Send only these:
    - `Accept` from `accept`, and `Content-Type` from `contentType`;
    - `If-Match` from `ifMatch`, where the value `current` means the engine first HEADs
      the URL as the same identity and sends the ETag it returns, or no If-Match if there
@@ -376,7 +384,7 @@ delivery target.
    - `Authorization` per the identity (section 5), which is a definition error if an
      `otherHeaders` entry also sets it and the identity is not anonymous;
    - plus `Host`, `Content-Length` and `User-Agent: touchstone/<version>`.
-3. **Body.** At most one of these:
+4. **Body.** At most one of these:
    - `body`: the expanded template, as UTF-8.
    - `bodyURL`: the fixture file's bytes, unchanged.
    - `bodyJSON`: the expanded value, serialized compactly as UTF-8 JSON; Content-Type

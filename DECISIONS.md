@@ -2075,3 +2075,82 @@ Pinned counts move from 145 to 154.
     deployment, or have lws-server queue past the limit instead of dropping.
 
 Drafted by an agent; waits on branch `webhook-suite`.
+
+### D-0067 — the search and type index services: catalogued from an editor's draft (format 0.6.0)
+`lws10-index` defines the Type Index Service (a GET listing the types in a storage) and the Type
+Search Service (an HTTP QUERY, RFC 10008, whose body is an `application/lws-query+json` filter).
+Like the webhook suite (D-0066) it is an editor's draft, "an unofficial proposal", that W3C has
+not published. Both of our servers implement it.
+
+**The catalog** (`catalog/lws10-index.ttl`): 57 requirements, 41 MUST, 5 SHOULD, 11 MAY, all
+Draft. The catalog grows from 239 to 296.
+- *Snapshot.* `catalog/sources/ED-lws10-index-20261002.html` is the editor's draft rendered by
+  W3C's spec generator, as for the webhook suite. Its normative sentences are those of
+  `w3c/lws-protocol` `3039b37` (2026-09-21), checked against the local source.
+- *Extraction.* `extract_clauses.py` found 28 normative blocks besides the BCP 14 boilerplate.
+  Most hold several obligations, so entries are sentences or clauses of a block, which
+  `check_drift.py` matches by containment. The one OPTIONAL clause (the `type` key) is filed
+  under MAY, as the webhook catalog files its OPTIONAL fields. Five entries are client
+  obligations and no server test cites them.
+- The GET section of the Type Index Service has no BCP 14 keyword, so the `TypeIndex` body
+  shape is asserted only alongside cited requirements, never cited on its own.
+
+**Format 0.6.0.** Two additions, neither changing anything a 0.5.0 definition relies on:
+1. `QUERY` joins the request methods (EXECUTION.md section 6). It carries a body like POST and
+   is safe, so it may be polled.
+2. A data-resource prerequisite may carry `linkHeaders`, sent on the POST that creates it
+   (section 4.3). The draft says servers SHOULD derive types from `Link rel="type"` and MAY
+   derive them from content, so a test resource has to declare its types both ways to be
+   typed on any server that does either.
+
+**28 definitions** (`index/manifest`), each applying when the storage advertises the service
+it uses:
+- discovery: `index-services-advertised`;
+- type index: `type-index-lists-readable-types`, `type-index-omits-unreadable-type`,
+  `type-index-not-shared`;
+- search semantics: `type-search-by-type`, `-and-or`, `-native-classes`, `-no-match`,
+  `-duplicate-groups`, `-at-members-ignored`, `-empty-key-absent`, `-unindexed-relation`,
+  `-structural-relation-not-indexed`;
+- errors: empty group, type not an array, bad element, malformed JSON, relative IRI, missing
+  Content-Type (400); unsupported format (415, and the SHOULD that it carries Accept-Query);
+  `Accept` excluding lws+json (406); Accept-Query on OPTIONS (SHOULD);
+- authorization: `type-search-authorization-filtered` (and `totalItems`),
+  `type-search-revoked-not-shown`, `type-search-not-shared`;
+- derivation: `type-search-type-from-link-header` (SHOULD), `type-search-type-from-content`
+  (MAY).
+
+Design points:
+- Types are `${test.container}#Alpha` and the like: absolute IRIs unique to the test, so a
+  search finds only the test's own resources and never needs to page.
+- Membership "MAY be eventually consistent", so the first wait for a typed resource is
+  polled, and it is a precondition. A server that derives no declared type (which the
+  SHOULD and the MAY allow) makes the tests that need one inapplicable, not failed. The two
+  derivation tests report which route a server lacks.
+- Authorization filtering "MUST NOT" be eventually consistent, so the search after a
+  revocation is not polled.
+- Not tested: the 422 complexity limit (a server chooses its own), expired page links (a test
+  cannot make one), and `Vary: Accept` (only binding on a server that negotiates).
+
+**The reference server follows.** It advertises both services and derives types from
+`Link rel="type"` and from `<> a <…>` statements in a Turtle body (that one form, not Turtle
+at large). Both services are filtered by current authorization on every request, mark their
+responses `private, no-store`, index no relations, and answer in one page. The search applies
+every error rule above, refusing more than 32 groups with 422. Against BROKEN_STORAGE, which
+forbids nothing, `type-index-omits-unreadable-type` and `type-search-authorization-filtered`
+fail, as they should.
+
+Pinned counts move from 154 to 182.
+
+**Against our deployments** (run from ebremer.com, 2026-10-02):
+- **lws-server** passes all 28.
+- **Halcyon** passes the 14 that need no typed resource, and fails both derivation tests.
+  Its 12 tests that need a typed resource are inapplicable, because Halcyon surfaces no type
+  a client declares:
+  - It does not read `Link rel="type"` on create (the SHOULD); it uses that link only to pick
+    a container's interaction model.
+  - Its metadata scanner gives a stored `text/turtle` document to Jena's RDF reader through a
+    blob path with no extension, and Jena refuses it ("Failed to determine the RDF syntax
+    (.lang or .base required)"). So types stated in content (the MAY) are never indexed
+    either.
+
+Drafted by an agent; waits on branch `index-suite`.

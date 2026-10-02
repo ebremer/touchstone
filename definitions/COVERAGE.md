@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **154 tests**: 125 MUST, 25 SHOULD, 4 MAY; 94 validation tests, 60 negative tests.
-- **213 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **182 tests**: 149 MUST, 28 SHOULD, 5 MAY; 113 validation tests, 69 negative tests.
+- **251 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -26,6 +26,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/notifications` | 13 | 12 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
+| `index/manifest` | 28 | 24 | 3 | 1 |
 | `notifications/webhook/manifest` | 9 | 8 | 1 | 0 |
 
 ## 1. lws-test-suite → definitions
@@ -313,6 +314,39 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authz-token-not-yet-valid-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-issued-in-future-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-multiple-audiences-rejected` | Negative | MUST | Authentication |  |
+
+### `index/manifest`
+
+| Test | Type | Level | Requires | Mirrors |
+|---|---|---|---|---|
+| `index-services-advertised` | Validation | MUST | Authentication |  |
+| `type-index-lists-readable-types` | Validation | MUST | Authentication |  |
+| `type-index-omits-unreadable-type` | Validation | MUST | Authentication |  |
+| `type-index-not-shared` | Validation | MUST | Authentication |  |
+| `type-search-by-type` | Validation | MUST | Authentication |  |
+| `type-search-and-or` | Validation | MUST | Authentication |  |
+| `type-search-native-classes` | Validation | MUST | Authentication |  |
+| `type-search-no-match` | Validation | MUST | Authentication |  |
+| `type-search-duplicate-groups` | Validation | MUST | Authentication |  |
+| `type-search-at-members-ignored` | Validation | MUST | Authentication |  |
+| `type-search-empty-key-absent` | Validation | MUST | Authentication |  |
+| `type-search-empty-group-rejected` | Negative | MUST | Authentication |  |
+| `type-search-type-not-array-rejected` | Negative | MUST | Authentication |  |
+| `type-search-bad-element-rejected` | Negative | MUST | Authentication |  |
+| `type-search-malformed-json-rejected` | Negative | MUST | Authentication |  |
+| `type-search-relative-iri-rejected` | Negative | MUST | Authentication |  |
+| `type-search-missing-content-type-rejected` | Negative | MUST | Authentication |  |
+| `type-search-unsupported-format-rejected` | Negative | MUST | Authentication |  |
+| `type-search-unsupported-format-accept-query` | Negative | SHOULD | Authentication |  |
+| `type-search-accept-query-advertised` | Validation | SHOULD | Authentication |  |
+| `type-search-not-acceptable` | Negative | MUST | Authentication |  |
+| `type-search-unindexed-relation` | Validation | MUST | Authentication |  |
+| `type-search-structural-relation-not-indexed` | Validation | MUST | Authentication |  |
+| `type-search-authorization-filtered` | Validation | MUST | Authentication |  |
+| `type-search-revoked-not-shown` | Validation | MUST | Authentication |  |
+| `type-search-not-shared` | Validation | MUST | Authentication |  |
+| `type-search-type-from-link-header` | Validation | SHOULD | Authentication |  |
+| `type-search-type-from-content` | Validation | MAY | Authentication |  |
 
 ### `notifications/webhook/manifest`
 

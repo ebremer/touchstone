@@ -25,8 +25,10 @@ WD and the four editor's-draft auth snapshots; the 2026-09-30 one (D-0057) retir
 | `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-09-02 (CID: 2026-09-30) |
 | `ED-lws10-notifications-webhook-20261002.html` | https://w3c.github.io/lws-protocol/lws10-notifications-webhook/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `4e9481c`) | 2026-10-02 |
 | `ED-lws10-notifications-webhook-20261002.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-02 |
+| `ED-lws10-index-20261002.html` | https://w3c.github.io/lws-protocol/lws10-index/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `3039b37`) | 2026-10-02 |
+| `ED-lws10-index-20261002.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-02 |
 
-The webhook suite has no published version, so its snapshot is the editor's draft rendered by
+The webhook suite and the search and type index services have no published version, so each snapshot is the editor's draft rendered by
 W3C's own spec generator, which expands the ReSpec macros as publication would (D-0066). An
 editor's draft is undated, so the file is named for the day it was rendered.
 

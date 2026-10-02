@@ -88,6 +88,11 @@ public final class RefLwsServer implements AutoCloseable {
     private static final String REQUESTS = "/_requests/";
     /** The NotificationService endpoint, and its one subscription type. */
     private static final String SUBSCRIPTIONS = "/_subscriptions/";
+    private static final String TYPE_INDEX = "/_types/index";
+    private static final String TYPE_SEARCH = "/_types/search";
+    private static final String LWS_QUERY = "application/lws-query+json";
+    /** Groups a type search may hold before it is refused with 422 (lws10-index section 7.2). */
+    static final int MAX_FILTER_GROUPS = 32;
     private static final String WEBHOOK = "WebhookSubscription";
     private static final String AS_CONTEXT = "https://www.w3.org/ns/activitystreams";
     /** Delivers notifications off the request thread; one attempt each (section 10.3). */
@@ -99,6 +104,14 @@ public final class RefLwsServer implements AutoCloseable {
      * five-member container spans two pages; no other definition lists more than four.
      */
     static final int PAGE_SIZE = 4;
+
+    private static final java.util.regex.Pattern LINK_TYPE =
+            java.util.regex.Pattern.compile("<([^>]*)>\\s*;[^,<]*\\brel=\"?type\"?(?=[\\s;,]|$)");
+    private static final java.util.regex.Pattern TURTLE_SELF_TYPE =
+            java.util.regex.Pattern.compile("<>\\s+a\\s+((?:<[^>\\s]*>\\s*,?\\s*)+)");
+    /** An absolute IRI: a scheme, then no whitespace or characters RFC 3987 excludes. */
+    private static final java.util.regex.Pattern ABSOLUTE_IRI =
+            java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9+.-]*:[^\\s<>\"{}|\\\\^`]+");
 
     private final AuthMode authMode;
     private final Server server;
@@ -139,6 +152,8 @@ public final class RefLwsServer implements AutoCloseable {
         volatile String owner;
         volatile Instant modified = now();
         volatile ObjectNode linkset;
+        /** Types the client declared: Link rel="type" on create or update, or {@code <> a} in Turtle. */
+        volatile Set<String> declaredTypes = Set.of();
         volatile String linksetEtag = newEtag();
         final Set<String> children = ConcurrentHashMap.newKeySet();
 
@@ -357,6 +372,14 @@ public final class RefLwsServer implements AutoCloseable {
 
             if (path.startsWith(SUBSCRIPTIONS)) {
                 subscriptions(request, response, callback, path, method, subject, client);
+                return true;
+            }
+            if (path.equals(TYPE_INDEX) || path.equals(TYPE_SEARCH)) {
+                if (authMode == AuthMode.SECURED && subject == null) {
+                    challenge(request, response, callback, null);
+                } else {
+                    new TypeServices(subject, client).handle(request, response, callback, path, method);
+                }
                 return true;
             }
             if (path.startsWith(GRANTS) || path.startsWith(REQUESTS)) {
@@ -787,6 +810,9 @@ public final class RefLwsServer implements AutoCloseable {
                 childPath = path + unique(path, slug, isContainer) + (isContainer ? "/" : "");
                 store.put(childPath, child);
             }
+            if (!isContainer) {
+                child.declaredTypes = declaredTypes(request, absolute(request, childPath), child);
+            }
             parent.children.add(childPath);
             parent.etag = newEtag();
             parent.modified = now();
@@ -832,6 +858,7 @@ public final class RefLwsServer implements AutoCloseable {
             if (contentType != null) {
                 node.contentType = contentType;
             }
+            node.declaredTypes = declaredTypes(request, absolute(request, path), node);
             touch(path, node);
             announce(request, "Update", path, node, null, null);
             response.setStatus(204);
@@ -1033,6 +1060,8 @@ public final class RefLwsServer implements AutoCloseable {
                     .putArray("conformsTo").add(LWS_NS + "AccessProfile");
             service(services, storage + "#notifications", "NotificationService", absolute(request, SUBSCRIPTIONS))
                     .putArray("subscriptionType").add(WEBHOOK);
+            service(services, storage + "#type-index", "TypeIndexService", absolute(request, TYPE_INDEX));
+            service(services, storage + "#type-search", "TypeSearchService", absolute(request, TYPE_SEARCH));
             // The key deliveries are signed with, as the webhook suite requires: a verification
             // method in verificationMethod, referenced from authentication.
             ObjectNode vm = root.putArray("verificationMethod").addObject();
@@ -1159,6 +1188,226 @@ public final class RefLwsServer implements AutoCloseable {
             response.setStatus(405);
             response.getHeaders().put(HttpHeader.ALLOW, allow);
             callback.succeeded();
+        }
+
+        // ---- type index and type search (lws10-index) ----
+
+        /**
+         * The types a client declared for a data resource: each Link rel="type" outside the LWS
+         * namespace (section 5, the SHOULD), and, for Turtle, the objects of {@code <> a ...}
+         * statements (the MAY: a reference server reads that one form, not Turtle at large).
+         */
+        private Set<String> declaredTypes(Request request, String uri, Node node) {
+            Set<String> types = new LinkedHashSet<>();
+            String links = String.join(", ", request.getHeaders().getValuesList("Link"));
+            java.util.regex.Matcher link = LINK_TYPE.matcher(links);
+            while (link.find()) {
+                String iri = link.group(1);
+                if (!iri.startsWith(LWS_NS) && ABSOLUTE_IRI.matcher(iri).matches()) {
+                    types.add(iri);
+                }
+            }
+            if (node.contentType != null && node.contentType.toLowerCase(Locale.ROOT).startsWith("text/turtle")
+                    && node.bytes != null) {
+                java.util.regex.Matcher a = TURTLE_SELF_TYPE.matcher(new String(node.bytes, StandardCharsets.UTF_8));
+                while (a.find()) {
+                    java.util.regex.Matcher iri = java.util.regex.Pattern.compile("<([^>\\s]*)>").matcher(a.group(1));
+                    while (iri.find()) {
+                        types.add(URI.create(uri).resolve(iri.group(1)).toString());
+                    }
+                }
+            }
+            return Set.copyOf(types);
+        }
+
+        /**
+         * The Type Index Service (GET) and the Type Search Service (QUERY). Both list only what the
+         * client may read now (section 8): nothing is cached, so a revoked grant is gone from the
+         * next response. Neither pages, since no definition lists more than a handful; one page
+         * is a page. No link relation is indexed, so a relation key matches nothing (section 7.1).
+         */
+        private final class TypeServices {
+            private final String subject;
+            private final String client;
+
+            TypeServices(String subject, String client) {
+                this.subject = subject;
+                this.client = client;
+            }
+
+            void handle(Request request, Response response, Callback callback, String path, String method)
+                    throws Exception {
+                boolean search = path.equals(TYPE_SEARCH);
+                String allow = search ? "OPTIONS, QUERY" : "GET, HEAD, OPTIONS";
+                if (method.equals("OPTIONS")) {
+                    response.getHeaders().put(HttpHeader.ALLOW, allow);
+                    if (search) {
+                        response.getHeaders().put("Accept-Query", LWS_QUERY);
+                    }
+                    response.setStatus(204);
+                    callback.succeeded();
+                    return;
+                }
+                if (search ? !method.equals("QUERY") : !(method.equals("GET") || method.equals("HEAD"))) {
+                    if (search) {
+                        response.getHeaders().put("Accept-Query", LWS_QUERY);
+                    }
+                    methodNotAllowed(response, callback, allow);
+                    return;
+                }
+                List<List<String>> typeGroups = List.of();
+                boolean relationConstrained = false;
+                if (search) {
+                    String contentType = request.getHeaders().get("Content-Type");
+                    if (contentType == null || contentType.isBlank()) {
+                        status(request, response, callback, 400);
+                        return;
+                    }
+                    String essence = contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+                    if (!essence.equals(LWS_QUERY)) {
+                        response.getHeaders().put("Accept-Query", LWS_QUERY);
+                        status(request, response, callback, 415);
+                        return;
+                    }
+                    JsonNode filter;
+                    try (InputStream in = Content.Source.asInputStream(request)) {
+                        byte[] body = in.readAllBytes();
+                        filter = body.length == 0 ? mapper.createObjectNode() : mapper.readTree(body);
+                    } catch (Exception e) {
+                        filter = null;
+                    }
+                    if (filter == null || !filter.isObject()) {
+                        status(request, response, callback, 400);
+                        return;
+                    }
+                    int groups = 0;
+                    List<List<String>> types = new ArrayList<>();
+                    for (var field : (Iterable<java.util.Map.Entry<String, JsonNode>>) filter::fields) {
+                        if (field.getKey().startsWith("@")) {
+                            continue;
+                        }
+                        List<List<String>> parsed = groups(field.getValue());
+                        if (parsed == null) {
+                            status(request, response, callback, 400);
+                            return;
+                        }
+                        groups += parsed.size();
+                        if (field.getKey().equals("type")) {
+                            types.addAll(parsed);
+                        } else if (!parsed.isEmpty()) {
+                            relationConstrained = true;
+                        }
+                    }
+                    if (groups > MAX_FILTER_GROUPS) {
+                        status(request, response, callback, 422);
+                        return;
+                    }
+                    typeGroups = types;
+                }
+                if (!acceptable(request.getHeaders().get("Accept"))) {
+                    status(request, response, callback, 406);
+                    return;
+                }
+                ObjectNode doc = mapper.createObjectNode();
+                doc.put("@context", LWS_CONTEXT);
+                ArrayNode items = mapper.createArrayNode();
+                if (search) {
+                    doc.put("type", "ContainerPage");
+                    java.util.TreeMap<String, Set<String>> matches = new java.util.TreeMap<>();
+                    if (!relationConstrained) {
+                        readable(request).forEach((uri, types) -> matches.put(uri, types));
+                    }
+                    for (var e : matches.entrySet()) {
+                        boolean all = typeGroups.stream().allMatch(g -> g.stream().anyMatch(e.getValue()::contains));
+                        if (all) {
+                            ObjectNode item = items.addObject();
+                            item.put("id", e.getKey());
+                            ArrayNode t = item.putArray("type");
+                            e.getValue().forEach(v -> t.add(v.startsWith(LWS_NS) ? v.substring(LWS_NS.length()) : v));
+                        }
+                    }
+                } else {
+                    doc.put("type", "TypeIndex");
+                    java.util.TreeSet<String> types = new java.util.TreeSet<>();
+                    readable(request).values().forEach(types::addAll);
+                    types.forEach(v -> items.addObject().put("id", v));
+                }
+                doc.put("totalItems", items.size());
+                doc.set("items", items);
+                response.setStatus(200);
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_JSON);
+                // authorization-filtered, so never to be reused for another client (section 8)
+                response.getHeaders().put(HttpHeader.CACHE_CONTROL, "private, no-store");
+                response.getHeaders().put(HttpHeader.VARY, "Authorization, Accept");
+                send(response, callback, bytes(doc), !method.equals("HEAD"));
+            }
+
+            /** A key's value as CNF groups, or null when it breaks the grammar (section 7.2). */
+            private List<List<String>> groups(JsonNode value) {
+                if (!value.isArray()) {
+                    return null;
+                }
+                List<List<String>> out = new ArrayList<>();
+                for (JsonNode element : value) {
+                    List<String> group = new ArrayList<>();
+                    if (element.isTextual()) {
+                        group.add(element.asText());
+                    } else if (element.isArray() && !element.isEmpty()) {
+                        for (JsonNode member : element) {
+                            if (!member.isTextual()) {
+                                return null;
+                            }
+                            group.add(member.asText());
+                        }
+                    } else {
+                        return null;
+                    }
+                    if (!group.stream().allMatch(v -> ABSOLUTE_IRI.matcher(v).matches())) {
+                        return null;
+                    }
+                    if (!out.contains(group)) {
+                        out.add(group);
+                    }
+                }
+                return out;
+            }
+
+            /** Every resource the client may read now, with its types. */
+            private java.util.Map<String, Set<String>> readable(Request request) {
+                java.util.Map<String, Set<String>> out = new java.util.HashMap<>();
+                store.forEach((path, node) -> {
+                    String uri = absolute(request, path);
+                    if (authMode != AuthMode.SECURED || allowed("read", node, uri, subject, client)) {
+                        Set<String> types = new LinkedHashSet<>();
+                        types.add(LWS_NS + (node.container ? "Container" : "DataResource"));
+                        types.addAll(node.declaredTypes);
+                        out.put(uri, types);
+                    }
+                });
+                return out;
+            }
+
+            /** Whether Accept admits application/lws+json, the one format these services produce. */
+            private boolean acceptable(String accept) {
+                if (accept == null || accept.isBlank()) {
+                    return true;
+                }
+                for (String range : accept.split(",")) {
+                    String[] parts = range.split(";");
+                    String type = parts[0].trim().toLowerCase(Locale.ROOT);
+                    boolean zero = false;
+                    for (int i = 1; i < parts.length; i++) {
+                        String p = parts[i].trim().toLowerCase(Locale.ROOT);
+                        if (p.startsWith("q=") && p.substring(2).trim().matches("0(\\.0{0,3})?")) {
+                            zero = true;
+                        }
+                    }
+                    if (!zero && (type.equals("*/*") || type.equals("application/*") || type.equals(LWS_JSON))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
         }
 
         // ---- notification delivery ----
