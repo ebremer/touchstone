@@ -145,15 +145,26 @@ entries:
     comment: >-
       The serviceEndpoint "MUST be a URL that supports GET operations to list a
       subscriber's active webhook subscriptions", serialized as an LWS container. A new
-      subscription appears among its items.
+      subscription appears among its items. bob subscribes and lists, so the listing holds
+      his own subscriptions. The storage owner's view can hold every subscriber's. The
+      listing "SHOULD support LWS Paging", and a definition cannot walk an unknown number of
+      pages, so a listing that spans pages even for bob makes the test inapplicable rather
+      than failing a server that pages correctly (D-0072).
     status: Proposed
     level: MUST
     source:
       - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management
     traits: [Post, Get, Notifications, Container]
-    requires: [ReachableFixtures]
+    requires: [Authentication, ReachableFixtures]
     requirements:
       - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-listing-container
+    prereqs:
+      hierarchy:
+        - dataResource: watched
+          contentType: text/plain
+          body: bob may read this, and subscribes to it
+          authorization:
+            read: [bob]
     steps:
       - label: the storage offers webhook subscriptions (otherwise this test does not apply)
         precondition: true
@@ -170,7 +181,8 @@ entries:
                   hasValue: NotificationService
                 - pointer: /subscriptionType
                   hasValue: WebhookSubscription
-      - label: subscribe to the test container, delivering to this test's inbox
+      - label: bob subscribes to a resource he may read, delivering to this test's inbox
+        as: bob
         request:
           method: POST
           url: "${service.NotificationService}"
@@ -178,7 +190,7 @@ entries:
           bodyJSON:
             "@context": ["https://www.w3.org/ns/lws/v1"]
             type: WebhookSubscription
-            topic: ["${test.container}"]
+            topic: ["${watched}"]
             inbox: "${test.inbox}"
         response:
           statusCode: "2xx"
@@ -186,7 +198,20 @@ entries:
             - pointer: /subscription
               jsonType: string
               capture: subscription
+      - label: bob's listing fits on one page (otherwise this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: GET
+          url: "${service.NotificationService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: next
+              absent: true
       - label: the endpoint lists it, as a container
+        as: bob
         request:
           method: GET
           url: "${service.NotificationService}"
@@ -201,6 +226,7 @@ entries:
                 - pointer: /id
                   equalsIri: "${subscription}"
       - label: cancel the subscription (tidying up, not judged)
+        as: bob
         request:
           method: DELETE
           url: "${subscription}"

@@ -365,7 +365,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 |---|---|---|---|---|
 | `webhook-subscription-response` | Validation | MUST | ReachableFixtures |  |
 | `webhook-subscription-expires-supported` | Validation | MUST | ReachableFixtures |  |
-| `webhook-subscription-listed` | Validation | MUST | ReachableFixtures |  |
+| `webhook-subscription-listed` | Validation | MUST | Authentication, ReachableFixtures |  |
 | `webhook-subscription-get-delete` | Validation | MUST | ReachableFixtures |  |
 | `webhook-delivery-lws-json` | Validation | MUST | ReachableFixtures |  |
 | `webhook-delivery-signed` | Validation | SHOULD | ReachableFixtures |  |

@@ -2313,3 +2313,24 @@ must catch it. Pinned counts move from 194 to 195.
 
 The README's "Not yet defined" no longer says the webhook suite is uncatalogued or problem details
 undefined. Drafted by an agent; waits on branch `tests/small-batch`.
+
+### D-0072 — webhook-subscription-listed lists bob's own subscriptions, and pages honestly
+`webhook-subscription-listed` subscribed as alice, the storage owner, and expected the new
+subscription on the first page of the listing. Two things broke it on a server that pages: an
+owner's listing can hold every subscriber's subscriptions, and the listing "SHOULD support LWS
+Paging". On the SBU lws-server, paging at 4 items, the listing held 19, most of them left behind by
+earlier runs, and the test failed a server that was doing nothing wrong.
+
+Now bob subscribes to a resource granted to him, and lists as bob, so the listing holds only his
+own subscriptions. A definition cannot walk an unknown number of pages, so a precondition requires
+bob's listing to fit on one page (no `rel="next"`). A listing that spans pages makes the test
+inapplicable, not failed. It now needs Authentication as well as ReachableFixtures.
+
+**Why subscriptions were left behind.** Every subscribing definition cancels its subscription in
+its last step, and a step runs only if every earlier one passed. So a test that fails, or stops at
+a precondition after subscribing, leaves its subscription, and so does a run that is killed. A
+server need not end a subscription when its topic is deleted. Format 0.7.0 can register only a
+`Location` header for cleanup, and neither suite requires a Location on a subscription response, so
+the definitions cannot fix this themselves. Deployments sweep instead (the Touchstone runner for our
+targets now cancels leftover subscriptions whose topics lie under its container). A format that
+could register any captured URL for cleanup would fix it at the source; noted for a later version.
