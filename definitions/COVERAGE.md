@@ -6,14 +6,14 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **198 tests**: 156 MUST, 31 SHOULD, 11 MAY; 128 validation tests, 70 negative tests.
+- **203 tests**: 161 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 74 negative tests.
 - **264 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
-| `auth/cid/manifest` | 17 | 17 | 0 | 0 |
+| `auth/cid/manifest` | 22 | 22 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
 | `core/access_grants` | 17 | 13 | 2 | 2 |
@@ -115,6 +115,11 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authn-cid-expired` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `authn-cid-alg-none` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `authn-cid-claims-mismatch` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `authn-cid-document-id-mismatch` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `authn-cid-key-not-for-authentication` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `authn-cid-key-revoked` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `authn-cid-foreign-controller` | Negative | MUST | Authentication, ReachableFixtures |  |
+| `authn-cid-referenced-method` | Validation | MUST | Authentication, ReachableFixtures |  |
 | `authn-cid-didkey-valid-credential` | Validation | MUST | Authentication | authn-didkey-valid-credential |
 | `authn-cid-didkey-invalid-signature` | Negative | MUST | Authentication | authn-didkey-invalid-signature |
 | `authn-cid-didkey-alg-none` | Negative | MUST | Authentication |  |

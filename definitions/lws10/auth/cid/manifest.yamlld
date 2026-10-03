@@ -341,6 +341,255 @@ entries:
 
   # ------------------------------------------------ did:key subjects (DID documents)
 
+  - id: "#authn-cid-document-id-mismatch"
+    type: NegativeTest
+    name: authn-cid-document-id-mismatch
+    label: A credential whose subject dereferences to a document with another id is refused
+    comment: >-
+      The verifier "MUST dereference the sub ... The resulting resource MUST be formatted as a valid controlled identifier document with an id value equal to the subject identifier." The document at the subject URL names someone else, so it vouches for nothing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-dereference-sub-cid
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-document-id-mismatch}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-key-not-for-authentication"
+    type: NegativeTest
+    name: authn-cid-key-not-for-authentication
+    label: A credential signed with a key the document does not list for authentication is refused
+    comment: >-
+      The kid identifies "a verification method from the subject's controlled identifier document" by the process of CID 1.0 section 3.3, which retrieves a method for a verification relationship, here authentication. A key the document lists only for assertionMethod is not one the subject authenticates with.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-key-not-for-authentication}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-key-revoked"
+    type: NegativeTest
+    name: authn-cid-key-revoked
+    label: A credential signed with a revoked verification method is refused
+    comment: >-
+      CID 1.0 lets a verification method carry a revoked time, after which it is not to be used to verify. The document still lists the key, revoked in 2000, and the credential is signed with it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-key-revoked}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-foreign-controller"
+    type: NegativeTest
+    name: authn-cid-foreign-controller
+    label: A credential signed with a verification method another identifier controls is refused
+    comment: >-
+      A verification method retrieved for the subject must be controlled by the subject (CID 1.0 section 3.3). This one names another document as its controller, so the subject cannot vouch for itself with it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-foreign-controller}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 400
+          contentType: application/json
+          json:
+            - pointer: /error
+              equals: invalid_request
+
+  - id: "#authn-cid-referenced-method"
+    type: ValidationTest
+    name: authn-cid-referenced-method
+    label: A credential whose authentication method is referenced by id, not embedded, is accepted
+    comment: >-
+      CID 1.0 lets a verification relationship either embed a method or refer to one defined
+      under verificationMethod. authn-cid-valid-credential embeds it; here the authentication
+      relationship names the method by its id, and the verifier must follow the reference.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+    traits: [Post, TokenExchange, Authn]
+    requires: [Authentication, ReachableFixtures]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-kid-verification-method
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/validation-dereference-sub-cid
+    steps:
+      - label: the authorization server takes jwt credentials for https subjects (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${as.metadataUrl}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /subject_token_types_supported
+              optional: true
+              hasValue: urn:ietf:params:oauth:token-type:jwt
+            - pointer: /subject_identifier_types_supported
+              optional: true
+              hasValue: https
+      - label: exchange the credential for an access token naming its subject
+        request:
+          method: POST
+          url: "${as.tokenEndpoint}"
+          bodyForm:
+            grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+            resource: "${as.realm}"
+            subject_token: "${credential.cid-referenced-method}"
+            subject_token_type: urn:ietf:params:oauth:token-type:jwt
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /access_token
+              jsonType: string
+              capture: accessToken
+          jwt:
+            token: "${accessToken}"
+            jwks: "${as.jwksUri}"
+            claims:
+              - pointer: /sub
+                equals: "${identity.cid-referenced-method.webid}"
+
   - id: "#authn-cid-didkey-valid-credential"
     type: ValidationTest
     name: authn-cid-didkey-valid-credential

@@ -386,6 +386,164 @@ identities:
           controller: "${self.webid}"
           publicKeyJwk: "${self.publicJwk}"
 
+  - id: "#cid-document-id-mismatch"
+    type: Identity
+    label: Self-issued credential whose controlled identifier document names another id
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid-document-id-mismatch"
+    comment: >-
+      The document at the subject URL gives a different id, so it is not the subject's document. The credential itself is well formed and signed with the run's CID key; only the
+      document the harness hosts differs from #cid's (D-0074).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${fixtures.baseUrl}agents/someone-else"
+      authentication:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${self.webid}"
+          publicKeyJwk: "${self.publicJwk}"
+  - id: "#cid-key-not-for-authentication"
+    type: Identity
+    label: Self-issued credential whose key the document lists, but not for authentication
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid-key-not-for-authentication"
+    comment: >-
+      The key is a verificationMethod referenced only from assertionMethod, so the subject does not authenticate with it (CID 1.0 section 3.3). The credential itself is well formed and signed with the run's CID key; only the
+      document the harness hosts differs from #cid's (D-0074).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      verificationMethod:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${self.webid}"
+          publicKeyJwk: "${self.publicJwk}"
+      assertionMethod: ["${self.webid}#${self.kid}"]
+  - id: "#cid-key-revoked"
+    type: Identity
+    label: Self-issued credential whose verification method has been revoked
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid-key-revoked"
+    comment: >-
+      The authentication method carries a revoked time in the past (CID 1.0 section 2.2). The credential itself is well formed and signed with the run's CID key; only the
+      document the harness hosts differs from #cid's (D-0074).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      authentication:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${self.webid}"
+          publicKeyJwk: "${self.publicJwk}"
+          revoked: "2000-01-01T00:00:00Z"
+  - id: "#cid-foreign-controller"
+    type: Identity
+    label: Self-issued credential whose verification method another identifier controls
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid-foreign-controller"
+    comment: >-
+      The authentication method names another document as its controller, so it is not the subject's key. The credential itself is well formed and signed with the run's CID key; only the
+      document the harness hosts differs from #cid's (D-0074).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      authentication:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${fixtures.baseUrl}agents/someone-else"
+          publicKeyJwk: "${self.publicJwk}"
+  - id: "#cid-referenced-method"
+    type: Identity
+    label: Self-issued credential whose authentication method is referenced, not embedded
+    kind: SubjectCredential
+    suite: https://www.w3.org/TR/lws10-authn-ssi-cid/
+    tokenType: urn:ietf:params:oauth:token-type:jwt
+    algorithm: ES256
+    requires: [ReachableFixtures]
+    webid: "${fixtures.baseUrl}agents/cid-referenced-method"
+    comment: >-
+      The authentication relationship names the method by its id, and the method is defined under verificationMethod: the reference form CID 1.0 allows beside embedding. The credential itself is well formed and signed with the run's CID key; only the
+      document the harness hosts differs from #cid's (D-0074).
+    credentialHeader:
+      alg: ES256
+      typ: JWT
+      kid: "${self.kid}"
+    credentialClaims:
+      sub: "${self.webid}"
+      iss: "${self.webid}"
+      client_id: "${self.webid}"
+      aud: ["${as.issuer}"]
+      iat: "${now}"
+      exp: "${now+300}"
+    identityDocument:
+      "@context": ["https://www.w3.org/ns/cid/v1"]
+      id: "${self.webid}"
+      verificationMethod:
+        - id: "${self.webid}#${self.kid}"
+          type: JsonWebKey
+          controller: "${self.webid}"
+          publicKeyJwk: "${self.publicJwk}"
+      authentication: ["${self.webid}#${self.kid}"]
   - id: "#cid-unknown-kid"
     type: Identity
     label: Self-issued credential whose kid names no verification method

@@ -183,9 +183,26 @@ final class SubjectTokens {
         if (!subject.equals(doc.path("id").asText())) {
             throw new Invalid("the controlled identifier document at " + subject + " names another id");
         }
-        JsonNode method = method(doc, methodId);
+        JsonNode method = authenticationMethod(doc, subject, methodId);
         if (method == null) {
-            throw new Invalid("the controlled identifier document names no verification method " + methodId);
+            throw new Invalid("the controlled identifier document names no authentication method " + methodId);
+        }
+        // CID 1.0 section 3.3: the method must be the subject's, and in force.
+        if (!subject.equals(resolve(method.path("controller").asText(null), subject))) {
+            throw new Invalid("verification method " + methodId + " is controlled by another identifier");
+        }
+        for (String bound : List.of("revoked", "expires")) {
+            if (method.hasNonNull(bound)) {
+                java.time.Instant at;
+                try {
+                    at = java.time.OffsetDateTime.parse(method.path(bound).asText()).toInstant();
+                } catch (RuntimeException e) {
+                    throw new Invalid("verification method " + methodId + " has an unreadable " + bound + " time");
+                }
+                if (!java.time.Instant.now().isBefore(at)) {
+                    throw new Invalid("verification method " + methodId + " is " + bound + " (" + at + ")");
+                }
+            }
         }
         JWK key;
         try {
@@ -201,15 +218,35 @@ final class SubjectTokens {
         return new Subject(subject, subject);
     }
 
-    private static JsonNode method(JsonNode doc, String id) {
-        for (String relation : List.of("authentication", "verificationMethod")) {
-            for (JsonNode m : doc.path(relation)) {
-                if (m.isObject() && id.equals(m.path("id").asText())) {
-                    return m;
+    /**
+     * The method {@code id} among those the {@code authentication} relationship names (CID 1.0
+     * section 3.3): embedded in it, or referenced from it and defined under
+     * {@code verificationMethod} in the same document. A key listed only under
+     * {@code verificationMethod}, or only for another relationship, is not one the subject
+     * authenticates with, so it is not found.
+     */
+    private static JsonNode authenticationMethod(JsonNode doc, String subject, String id) {
+        for (JsonNode entry : doc.path("authentication")) {
+            JsonNode m = entry;
+            if (entry.isTextual()) {
+                String ref = resolve(entry.asText(), subject);
+                m = null;
+                for (JsonNode candidate : doc.path("verificationMethod")) {
+                    if (candidate.isObject() && ref.equals(resolve(candidate.path("id").asText(null), subject))) {
+                        m = candidate;
+                    }
                 }
+            }
+            if (m != null && m.isObject() && id.equals(resolve(m.path("id").asText(null), subject))) {
+                return m;
             }
         }
         return null;
+    }
+
+    /** A {@code #fragment} reference resolved against the subject's document; anything else as is. */
+    private static String resolve(String ref, String subject) {
+        return ref != null && ref.startsWith("#") ? subject + ref : ref;
     }
 
     /** sub = iss = client_id, aud includes this server, exp in the future, iat present and not ahead. */

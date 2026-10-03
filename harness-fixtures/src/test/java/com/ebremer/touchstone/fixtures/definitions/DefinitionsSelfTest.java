@@ -93,7 +93,7 @@ class DefinitionsSelfTest {
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
             expected.add("core/authorization_server#authz-token-exchange-invalid-resource");
             assertThat(failed(run)).as(details(run)).isEqualTo(expected);
-            assertThat(expected).hasSize(23);
+            assertThat(expected).hasSize(27);
             assertThat(notPassed(run)).doesNotContainValue(Outcome.CANT_TELL);
         }
     }

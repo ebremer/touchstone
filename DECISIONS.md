@@ -2366,3 +2366,35 @@ invent a requirement the catalog does not hold.
 
 The reference server passes all three; no broken twin models a scope defect. Pinned counts move
 from 195 to 198. Drafted by an agent; waits on branch `tests/scope-and-listing`.
+
+### D-0074 — CID documents that must not verify, and one that must
+Five definitions in `auth/cid`, made possible by what the format already has. Every standalone
+identity with a `webid` under the fixture base and an `identityDocument` is served by the fixture
+host, and the document may say anything. So each case is an identity whose credential is well formed
+and signed with the run's CID key, and whose document breaks one rule of CID 1.0 section 3.3:
+- `authn-cid-document-id-mismatch` (MUST): the document at the subject URL names another `id`
+  (validation-dereference-sub-cid);
+- `authn-cid-key-not-for-authentication` (MUST): the key is a `verificationMethod` referenced only
+  from `assertionMethod`;
+- `authn-cid-key-revoked` (MUST): the authentication method was `revoked` in 2000;
+- `authn-cid-foreign-controller` (MUST): the method's `controller` is another document;
+- `authn-cid-referenced-method` (MUST, positive): `authentication` refers to the method by id and
+  `verificationMethod` defines it, the reference form beside embedding. `authn-cid-valid-credential`
+  covers only embedding.
+
+The refusals expect 400 `invalid_request`, as every other refused subject token does. Sources cite
+the CID suite's validation section only: CID 1.0 is not in `anchors.json` (no dated snapshot), so the
+comments quote it instead.
+
+**Not defined.** A published private key and a Multikey document: the identity templates expose the
+key only as `self.publicJwk`, a whole JWK, with no private member and no multibase form. A did:web
+subject: the fixture host serves a document at the identity's own URL, and a did:web document lives at
+a URL derived from the DID. Each needs an engine addition, noted for later.
+
+**The reference authorization server follows.** It searched `verificationMethod` as well as
+`authentication`, and ignored `controller`, `revoked` and `expires`. It now retrieves the method by
+CID 1.0 section 3.3: the method must be embedded in `authentication` or referenced from it and
+defined in the document, controlled by the subject, and not revoked or expired. The broken
+authorization server exchanges anything, so the four refusals join the auth negative tests that must
+catch it (23 → 27). Pinned counts move from 198 to 203, `auth` from 26 to 31. Drafted by an agent;
+waits on branch `tests/cid-documents`.
