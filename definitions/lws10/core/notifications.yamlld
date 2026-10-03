@@ -1193,3 +1193,207 @@ entries:
           url: "${subscription}"
         response:
           statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-delivered-in-subcontainer"
+    type: ValidationTest
+    name: notification-delivered-in-subcontainer
+    label: A subscription to a container reaches a resource created in a subcontainer
+    comment: >-
+      "A subscription to a container is recursive: the subscriber receives notifications
+      for the container itself and for all resources transitively contained in that
+      container" (10.3.2), and delivery-time authorization "applies to all resources within
+      the scope of a subscription, including resources in subcontainers". alice subscribes
+      to her test container, then creates a data resource one level down, in a subcontainer.
+      A Create naming it must arrive. Every other delivery test changes the container it
+      subscribed to, so none checks the recursion. The scope paragraph carries no RFC 2119
+      keyword and so has no catalog entry; the test cites the delivery requirements it
+      exercises (D-0073).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-scope
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+    traits: [Post, Get, Notifications, Container]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-activity-types-supported
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-id
+    prereqs:
+      hierarchy:
+        - container: inner
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to the test container, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: create a data resource in the subcontainer
+        request:
+          method: POST
+          url: "${inner}"
+          contentType: text/plain
+          body: one level down
+        response:
+          statusCode: 201
+          location:
+            capture: created
+      - label: a Create naming it arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Create
+                    - pointer: /object/id
+                      equalsIri: "${created}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
+  - id: "#notification-scope-data-resource-only"
+    type: ValidationTest
+    name: notification-scope-data-resource-only
+    label: A subscription to a data resource hears nothing about its siblings
+    comment: >-
+      "A subscription to a data resource applies only to that individual resource"
+      (10.3.2). alice subscribes to one data resource, updates a sibling in the same
+      container, and then updates the subscribed resource. Polling waits for the Update she
+      is entitled to; by then the earlier sibling change, had it been delivered, has arrived
+      too, and nothing may name the sibling. The scope paragraph has no catalog entry (no RFC
+      2119 keyword), so the test cites the delivery requirements it exercises (D-0073).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-scope
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+    traits: [Put, Get, Notifications, DataResource]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-activity-types-supported
+      - https://example.org/touchstone/req/lws10-core/notification-activity-object-id
+    prereqs:
+      hierarchy:
+        - dataResource: watched
+          contentType: text/plain
+          body: the subscribed resource
+        - dataResource: sibling
+          contentType: text/plain
+          body: a resource beside it
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: subscribe to one data resource, delivering to this test's inbox
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${watched}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: update the sibling first
+        request:
+          method: PUT
+          url: "${sibling}"
+          ifMatch: current
+          contentType: text/plain
+          body: a resource beside it, changed
+        response:
+          statusCode: [200, 204]
+      - label: then update the subscribed resource
+        request:
+          method: PUT
+          url: "${watched}"
+          ifMatch: current
+          contentType: text/plain
+          body: the subscribed resource, changed
+        response:
+          statusCode: [200, 204]
+      - label: the subscribed resource's Update arrives, and nothing names the sibling
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Update
+                    - pointer: /object/id
+                      equalsIri: "${watched}"
+            - pointer: /deliveries
+              none:
+                - pointer: /activities
+                  some:
+                    - pointer: /object/id
+                      equalsIri: "${sibling}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]

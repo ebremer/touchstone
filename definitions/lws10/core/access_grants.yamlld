@@ -1355,3 +1355,64 @@ entries:
           url: "${created}"
         response:
           statusCode: 200
+
+  - id: "#container-listing-filtered-metadata"
+    type: ValidationTest
+    name: container-listing-filtered-metadata
+    label: A listing filtered by authorization still gives each member it shows its core metadata
+    comment: >-
+      "For containers, the server returns a listing of member resources which MAY be
+      filtered based on authorization. Listings must include core metadata for each member."
+      bob may read a container and one of its data resources but not the other. Whatever his
+      listing shows, the member he may read among it, every member carries an id and a type,
+      and the readable data resource its format. Omitting the member he may not read is the
+      MAY; listing it is allowed too, with its metadata. A server where a grant on a container
+      reaches its members simply shows him both.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-representation
+    traits: [Get, Container, AccessGrants, Authz]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/read-container-listing-authz-filtered
+    prereqs:
+      hierarchy:
+        - container: box
+          authorization:
+            read: [bob]
+        - dataResource: visible
+          in: box
+          contentType: text/plain
+          body: bob may read this
+          authorization:
+            read: [bob]
+        - dataResource: hidden
+          in: box
+          contentType: text/plain
+          body: bob is granted nothing on this
+    steps:
+      - label: bob's listing shows the member he may read, and core metadata for every member it shows
+        as: bob
+        request:
+          method: GET
+          url: "${box}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${visible}"
+                - pointer: /type
+                  hasValue: DataResource
+                - pointer: /format
+                  jsonType: string
+            - pointer: /items
+              every:
+                - pointer: /id
+                  jsonType: string
+                - pointer: /type
+                  exists: true

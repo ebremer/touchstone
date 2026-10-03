@@ -6,8 +6,8 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **195 tests**: 154 MUST, 31 SHOULD, 10 MAY; 125 validation tests, 70 negative tests.
-- **263 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
+- **198 tests**: 156 MUST, 31 SHOULD, 11 MAY; 128 validation tests, 70 negative tests.
+- **264 catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
 
@@ -16,14 +16,14 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `auth/cid/manifest` | 17 | 17 | 0 | 0 |
 | `auth/oidc/manifest` | 6 | 6 | 0 | 0 |
 | `auth/saml/manifest` | 3 | 3 | 0 | 0 |
-| `core/access_grants` | 16 | 13 | 2 | 1 |
+| `core/access_grants` | 17 | 13 | 2 | 2 |
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 18 | 11 | 5 | 2 |
 | `core/data_resources` | 16 | 9 | 6 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
 | `core/linksets` | 9 | 8 | 1 | 0 |
-| `core/notifications` | 13 | 12 | 1 | 0 |
+| `core/notifications` | 15 | 14 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
 | `index/manifest` | 39 | 29 | 6 | 4 |
@@ -166,6 +166,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `access-grant-constraint-format` | Validation | MUST | Authentication |  |
 | `access-grant-constraint-type` | Validation | MUST | Authentication |  |
 | `access-grant-constraint-client` | Validation | MUST | Authentication |  |
+| `container-listing-filtered-metadata` | Validation | MAY | Authentication |  |
 
 ### `core/authorization_server`
 
@@ -282,6 +283,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `notification-not-delivered-for-unreadable-resource` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `notification-stops-after-revocation` | Negative | MUST | Authentication, ReachableFixtures |  |
 | `notification-actor-omitted` | Validation | SHOULD | ReachableFixtures |  |
+| `notification-delivered-in-subcontainer` | Validation | MUST | ReachableFixtures |  |
+| `notification-scope-data-resource-only` | Validation | MUST | ReachableFixtures |  |
 
 ### `core/pagination`
 

@@ -2334,3 +2334,35 @@ server need not end a subscription when its topic is deleted. Format 0.7.0 can r
 the definitions cannot fix this themselves. Deployments sweep instead (the Touchstone runner for our
 targets now cancels leftover subscriptions whose topics lie under its container). A format that
 could register any captured URL for cleanup would fix it at the source; noted for a later version.
+
+### D-0073 — subscription scope, and filtered listings
+Three definitions, the last ones the specification as it stands supports without a format change,
+a server change or a working-group answer (catalog coverage 263 → 264 requirements cited).
+
+**Subscription scope** (`core/notifications`). Core 10.3.2: "A subscription to a container is
+recursive: the subscriber receives notifications for the container itself and for all resources
+transitively contained in that container. A subscription to a data resource applies only to that
+individual resource." Every delivery test so far changed the very resource or container it
+subscribed to, so neither half was tested.
+- `notification-delivered-in-subcontainer` (MUST): subscribe to the test container, create a data
+  resource in a subcontainer, and a Create naming it arrives.
+- `notification-scope-data-resource-only` (MUST): subscribe to one data resource, update a sibling,
+  then update the subscribed one. Polling waits for the subscribed resource's Update; by then a
+  sibling delivery would have arrived too, and none may name the sibling.
+
+*No catalog entry for the scope paragraph.* It states the rule without an RFC 2119 keyword, so the
+extractor did not catalogue it. The delivery-time authorization MUST leans on it ("all resources
+within the scope of a subscription, including resources in subcontainers"). The tests quote it,
+cite its section as their source, and cite the delivery requirements they exercise. They do not
+invent a requirement the catalog does not hold.
+
+**Filtered listings** (`core/access_grants`):
+- `container-listing-filtered-metadata` (MAY): bob may read a container and one of its data
+  resources, not the other. His listing shows the one he may read with its type and format, and
+  every member it shows has an id and a type. Leaving out the other member is the MAY, and listing it
+  is allowed too. "Listings must include core metadata for each member" is lower-case, so it binds
+  the shape of what is shown, not whether the hidden member appears. In `core/access_grants`, not
+  `core/containers`, because it is about what a grant lets bob see.
+
+The reference server passes all three; no broken twin models a scope defect. Pinned counts move
+from 195 to 198. Drafted by an agent; waits on branch `tests/scope-and-listing`.
