@@ -7,7 +7,7 @@ disagree, the spec wins.
 Gate status:
 - **Gate 1: CLOSED — Erich approved the 15 seed requirements on 2026-07-16; mass extraction authorized (D-0013).**
 - **Gate 2: CLOSED — manifest JSON Schema v1 frozen on 2026-07-16 (D-0013).**
-- **Gate C: OPEN — the client rule format 0.8.0 was proposed on 2026-10-05 (D-0078); no client rule is written until it closes.**
+- **Gate C: CLOSED — Erich approved the client rule format on 2026-10-05; format 0.8.0 frozen (D-0079).**
 
 ## 2026-07-16
 
@@ -2688,3 +2688,98 @@ The documentation pages that say "format 0.7.0, frozen" change when 0.8.0 is fro
 
 Drafted by an agent; waits on branch `clients/c2-rules`, which is stacked on
 `clients/c1-sessions`.
+
+### D-0079 — Gate C closed: format 0.8.0 is frozen, with the seven defaults accepted
+Erich approved the proposal of D-0078 on 2026-10-05. The freeze covers the schema
+(`$id …/0-8-0`), `context.jsonld`, `vocab.yamlld`, `EXECUTION.md` and the new
+`OBSERVATION.md`. The seven defaults D-0078 left open are accepted as written:
+1. `client-no-assumed-methods-405-415` is about linksets;
+2. a rule takes the level of the obligation it observes;
+3. the subscription POST's authentication is not judged per request;
+4. access documents get one rule per property;
+5. MAY rules are information, and two MAY rows get no rule;
+6. `presentation` is a set;
+7. tasks, faults and `followedBy` come with phase C3, as a later format version.
+
+**One clarification at the freeze.** The proposal's `OBSERVATION.md` section 3 said request
+bodies "are kept whole". Rules do judge them whole, as each exchange is recorded, but the
+traffic log keeps only the first 64 KiB, as it did in phase C1. Section 3 now says both.
+
+A later change to any of the five files bumps the schema `$id` and needs its own entry, as
+before. Adding, correcting or retiring a client rule is content, not format.
+
+### D-0080 — client rules (phase C2): 25 rules, judged as each exchange is recorded, proven by a reference client and 25 twins
+Phase C2 is built. Its acceptance criterion was that every C2 rule passes for the reference
+client and fails for its twin. It holds for all 25 rules.
+
+**The rules** are the 25 of D-0078, unchanged, in `definitions/lws10/clients/` (core,
+notifications, index). `COVERAGE.md` lists them in a new section 5. Its role table gains a
+column of the requirements a client rule cites: 32 of the 79 that bind a client or a receiver.
+
+**harness-core** gains client-rule loading, and the matching it shares with the engine:
+- **`DefinitionLoader.loadClientRules`** reads `lws10/clients/` through the same YAML, schema
+  and JSON-LD checks, then the lint of `OBSERVATION.md` section 2 (`ClientRuleLint`). It loads
+  the server tests too, because names are unique across both. The server loader still refuses
+  a client rule in a server manifest.
+- **`Matching`** is a public facade over the response checks. The status, Link and header
+  checks moved out of `Evaluator` into `MessageChecks`, which both use. A term therefore means
+  the same on a client's request as on a server's response, with one implementation.
+
+**harness-clients** now depends on harness-core, as CLIENT-TESTING.md section 4.1 planned:
+- **The recorder** computes the rest of `OBSERVATION.md` section 4:
+  - `server`;
+  - `builtBy`, `builtFrom` and `builtFromRole`. The ledger keeps the order URLs were handed out
+    in, and the role of each URL's latest exchange.
+  - `presentation`, now a set. A token the session issued is found anywhere: in another header
+    or a query parameter. The session keeps its tokens in memory, those of its API and those
+    its token endpoint answers with.
+  - the three `…Advertised` booleans. A 415 now advertises, as a 405 already did, since it
+    carries `Accept-Patch` or `Accept-Query`.
+- **`Judge`** applies the rules to each exchange under the log's lock, in the log's order, with
+  `Conditions` evaluating each condition. Each exchange in the log carries the verdicts of the
+  rules it was a trial of.
+- **The session API** gains `GET …/results` (each rule's outcome, trials, first failure and
+  guidance, and the verdict) and `POST …/reset`.
+- **The session page** shows the rules and their evidence, and a Rules column in the traffic
+  log.
+- **The launcher** takes `--definitions` and `--catalog`, and exits 2 if a rule fails its
+  checks.
+
+**Some linksets now accept PUT, in sessions only.** The session's linksets all refused PUT.
+That left `client-linkset-put-only-when-advertised` with no way to pass: its only possible
+trials were failures, so a conformant client could only ever be *untested*. In a session, a data
+resource's linkset now accepts PUT and lists it in `Allow`, while a container's refuses it. A
+client therefore cannot assume either way.
+
+The draft makes PUT on a linkset optional in so many words ("If advertised in the Allow
+header, a client MAY replace the entire linkset"). It is a switch of its own on
+`RefLwsServer`, `linksetPutOnDataResources`, not one of the `Traps`. The trapped server
+self-test leaves it off, because `linkset-put-405-when-unsupported` needs a data resource's
+linkset that refuses PUT, and would otherwise be inapplicable.
+
+**The proof.**
+- **`RefLwsClient`** (`harness-fixtures`) is a scripted client on the JDK `HttpClient`. It
+  reads before it writes, makes its writes conditional, follows the links it is given,
+  composes access documents and a subscription as the drafts define them, and retries a
+  refused search in the baseline format.
+- **Its `Flaw`s** make 25 twins, one per rule, each getting exactly one thing wrong.
+- **`ClientRulesSelfTest`** runs each in a session of its own:
+  - the reference passes all 25 rules, none of them *untested*, and the verdict reads "no MUST
+    failure in 18 MUST rules exercised, of 18 that apply";
+  - every twin fails exactly the rule aimed at it.
+
+  The evidence was read, not only the outcomes, to confirm each twin fails for the reason it
+  exists. For example, the page builder fails at `?page=2` on "issued: expected true, was
+  false".
+- **Checks:** 12 new schema controls for client rules are all rejected, and the Python lint
+  enforces section 2.
+
+**Not yet:**
+- tasks and faults, phase C3;
+- the EARL and JUnit XML forms of the results, and choosing areas out of scope when a session
+  starts, phase C6 (the judge already makes such rules *inapplicable*);
+- clearer evidence for a quantified JSON expectation (`every`, `some`, `none`). It shows the
+  whole nested list rather than the member that failed, which is enough for a log but not for
+  the page that phase C6 builds.
+
+Drafted by an agent; waits on branch `clients/c2-rules`.

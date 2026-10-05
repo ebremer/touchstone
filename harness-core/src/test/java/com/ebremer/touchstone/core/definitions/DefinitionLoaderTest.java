@@ -154,13 +154,13 @@ class DefinitionLoaderTest {
         }
     }
 
-    private static String first(String s, String target, String replacement) {
+    static String first(String s, String target, String replacement) {
         int i = s.indexOf(target);
         assertThat(i).as("fixture text " + target).isNotNegative();
         return s.substring(0, i) + replacement + s.substring(i + target.length());
     }
 
-    private static Path copy(Path tmp) throws IOException {
+    static Path copy(Path tmp) throws IOException {
         Path target = tmp.resolve("definitions");
         try (Stream<Path> files = Files.walk(DEFINITIONS)) {
             for (Path p : files.toList()) {

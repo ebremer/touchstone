@@ -17,6 +17,11 @@
   <dependencies>
     <dependency>
       <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
       <artifactId>harness-fixtures</artifactId>
       <version>${project.version}</version>
     </dependency>

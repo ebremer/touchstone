@@ -1,16 +1,16 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.7.0, frozen on 2026-10-02 (DECISIONS.md D-0070).** The
+**Status: format version 0.8.0, frozen on 2026-10-05 (DECISIONS.md D-0079).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
-every test is `status: Proposed`. Format 0.8.0, which adds client rules (`OBSERVATION.md`), is
-proposed and waits at Gate C (D-0078).
+every test is `status: Proposed`.
 
 0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changed
 only how a did:key subject's credential is made, since W3C discontinued the did:key suite;
 0.4.0 added what testing notification delivery needs (a polled step, a per-test inbox); 0.5.0
 records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QUERY method and Link headers on prerequisites; 0.7.0 lets a test script
-its inbox's answers. A test that is one
+its inbox's answers; 0.8.0 adds client rules, which judge the requests an LWS client sends
+(`OBSERVATION.md`). A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -322,7 +322,7 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Format version
 
-Format version 0.8.0 (proposed 2026-10-05, D-0078, Gate C) adds a third kind of entry and
+Format version 0.8.0 (2026-10-05, D-0079, frozen at Gate C) adds a third kind of entry and
 changes nothing a 0.7.0 definition relies on. An `ObservationTest` is a client rule: it judges
 the exchanges an LWS client sends to a client session (`CLIENT-TESTING.md`), by two conditions
 on one exchange, `observe` and `expect`. `OBSERVATION.md` is its contract. Client rules live

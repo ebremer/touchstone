@@ -77,6 +77,13 @@ tr.detail pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-h
 .s4 { color: var(--warn); }
 .s5 { color: var(--bad); }
 td.built { background: var(--built); }
+.verdict { font-weight: 600; }
+.rules { font-size: 0.9rem; }
+.rules code { display: block; }
+.o-passed { color: var(--ok); }
+.o-failed { color: var(--bad); font-weight: 600; }
+.o-cantTell { color: var(--warn); }
+.o-untested, .o-inapplicable { color: var(--muted); }
 @media (max-width: 640px) {
   .facts { grid-template-columns: 1fr; }
   .facts dd { margin-bottom: 0.5rem; }

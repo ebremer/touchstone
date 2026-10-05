@@ -148,6 +148,8 @@ public final class RefLwsServer implements AutoCloseable {
     private final LwsHandler handler;
     /** Which inboxes a notification may be sent to; a storage open to strangers restricts them. */
     private volatile java.util.function.Predicate<URI> deliveryGuard = uri -> true;
+    /** Whether the linksets of data resources support PUT; containers' never do. */
+    private volatile boolean linksetPut;
     /** Opaque page URLs: token to page, and container path and page number to token. */
     private final ConcurrentMap<String, PageRef> pageRefs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> pageTokens = new ConcurrentHashMap<>();
@@ -378,6 +380,16 @@ public final class RefLwsServer implements AutoCloseable {
     /** The handler that serves this storage, for a mounted one to be placed in another server. */
     public Handler handler() {
         return handler;
+    }
+
+    /**
+     * Lets the linksets of data resources support PUT, and advertise it in {@code Allow}, while
+     * containers' linksets still refuse it: PUT on a linkset is optional (WD section 9.3.2), so a
+     * client must read {@code Allow} before it replaces one. Off by default, because the server
+     * self-test needs linksets without PUT.
+     */
+    public void linksetPutOnDataResources(boolean supported) {
+        this.linksetPut = supported;
     }
 
     /** Lets notifications go only to the inboxes {@code guard} accepts. */
@@ -1007,7 +1019,8 @@ public final class RefLwsServer implements AutoCloseable {
         /**
          * A resource's linkset (RFC 9264): GET and HEAD, and PATCH with JSON Merge Patch, which
          * the Allow and Accept-Patch headers advertise. PUT is not supported, so it is 405 with
-         * the methods that are.
+         * the methods that are, unless {@link #linksetPutOnDataResources} lets a data resource's
+         * linkset be replaced.
          */
         private void linksetResource(Request request, Response response, Callback callback, String path, String method)
                 throws Exception {
@@ -1016,7 +1029,9 @@ public final class RefLwsServer implements AutoCloseable {
                 status(request, response, callback, 404);
                 return;
             }
-            response.getHeaders().put(HttpHeader.ALLOW, "GET, HEAD, PATCH");
+            boolean puttable = linksetPut && !node.container;
+            String allow = puttable ? "GET, HEAD, PUT, PATCH" : "GET, HEAD, PATCH";
+            response.getHeaders().put(HttpHeader.ALLOW, allow);
             response.getHeaders().put("Accept-Patch", MERGE_PATCH);
             switch (method) {
                 case "GET", "HEAD" -> {
@@ -1055,7 +1070,39 @@ public final class RefLwsServer implements AutoCloseable {
                     response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
                     status(request, response, callback, 204);
                 }
-                default -> methodNotAllowed(response, callback, "GET, HEAD, PATCH");
+                case "PUT" -> {
+                    if (!puttable) {
+                        methodNotAllowed(response, callback, allow);
+                        return;
+                    }
+                    String contentType = request.getHeaders().get("Content-Type");
+                    if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(LINKSET_JSON)) {
+                        status(request, response, callback, 415);
+                        return;
+                    }
+                    String ifMatch = request.getHeaders().get("If-Match");
+                    if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.linksetEtag)) {
+                        status(request, response, callback, 412);
+                        return;
+                    }
+                    JsonNode replacement;
+                    try (InputStream in = Content.Source.asInputStream(request)) {
+                        replacement = mapper.readTree(in.readAllBytes());
+                    } catch (Exception e) {
+                        status(request, response, callback, 400);
+                        return;
+                    }
+                    if (replacement == null || !replacement.isObject() || !replacement.path("linkset").isArray()) {
+                        status(request, response, callback, 422);
+                        return;
+                    }
+                    node.linkset = (ObjectNode) replacement;
+                    node.linksetEtag = newEtag();
+                    node.indexed = Instant.now();
+                    response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
+                    status(request, response, callback, 204);
+                }
+                default -> methodNotAllowed(response, callback, allow);
             }
         }
 

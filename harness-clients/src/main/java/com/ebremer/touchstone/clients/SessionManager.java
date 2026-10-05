@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.ebremer.touchstone.core.definitions.ClientRules;
+
 /**
  * The live sessions, and the bounds on them (CLIENT-TESTING.md section 8.2): a global cap, a cap
  * per address per hour, and expiry when idle or old. Everything is in memory; an ended session
@@ -34,13 +36,15 @@ final class SessionManager {
     }
 
     private final ClientLabConfig config;
+    private final ClientRules rules;
     private final Clock clock;
     private final SecureRandom random = new SecureRandom();
     private final ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> starts = new HashMap<>();
 
-    SessionManager(ClientLabConfig config, Clock clock) {
+    SessionManager(ClientLabConfig config, ClientRules rules, Clock clock) {
         this.config = config;
+        this.rules = rules;
         this.clock = clock;
     }
 
@@ -60,7 +64,7 @@ final class SessionManager {
             recent.addLast(now);
             String id = randomToken(12);
             String key = randomToken(32);
-            Session session = new Session(id, key, config, now);
+            Session session = new Session(id, key, config, rules, now);
             sessions.put(id, session);
             return new Created(session, key);
         }

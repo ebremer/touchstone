@@ -55,6 +55,8 @@ const short = t => 'request' in t;
 const pre = t => 'prereqs' in t;
 const dataPre = t => pre(t) && 'dataResource' in t.prereqs.hierarchy[0];
 const chal = t => short(t) && 'authenticationChallenge' in t.response;
+const rule = t => t.type === 'ObservationTest';
+const ruleAnyOf = t => rule(t) && 'anyOf' in t.expect;
 const controls = {
   'typo key statusCod': [flow, t => { t.steps[0].response.statusCod = 200; }],
   'malformed template ${test.container': [flow, t => { t.steps[0].request.url = '${test.container'; }],
@@ -76,6 +78,19 @@ const controls = {
   'challenge without wwwAuthenticate': [chal, t => { delete t.response.authenticationChallenge.wwwAuthenticate; }],
   'challenge with the 0.1.0 scheme key': [chal, t => { const c = t.response.authenticationChallenge; c.scheme = c.wwwAuthenticate; delete c.wwwAuthenticate; }],
   'asUri with an unknown operator': [chal, t => { t.response.authenticationChallenge.asUri = { equals: 'x' }; }],
+  // Client rules (format 0.8.0, OBSERVATION.md).
+  'client rule with steps': [rule, t => { t.steps = [{ label: 'x', request: { method: 'GET', url: 'x' }, response: { statusCode: 200 } }]; }],
+  'client rule without guidance': [rule, t => { delete t.guidance; }],
+  'client rule without requirements': [rule, t => { delete t.requirements; }],
+  'client rule in an unknown area': [rule, t => { t.area = 'auth'; }],
+  'client rule with an unknown role': [rule, t => { t.observe.role = 'resource'; }],
+  'client rule with an unknown condition term': [rule, t => { t.expect.identity = 'alice'; }],
+  'client rule with after in expect': [rule, t => { t.expect.after = { statusCode: 415 }; }],
+  'client rule with sameTarget outside a trigger': [rule, t => { t.observe.sameTarget = true; }],
+  'client rule with an empty expect': [rule, t => { t.expect = {}; }],
+  'client rule with a lower-case method': [rule, t => { t.observe.method = 'put'; }],
+  'client rule with anyOf of one': [ruleAnyOf, t => { t.expect.anyOf = t.expect.anyOf.slice(0, 1); }],
+  'server test with observe': [rule, t => { t.type = 'ValidationTest'; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

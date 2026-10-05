@@ -9,14 +9,17 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.ebremer.touchstone.core.definitions.ClientRules;
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -42,7 +45,8 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>{@code /}: the start page; {@code /static/...}: its scripts and styles;</li>
  *   <li>{@code POST /sessions}: starts a session (section 4.4);</li>
- *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../tokens/{name}}: the session API,
+ *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results}, {@code .../reset},
+ *       {@code .../tokens/{name}}: the session API,
  *       which takes the session key as a Bearer token; {@code .../page}: the session page, which
  *       reads the key from its URL's fragment;</li>
  *   <li>{@code /s/{sid}/storage/...} and {@code /s/{sid}/as/...}: the session's storage and
@@ -63,18 +67,22 @@ public final class ClientLab implements AutoCloseable {
             "session.js", "text/javascript; charset=utf-8");
     private static final String CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
             + " connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+    private static final String STORAGE = "storage";
+    private static final String AS = "authorizationServer";
     private static final String EXPOSED = "Location, Link, ETag, Allow, Accept-Patch, Accept-Query, Accept-Ranges,"
             + " Content-Location, Content-Range, Last-Modified, WWW-Authenticate, Vary, Retry-After";
 
     private final ClientLabConfig config;
+    private final ClientRules rules;
     private final SessionManager sessions;
     private final Server server;
     private final ServerConnector connector;
     private final ScheduledExecutorService sweeper;
 
-    private ClientLab(ClientLabConfig config, Clock clock) {
+    private ClientLab(ClientLabConfig config, ClientRules rules, Clock clock) {
         this.config = config;
-        this.sessions = new SessionManager(config, clock);
+        this.rules = rules;
+        this.sessions = new SessionManager(config, rules, clock);
         this.server = new Server();
         this.connector = new ServerConnector(server);
         connector.setHost(config.bindHost());
@@ -89,12 +97,13 @@ public final class ClientLab implements AutoCloseable {
         });
     }
 
-    public static ClientLab start(ClientLabConfig config) {
-        return start(config, Clock.systemUTC());
+    /** @param rules the client rules every session judges its client by (OBSERVATION.md) */
+    public static ClientLab start(ClientLabConfig config, ClientRules rules) {
+        return start(config, rules, Clock.systemUTC());
     }
 
-    static ClientLab start(ClientLabConfig config, Clock clock) {
-        ClientLab lab = new ClientLab(config, clock);
+    static ClientLab start(ClientLabConfig config, ClientRules rules, Clock clock) {
+        ClientLab lab = new ClientLab(config, rules, clock);
         try {
             lab.server.start();
         } catch (Exception e) {
@@ -106,7 +115,8 @@ public final class ClientLab implements AutoCloseable {
                 LOG.info("{} expired session(s) ended; {} live", ended, lab.sessions.size());
             }
         }, 1, 1, TimeUnit.MINUTES);
-        LOG.info("client sessions at {} (listening on {}:{})", config.publicBase(), config.bindHost(), lab.port());
+        LOG.info("client sessions at {} (listening on {}:{}), judged by {} client rules", config.publicBase(),
+                config.bindHost(), lab.port(), rules.rules().size());
         return lab;
     }
 
@@ -151,7 +161,7 @@ public final class ClientLab implements AutoCloseable {
                     plain(response, callback, 404);
                     return true;
                 }
-                protocol(s, s.as.handler(), "asMetadata", request, response, callback);
+                protocol(s, s.as.handler(), AS, "asMetadata", request, response, callback);
                 return true;
             }
             if (path.equals(base)) {
@@ -183,16 +193,16 @@ public final class ClientLab implements AutoCloseable {
                 }
                 String sub = inSession.substring(slash);
                 if (sub.startsWith("/storage/")) {
-                    protocol(s, s.storage.handler(), null, request, response, callback);
+                    protocol(s, s.storage.handler(), STORAGE, null, request, response, callback);
                 } else if (sub.startsWith("/as/")) {
                     String role = switch (sub) {
                         case "/as/token" -> "asToken";
                         case "/as/jwks" -> "asJwks";
                         default -> "unknown";
                     };
-                    protocol(s, s.as.handler(), role, request, response, callback);
+                    protocol(s, s.as.handler(), AS, role, request, response, callback);
                 } else {
-                    protocol(s, NOTHING, "unknown", request, response, callback);
+                    protocol(s, NOTHING, null, "unknown", request, response, callback);
                 }
             } else {
                 plain(response, callback, 404);
@@ -207,10 +217,11 @@ public final class ClientLab implements AutoCloseable {
          * preflights answered here, the session's bounds enforced, CORS headers added for a
          * browser client, and the exchange annotated with what the handler and the ledger know.
          *
+         * @param server the annotation {@code server}: which of the session's servers is addressed, or null
          * @param fixedRole the role when {@code target} does not set one (the authorization server)
          */
-        private void protocol(Session s, Handler target, String fixedRole, Request request, Response response,
-                              Callback callback) throws Exception {
+        private void protocol(Session s, Handler target, String server, String fixedRole, Request request,
+                              Response response, Callback callback) throws Exception {
             long started = System.nanoTime();
             Instant at = sessions.now();
             s.touch(at);
@@ -218,7 +229,7 @@ public final class ClientLab implements AutoCloseable {
                     + (request.getHttpURI().getQuery() == null ? "" : "?" + request.getHttpURI().getQuery());
             String method = request.getMethod();
             String origin = request.getHeaders().get(HttpHeader.ORIGIN);
-            Pending pending = new Pending(s, request, url, at, started);
+            Pending pending = new Pending(s, request, url, at, started, server);
 
             if (method.equals("OPTIONS") && request.getHeaders().get("Access-Control-Request-Method") != null) {
                 preflight(request, response, origin);
@@ -415,6 +426,20 @@ public final class ClientLab implements AutoCloseable {
                 json(response, callback, 200, body);
                 return;
             }
+            if (parts.length == 2 && parts[1].equals("results") && method.equals("GET")) {
+                ObjectNode body = s.judge.results();
+                body.put("session", s.id);
+                body.put("recorded", s.recorder.recorded());
+                json(response, callback, 200, body);
+                return;
+            }
+            if (parts.length == 2 && parts[1].equals("reset") && method.equals("POST")) {
+                s.judge.reset();
+                LOG.info("session {}: results reset", s.id);
+                response.setStatus(204);
+                callback.succeeded();
+                return;
+            }
             if (parts.length == 3 && parts[1].equals("tokens") && method.equals("POST")
                     && Session.IDENTITIES.contains(parts[2])) {
                 ObjectNode body = JSON.createObjectNode();
@@ -434,6 +459,8 @@ public final class ClientLab implements AutoCloseable {
             body.put("id", s.id);
             body.put("page", config.publicBase() + "/sessions/" + s.id + "/page");
             body.put("api", config.publicBase() + "/sessions/" + s.id);
+            body.put("results", config.publicBase() + "/sessions/" + s.id + "/results");
+            body.put("rules", rules.rules().size());
             body.put("storage", s.storageUrl());
             ObjectNode as = body.putObject("authorizationServer");
             as.put("issuer", s.as.issuer());
@@ -452,6 +479,7 @@ public final class ClientLab implements AutoCloseable {
             traps.put("flatResourceUris", s.traps.flatResourceUris());
             traps.put("opaqueLinksetUrls", s.traps.opaqueLinksetUrls());
             traps.put("putOnlyForText", s.traps.putOnlyForText());
+            traps.put("linksetPutOnlyForDataResources", true);
             traps.put("decoy", s.traps.decoy());
             traps.put("indexLagSeconds", s.traps.indexLag().toSeconds());
             ObjectNode limits = body.putObject("limits");
@@ -514,27 +542,34 @@ public final class ClientLab implements AutoCloseable {
 
     // ---- the exchange being recorded ----
 
-    /** An exchange from its request until its answer is complete, when it is appended to the log. */
+    /** An exchange from its request until its answer is complete, when it is judged and appended to the log. */
     private final class Pending {
         private final Session session;
         private final Request request;
         private final String url;
         private final Instant at;
         private final long started;
+        private final String server;
         private final Map<String, List<String>> requestHeaders;
         private final String issuedVia;
+        private final Recorder.Built built;
+        private final String builtFromRole;
         private final Map<String, String> advertised;
         byte[] requestBody = new byte[0];
 
-        Pending(Session session, Request request, String url, Instant at, long started) {
+        Pending(Session session, Request request, String url, Instant at, long started, String server) {
             this.session = session;
             this.request = request;
             this.url = url;
             this.at = at;
             this.started = started;
+            this.server = server;
             this.requestHeaders = headers(request.getHeaders());
-            // Taken now, before this exchange's own answer teaches the ledger anything.
+            // Taken now, before this exchange's own answer teaches the ledger anything
+            // (OBSERVATION.md section 4: an answer never vouches for its own request).
             this.issuedVia = session.recorder.issuedVia(url);
+            this.built = issuedVia == null ? session.recorder.builtFrom(url) : null;
+            this.builtFromRole = built == null ? null : session.recorder.roleOf(built.from());
             this.advertised = session.recorder.advertisedFor(url);
         }
 
@@ -545,49 +580,147 @@ public final class ClientLab implements AutoCloseable {
             String responseType = responseFields.get(HttpHeader.CONTENT_TYPE);
             String requestText = text(requestBody, requestType, requestBody.length);
             String responseText = responseBody == null ? null : text(responseBody, responseType, responseBody.length);
+            byte[] judgedBody = requestBody;
             if (role.equals("asToken")) {
+                rememberIssuedToken(responseText);
+                String form = new String(requestBody, StandardCharsets.UTF_8);
+                judgedBody = Redaction.form(form).getBytes(StandardCharsets.UTF_8);
                 requestText = requestText == null ? null : Redaction.form(requestText);
                 responseText = responseText == null ? null : Redaction.json(responseText);
             }
             // The ledger learns from the whole answer; the log keeps the first part of it.
             session.recorder.learn(url, role, status, responseHeaders, responseText);
             Object subject = request.getAttribute(RefLwsServer.SUBJECT_ATTRIBUTE);
-            String[] presented = presentation(request, requestType, requestBody);
-            Exchange.Annotations annotations = new Exchange.Annotations(role,
+            Presented presented = presentation(request, requestType, requestBody, session.tokens);
+            String method = request.getMethod();
+            String essence = essence(requestType);
+            Exchange.Annotations annotations = new Exchange.Annotations(server, role,
                     subject == null ? null : session.identityOf(subject.toString()),
-                    presented[1], presented[0], issuedVia != null, issuedVia, advertised, null, limit);
+                    presented.fingerprint(), presented.places(), issuedVia != null, issuedVia,
+                    built == null ? null : built.by(), built == null ? null : built.from(), builtFromRole,
+                    advertised,
+                    listed(advertised.get("Allow"), method, false),
+                    essence != null && listed(advertised.get("Accept-Patch"), essence, true),
+                    essence != null && listed(advertised.get("Accept-Query"), essence, true),
+                    null, limit);
             int cap = config.maxRecordedResponseBytes();
             Exchange.Body req = body(requestText, requestBody.length, requestBody.length, cap);
             Exchange.Body res = body(responseText, responseLength, responseBody == null ? 0 : responseBody.length, cap);
             long millis = (System.nanoTime() - started) / 1_000_000;
             String shown = redactUrl(url);
-            session.recorder.append(seq -> new Exchange(seq, at.toString(), millis, request.getMethod(), shown,
-                    requestHeaders, req, status, responseHeaders, res, annotations));
+            byte[] body = judgedBody;
+            session.recorder.append(seq -> {
+                // Judged under the log's lock, in the order of the log (OBSERVATION.md section 6).
+                Observed observed = new Observed(seq, method, shown, requestHeaders, body, status, annotations);
+                return new Exchange(seq, at.toString(), millis, method, shown, requestHeaders, req, status,
+                        responseHeaders, res, annotations, session.judge.judge(observed));
+            });
+        }
+
+        /** A token the session's token endpoint issued, so the recorder knows it wherever a client puts it. */
+        private void rememberIssuedToken(String responseText) {
+            if (responseText == null) {
+                return;
+            }
+            try {
+                String token = JSON.readTree(responseText).path("access_token").asText(null);
+                if (token != null && !token.isEmpty()) {
+                    session.tokens.add(token);
+                }
+            } catch (IOException e) {
+                // no JSON, no token
+            }
         }
     }
 
-    /** {presentation, token fingerprint} for the credential a request carries, if any. */
-    private static String[] presentation(Request request, String contentType, byte[] body) {
+    /** Where a request carried a credential, and the fingerprint of the first one (OBSERVATION.md section 4.4). */
+    private record Presented(List<String> places, String fingerprint) {
+    }
+
+    private static Presented presentation(Request request, String contentType, byte[] body, Set<String> tokens) {
+        Set<String> places = new LinkedHashSet<>();
+        String first = null;
         String auth = request.getHeaders().get(HttpHeader.AUTHORIZATION);
         if (auth != null) {
             int space = auth.indexOf(' ');
             String scheme = space < 0 ? auth : auth.substring(0, space);
             String credential = space < 0 ? "" : auth.substring(space + 1).trim();
-            return new String[] {scheme.equalsIgnoreCase("Bearer") ? "authorization" : "authorization:" + scheme,
-                    credential.isEmpty() ? null : Redaction.fingerprint(credential)};
+            places.add(scheme.equalsIgnoreCase("Bearer") ? "bearer" : "otherScheme");
+            first = credential.isEmpty() ? null : credential;
         }
         String query = request.getHttpURI().getQuery();
         String fromQuery = formValue(query, "access_token");
+        if (fromQuery == null) {
+            fromQuery = tokenAmong(query, tokens);
+        }
         if (fromQuery != null) {
-            return new String[] {"query", Redaction.fingerprint(fromQuery)};
+            places.add("query");
+            first = first == null ? fromQuery : first;
         }
         if (contentType != null && contentType.toLowerCase(Locale.ROOT).startsWith("application/x-www-form-urlencoded")) {
             String fromForm = formValue(new String(body, StandardCharsets.UTF_8), "access_token");
             if (fromForm != null) {
-                return new String[] {"form", Redaction.fingerprint(fromForm)};
+                places.add("form");
+                first = first == null ? fromForm : first;
             }
         }
-        return new String[] {"none", null};
+        for (HttpField field : request.getHeaders()) {
+            if (field.getName().equalsIgnoreCase("Authorization") || field.getValue() == null) {
+                continue;
+            }
+            for (String token : tokens) {
+                if (field.getValue().contains(token)) {
+                    places.add("otherHeader");
+                    first = first == null ? token : first;
+                }
+            }
+        }
+        if (places.isEmpty()) {
+            places.add("none");
+        }
+        return new Presented(List.copyOf(places), first == null ? null : Redaction.fingerprint(first));
+    }
+
+    /** The value of the first query parameter that is a token the session issued, or null. */
+    private static String tokenAmong(String query, Set<String> tokens) {
+        if (query == null || tokens.isEmpty()) {
+            return null;
+        }
+        for (String pair : query.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0) {
+                String value = java.net.URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+                if (tokens.contains(value)) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether a comma-separated header value lists {@code item}: methods compare exactly (RFC 9110
+     * section 9.1), media types by essence.
+     */
+    private static boolean listed(String headerValue, String item, boolean mediaType) {
+        if (headerValue == null) {
+            return false;
+        }
+        for (String member : headerValue.split(",")) {
+            String m = mediaType ? essence(member) : member.trim();
+            if (item.equals(m)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String essence(String mediaType) {
+        if (mediaType == null) {
+            return null;
+        }
+        int semi = mediaType.indexOf(';');
+        return (semi < 0 ? mediaType : mediaType.substring(0, semi)).trim().toLowerCase(Locale.ROOT);
     }
 
     private static String formValue(String encoded, String name) {

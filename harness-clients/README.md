@@ -2,15 +2,18 @@
 
 The service that tests LWS clients ([CLIENT-TESTING.md](../CLIENT-TESTING.md)). A client
 developer starts a session, points their client at the session's storage, and watches every
-request it sends on the session's page. This is phase C1: the sessions and their traffic log.
-The rules that judge the traffic come in phase C2.
+request it sends on the session's page. Every request is judged against the client rules,
+`definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
+Phases C1 and C2 are built: sessions, the traffic log and the rules. Tasks and faults come in
+phase C3.
 
 ## Running it
 
 ```bash
 ./mvnw -pl harness-clients -am package -DskipTests
 java -jar harness-clients/target/touchstone-clients.jar \
-    --public-base https://example.org/touchstone/clients --port 18090 --trust-forwarded-for
+    --public-base https://example.org/touchstone/clients --port 18090 --trust-forwarded-for \
+    --definitions definitions --catalog catalog
 ```
 
 | Option | Default | Meaning |
@@ -19,6 +22,11 @@ java -jar harness-clients/target/touchstone-clients.jar \
 | `--bind` | `127.0.0.1` | The interface to listen on. |
 | `--port` | `18090` | The port. |
 | `--trust-forwarded-for` | off | Take the client's address from `X-Forwarded-For`, for the per-address session limit. Only behind a proxy that sets it. |
+| `--definitions` | `definitions` | The definitions directory; the client rules are under `lws10/clients/`. |
+| `--catalog` | `catalog` | The requirements catalog the rules cite. |
+
+The rules are loaded and checked at start: YAML, schema, JSON-LD and the lint of
+`OBSERVATION.md` section 2. A rule that fails stops the service with exit code 2.
 
 Behind a reverse proxy, forward two path prefixes, keeping the paths:
 
@@ -45,6 +53,8 @@ The session API takes the key as a Bearer token:
 |---|---|
 | `GET <base>/sessions/{id}` | the session: URLs, identities, traps, limits, expiry |
 | `GET <base>/sessions/{id}/exchanges?after=N&limit=M` | the traffic log after exchange `N`, at most `M` (≤ 500) |
+| `GET <base>/sessions/{id}/results` | each rule's outcome, trials and first failure with how to fix it, and the verdict |
+| `POST <base>/sessions/{id}/reset` | starts the results over; the storage and the log stay |
 | `POST <base>/sessions/{id}/tokens/{alice\|bob}` | a fresh access token |
 | `DELETE <base>/sessions/{id}` | ends the session |
 | `GET <base>/sessions/{id}/page` | the session page; it reads the key from its fragment, `#key=…` |
@@ -54,17 +64,26 @@ hex digits of their SHA-256. It is annotated with:
 
 - what the request addressed;
 - whose valid token it carried, and how it was presented;
-- whether the session handed out the URL, and how, or whether the client built it;
-- what the URL last advertised in `Allow`, `Accept-Patch`, `Accept-Query` and `ETag`.
+- whether the session handed out the URL, and how, or which handed-out URL the client built it
+  from, by query or by path;
+- what the URL last advertised in `Allow`, `Accept-Patch`, `Accept-Query` and `ETag`;
+- the rules it was a trial of, and how each judged it.
+
+A rule's outcome is *passed* once a request has tried it and none failed it, *failed* with the
+first failing request kept as evidence, or *untested*. Only MUST rules decide the verdict,
+which reads, for example, "no MUST failure in 12 MUST rules exercised, of 18 that apply".
 
 ## Traps
 
 Every session's storage sets all of these. Each is legal under the drafts, and the server
-self-test proves it: every definition passes against a reference deployment with them set.
+self-test proves it: every definition passes against a reference deployment with them set. The
+exception is PUT on data resources' linksets, which the draft makes optional in so many words;
+the self-test leaves it off, because one server test needs a linkset that refuses PUT.
 
 - Container pages are opaque URLs under `_t/p/`; a `?page=` query answers 404.
 - Resources the server names get URLs under `_r/`, which do not nest under their container's.
-- A linkset is an opaque URL under `_t/l/`, found only through `rel="linkset"`.
+- A linkset is an opaque URL under `_t/l/`, found only through `rel="linkset"`. A data
+  resource's linkset accepts PUT and lists it in `Allow`; a container's does not.
 - Binary resources refuse PUT, and their `Allow` leaves it out. A resource is binary unless its
   media type is text, JSON, XML or an RDF syntax.
 - The root container lists a decoy first. It answers every request with a 401 whose realm does

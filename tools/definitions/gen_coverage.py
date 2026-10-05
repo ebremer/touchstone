@@ -65,6 +65,7 @@ TS_NOTES = {
 
 
 def load():
+    """Every entry, server tests and client rules (ObservationTest) alike, in file order."""
     tests = []
     for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True)):
         rel = os.path.relpath(path, OUT).replace("\\", "/")
@@ -102,7 +103,9 @@ def role_rank(r):
     return ROLES.index(r) if r in ROLES else len(ROLES)
 
 
-tests = load()
+entries = load()
+tests = [t for t in entries if t["type"] != "ObservationTest"]
+rules = [t for t in entries if t["type"] == "ObservationTest"]
 catalog = load_catalog()
 by_name = {t["name"]: t for t in tests}
 levels = Counter(t["level"] for t in tests)
@@ -140,6 +143,12 @@ L.append("")
 L.append(f"- **{len(tests)} tests**: {levels['MUST']} MUST, {levels['SHOULD']} SHOULD, {levels['MAY']} MAY; "
          f"{types['ValidationTest']} validation tests, {types['NegativeTest']} negative tests.")
 server_side = {i for i, r in catalog.items() if {"Server", "AuthorizationServer"} & set(r["roles"])}
+rule_levels = Counter(t["level"] for t in rules)
+client_side_ids = {i for i, r in catalog.items() if {"Client", "Receiver"} & set(r["roles"])}
+judged = {r for t in rules for r in t.get("requirements", [])}
+L.append(f"- **{len(rules)} client rules** (`clients/`, judged by client sessions; OBSERVATION.md): "
+         f"{rule_levels['MUST']} MUST, {rule_levels['SHOULD']} SHOULD, {rule_levels['MAY']} MAY. They cite "
+         f"{len(judged & client_side_ids)} of the {len(client_side_ids)} requirements that bind a client or a receiver (sections 4 and 5).")
 L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_side)} of the {len(server_side)} that bind a "
          "server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.")
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
@@ -197,36 +206,62 @@ L.append("## 4. Requirements by role")
 L.append("")
 L.append("Each catalog requirement names the roles it binds (`touchstone:appliesTo`, D-0076). One that binds")
 L.append("several roles is counted in each. Server runs answer for the Server and AuthorizationServer rows;")
-L.append("client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) will answer for the Client and Receiver rows.")
+L.append("client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Client and Receiver rows.")
 L.append("")
-L.append("| Role | Requirements | MUST | SHOULD | MAY | Cited by a test |")
-L.append("|---|---:|---:|---:|---:|---:|")
+L.append("| Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |")
+L.append("|---|---:|---:|---:|---:|---:|---:|")
 for role in ROLES:
     ids = [i for i, r in catalog.items() if role in r["roles"]]
     lv = Counter(catalog[i]["level"] for i in ids)
-    L.append(f"| {role} | {len(ids)} | {lv['MUST']} | {lv['SHOULD']} | {lv['MAY']} | {sum(1 for i in ids if i in cited)} |")
+    L.append(f"| {role} | {len(ids)} | {lv['MUST']} | {lv['SHOULD']} | {lv['MAY']} | {sum(1 for i in ids if i in cited)} "
+             f"| {sum(1 for i in ids if i in judged)} |")
 L.append("")
 L.append("### Client and receiver requirements")
 L.append("")
-L.append("What a client session can judge: the starting inventory of CLIENT-TESTING.md section 11. *Also binds*")
+L.append("What a client session can judge: the inventory of CLIENT-TESTING.md section 11. *Also binds*")
 L.append("names the other roles of a clause that binds more than one; *Cited by* names the server tests that")
-L.append("already cite it, as a premise or for its server half.")
+L.append("cite it, as a premise or for its server half; *Judged by* names the client rules that cite it.")
 L.append("")
-L.append("| Requirement | Level | Also binds | Summary | Cited by |")
-L.append("|---|---|---|---|---|")
+L.append("| Requirement | Level | Also binds | Summary | Cited by | Judged by |")
+L.append("|---|---|---|---|---|---|")
 citing = defaultdict(list)
 for t in tests:
     for r in t.get("requirements", []):
         citing[r].append(t["name"])
+judging = defaultdict(list)
+for t in rules:
+    for r in t.get("requirements", []):
+        judging[r].append(t["name"])
 client_side = sorted((i for i, r in catalog.items() if {"Client", "Receiver"} & set(r["roles"])),
                      key=lambda i: (catalog[i]["module"], i))
 for i in client_side:
     r = catalog[i]
     also = ", ".join(x for x in r["roles"] if x not in ("Client", "Receiver"))
     by = ", ".join(f"`{n}`" for n in sorted(citing.get(i, [])))
+    rule_names = ", ".join(f"`{n}`" for n in sorted(judging.get(i, [])))
     summary = r["summary"].replace("|", "\\|")
-    L.append(f"| `{r['module']}/{i.rsplit('/', 1)[1]}` | {r['level']} | {also} | {summary} | {by} |")
+    L.append(f"| `{r['module']}/{i.rsplit('/', 1)[1]}` | {r['level']} | {also} | {summary} | {by} | {rule_names} |")
 L.append("")
+L.append("## 5. Client rules")
+L.append("")
+L.append("Each rule judges the exchanges an LWS client sends to a client session (definitions/OBSERVATION.md);")
+L.append("*Area* is what a developer may declare out of scope.")
+L.append("")
+rule_mods = []
+for t in rules:
+    if t["_manifest"] not in rule_mods:
+        rule_mods.append(t["_manifest"])
+for m in rule_mods:
+    L.append(f"### `{m}`")
+    L.append("")
+    L.append("| Rule | Level | Area | Requirements |")
+    L.append("|---|---|---|---|")
+    for t in rules:
+        if t["_manifest"] != m:
+            continue
+        reqs = ", ".join(f"`{x.rsplit('/', 1)[1]}`" for x in t.get("requirements", []))
+        L.append(f"| `{t['name']}` | {t['level']} | {t['area']} | {reqs} |")
+    L.append("")
 text = "\n".join(L).rstrip() + "\n"
 if "--check" in sys.argv:
     current = DST.read_text(encoding="utf-8") if DST.exists() else ""
@@ -237,6 +272,6 @@ if "--check" in sys.argv:
 else:
     with open(DST, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text)
-print(f"COVERAGE.md: {len(tests)} tests, {len(lts_order)} lws-test-suite rows, {len(ts_manifests)} manifest rows")
+print(f"COVERAGE.md: {len(tests)} tests, {len(rules)} client rules, {len(lts_order)} lws-test-suite rows, {len(ts_manifests)} manifest rows")
 missing_notes = [n for _, n in lts_order if n not in LTS_NOTES]
 print("lws-test-suite tests without a note:", missing_notes or "none")

@@ -1,6 +1,7 @@
 # Judging the LWS client rules
 
-**Status: proposed, format 0.8.0 (2026-10-05, DECISIONS.md D-0078), awaiting Gate C.** This
+**Status: frozen, format 0.8.0 (2026-10-05, DECISIONS.md D-0079; proposed in D-0078 and reviewed
+at Gate C).** This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -48,7 +49,8 @@ none, and a rule's `guidance` is advice that never decides anything.
 The recorder keeps each request and its answer.
 
 - **The request:** the method, the URL resolved against the session's public origin, the
-  header fields in order, and the body. Bodies are kept whole: one larger than the session's
+  header fields in order, and the body. Rules judge the body whole, as the exchange is
+  recorded; the traffic log then keeps its first 64 KiB. A body larger than the session's
   request bound (1 MiB) is refused `413` before any server sees it (CLIENT-TESTING.md section
   8.2).
 - **The answer:** the status, the header fields, and the first 64 KiB of the body.

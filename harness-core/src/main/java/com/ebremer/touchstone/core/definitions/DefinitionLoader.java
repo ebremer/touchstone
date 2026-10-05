@@ -8,6 +8,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.apicatalog.jsonld.JsonLd;
+import com.ebremer.touchstone.core.catalog.Requirement;
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.JsonLdErrorCode;
 import com.apicatalog.jsonld.JsonLdOptions;
@@ -47,6 +50,8 @@ public final class DefinitionLoader {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Schema SCHEMA = loadSchema();
     private static final Set<String> CONTEXTS = Set.of("context.jsonld", "touchstone.jsonld");
+    /** The root of the client rules, under {@code lws10/} (OBSERVATION.md section 2). */
+    private static final String CLIENT_ROOT = "clients/manifest.yamlld";
 
     private DefinitionLoader() {
     }
@@ -77,6 +82,86 @@ public final class DefinitionLoader {
             throw new InvalidDefinitionsException(sb.toString());
         }
         return new Definitions(definitionsDir, tests, identities);
+    }
+
+    /**
+     * Loads the client rules (OBSERVATION.md section 2): from {@code lws10/clients/manifest.yamlld},
+     * through the same YAML, schema and JSON-LD checks as the server tests, then the client rule
+     * lint. The server tests are loaded too, since names are unique across both.
+     *
+     * @param catalog the loaded catalog; a rule citing a requirement outside it, or none binding a
+     *                client or receiver, is refused. Null skips those checks.
+     */
+    public static ClientRules loadClientRules(Path definitionsDir, Collection<Requirement> catalog) {
+        Path lws10 = definitionsDir.resolve("lws10");
+        if (!Files.isRegularFile(lws10.resolve(CLIENT_ROOT))) {
+            throw new InvalidDefinitionsException("no client rules at " + definitionsDir
+                    + " (expected lws10/" + CLIENT_ROOT + ")");
+        }
+        Set<String> serverNames = new HashSet<>();
+        load(definitionsDir, null).tests().forEach(t -> serverNames.add(t.name()));
+
+        List<RuleDefinition> rules = new ArrayList<>();
+        visitRules(lws10, CLIENT_ROOT, new HashSet<>(), rules);
+
+        Map<String, Requirement> byIri = null;
+        if (catalog != null) {
+            byIri = new HashMap<>();
+            for (Requirement r : catalog) {
+                byIri.put(r.iri(), r);
+            }
+        }
+        List<String> problems = ClientRuleLint.check(rules, serverNames, byIri);
+        if (!problems.isEmpty()) {
+            StringBuilder sb = new StringBuilder("the client rules fail the lint (OBSERVATION.md section 2):");
+            problems.forEach(p -> sb.append("\n  - ").append(p));
+            throw new InvalidDefinitionsException(sb.toString());
+        }
+        return new ClientRules(definitionsDir, rules);
+    }
+
+    private static void visitRules(Path lws10, String rel, Set<String> seen, List<RuleDefinition> rules) {
+        if (!rel.startsWith("clients/")) {
+            throw new InvalidDefinitionsException(rel + " is included by a client manifest but lies outside lws10/clients/");
+        }
+        if (!seen.add(rel)) {
+            throw new InvalidDefinitionsException(rel + " is included more than once");
+        }
+        JsonNode doc = document(lws10, rel);
+        if (!"Manifest".equals(doc.path("type").asText())) {
+            throw new InvalidDefinitionsException(rel + " is included as a manifest but is not one");
+        }
+        String dir = rel.substring(0, rel.lastIndexOf('/') + 1);
+        for (JsonNode include : doc.path("include")) {
+            visitRules(lws10, normalize(dir + include.asText()), seen, rules);
+        }
+        String manifestPath = rel.substring(0, rel.length() - ".yamlld".length());
+        for (JsonNode r : doc.path("entries")) {
+            String name = r.path("name").asText();
+            if (!"ObservationTest".equals(r.path("type").asText())) {
+                throw new InvalidDefinitionsException(rel + ": " + name + " is a server test; lws10/clients/ holds only"
+                        + " client rules");
+            }
+            if (!r.path("id").asText().equals("#" + name)) {
+                throw new InvalidDefinitionsException(rel + ": the id of " + name + " is not #" + name);
+            }
+            rules.add(new RuleDefinition(
+                    manifestPath + "#" + name,
+                    manifestPath,
+                    name,
+                    Definitions.BASE + manifestPath + "#" + name,
+                    r.path("label").asText(),
+                    text(r, "comment"),
+                    r.path("level").asText(),
+                    r.path("status").asText(),
+                    strings(r.path("source")),
+                    strings(r.path("traits")),
+                    r.path("area").asText(),
+                    strings(r.path("requirements")),
+                    r.get("observe"),
+                    r.get("expect"),
+                    r.path("guidance").asText()));
+        }
     }
 
     /** The definitions must be written in the format this engine implements. */

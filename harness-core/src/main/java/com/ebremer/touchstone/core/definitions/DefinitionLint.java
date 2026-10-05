@@ -239,7 +239,7 @@ public final class DefinitionLint {
     }
 
     /** No executable value may name an RFC 2606 or RFC 6761 example host: it can never match a live server. */
-    private static void exampleHosts(String where, String part, JsonNode node, List<String> errors) {
+    static void exampleHosts(String where, String part, JsonNode node, List<String> errors) {
         for (String s : strings(node)) {
             Matcher m = HOST.matcher(s);
             while (m.find()) {
@@ -296,7 +296,7 @@ public final class DefinitionLint {
         }
     }
 
-    private static List<String> strings(JsonNode node) {
+    static List<String> strings(JsonNode node) {
         List<String> out = new ArrayList<>();
         collect(node, out);
         return out;

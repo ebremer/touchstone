@@ -38,6 +38,24 @@
     <p><button type="button" id="end" class="danger">End this session</button></p>
   </section>
 
+  <section id="rules" hidden>
+    <h2>Rules</h2>
+    <p id="verdict" class="verdict"></p>
+    <p class="note">Each rule judges every request it applies to. A rule passes once a request has
+      tried it and none has failed it; a failure keeps the first offending request, and
+      <em>untested</em> means your client has not done what the rule is about yet. Only MUST rules
+      decide the verdict. <button type="button" id="reset" class="copy">Reset results</button></p>
+    <div class="scroll">
+      <table class="rules">
+        <thead><tr>
+          <th scope="col">Rule</th><th scope="col">Level</th><th scope="col">Outcome</th>
+          <th scope="col">Trials</th><th scope="col">First failure, and how to fix it</th>
+        </tr></thead>
+        <tbody id="rule-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="traffic" hidden>
     <h2>Traffic</h2>
     <p class="note">Every request your client sent this session, newest first. Select a row for the
@@ -48,6 +66,7 @@
         <thead><tr>
           <th scope="col">#</th><th scope="col">Time</th><th scope="col">Request</th><th scope="col">Status</th>
           <th scope="col">Addressed</th><th scope="col">As</th><th scope="col">Token</th><th scope="col">URL came from</th>
+          <th scope="col">Rules</th>
         </tr></thead>
         <tbody id="log"></tbody>
       </table>

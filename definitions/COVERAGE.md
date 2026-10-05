@@ -7,6 +7,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 ## Summary
 
 - **203 tests**: 161 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 74 negative tests.
+- **25 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 18 MUST, 6 SHOULD, 1 MAY. They cite 32 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
@@ -387,101 +388,146 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 
 Each catalog requirement names the roles it binds (`touchstone:appliesTo`, D-0076). One that binds
 several roles is counted in each. Server runs answer for the Server and AuthorizationServer rows;
-client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) will answer for the Client and Receiver rows.
+client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Client and Receiver rows.
 
-| Role | Requirements | MUST | SHOULD | MAY | Cited by a test |
-|---|---:|---:|---:|---:|---:|
-| Server | 223 | 167 | 24 | 32 | 201 |
-| AuthorizationServer | 26 | 22 | 2 | 2 | 24 |
-| Client | 75 | 54 | 8 | 13 | 64 |
-| IdentityProvider | 16 | 15 | 1 | 0 | 16 |
-| Receiver | 4 | 4 | 0 | 0 | 4 |
-| Specification | 2 | 2 | 0 | 0 | 2 |
+| Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |
+|---|---:|---:|---:|---:|---:|---:|
+| Server | 223 | 167 | 24 | 32 | 201 | 23 |
+| AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 0 |
+| Client | 75 | 54 | 8 | 13 | 64 | 32 |
+| IdentityProvider | 16 | 15 | 1 | 0 | 16 | 0 |
+| Receiver | 4 | 4 | 0 | 0 | 4 | 0 |
+| Specification | 2 | 2 | 0 | 0 | 2 | 0 |
 
 ### Client and receiver requirements
 
-What a client session can judge: the starting inventory of CLIENT-TESTING.md section 11. *Also binds*
+What a client session can judge: the inventory of CLIENT-TESTING.md section 11. *Also binds*
 names the other roles of a clause that binds more than one; *Cited by* names the server tests that
-already cite it, as a premise or for its server half.
+cite it, as a premise or for its server half; *Judged by* names the client rules that cite it.
 
-| Requirement | Level | Also binds | Summary | Cited by |
-|---|---|---|---|---|
-| `lws10-authn-openid/id-token-token-type-uri` | MUST |  | An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server. | `authn-oidc-valid-id-token` |
-| `lws10-authn-saml/token-type-saml2` | MUST |  | A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server. | `authn-saml-valid-assertion` |
-| `lws10-authn-ssi-cid/alg-not-none` | MUST |  | The self-issued JWT must not use "none" as its signing algorithm. | `authn-cid-alg-none`, `authn-cid-didkey-alg-none` |
-| `lws10-authn-ssi-cid/aud-includes-as` | MUST |  | Any audience restriction uses aud, which must include the target authorization server. | `authn-cid-didkey-audience-excludes-as`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/client-id-claim` | MUST |  | The client_id claim carries the client identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/exp-claim` | MUST |  | The JWT includes an exp (expiration) claim. | `authn-cid-didkey-missing-exp`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/iat-claim` | MUST |  | The JWT includes an iat (issued at) claim. | `authn-cid-didkey-missing-iat`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/iss-claim` | MUST |  | The iss claim carries the issuer identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/sub-claim` | MUST |  | The sub claim carries the subject identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/sub-iss-client-same-uri` | MUST |  | For self-issued credentials, sub, iss, and client_id are the same URI. | `authn-cid-claims-mismatch`, `authn-cid-didkey-claims-mismatch`, `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-authn-ssi-cid/token-type-jwt` | MUST |  | A self-issued JWT credential uses the jwt token-type URI at the authorization server. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |
-| `lws10-core/access-access-collection` | MUST | Server | The access property is a collection of one or more objects. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/access-access-required` | MUST | Server | The access property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/access-extra-properties-allowed` | MAY | Server | Other properties may be present on access requests and access grants. | `access-grant-extra-properties-accepted` |
-| `lws10-core/access-inbox-optional` | MAY | Server | The inbox property is optional. | `access-grant-extra-properties-accepted` |
-| `lws10-core/access-inbox-uri` | MUST | Server | The inbox property value is a URI. | `access-grant-incomplete-refused` |
-| `lws10-core/access-jsonld-context-lws-v1` | MUST | Server | Access request/grant JSON-LD documents include an @context ordered set containing https://www.w3.org/ns/lws/v1; extension contexts are allowed. | `access-grant-document-shape` |
-| `lws10-core/access-storage-required` | MUST | Server | The storage property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/access-storage-uri` | MUST | Server | The storage property value is a URI. | `access-grant-create` |
-| `lws10-core/access-type-required` | MUST | Server | The type property on access requests and grants is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/access-type-values` | MUST | Server | The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed. | `access-grant-create`, `access-request-create` |
-| `lws10-core/authn-audience-restriction-recommended` | SHOULD | IdentityProvider | Audience restriction is recommended and its list should include an authorization server identifier. | `authn-cid-didkey-audience-excludes-as` |
-| `lws10-core/authn-client-claim` | MUST | IdentityProvider | The client claim is required and should be a URI. | `authn-cid-didkey-missing-client-id`, `authn-oidc-missing-azp` |
-| `lws10-core/authn-credential-signed` | MUST | IdentityProvider | Authentication credentials are signed; asymmetric cryptography is recommended. | `authn-cid-alg-none`, `authn-cid-bad-signature`, `authn-cid-didkey-alg-none`, `authn-cid-didkey-invalid-signature`, `authn-oidc-alg-none`, `authn-oidc-bad-signature`, `authn-saml-invalid-signature`, `authn-saml-unsigned` |
-| `lws10-core/authn-credential-tamper-evident-claims` | MUST | IdentityProvider | An authentication credential includes tamper-evident claims about a subject. | `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject` |
-| `lws10-core/authn-issuer-claim-uri` | MUST | IdentityProvider | The issuer claim is required and its value is a URI. | `authn-cid-didkey-missing-issuer` |
-| `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` |
-| `lws10-core/authz-bearer-presentation-rfc6750` | MUST |  | Clients present access tokens via the Authorization header per RFC 6750. | `getContainer-authenticated-owner` |
-| `lws10-core/authz-challenge-realm-param` | MUST | Server | The realm challenge parameter is required; clients verify the request URI is logically within the realm. | `getContainer-private-unauthorized` |
-| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` |
-| `lws10-core/authz-token-exchange-subject-token-param` | MUST | AuthorizationServer | The subject_token parameter is required and carries a valid subject token such as an authentication credential. | `authz-token-exchange-missing-subject-token`, `authz-token-exchange-valid` |
-| `lws10-core/client-no-assumed-methods-405-415` | MUST |  | Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully. |  |
-| `lws10-core/conformance-client-class` | MUST |  | An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section. |  |
-| `lws10-core/create-container-type-link` | MUST | Server | Creating a container is signalled by a request Link header rel=type pointing at lws#Container; the server materializes a container accordingly. | `createContainer` |
-| `lws10-core/create-post-not-idempotent` | SHOULD |  | POST is not idempotent; clients should avoid unintentional retries or use unique identifiers. | `create-post-twice-distinct` |
-| `lws10-core/create-server-managed-metadata-protected` | MUST | Server | On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden. | `create-server-managed-links-protected` |
-| `lws10-core/delete-if-match-optional` | MAY |  | DELETE targets the resource URI; clients may include If-Match for concurrency checks. | `conditional-delete-stale-if-match-412` |
-| `lws10-core/delete-non-empty-container-409-depth` | MUST | Server | Non-recursive DELETE of a non-empty container is rejected with 409; recursive deletion is requested via Depth: infinity. | `delete-container-recursive`, `delete-container-recursive-deep`, `delete-non-empty-container-409` |
-| `lws10-core/iana-ld-json-profile-equivalence` | SHOULD | Server | Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |
-| `lws10-core/linkset-precondition-failed-412` | MUST | Server | A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there. | `linkset-conditional-412` |
-| `lws10-core/linkset-put-405-if-unsupported` | MUST | Server | PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed. | `linkset-put-405-when-unsupported` |
-| `lws10-core/lws-profile-equivalence` | SHOULD | Server | application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |
-| `lws10-core/pagination-first-page-flow` | MAY | Server | The composite resource URI yields the first page; servers may support direct access to specific pages. | `pagination-first-page` |
-| `lws10-core/pagination-uris-opaque` | SHOULD |  | Pagination URIs are opaque; clients use the URIs the server provides. |  |
-| `lws10-core/policy-action-required` | MUST | Server | The action property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/policy-action-values` | MUST | Server | The action property is a collection of server-recognized operation strings; read, modify, create and delete are mandatory to support. | `access-grant-authenticated-agent` |
-| `lws10-core/policy-assignee-required` | MUST | Server | The assignee property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/policy-assignee-uri-foaf-agent` | MUST | Server | The assignee is a URI; public access may be assigned via foaf:Agent. | `getContainer-public-read`, `readDataResource-public-read` |
-| `lws10-core/policy-constraint-objects` | MUST | Server | The constraint property, if present, is a collection of constraint objects with the defined members. | `access-grant-constraints-all-satisfied`, `access-grant-left-operands-accepted` |
-| `lws10-core/policy-constraint-optional` | MAY | Server | The constraint property is optional. | `access-grant-extra-properties-accepted` |
-| `lws10-core/policy-target-object` | MUST | Server | The target property is an object containing the defined properties. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/policy-target-optional` | MAY | Server | The target property is optional. |  |
-| `lws10-core/policy-type-access-policy` | MUST | Server | A policy type includes AccessPolicy; additional types are allowed. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/policy-type-required` | MUST | Server | The policy type property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` |
-| `lws10-core/prefer-link-relations-filtering` | MAY |  | Clients may use Prefer with lws#PreferLinkRelations to include or omit specific relations. |  |
-| `lws10-core/put-clients-use-conditional-requests` | SHOULD | Server | Clients SHOULD make PUT conditional (RFC 9110) to avoid overwriting concurrent changes; PUT is idempotent for existing resources. |  |
-| `lws10-core/subscription-create-post-lws-json` | MUST |  | A subscription is created by an authenticated POST to the NotificationService endpoint with an application/lws+json body. | `subscription-create` |
-| `lws10-core/subscription-request-additional-fields` | MAY |  | A subscription request may carry further fields required by its subscription type. | `subscription-create` |
-| `lws10-core/subscription-request-required-fields` | MUST |  | A subscription request contains the required subscription fields. | `subscription-create`, `subscription-missing-topic-refused`, `subscription-missing-type-refused` |
-| `lws10-core/subscription-request-topic` | MUST |  | A subscription request carries a required topic: an array of URIs naming the resources in scope. | `subscription-create`, `subscription-missing-topic-refused` |
-| `lws10-core/subscription-request-type` | MUST |  | A subscription request carries a required type, one of the subscription types the NotificationService advertises. | `subscription-create`, `subscription-missing-type-refused`, `subscription-unadvertised-type-refused` |
-| `lws10-core/update-content-vs-metadata-prefer-set-linkset` | MUST | Server | PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501). | `updateDataResource` |
-| `lws10-core/uri-independent-of-hierarchy` | SHOULD | Server | Resource URIs are independent of containment position; servers may use client hints but clients must not assume URI structure reflects containment. | `create-post-twice-distinct` |
-| `lws10-index/client-415-accept-query` | MAY |  | A client refused with 415 may consult Accept-Query to pick a supported format. (A client permission.) |  |
-| `lws10-index/client-baseline-only` | MUST |  | A portable client relies on no query format beyond the baseline. (A client obligation.) |  |
-| `lws10-index/client-no-read-your-writes` | MUST |  | Clients do not assume read-your-writes consistency and tolerate transient staleness. (A client obligation.) |  |
-| `lws10-index/client-restart` | SHOULD |  | A client refused a page restarts the search or listing. (A client obligation.) |  |
-| `lws10-index/query-content-type-required` | MUST | Server | A search request carries a Content-Type identifying its query format; a server fails a request without one. | `type-search-missing-content-type-rejected` |
-| `lws10-index/query-safe-idempotent` | MAY | Server | QUERY is safe and idempotent: a search never alters server state and may be repeated, retried or cached. | `type-search-safe` |
-| `lws10-index/type-filter` | MAY | Server | The optional type key is a conjunctive-normal-form filter over rdf:type: an array whose elements are ANDed, each a type IRI or an array of IRIs ORed; a filter with no constraints matches every resource visible to the client. | `type-search-and-or`, `type-search-by-type`, `type-search-empty-key-absent`, `type-search-native-classes`, `type-search-relation-cnf` |
-| `lws10-notifications-webhook/inbox-verifies-signature` | MUST |  | An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.) | `webhook-signature-verifies` |
-| `lws10-notifications-webhook/keyid-url-with-fragment` | MUST | Server | The keyid is a URL with a fragment component; without the fragment it is the storage identifier. | `webhook-signing-key-published` |
-| `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY |  | Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.) |  |
-| `lws10-notifications-webhook/receiver-verification-steps` | MUST |  | A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.) | `webhook-signature-verifies` |
-| `lws10-notifications-webhook/storage-description-id-matches` | MUST | Server | The storage description dereferenced from the keyid has a top-level id equal to the storage identifier. | `webhook-signing-key-published` |
-| `lws10-notifications-webhook/subscription-expires-optional` | MAY | Server | A webhook subscription request may carry an expires datetime. | `webhook-subscription-expires-supported` |
-| `lws10-notifications-webhook/subscription-inbox-required` | MUST | Server | A webhook subscription request carries a required inbox: the URI notifications are delivered to. | `webhook-subscription-response` |
-| `lws10-notifications-webhook/subscription-type-and-fields` | MUST | Server | A webhook subscription request has type WebhookSubscription, and the server supports the webhook fields. | `webhook-subscription-expires-supported`, `webhook-subscription-response` |
-| `lws10-notifications-webhook/subscription-type-identifier` | MUST | Server | A webhook subscription uses the string WebhookSubscription as its subscription type with the NotificationService. | `webhook-subscription-response` |
+| Requirement | Level | Also binds | Summary | Cited by | Judged by |
+|---|---|---|---|---|---|
+| `lws10-authn-openid/id-token-token-type-uri` | MUST |  | An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server. | `authn-oidc-valid-id-token` |  |
+| `lws10-authn-saml/token-type-saml2` | MUST |  | A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server. | `authn-saml-valid-assertion` |  |
+| `lws10-authn-ssi-cid/alg-not-none` | MUST |  | The self-issued JWT must not use "none" as its signing algorithm. | `authn-cid-alg-none`, `authn-cid-didkey-alg-none` |  |
+| `lws10-authn-ssi-cid/aud-includes-as` | MUST |  | Any audience restriction uses aud, which must include the target authorization server. | `authn-cid-didkey-audience-excludes-as`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/client-id-claim` | MUST |  | The client_id claim carries the client identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/exp-claim` | MUST |  | The JWT includes an exp (expiration) claim. | `authn-cid-didkey-missing-exp`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/iat-claim` | MUST |  | The JWT includes an iat (issued at) claim. | `authn-cid-didkey-missing-iat`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/iss-claim` | MUST |  | The iss claim carries the issuer identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/sub-claim` | MUST |  | The sub claim carries the subject identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/sub-iss-client-same-uri` | MUST |  | For self-issued credentials, sub, iss, and client_id are the same URI. | `authn-cid-claims-mismatch`, `authn-cid-didkey-claims-mismatch`, `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/token-type-jwt` | MUST |  | A self-issued JWT credential uses the jwt token-type URI at the authorization server. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-core/access-access-collection` | MUST | Server | The access property is a collection of one or more objects. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-document-access` |
+| `lws10-core/access-access-required` | MUST | Server | The access property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-document-access` |
+| `lws10-core/access-extra-properties-allowed` | MAY | Server | Other properties may be present on access requests and access grants. | `access-grant-extra-properties-accepted` |  |
+| `lws10-core/access-inbox-optional` | MAY | Server | The inbox property is optional. | `access-grant-extra-properties-accepted` |  |
+| `lws10-core/access-inbox-uri` | MUST | Server | The inbox property value is a URI. | `access-grant-incomplete-refused` | `client-access-document-inbox` |
+| `lws10-core/access-jsonld-context-lws-v1` | MUST | Server | Access request/grant JSON-LD documents include an @context ordered set containing https://www.w3.org/ns/lws/v1; extension contexts are allowed. | `access-grant-document-shape` | `client-access-document-context` |
+| `lws10-core/access-storage-required` | MUST | Server | The storage property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-document-storage` |
+| `lws10-core/access-storage-uri` | MUST | Server | The storage property value is a URI. | `access-grant-create` | `client-access-document-storage` |
+| `lws10-core/access-type-required` | MUST | Server | The type property on access requests and grants is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-grant-type`, `client-access-request-type` |
+| `lws10-core/access-type-values` | MUST | Server | The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed. | `access-grant-create`, `access-request-create` | `client-access-grant-type`, `client-access-request-type` |
+| `lws10-core/authn-audience-restriction-recommended` | SHOULD | IdentityProvider | Audience restriction is recommended and its list should include an authorization server identifier. | `authn-cid-didkey-audience-excludes-as` |  |
+| `lws10-core/authn-client-claim` | MUST | IdentityProvider | The client claim is required and should be a URI. | `authn-cid-didkey-missing-client-id`, `authn-oidc-missing-azp` |  |
+| `lws10-core/authn-credential-signed` | MUST | IdentityProvider | Authentication credentials are signed; asymmetric cryptography is recommended. | `authn-cid-alg-none`, `authn-cid-bad-signature`, `authn-cid-didkey-alg-none`, `authn-cid-didkey-invalid-signature`, `authn-oidc-alg-none`, `authn-oidc-bad-signature`, `authn-saml-invalid-signature`, `authn-saml-unsigned` |  |
+| `lws10-core/authn-credential-tamper-evident-claims` | MUST | IdentityProvider | An authentication credential includes tamper-evident claims about a subject. | `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject` |  |
+| `lws10-core/authn-issuer-claim-uri` | MUST | IdentityProvider | The issuer claim is required and its value is a URI. | `authn-cid-didkey-missing-issuer` |  |
+| `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` |  |
+| `lws10-core/authz-bearer-presentation-rfc6750` | MUST |  | Clients present access tokens via the Authorization header per RFC 6750. | `getContainer-authenticated-owner` | `client-token-in-authorization-header` |
+| `lws10-core/authz-challenge-realm-param` | MUST | Server | The realm challenge parameter is required; clients verify the request URI is logically within the realm. | `getContainer-private-unauthorized` |  |
+| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` |  |
+| `lws10-core/authz-token-exchange-subject-token-param` | MUST | AuthorizationServer | The subject_token parameter is required and carries a valid subject token such as an authentication credential. | `authz-token-exchange-missing-subject-token`, `authz-token-exchange-valid` |  |
+| `lws10-core/client-no-assumed-methods-405-415` | MUST |  | Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully. |  | `client-linkset-patch-format-advertised`, `client-linkset-put-only-when-advertised` |
+| `lws10-core/conformance-client-class` | MUST |  | An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section. |  |  |
+| `lws10-core/create-container-type-link` | MUST | Server | Creating a container is signalled by a request Link header rel=type pointing at lws#Container; the server materializes a container accordingly. | `createContainer` |  |
+| `lws10-core/create-post-not-idempotent` | SHOULD |  | POST is not idempotent; clients should avoid unintentional retries or use unique identifiers. | `create-post-twice-distinct` |  |
+| `lws10-core/create-server-managed-metadata-protected` | MUST | Server | On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden. | `create-server-managed-links-protected` |  |
+| `lws10-core/delete-if-match-optional` | MAY |  | DELETE targets the resource URI; clients may include If-Match for concurrency checks. | `conditional-delete-stale-if-match-412` | `client-delete-conditional` |
+| `lws10-core/delete-non-empty-container-409-depth` | MUST | Server | Non-recursive DELETE of a non-empty container is rejected with 409; recursive deletion is requested via Depth: infinity. | `delete-container-recursive`, `delete-container-recursive-deep`, `delete-non-empty-container-409` |  |
+| `lws10-core/iana-ld-json-profile-equivalence` | SHOULD | Server | Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |  |
+| `lws10-core/linkset-precondition-failed-412` | MUST | Server | A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there. | `linkset-conditional-412` | `client-linkset-write-conditional` |
+| `lws10-core/linkset-put-405-if-unsupported` | MUST | Server | PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed. | `linkset-put-405-when-unsupported` |  |
+| `lws10-core/lws-profile-equivalence` | SHOULD | Server | application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |  |
+| `lws10-core/pagination-first-page-flow` | MAY | Server | The composite resource URI yields the first page; servers may support direct access to specific pages. | `pagination-first-page` |  |
+| `lws10-core/pagination-uris-opaque` | SHOULD |  | Pagination URIs are opaque; clients use the URIs the server provides. |  | `client-page-urls-issued` |
+| `lws10-core/policy-action-required` | MUST | Server | The action property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-action` |
+| `lws10-core/policy-action-values` | MUST | Server | The action property is a collection of server-recognized operation strings; read, modify, create and delete are mandatory to support. | `access-grant-authenticated-agent` | `client-access-policy-action` |
+| `lws10-core/policy-assignee-required` | MUST | Server | The assignee property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-assignee` |
+| `lws10-core/policy-assignee-uri-foaf-agent` | MUST | Server | The assignee is a URI; public access may be assigned via foaf:Agent. | `getContainer-public-read`, `readDataResource-public-read` | `client-access-policy-assignee` |
+| `lws10-core/policy-constraint-objects` | MUST | Server | The constraint property, if present, is a collection of constraint objects with the defined members. | `access-grant-constraints-all-satisfied`, `access-grant-left-operands-accepted` | `client-access-policy-constraint` |
+| `lws10-core/policy-constraint-optional` | MAY | Server | The constraint property is optional. | `access-grant-extra-properties-accepted` |  |
+| `lws10-core/policy-target-object` | MUST | Server | The target property is an object containing the defined properties. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-target` |
+| `lws10-core/policy-target-optional` | MAY | Server | The target property is optional. |  |  |
+| `lws10-core/policy-type-access-policy` | MUST | Server | A policy type includes AccessPolicy; additional types are allowed. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-type` |
+| `lws10-core/policy-type-required` | MUST | Server | The policy type property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-type` |
+| `lws10-core/prefer-link-relations-filtering` | MAY |  | Clients may use Prefer with lws#PreferLinkRelations to include or omit specific relations. |  |  |
+| `lws10-core/put-clients-use-conditional-requests` | SHOULD | Server | Clients SHOULD make PUT conditional (RFC 9110) to avoid overwriting concurrent changes; PUT is idempotent for existing resources. |  | `client-put-conditional` |
+| `lws10-core/subscription-create-post-lws-json` | MUST |  | A subscription is created by an authenticated POST to the NotificationService endpoint with an application/lws+json body. | `subscription-create` | `client-subscription-media-type` |
+| `lws10-core/subscription-request-additional-fields` | MAY |  | A subscription request may carry further fields required by its subscription type. | `subscription-create` |  |
+| `lws10-core/subscription-request-required-fields` | MUST |  | A subscription request contains the required subscription fields. | `subscription-create`, `subscription-missing-topic-refused`, `subscription-missing-type-refused` | `client-subscription-topic`, `client-subscription-type` |
+| `lws10-core/subscription-request-topic` | MUST |  | A subscription request carries a required topic: an array of URIs naming the resources in scope. | `subscription-create`, `subscription-missing-topic-refused` | `client-subscription-topic` |
+| `lws10-core/subscription-request-type` | MUST |  | A subscription request carries a required type, one of the subscription types the NotificationService advertises. | `subscription-create`, `subscription-missing-type-refused`, `subscription-unadvertised-type-refused` | `client-subscription-type` |
+| `lws10-core/update-content-vs-metadata-prefer-set-linkset` | MUST | Server | PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501). | `updateDataResource` |  |
+| `lws10-core/uri-independent-of-hierarchy` | SHOULD | Server | Resource URIs are independent of containment position; servers may use client hints but clients must not assume URI structure reflects containment. | `create-post-twice-distinct` | `client-member-urls-issued` |
+| `lws10-index/client-415-accept-query` | MAY |  | A client refused with 415 may consult Accept-Query to pick a supported format. (A client permission.) |  |  |
+| `lws10-index/client-baseline-only` | MUST |  | A portable client relies on no query format beyond the baseline. (A client obligation.) |  | `client-query-baseline-after-415` |
+| `lws10-index/client-no-read-your-writes` | MUST |  | Clients do not assume read-your-writes consistency and tolerate transient staleness. (A client obligation.) |  |  |
+| `lws10-index/client-restart` | SHOULD |  | A client refused a page restarts the search or listing. (A client obligation.) |  |  |
+| `lws10-index/query-content-type-required` | MUST | Server | A search request carries a Content-Type identifying its query format; a server fails a request without one. | `type-search-missing-content-type-rejected` | `client-query-content-type` |
+| `lws10-index/query-safe-idempotent` | MAY | Server | QUERY is safe and idempotent: a search never alters server state and may be repeated, retried or cached. | `type-search-safe` |  |
+| `lws10-index/type-filter` | MAY | Server | The optional type key is a conjunctive-normal-form filter over rdf:type: an array whose elements are ANDed, each a type IRI or an array of IRIs ORed; a filter with no constraints matches every resource visible to the client. | `type-search-and-or`, `type-search-by-type`, `type-search-empty-key-absent`, `type-search-native-classes`, `type-search-relation-cnf` |  |
+| `lws10-notifications-webhook/inbox-verifies-signature` | MUST |  | An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.) | `webhook-signature-verifies` |  |
+| `lws10-notifications-webhook/keyid-url-with-fragment` | MUST | Server | The keyid is a URL with a fragment component; without the fragment it is the storage identifier. | `webhook-signing-key-published` |  |
+| `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY |  | Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.) |  |  |
+| `lws10-notifications-webhook/receiver-verification-steps` | MUST |  | A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.) | `webhook-signature-verifies` |  |
+| `lws10-notifications-webhook/storage-description-id-matches` | MUST | Server | The storage description dereferenced from the keyid has a top-level id equal to the storage identifier. | `webhook-signing-key-published` |  |
+| `lws10-notifications-webhook/subscription-expires-optional` | MAY | Server | A webhook subscription request may carry an expires datetime. | `webhook-subscription-expires-supported` |  |
+| `lws10-notifications-webhook/subscription-inbox-required` | MUST | Server | A webhook subscription request carries a required inbox: the URI notifications are delivered to. | `webhook-subscription-response` | `client-subscription-inbox` |
+| `lws10-notifications-webhook/subscription-type-and-fields` | MUST | Server | A webhook subscription request has type WebhookSubscription, and the server supports the webhook fields. | `webhook-subscription-expires-supported`, `webhook-subscription-response` | `client-subscription-type` |
+| `lws10-notifications-webhook/subscription-type-identifier` | MUST | Server | A webhook subscription uses the string WebhookSubscription as its subscription type with the NotificationService. | `webhook-subscription-response` | `client-subscription-type` |
+
+## 5. Client rules
+
+Each rule judges the exchanges an LWS client sends to a client session (definitions/OBSERVATION.md);
+*Area* is what a developer may declare out of scope.
+
+### `clients/core`
+
+| Rule | Level | Area | Requirements |
+|---|---|---|---|
+| `client-token-in-authorization-header` | MUST | core | `authz-bearer-presentation-rfc6750` |
+| `client-linkset-put-only-when-advertised` | SHOULD | core | `client-no-assumed-methods-405-415` |
+| `client-linkset-patch-format-advertised` | SHOULD | core | `client-no-assumed-methods-405-415` |
+| `client-put-conditional` | SHOULD | core | `put-clients-use-conditional-requests` |
+| `client-linkset-write-conditional` | SHOULD | core | `linkset-precondition-failed-412` |
+| `client-page-urls-issued` | SHOULD | core | `pagination-uris-opaque` |
+| `client-member-urls-issued` | SHOULD | core | `uri-independent-of-hierarchy` |
+| `client-access-document-context` | MUST | core | `access-jsonld-context-lws-v1` |
+| `client-access-request-type` | MUST | core | `access-type-required`, `access-type-values` |
+| `client-access-grant-type` | MUST | core | `access-type-required`, `access-type-values` |
+| `client-access-document-storage` | MUST | core | `access-storage-required`, `access-storage-uri` |
+| `client-access-document-access` | MUST | core | `access-access-required`, `access-access-collection` |
+| `client-access-policy-type` | MUST | core | `policy-type-required`, `policy-type-access-policy` |
+| `client-access-policy-action` | MUST | core | `policy-action-required`, `policy-action-values` |
+| `client-access-policy-assignee` | MUST | core | `policy-assignee-required`, `policy-assignee-uri-foaf-agent` |
+| `client-access-policy-target` | MUST | core | `policy-target-object` |
+| `client-access-policy-constraint` | MUST | core | `policy-constraint-objects` |
+| `client-access-document-inbox` | MUST | core | `access-inbox-uri` |
+| `client-delete-conditional` | MAY | core | `delete-if-match-optional` |
+
+### `clients/index`
+
+| Rule | Level | Area | Requirements |
+|---|---|---|---|
+| `client-query-content-type` | MUST | index | `query-content-type-required` |
+| `client-query-baseline-after-415` | MUST | index | `client-baseline-only` |
+
+### `clients/notifications`
+
+| Rule | Level | Area | Requirements |
+|---|---|---|---|
+| `client-subscription-media-type` | MUST | notifications | `subscription-create-post-lws-json` |
+| `client-subscription-type` | MUST | notifications | `subscription-request-required-fields`, `subscription-request-type`, `subscription-type-and-fields`, `subscription-type-identifier` |
+| `client-subscription-topic` | MUST | notifications | `subscription-request-required-fields`, `subscription-request-topic` |
+| `client-subscription-inbox` | MUST | notifications | `subscription-inbox-required` |

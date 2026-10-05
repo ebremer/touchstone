@@ -1,0 +1,586 @@
+# Client rules for LWS Protocol 1.0 core (YAML-LD, format 0.8.0).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: LWS core, as a client uses it
+comment: >-
+  What a client's requests to the session's storage must satisfy: how it presents its token,
+  how it finds URLs, how it writes, and the access requests and grants it composes. The
+  session's traps (CLIENT-TESTING.md section 6.1) make the URL and method rules bite: page,
+  resource and linkset URLs are opaque, and linksets refuse PUT.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+entries:
+  - id: "#client-token-in-authorization-header"
+    type: ObservationTest
+    name: client-token-in-authorization-header
+    label: The client presents its access token to the storage in an Authorization Bearer header and nowhere else
+    comment: >-
+      Every request to the storage that carries a credential is a trial. RFC 6750 section 2
+      also forbids more than one way per request, so a token in the header and in the query
+      string fails too.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation
+      - https://www.rfc-editor.org/rfc/rfc6750#section-2
+    traits: [Authz]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-bearer-presentation-rfc6750
+    observe:
+      server: storage
+      presentation: [bearer, otherScheme, query, form, otherHeader]
+    expect:
+      presentation: bearer
+    guidance: >-
+      Send the access token as "Authorization: Bearer <token>" and in no other place: not in
+      the query string, a form body, a cookie or a header of your own.
+
+  - id: "#client-linkset-put-only-when-advertised"
+    type: ObservationTest
+    name: client-linkset-put-only-when-advertised
+    label: The client replaces a linkset with PUT only after the linkset advertised PUT
+    comment: >-
+      The clause sits in the section on metadata, so it is read as being about linksets. Its
+      first half is a SHOULD NOT, which this rule observes; the MUST to handle 405 and 415
+      gracefully needs a fault, and comes in phase C3. The session's linksets do not support
+      PUT, as the draft allows.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Put, Linkset]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+    observe:
+      role: linkset
+      method: PUT
+    expect:
+      methodAdvertised: true
+    guidance: >-
+      Read the linkset first (GET or HEAD) and use PUT only if its Allow header lists PUT.
+      Otherwise update it with PATCH, in a format its Accept-Patch header lists.
+
+  - id: "#client-linkset-patch-format-advertised"
+    type: ObservationTest
+    name: client-linkset-patch-format-advertised
+    label: The client patches a linkset only in a format the linkset advertised
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Patch, Linkset]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+    observe:
+      role: linkset
+      method: PATCH
+    expect:
+      patchFormatAdvertised: true
+    guidance: >-
+      Read the linkset first and send the PATCH body in a media type its Accept-Patch header
+      lists. Every LWS server accepts application/merge-patch+json; the session accepts nothing
+      else.
+
+  - id: "#client-put-conditional"
+    type: ObservationTest
+    name: client-put-conditional
+    label: The client makes a PUT that replaces a data resource conditional
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Put, DataResource, Conditional]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/put-clients-use-conditional-requests
+    observe:
+      role: dataResource
+      method: PUT
+    expect:
+      anyOf:
+        - otherHeaders:
+            - headerName: If-Match
+              present: true
+        - otherHeaders:
+            - headerName: If-Unmodified-Since
+              present: true
+    guidance: >-
+      Send If-Match with the ETag of your last read of the resource, so that a change someone
+      else made in the meantime gets a 412 instead of being overwritten.
+
+  - id: "#client-linkset-write-conditional"
+    type: ObservationTest
+    name: client-linkset-write-conditional
+    label: The client makes PUT and PATCH on a linkset conditional
+    comment: >-
+      The clause is a MUST for the server (a failed precondition is a 412) and a SHOULD for
+      both parties to use conditional requests. This rule judges the client's half.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+    traits: [Put, Patch, Linkset, Conditional]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-precondition-failed-412
+    observe:
+      role: linkset
+      method: [PUT, PATCH]
+    expect:
+      anyOf:
+        - otherHeaders:
+            - headerName: If-Match
+              present: true
+        - otherHeaders:
+            - headerName: If-Unmodified-Since
+              present: true
+    guidance: >-
+      Send If-Match with the ETag from your last read of the linkset. Several agents can edit a
+      resource's metadata, and an unconditional write discards their changes.
+
+  - id: "#client-page-urls-issued"
+    type: ObservationTest
+    name: client-page-urls-issued
+    label: The client requests only the page URLs the server gave it
+    comment: >-
+      Trials are the requests for pages, and the requests for URLs the client made by changing
+      the query of a container's or a page's URL. The session's page URLs are opaque, so a
+      client that builds them asks for something that is not there.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+    traits: [Get, Container]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/pagination-uris-opaque
+    observe:
+      anyOf:
+        - role: page
+        - builtBy: query
+          builtFromRole: [container, page]
+    expect:
+      issued: true
+    guidance: >-
+      Follow the first, next, prev and last links of a container's representation. Do not
+      build page URLs from the container's URL, or edit one page URL into another.
+
+  - id: "#client-member-urls-issued"
+    type: ObservationTest
+    name: client-member-urls-issued
+    label: The client reaches resources through URLs the server gave it, not by building paths
+    comment: >-
+      Trials are the storage requests for containers, data resources and linksets, and for
+      URLs the client made by extending or editing the path of a URL the session handed out.
+      The session gives resources flat URLs outside their container's path.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#resource-identification-0
+    traits: [Get, Container, DataResource]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/uri-independent-of-hierarchy
+    observe:
+      server: storage
+      anyOf:
+        - role: [container, dataResource, linkset]
+        - builtBy: path
+    expect:
+      issued: true
+    guidance: >-
+      Take a resource's URL from the Location of the request that created it, from its
+      container's items, or from a Link header. Never join a name to a container's URL, and
+      never edit another resource's URL.
+
+  - id: "#client-access-document-context"
+    type: ObservationTest
+    name: client-access-document-context
+    label: The client's access requests and grants have an @context array that includes the LWS context
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#json-ld-serialization
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-jsonld-context-lws-v1
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+    expect:
+      json:
+        - pointer: /@context
+          jsonType: array
+        - pointer: /@context
+          hasValue: https://www.w3.org/ns/lws/v1
+    guidance: >-
+      Start the document with "@context": ["https://www.w3.org/ns/lws/v1"]. Further contexts
+      may follow in the array.
+
+  - id: "#client-access-request-type"
+    type: ObservationTest
+    name: client-access-request-type
+    label: The client's access requests have a type that includes AccessRequest
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-type-required
+      - https://example.org/touchstone/req/lws10-core/access-type-values
+    observe:
+      role: accessRequests
+      method: POST
+    expect:
+      json:
+        - pointer: /type
+          hasValue: AccessRequest
+    guidance: >-
+      Give the request "type": ["AccessRequest"]. Further types may follow.
+
+  - id: "#client-access-grant-type"
+    type: ObservationTest
+    name: client-access-grant-type
+    label: The client's access grants have a type that includes AccessGrant
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-type-required
+      - https://example.org/touchstone/req/lws10-core/access-type-values
+    observe:
+      role: accessGrants
+      method: POST
+    expect:
+      json:
+        - pointer: /type
+          hasValue: AccessGrant
+    guidance: >-
+      Give the grant "type": ["AccessGrant"]. Further types may follow.
+
+  - id: "#client-access-document-storage"
+    type: ObservationTest
+    name: client-access-document-storage
+    label: The client's access requests and grants name their storage with a URI
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-storage-required
+      - https://example.org/touchstone/req/lws10-core/access-storage-uri
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+    expect:
+      json:
+        - pointer: /storage
+          jsonType: string
+          matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Set "storage" to the storage's identifier, the id of its storage description.
+
+  - id: "#client-access-document-access"
+    type: ObservationTest
+    name: client-access-document-access
+    label: The client's access requests and grants carry an access array of one or more objects
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-access-required
+      - https://example.org/touchstone/req/lws10-core/access-access-collection
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+    expect:
+      json:
+        - pointer: /access
+          jsonType: array
+        - pointer: /access
+          some:
+            - pointer: ""
+              jsonType: object
+        - pointer: /access
+          every:
+            - pointer: ""
+              jsonType: object
+    guidance: >-
+      Put the policies in an "access" array, one object per policy, even when there is only
+      one.
+
+  - id: "#client-access-policy-type"
+    type: ObservationTest
+    name: client-access-policy-type
+    label: Every policy in the client's access requests and grants has a type that includes AccessPolicy
+    comment: >-
+      Trials are the documents whose access is an array; client-access-document-access judges
+      the others.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-type-required
+      - https://example.org/touchstone/req/lws10-core/policy-type-access-policy
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /access
+          jsonType: array
+    expect:
+      json:
+        - pointer: /access
+          every:
+            - pointer: /type
+              hasValue: AccessPolicy
+    guidance: >-
+      Give every policy "type": ["AccessPolicy"].
+
+  - id: "#client-access-policy-action"
+    type: ObservationTest
+    name: client-access-policy-action
+    label: Every policy in the client's access requests and grants names one or more actions the server recognises
+    comment: >-
+      The session recognises the four actions every server must: read, modify, create and
+      delete.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-action-required
+      - https://example.org/touchstone/req/lws10-core/policy-action-values
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /access
+          jsonType: array
+    expect:
+      json:
+        - pointer: /access
+          every:
+            - pointer: /action
+              jsonType: array
+            - pointer: /action
+              some:
+                - pointer: ""
+                  jsonType: string
+            - pointer: /action
+              every:
+                - pointer: ""
+                  matches: "^(read|modify|create|delete)$"
+    guidance: >-
+      Give every policy an "action" array of the operations it covers, from read, modify,
+      create and delete.
+
+  - id: "#client-access-policy-assignee"
+    type: ObservationTest
+    name: client-access-policy-assignee
+    label: Every policy in the client's access requests and grants names its assignee with a URI
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-required
+      - https://example.org/touchstone/req/lws10-core/policy-assignee-uri-foaf-agent
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /access
+          jsonType: array
+    expect:
+      json:
+        - pointer: /access
+          every:
+            - pointer: /assignee
+              jsonType: string
+              matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Set every policy's "assignee" to the agent's URI, or to http://xmlns.com/foaf/0.1/Agent
+      for public access.
+
+  - id: "#client-access-policy-target"
+    type: ObservationTest
+    name: client-access-policy-target
+    label: A policy target in the client's access requests and grants is an object with a type and one or more values
+    comment: >-
+      The target is optional, so trials are only the documents with a policy that has one.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-target-object
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /access
+          some:
+            - pointer: /target
+              exists: true
+    expect:
+      json:
+        - pointer: /access
+          every:
+            - pointer: /target
+              optional: true
+              jsonType: object
+            - pointer: /target/type
+              optional: true
+              jsonType: string
+            - pointer: /target/value
+              optional: true
+              jsonType: array
+            - pointer: /target/value
+              optional: true
+              some:
+                - pointer: ""
+                  jsonType: string
+            - pointer: /target/value
+              optional: true
+              every:
+                - pointer: ""
+                  jsonType: string
+        - pointer: /access
+          none:
+            - pointer: /target
+              exists: true
+            - pointer: /target/type
+              exists: false
+        - pointer: /access
+          none:
+            - pointer: /target
+              exists: true
+            - pointer: /target/value
+              exists: false
+    guidance: >-
+      Write a target as {"type": "StorageResource", "value": ["<resource URL>"]}: a type and
+      an array of one or more resource URLs.
+
+  - id: "#client-access-policy-constraint"
+    type: ObservationTest
+    name: client-access-policy-constraint
+    label: A policy's constraints in the client's access requests and grants are objects with leftOperand, operator and rightOperand
+    comment: >-
+      Constraints are optional, so trials are only the documents with a policy that has them.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/policy-constraint-objects
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /access
+          some:
+            - pointer: /constraint
+              exists: true
+    expect:
+      json:
+        - pointer: /access
+          every:
+            - pointer: /constraint
+              optional: true
+              jsonType: array
+            - pointer: /constraint
+              optional: true
+              every:
+                - pointer: ""
+                  jsonType: object
+                - pointer: /leftOperand
+                  jsonType: string
+                - pointer: /operator
+                  jsonType: string
+                - pointer: /rightOperand
+                  exists: true
+    guidance: >-
+      Write "constraint" as an array of objects, each with a leftOperand string, an operator
+      string and a rightOperand.
+
+  - id: "#client-access-document-inbox"
+    type: ObservationTest
+    name: client-access-document-inbox
+    label: An inbox in the client's access requests and grants is a URI
+    comment: >-
+      The inbox is optional, so trials are only the documents that have one.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
+    traits: [Post, AccessGrants]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/access-inbox-uri
+    observe:
+      role: [accessRequests, accessGrants]
+      method: POST
+      json:
+        - pointer: /inbox
+          exists: true
+    expect:
+      json:
+        - pointer: /inbox
+          jsonType: string
+          matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Set "inbox" to the URL where the agent wants to hear about the request or grant.
+
+  - id: "#client-delete-conditional"
+    type: ObservationTest
+    name: client-delete-conditional
+    label: The client makes a DELETE conditional on the ETag it last read
+    comment: >-
+      A permission, so the outcome is information: it says whether the client uses it.
+    status: Proposed
+    level: MAY
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Delete, Conditional]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-if-match-optional
+    observe:
+      role: [dataResource, container]
+      method: DELETE
+    expect:
+      otherHeaders:
+        - headerName: If-Match
+          present: true
+    guidance: >-
+      Sending If-Match with the ETag of your last read stops a delete of something that
+      changed since you looked at it.

@@ -66,17 +66,8 @@ final class Evaluator {
     // 1. statusCode
     private boolean statusCode() {
         JsonNode sc = expect.path("statusCode");
-        List<String> expected = new ArrayList<>();
-        boolean ok = false;
-        for (JsonNode s : sc.isArray() ? sc : List.of(sc)) {
-            expected.add(s.asText());
-            if (s.isInt() ? s.asInt() == resp.status()
-                    : s.asText().length() == 3 && s.asText().charAt(0) - '0' == resp.status() / 100) {
-                ok = true;
-            }
-        }
-        String want = expected.size() == 1 ? expected.getFirst() : String.join(" or ", expected);
-        return check(ok, "status code", want, String.valueOf(resp.status()));
+        return check(MessageChecks.statusMatches(sc, resp.status()), "status code", MessageChecks.statusText(sc),
+                String.valueOf(resp.status()));
     }
 
     // 2. contentType
@@ -112,89 +103,13 @@ final class Evaluator {
         if (!expect.has("linkHeaders")) {
             return true;
         }
-        List<LinkValues.Link> links = LinkValues.parse(resp.header("Link"), req.uri());
-        for (JsonNode e : expect.get("linkHeaders")) {
-            String rel = e.path("rel").asText();
-            String href = e.has("href") ? LinkValues.resolve(req.uri(), Templates.expand(e.get("href").asText(), scope)) : null;
-            String mediaType = e.has("mediaType") ? e.get("mediaType").asText() : null;
-            LinkValues.Link match = null;
-            for (LinkValues.Link link : links) {
-                if (link.hasRel(rel) && (href == null || link.target().equals(href))
-                        && (mediaType == null || mediaType.equalsIgnoreCase(link.param("type")))) {
-                    match = link;
-                    break;
-                }
-            }
-            String wanted = "rel=\"" + rel + "\"" + (href == null ? "" : " to " + href)
-                    + (mediaType == null ? "" : " type=\"" + mediaType + "\"");
-            String actual = String.join(", ", resp.header("Link"));
-            if (e.path("absent").asBoolean(false)) {
-                if (!check(match == null, "Link " + wanted + " absent", "no such link", actual.isEmpty() ? "no Link" : actual)) {
-                    return false;
-                }
-                continue;
-            }
-            if (!check(match != null, "Link " + wanted, "a matching link", actual.isEmpty() ? "no Link" : actual)) {
-                return false;
-            }
-            if (e.has("capture")) {
-                scope.bind(e.get("capture").asText(), match.target());
-            }
-        }
-        return true;
+        return MessageChecks.links(expect.get("linkHeaders"), resp.header("Link"), req.uri(), scope, scope::bind,
+                results);
     }
 
     // 5. otherHeaders
     private boolean otherHeaders() {
-        for (JsonNode e : expect.path("otherHeaders")) {
-            String name = e.path("headerName").asText();
-            List<String> lines = resp.header(name);
-            String combined = String.join(", ", lines);
-            String actual = lines.isEmpty() ? "absent" : combined;
-            for (Map.Entry<String, JsonNode> op : e.properties()) {
-                boolean ok;
-                String expected;
-                switch (op.getKey()) {
-                    case "headerName" -> {
-                        continue;
-                    }
-                    case "headerValue" -> {
-                        String v = Templates.expand(op.getValue().asText(), scope).trim();
-                        expected = v;
-                        ok = combined.trim().equals(v) || lines.stream().anyMatch(l -> l.trim().equals(v));
-                    }
-                    case "present" -> {
-                        expected = op.getValue().asBoolean() ? "present" : "absent";
-                        ok = op.getValue().asBoolean() != lines.isEmpty();
-                    }
-                    case "differsFrom" -> {
-                        String v = Templates.expand(op.getValue().asText(), scope).trim();
-                        expected = "present and not " + v;
-                        ok = !lines.isEmpty() && lines.stream().noneMatch(l -> l.trim().equals(v));
-                    }
-                    case "matches" -> {
-                        Pattern p = Pattern.compile(op.getValue().asText());
-                        expected = "matches /" + op.getValue().asText() + "/";
-                        ok = p.matcher(combined).find() || lines.stream().anyMatch(l -> p.matcher(l).find());
-                    }
-                    case "capture" -> {
-                        if (!check(!lines.isEmpty(), "header " + name + " captured", "present", actual)) {
-                            return false;
-                        }
-                        scope.bind(op.getValue().asText(), combined);
-                        continue;
-                    }
-                    default -> {
-                        expected = op.getKey();
-                        ok = false;
-                    }
-                }
-                if (!check(ok, "header " + name + " " + op.getKey(), expected, actual)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return MessageChecks.headers(expect.path("otherHeaders"), resp::header, scope, scope::bind, results);
     }
 
     // 6. authenticationChallenge

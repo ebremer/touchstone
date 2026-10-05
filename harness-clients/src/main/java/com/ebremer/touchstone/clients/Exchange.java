@@ -5,18 +5,19 @@ import java.util.Map;
 
 /**
  * One request a client sent to its session and the answer it got, as the traffic log keeps it
- * (CLIENT-TESTING.md section 4.3): redacted, bodies cut short, and annotated with what only the
- * server knows.
+ * (CLIENT-TESTING.md section 4.3): redacted, bodies cut short, annotated with what only the
+ * server knows, and with the verdicts of the rules it was a trial of.
  *
  * @param seq its place in the session's log, from 1
  * @param at when the request arrived, ISO 8601
  * @param millis how long the answer took
  * @param url the request's public URL, credentials in its query redacted
+ * @param rules the client rules this exchange was a trial of, and how each judged it
  */
 record Exchange(long seq, String at, long millis, String method, String url,
                 Map<String, List<String>> requestHeaders, Body requestBody,
                 int status, Map<String, List<String>> responseHeaders, Body responseBody,
-                Annotations annotations) {
+                Annotations annotations, List<Judge.Verdict> rules) {
 
     /**
      * A body: its length in bytes, and its text when the media type is textual, cut to the
@@ -27,26 +28,35 @@ record Exchange(long seq, String at, long millis, String method, String url,
     }
 
     /**
-     * What the server knows about the exchange.
+     * What the server knows about the exchange: the annotations of OBSERVATION.md section 4, and
+     * a few more for the traffic log.
      *
-     * @param role what the request addressed: storageDescription, container, page, dataResource,
-     *     linkset, a service (accessGrants, subscriptions, typeSearch, ...), decoy, asMetadata,
-     *     asJwks, asToken, preflight, unknown (nothing there), or limited (refused by a bound)
+     * @param server storage or authorizationServer, or null for another URL of the session
+     * @param role what the request addressed (OBSERVATION.md section 4.2), or preflight, or
+     *     limited (refused by a bound)
      * @param identity alice or bob, the subject IRI of another valid token, or null when no valid
      *     token was presented
-     * @param token the presented token's fingerprint, or null
-     * @param presentation how a token was presented: authorization (a Bearer header),
-     *     authorization:<scheme> for another scheme, query, form, or none
-     * @param issued whether the session had handed out this URL before the request, so the client
-     *     did not build it
+     * @param token the fingerprint of the first credential presented, or null
+     * @param presentation where the request carried a credential: bearer, otherScheme, query,
+     *     form, otherHeader; or none
+     * @param issued whether the session had handed out this URL before the request
      * @param issuedVia how the URL was handed out: session, location, content-location,
      *     link:<rel>, challenge:as_uri, body:<role>
-     * @param advertised what the URL's last answer to this client advertised: Allow,
-     *     Accept-Patch, Accept-Query, ETag
+     * @param builtBy for a URL not issued, query or path: how it relates to the issued URL it was
+     *     built from (OBSERVATION.md section 4.3); null otherwise
+     * @param builtFrom that issued URL, or null
+     * @param builtFromRole that URL's role, or null when the client never requested it
+     * @param advertised what the URL's last answer advertised: Allow, Accept-Patch, Accept-Query,
+     *     ETag
+     * @param methodAdvertised whether Allow listed the request's method
+     * @param patchFormatAdvertised whether Accept-Patch listed the request's Content-Type
+     * @param queryFormatAdvertised whether Accept-Query listed the request's Content-Type
      * @param fault the fault that fired on this exchange, or null (phase C3)
      * @param limit the bound that refused the request (rate, body, storage), or null
      */
-    record Annotations(String role, String identity, String token, String presentation, boolean issued,
-                       String issuedVia, Map<String, String> advertised, String fault, String limit) {
+    record Annotations(String server, String role, String identity, String token, List<String> presentation,
+                       boolean issued, String issuedVia, String builtBy, String builtFrom, String builtFromRole,
+                       Map<String, String> advertised, boolean methodAdvertised, boolean patchFormatAdvertised,
+                       boolean queryFormatAdvertised, String fault, String limit) {
     }
 }

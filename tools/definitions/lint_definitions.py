@@ -11,7 +11,10 @@ what the schema cannot:
   instead rest on the clause of the Client or IdentityProvider whose message it forges (D-0076);
 - every `source` anchor exists in its dated snapshot (anchors.json);
 - fixtures exist, and no executable value names an example host;
-- `mirrors` and `supersedes` name real lws-test-suite tests and retired manifests/ tests.
+- `mirrors` and `supersedes` name real lws-test-suite tests and retired manifests/ tests;
+- client rules (ObservationTest, OBSERVATION.md section 2) live only under clients/, cite a
+  requirement that binds a Client or Receiver, are no stronger than what they cite, and have
+  no variables and no captures.
 """
 import glob
 import json
@@ -50,6 +53,9 @@ vocab = rdflib.Graph().parse(os.path.join(TS, "catalog", "vocab", "touchstone-vo
 ROLES = {str(r).rsplit("#", 1)[1] for r in vocab.subjects(rdflib.RDF.type, T.Role)}
 SERVER_SIDE = {"Server", "AuthorizationServer"}
 FORGEABLE = {"Client", "IdentityProvider"}
+CLIENT_SIDE = {"Client", "Receiver"}
+LEVELS = ["MAY", "SHOULD", "MUST"]
+req_level = {str(s): str(o) for s, o in g.subject_objects(T.level)}
 roles = {}
 for s in sorted(catalog):
     rs = {str(o).rsplit("#", 1)[1] for o in g.objects(rdflib.URIRef(s), T.appliesTo)}
@@ -128,6 +134,7 @@ mirrored = defaultdict(list)
 superseded = defaultdict(list)
 cited = Counter()
 total = 0
+rules = 0
 for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True)):
     rel = os.path.relpath(path, OUT).replace("\\", "/")
     doc = json.load(open(path, encoding="utf-8"))
@@ -165,6 +172,26 @@ for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True))
             if r.rsplit("/", 1)[-1] in DRIFTED:
                 E(f"{where}: cites drifted requirement {r}")
         bound = set().union(*(roles.get(r, set()) for r in t.get("requirements", [])))
+        if (t.get("type") == "ObservationTest") != rel.startswith("clients/"):
+            E(f"{where}: client rules, and only they, live under clients/")
+        if t.get("type") == "ObservationTest":
+            rules += 1
+            if not bound & CLIENT_SIDE:
+                E(f"{where}: cites no requirement that binds a Client or Receiver (it cites "
+                  f"{', '.join(sorted(bound)) or 'no role'})")
+            strongest = max((LEVELS.index(req_level[r]) for r in t.get("requirements", []) if r in req_level), default=-1)
+            if strongest >= 0 and LEVELS.index(t.get("level")) > strongest:
+                E(f"{where}: is {t.get('level')}, stronger than any requirement it cites ({LEVELS[strongest]})")
+            for key in ("observe", "expect"):
+                for sv in strings(t.get(key, {})):
+                    if "${" in sv:
+                        E(f"{where}: {key} has {sv}, but client rules have no variables")
+                    for host in EXAMPLE_HOST.findall(sv):
+                        if example_host(host):
+                            E(f"{where}: {key} names the example host {host}, which no live server can match")
+                if captures_of(t.get(key, {})):
+                    E(f"{where}: {key} captures a value, but nothing passes between trials")
+            continue
         if t.get("requirements") and not bound & SERVER_SIDE \
                 and not (t.get("type") == "NegativeTest" and bound & FORGEABLE):
             E(f"{where}: no requirement it cites binds a Server or AuthorizationServer (it cites "
@@ -297,7 +324,7 @@ for n, c in names.items():
 unmirrored = sorted(set(lts_tests) - set(mirrored)) if lts_tests is not None else None
 unsuperseded = sorted(ts_manifests - set(superseded))
 
-print(f"tests: {total} in {len(per_manifest)} manifests; levels {dict(levels)}")
+print(f"tests: {total} in {len(per_manifest)} manifests, {rules} of them client rules; levels {dict(levels)}")
 for m, c in per_manifest.items():
     print(f"   {m:40s} {c}")
 print(f"catalog requirements cited: {len(cited)} distinct")

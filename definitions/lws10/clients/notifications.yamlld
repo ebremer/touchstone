@@ -1,0 +1,127 @@
+# Client rules for subscriptions (LWS core and lws10-notifications-webhook) (YAML-LD, format 0.8.0).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: Subscriptions, as a client makes them
+comment: >-
+  What the subscription requests a client POSTs to the session's NotificationService must
+  carry. The session advertises one subscription type, WebhookSubscription. It sends no
+  deliveries until phase C5, but subscribing works and is judged.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
+entries:
+  - id: "#client-subscription-media-type"
+    type: ObservationTest
+    name: client-subscription-media-type
+    label: The client sends a subscription request as an application/lws+json object
+    comment: >-
+      A body conforms to a media type when it is labelled with it and parses as it. The clause
+      also says the POST is authenticated; that is not judged per request, because a client may
+      first try without a token and authenticate after the 401, as discovery works.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-create-post-lws-json
+    observe:
+      role: subscriptions
+      method: POST
+    expect:
+      contentType: application/lws+json
+      json:
+        - pointer: ""
+          jsonType: object
+    guidance: >-
+      POST the subscription as a JSON object with "Content-Type: application/lws+json".
+
+  - id: "#client-subscription-type"
+    type: ObservationTest
+    name: client-subscription-type
+    label: The client's subscription requests have a type the NotificationService advertises
+    comment: >-
+      The session's NotificationService lists one subscriptionType, WebhookSubscription, so
+      that is the only type that passes.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#subscription-type
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-request-type
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-type-and-fields
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-type-identifier
+    observe:
+      role: subscriptions
+      method: POST
+    expect:
+      json:
+        - pointer: /type
+          equals: WebhookSubscription
+    guidance: >-
+      Read the subscriptionType array of the NotificationService in the storage description,
+      and set "type" to one of its values: here, "WebhookSubscription".
+
+  - id: "#client-subscription-topic"
+    type: ObservationTest
+    name: client-subscription-topic
+    label: The client's subscription requests have a topic array of URIs
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
+      - https://example.org/touchstone/req/lws10-core/subscription-request-topic
+    observe:
+      role: subscriptions
+      method: POST
+    expect:
+      json:
+        - pointer: /topic
+          jsonType: array
+        - pointer: /topic
+          every:
+            - pointer: ""
+              jsonType: string
+              matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Set "topic" to an array of the URLs of the resources to hear about, even when there is
+      only one.
+
+  - id: "#client-subscription-inbox"
+    type: ObservationTest
+    name: client-subscription-inbox
+    label: The client's webhook subscription requests name an inbox URI
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/subscription-inbox-required
+    observe:
+      role: subscriptions
+      method: POST
+      json:
+        - pointer: /type
+          equals: WebhookSubscription
+    expect:
+      json:
+        - pointer: /inbox
+          jsonType: string
+          matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Set "inbox" to the URL the server is to deliver notifications to.

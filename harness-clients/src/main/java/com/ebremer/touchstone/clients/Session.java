@@ -7,14 +7,18 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.ebremer.touchstone.core.definitions.ClientRules;
 import com.ebremer.touchstone.fixtures.as.RefAuthorizationServer;
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.ebremer.touchstone.fixtures.lws.Traps;
 
 /**
  * One client developer's session (CLIENT-TESTING.md section 4.2): a storage and its
- * authorization server of their own, two identities, and the log of everything their client sent.
+ * authorization server of their own, two identities, the log of everything their client sent, and
+ * the judge of the client rules.
  * Its id is public and appears in every URL it serves; its key is secret, unlocks the session's
  * page and API, and is kept only as a hash.
  */
@@ -31,12 +35,19 @@ final class Session {
     final RefLwsServer storage;
     final Recorder recorder;
     final TokenBucket bucket;
+    final Judge judge;
+    /**
+     * Every access token the session handed out, through its API or its token endpoint. Kept in
+     * memory only, so the recorder can tell a token wherever a client puts it (OBSERVATION.md
+     * section 4.4).
+     */
+    final Set<String> tokens = ConcurrentHashMap.newKeySet();
     /** The client_id of the tokens the session hands out itself. */
     final String clientId;
     private final byte[] keyHash;
     private volatile Instant lastActive;
 
-    Session(String id, String key, ClientLabConfig config, Instant now) {
+    Session(String id, String key, ClientLabConfig config, ClientRules rules, Instant now) {
         this.id = id;
         this.base = config.publicBase() + "/s/" + id;
         this.created = now;
@@ -47,10 +58,13 @@ final class Session {
         this.storage = RefLwsServer.mounted(URI.create(storageUrl()), as, webid("alice"), traps);
         // Notifications go nowhere until the outbound guard of section 8.3 exists (phase C5).
         this.storage.deliverOnlyTo(uri -> false);
+        // Some linksets take PUT and some do not, so a client must read Allow first.
+        this.storage.linksetPutOnDataResources(true);
         String metadata = as.metadataUri().toString();
         this.recorder = new Recorder(url -> url.startsWith(base + "/") || url.equals(metadata), config.maxExchanges());
         this.bucket = new TokenBucket(config.requestBurst(), config.requestsPerSecond());
         this.clientId = base + "/client";
+        this.judge = new Judge(rules, Set.of());
         recorder.issue(storageUrl(), "session");
         IDENTITIES.forEach(name -> recorder.issue(webid(name), "session"));
     }
@@ -75,7 +89,9 @@ final class Session {
 
     /** An access token for {@code name}, as the session's authorization server would issue it. */
     String token(String name, Duration lifetime) {
-        return as.issue(webid(name), clientId, storage.realm(), lifetime);
+        String token = as.issue(webid(name), clientId, storage.realm(), lifetime);
+        tokens.add(token);
+        return token;
     }
 
     boolean keyMatches(String presented) {

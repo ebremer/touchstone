@@ -1,0 +1,66 @@
+# Client rules for the Search and Type Index Services (lws10-index) (YAML-LD, format 0.8.0).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: Type search, as a client uses it
+comment: >-
+  What a client's QUERY requests to the session's Type Search Service must satisfy. The session
+  accepts only the baseline query format, application/lws-query+json, and answers any other
+  with 415 and Accept-Query.
+specification:
+  - https://w3c.github.io/lws-protocol/lws10-index/
+entries:
+  - id: "#client-query-content-type"
+    type: ObservationTest
+    name: client-query-content-type
+    label: The client's search requests carry a Content-Type naming their query format
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery]
+    area: index
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/query-content-type-required
+    observe:
+      role: typeSearch
+      method: QUERY
+    expect:
+      otherHeaders:
+        - headerName: Content-Type
+          present: true
+    guidance: >-
+      Send every QUERY with the Content-Type of its query format, such as
+      application/lws-query+json.
+
+  - id: "#client-query-baseline-after-415"
+    type: ObservationTest
+    name: client-query-baseline-after-415
+    label: After a search format is refused with 415, the client's next search uses the baseline format
+    comment: >-
+      A client may try a richer query format first. A portable client does not rely on it:
+      once the server refuses it, the next search falls back to the baseline every server
+      supports.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-query
+    traits: [Discovery]
+    area: index
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/client-baseline-only
+    observe:
+      role: typeSearch
+      method: QUERY
+      after:
+        role: typeSearch
+        method: QUERY
+        statusCode: 415
+        sameTarget: true
+    expect:
+      contentType: application/lws-query+json
+    guidance: >-
+      When a search is refused with 415, retry it in application/lws-query+json, the baseline
+      format every server accepts.

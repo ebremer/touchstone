@@ -1,7 +1,7 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 and C1 are built ([D-0076](DECISIONS.md), D-0077). C2's rule format is
-proposed and waits at Gate C (D-0078). The rest is design (D-0075).**
+**Status: phases C0 to C2 are built ([D-0076](DECISIONS.md), D-0077, D-0080), and the rule
+format passed Gate C (D-0079). The rest is design (D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -163,8 +163,9 @@ tested once.
 
 ### 4.4 Session API
 
-Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phase C1 built
-everything here except results, faults and reset, which come with phases C2 and C3;
+Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 and C2
+built everything here except faults, which come with phase C3, and the EARL and JUnit XML forms
+of the results, which come with C6;
 [harness-clients/README.md](harness-clients/README.md) documents what exists.
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
   tokens for alice and bob. It is rate-limited, and may need sign-in (§12).
@@ -188,7 +189,7 @@ automation in the developer's own language with nothing per language on our side
 
 Client rules live in their own tree, `definitions/lws10/clients/`, as a new kind of entry,
 `ObservationTest`, in format 0.8.0. [`definitions/OBSERVATION.md`](definitions/OBSERVATION.md)
-is its contract; it is proposed at Gate C (§13, D-0078). A rule carries the same metadata as
+is its contract, frozen at Gate C (§13, D-0079). A rule carries the same metadata as
 a server test (`id`, `name`, `label`, `comment`, `status`, `level`, `source`, `traits`,
 `requirements`), plus:
 
@@ -273,10 +274,10 @@ without noticing; clients relying on unspecified behaviour trip over them.
   default and can be switched off on the session page, to separate this trap from other
   problems.
 - **Opaque linkset URLs.** A linkset is reachable only through `rel="linkset"`.
-- **Only some methods advertised.** Linksets support PATCH in JSON Merge Patch only, and
-  refuse PUT, as the draft allows. Binary data resources (any media type but text, JSON, XML
-  or an RDF syntax) refuse PUT and omit it from `Allow`. `Accept-Patch` lists a single
-  format.
+- **Only some methods advertised.** PUT on a linkset is optional: a data resource's linkset
+  accepts it and lists it in `Allow`, a container's refuses it. Linksets take PATCH in JSON
+  Merge Patch only. Binary data resources (any media type but text, JSON, XML or an RDF syntax)
+  refuse PUT and omit it from `Allow`. `Accept-Patch` lists a single format.
 - **A decoy resource** listed first in the root container, which answers `401` with a
   challenge whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant
   client neither requests nor presents a token for it.
@@ -362,8 +363,9 @@ The same discipline as the server side: each rule must pass against a client tha
 right thing, and fail against one that does not.
 
 - **`RefLwsClient`** (in `harness-fixtures`) is a scripted, conformant client on the JDK
-  `HttpClient`. It performs every task in the checklist, arms every fault through the
-  session API, and reports nothing itself: the session judges it.
+  `HttpClient`. Its script gives every rule a trial; from phase C3 it also performs every task
+  in the checklist and arms every fault through the session API. It reports nothing itself:
+  the session judges it.
 - **Broken twins** each get one thing wrong, for example:
   - one builds page URLs;
   - one drops `If-Match` after a 412;
@@ -423,8 +425,9 @@ clients; only the client half is judged here.
 | `lws10-index/client-no-read-your-writes` | MUST | not observable; the lagging-index trap surfaces it to the developer; stays `untested` | — |
 | `lws10-core/conformance-client-class` | MUST | the aggregate: the client's verdict (§5.2) | C6 |
 
-**The C2 rules.** Gate C reviews the format against these 25 rules, drafted to test it and
-written into `definitions/lws10/clients/` once the format is frozen (D-0078). The two MAY rows
+**The C2 rules,** in `definitions/lws10/clients/` (D-0080). Gate C reviewed the format against
+them, and `ClientRulesSelfTest` proves each passes for the reference client and fails for a
+twin. The two MAY rows
 of the C2 plan above get no rule. The syntax of `prefer-link-relations-filtering` is left open by
 the draft, so nothing can be checked. `client-415-accept-query` cannot be told apart from
 `client-query-baseline-after-415` while the session accepts only the baseline format.
@@ -503,13 +506,14 @@ Gate 2 did for the server-side schema.
   storage, and the log shows the redacted exchanges with their annotations. The traps also
   passed the server-side check: every definition passes against a reference deployment with
   them set.
-- **C2: rules.**
-  - Gate C, opened 2026-10-05: format 0.8.0 is proposed (D-0078).
+- **C2: rules. Done 2026-10-05 (D-0080).**
+  - Gate C: format 0.8.0 proposed (D-0078) and frozen (D-0079).
   - The new format version: schema, loader and lint for `ObservationTest`.
   - The passive rules of §11.
   - `RefLwsClient` and its first twins in `ClientRulesSelfTest`.
 
-  *Done when:* every C2 rule passes for the reference client and fails for its twin.
+  *Done when:* every C2 rule passes for the reference client and fails for its twin. All 25
+  pass for `RefLwsClient`, and each of its 25 twins fails exactly the rule aimed at it.
 - **C3: tasks and faults.** The checklist, the faults of §6.2 except `forgedDelivery`, and
   the task-based rules. *Done when:* every C3 rule discriminates in the self-test.
 - **C4: authentication.**

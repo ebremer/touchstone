@@ -13,6 +13,7 @@
     flatResourceUris: 'Resource URLs do not nest under their container: use rel="up" and listings, not paths.',
     opaqueLinksetUrls: 'A linkset is found only through its rel="linkset" link.',
     putOnlyForText: 'Binary resources do not support PUT: check Allow before replacing one.',
+    linksetPutOnlyForDataResources: 'Linksets of data resources accept PUT, linksets of containers do not: check Allow first.',
     decoy: 'The root container lists a decoy whose 401 names a realm that does not contain it: send it no token.',
   };
 
@@ -76,6 +77,7 @@
         + session.traps.indexLagSeconds + ' s: do not assume read-your-writes.'));
     }
     $('connect').hidden = false;
+    $('rules').hidden = false;
     $('traffic').hidden = false;
   }
 
@@ -94,7 +96,18 @@
     return base && url.startsWith(base) ? url.slice(base.length - 1) : url;
   }
 
-  const PRESENTED = { authorization: 'header', query: 'query string', form: 'form body' };
+  const PRESENTED = {
+    bearer: 'Bearer header', otherScheme: 'other scheme', query: 'query string', form: 'form body',
+    otherHeader: 'another header',
+  };
+
+  function presented(a) {
+    const places = a.presentation || [];
+    if (places.length === 0 || (places.length === 1 && places[0] === 'none')) {
+      return '—';
+    }
+    return places.map((p) => PRESENTED[p] || p).join(' + ') + (a.token ? ' · ' + a.token : '');
+  }
 
   function statusClass(code) {
     return code >= 500 ? 's5' : code >= 400 ? 's4' : code >= 300 ? 's3' : 's2';
@@ -111,20 +124,31 @@
       el('td', exchange.status, 'num ' + statusClass(exchange.status)),
       el('td', a.limit ? 'refused: ' + a.limit : a.role),
       el('td', a.identity || '—'),
-      el('td', a.presentation === 'none' ? '—'
-        : (PRESENTED[a.presentation] || a.presentation) + (a.token ? ' · ' + a.token : '')),
-      el('td', a.issued ? a.issuedVia : 'built by client', a.issued ? '' : 'built'),
+      el('td', presented(a)),
+      el('td', a.issued ? a.issuedVia : 'built by client' + (a.builtBy ? ' (by ' + a.builtBy + ')' : ''),
+        a.issued ? '' : 'built'),
+      el('td'),
     );
+    const verdicts = tr.children[8];
+    const failed = (exchange.rules || []).filter((v) => v.outcome === 'failed');
+    const passed = (exchange.rules || []).length - failed.length;
+    for (const v of failed) {
+      verdicts.append(el('div', '✗ ' + v.rule, 'o-failed'));
+    }
+    if (passed > 0) {
+      verdicts.append(el('div', '✓ ' + passed + ' passed', 'o-passed'));
+    }
     const request = tr.children[2];
     request.append(el('span', exchange.method + ' ', 'method'), el('code', relative(exchange.url)));
     const detail = el('tr', null, 'detail');
     detail.hidden = true;
     const cell = el('td');
-    cell.colSpan = 8;
+    cell.colSpan = 9;
     cell.append(el('pre', JSON.stringify({
       request: { method: exchange.method, url: exchange.url, headers: exchange.requestHeaders, body: exchange.requestBody },
       response: { status: exchange.status, headers: exchange.responseHeaders, body: exchange.responseBody },
       annotations: a,
+      rules: exchange.rules,
     }, null, 2)));
     detail.append(cell);
     const toggle = () => { detail.hidden = !detail.hidden; };
@@ -138,6 +162,30 @@
     return [tr, detail];
   }
 
+  const OUTCOMES = {
+    passed: 'passed', failed: 'failed', cantTell: 'cannot tell', untested: 'untested', inapplicable: 'inapplicable',
+  };
+
+  function showResults(results) {
+    $('verdict').textContent = results.verdict.text.charAt(0).toUpperCase() + results.verdict.text.slice(1) + '.';
+    const rows = $('rule-rows');
+    rows.replaceChildren();
+    for (const r of results.rules) {
+      const tr = el('tr');
+      const label = el('td');
+      label.append(el('div', r.label), el('code', r.rule, 'note'));
+      const evidence = el('td');
+      if (r.evidence) {
+        evidence.append(el('div', '#' + r.evidence.seq + ' ' + r.evidence.method + ' ' + relative(r.evidence.url)),
+          el('div', r.evidence.term + ': expected ' + r.evidence.expected + '; was ' + r.evidence.actual, 'note'),
+          el('div', r.guidance));
+      }
+      tr.append(label, el('td', r.level), el('td', OUTCOMES[r.outcome] || r.outcome, 'o-' + r.outcome),
+        el('td', r.trials, 'num'), evidence);
+      rows.append(tr);
+    }
+  }
+
   async function poll() {
     try {
       const body = await call('GET', '/exchanges?after=' + last + '&limit=200');
@@ -148,6 +196,7 @@
         log.prepend(tr);
       }
       last = body.last;
+      showResults(await call('GET', '/results'));
       $('counts').textContent = body.recorded + ' recorded'
         + (body.dropped ? ', the oldest ' + body.dropped + ' dropped' : '') + '.';
       status.textContent = 'Session ' + api.split('/').pop() + ' is live.';
@@ -175,6 +224,15 @@
       }
     });
   }
+
+  $('reset').addEventListener('click', async () => {
+    try {
+      await call('POST', '/reset');
+      showResults(await call('GET', '/results'));
+    } catch (e) {
+      status.textContent = 'Could not reset the results: ' + e.message;
+    }
+  });
 
   $('end').addEventListener('click', async () => {
     if (!confirm('End this session? Its storage and log are deleted.')) {

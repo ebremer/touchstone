@@ -38,7 +38,7 @@ class ClientLabTest {
     static void start() {
         int port = freePort();
         base = "http://localhost:" + port + "/touchstone/clients";
-        lab = ClientLab.start(ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port));
+        lab = ClientLab.start(ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port), TestRules.RULES);
     }
 
     @AfterAll
@@ -83,7 +83,8 @@ class ClientLabTest {
         JsonNode post = find(all, "POST", storage);
         assertThat(post.at("/annotations/role").asText()).isEqualTo("container");
         assertThat(post.at("/annotations/identity").asText()).isEqualTo("alice");
-        assertThat(post.at("/annotations/presentation").asText()).isEqualTo("authorization");
+        assertThat(post.at("/annotations/server").asText()).isEqualTo("storage");
+        assertThat(post.at("/annotations/presentation").toString()).isEqualTo("[\"bearer\"]");
         assertThat(post.at("/annotations/token").asText()).hasSize(12);
         assertThat(post.at("/annotations/issued").asBoolean()).isTrue();
         assertThat(post.at("/annotations/issuedVia").asText()).isEqualTo("session");
@@ -97,9 +98,10 @@ class ClientLabTest {
 
         JsonNode first = find(all, "GET", storage);
         assertThat(first.at("/annotations/identity").isNull()).isTrue();
-        assertThat(first.at("/annotations/presentation").asText()).isEqualTo("none");
+        assertThat(first.at("/annotations/presentation").toString()).isEqualTo("[\"none\"]");
         JsonNode md = find(all, "GET", session.at("/authorizationServer/metadata").asText());
         assertThat(md.at("/annotations/role").asText()).isEqualTo("asMetadata");
+        assertThat(md.at("/annotations/server").asText()).isEqualTo("authorizationServer");
         assertThat(md.at("/annotations/issuedVia").asText()).isEqualTo("challenge:as_uri");
     }
 
@@ -128,6 +130,8 @@ class ClientLabTest {
         assertThat(built.at("/annotations/issued").asBoolean()).isFalse();
         assertThat(built.at("/annotations/issuedVia").isNull()).isTrue();
         assertThat(built.at("/annotations/role").asText()).isEqualTo("unknown");
+        assertThat(built.at("/annotations/builtBy").asText()).isEqualTo("query");
+        assertThat(built.at("/annotations/builtFrom").asText()).isEqualTo(storage);
         List<JsonNode> toDecoy = all.stream().filter(e -> e.get("url").asText().equals(storage + "_t/decoy")).toList();
         assertThat(toDecoy).hasSize(2);
         assertThat(toDecoy).allSatisfy(e -> {
@@ -135,6 +139,10 @@ class ClientLabTest {
             assertThat(e.at("/annotations/identity").asText()).isEqualTo("alice");
         });
         assertThat(toDecoy.get(0).at("/annotations/issued").asBoolean()).isFalse();
+        assertThat(toDecoy.get(0).at("/annotations/builtBy").asText()).isEqualTo("path");
+        assertThat(toDecoy.get(0).at("/annotations/builtFrom").asText()).isEqualTo(storage);
+        // The client had not requested the root yet, so nothing says what it is.
+        assertThat(toDecoy.get(0).at("/annotations/builtFromRole").isNull()).isTrue();
         assertThat(toDecoy.get(1).at("/annotations/issuedVia").asText()).isEqualTo("body:container");
     }
 
@@ -243,7 +251,7 @@ class ClientLabTest {
         ClientLabConfig tight = new ClientLabConfig(d.publicBase(), d.bindHost(), d.port(), false, 10, 2,
                 d.idleTimeout(), d.maxLifetime(), 1000, d.maxRecordedResponseBytes(), d.maxExchanges(), 2,
                 d.maxStorageBytes(), 8, 0.001, d.tokenLifetime(), d.indexLag());
-        try (ClientLab small = ClientLab.start(tight)) {
+        try (ClientLab small = ClientLab.start(tight, TestRules.RULES)) {
             JsonNode session = startSession(tightBase);
             String storage = session.get("storage").asText();
             String alice = session.at("/tokens/alice").asText();
@@ -290,7 +298,7 @@ class ClientLabTest {
                 return now.get();
             }
         };
-        try (ClientLab idle = ClientLab.start(ClientLabConfig.defaults(URI.create(idleBase), "127.0.0.1", port), clock)) {
+        try (ClientLab idle = ClientLab.start(ClientLabConfig.defaults(URI.create(idleBase), "127.0.0.1", port), TestRules.RULES, clock)) {
             JsonNode session = startSession(idleBase);
             String api = session.get("api").asText();
             String key = session.get("key").asText();
