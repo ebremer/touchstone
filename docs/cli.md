@@ -121,7 +121,7 @@ touchstone coverage [-c <catalogDir>] [--definitions <dir>]
 
 ```text
 $ touchstone coverage
-Requirements coverage: 225 of 248 covered by 203 test(s)
+Requirements coverage: 225 of 248 covered by 204 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     2/2

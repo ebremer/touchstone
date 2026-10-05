@@ -9,7 +9,7 @@ deterministically.
 
 **Status: Phases 0–6 complete, running the YAML-LD definitions.** The tests are 101
 YAML-LD definitions (`definitions/`, format 0.7.0, frozen; DECISIONS.md D-0070) that mirror
-and extend the LWS test group's JSON-LD suite, follow the **21 September 2026** Working
+and extend the LWS test group's JSON-LD suite, follow the **5 October 2026** Working
 Draft, and cover the core protocol and all three current authentication suites (OpenID
 Connect, CID with HTTPS and did:key subjects, SAML) end to end. The engine that runs them implements
 `definitions/EXECUTION.md` (D-0054); the YAML manifests it replaced are retired (D-0055).
@@ -17,8 +17,9 @@ Every build runs all 101 against a reference deployment, a storage server and an
 authorization server, and against broken twins of both. Touchstone ships as a **Docker
 image + GitHub Action**, so a third-party LWS server gets a conformance report by adding
 one workflow file (`docs/distribution.md`). The **requirements catalog** spans all four
-current spec modules, the webhook notification suite and the search and type index services (296 requirements, drift-hashed), baselined on the 21 September 2026
-core and CID Working Drafts, the latest W3C versions as of 28 September 2026 (D-0057).
+current spec modules, the webhook notification suite and the search and type index services (296 requirements, drift-hashed), baselined on the 5 October 2026
+core Working Draft and the 21 September 2026 CID one, the latest W3C versions as of 5 October 2026
+(D-0057, D-0086).
 
 Three consumers, CLI, CI and MCP, over one engine: templates and derived variables,
 prerequisites and access grants, RFC 8288 links and RFC 9110 challenges, JSON pointer,

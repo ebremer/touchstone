@@ -61,7 +61,7 @@ A touchstone is the dark stone assayers once used to test gold against a known s
 
 ## Status
 
-As of September 2026:
+As of October 2026:
 
 - **Implemented:** the engine, the reporting, the reference servers, the CLI, the MCP server,
   the Docker image and the GitHub Action.
@@ -73,7 +73,7 @@ As of September 2026:
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
 - **Tests:** 101 [YAML-LD definitions](definitions.md) (84 MUST, 15 SHOULD, 2 MAY),
-  format 0.11.0, frozen. They follow the 21 September 2026 Working Draft, cover all 27 tests
+  format 0.11.0, frozen. They follow the 5 October 2026 Working Draft, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cite 120 of the 219 catalogued requirements.
   Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access
@@ -81,8 +81,8 @@ As of September 2026:
   run end to end. Against the reference deployment, 100 of the 101 definitions pass; the other is inapplicable,
   since the reference offers no notification service.
 - **Catalog baseline:** the catalog and the definitions follow the drafts W3C published as
-  of 28 September 2026: the 21 September core and CID Working Drafts and the 3 August
-  OpenID Connect and SAML ones. A weekly CI job fails when W3C publishes a newer version
+  of 5 October 2026: the 5 October core Working Draft, the 21 September CID one and the
+  3 August OpenID Connect and SAML ones. A weekly CI job fails when W3C publishes a newer version
   (see [Requirements catalog](catalog.md#tracking-the-draft)). The did:key suite, which
   W3C discontinued on 29 September 2026 in favour of the CID suite, is retired (D-0058).
 

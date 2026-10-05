@@ -3335,3 +3335,89 @@ proxy session, from choosing the target on the start page to the judged traffic,
 error.
 
 Drafted by an agent; waits on branch `clients/c7-proxy`.
+
+### D-0086 — the 5 October 2026 core draft: JSON Patch replaces JSON Merge Patch
+Erich asked for Touchstone to be up to date with the LWS specifications of 5 October 2026.
+That day W3C published a new core Working Draft; nothing else moved:
+
+| Document | Latest version on 5 October 2026 | Touchstone was on |
+|---|---|---|
+| LWS Protocol 1.0 | **WD 5 October 2026** | WD 21 September 2026 |
+| Authentication suite: CID | WD 21 September 2026 | the same |
+| Authentication suites: OpenID Connect, SAML 2.0 | WD 3 August 2026 | the same |
+| Webhook notifications, search and type index | editor's drafts, not on `/TR/` | renders of 2 October, the same text |
+
+`check_published.py` found it (the weekly `Spec drift` job would have, on its next run). The
+only w3c/lws-protocol commit after 9b03b32 (28 September, D-0057) is ef02548, PR #255, which
+changes three normative blocks of the core draft and its storage description example. Servers
+now MUST support and advertise **JSON Patch** (RFC 6902, `application/json-patch+json`) as the
+baseline patch format, on data resources and on linksets, where the draft named JSON Merge Patch
+and cited RFC 7386, the obsoleted predecessor of RFC 7396. JSON Merge Patch remains an optional
+format a server MAY add and then MUST advertise.
+
+**The core catalog moves to WD-lws10-core-20261005.** It still holds 190 requirements with the
+same levels. The 188 unchanged blocks keep their entries; the three that changed:
+- `patch-json-merge-patch-baseline` and `linkset-accept-patch-advertised` were **Approved
+  seeds**. They are retired, and their successors are the Draft entries
+  `patch-json-patch-baseline` and `linkset-accept-patch-json-patch`. D-0057's rule decides
+  it: a seed keeps Approved when only its words change or a part is deleted, and requiring a
+  different format is a different obligation. As in D-0040 and D-0057, the judgement is
+  flagged for Erich; promoting either is moving it above the generated marker.
+- `linkset-patch-merge-patch` (Draft) is renamed `linkset-patch-json-patch` for what it now
+  requires.
+
+Every seed and entry now cites the 5 October draft in `sourceDraft`, as do the definitions'
+`source` and `specification` lists; `anchors.json` holds the new snapshot's anchors, which
+are the 21 September draft's.
+
+**The definitions test JSON Patch.**
+- `patch-merge-patch-baseline` becomes `patch-json-patch-baseline`. A test, a replace, an add, a
+  remove and an append with the `-` index exercise the pointer forms a server has to resolve
+  and the order operations apply in. It no longer `supersedes` the retired manifest
+  `core/patch-merge-patch-baseline`, which tested the old format; COVERAGE.md table 2 says so.
+- **New, `patch-json-patch-atomic`** (NegativeTest, MUST): a patch whose second operation is a
+  failing `test` is refused with a 4xx, and its first operation must not have applied. RFC
+  6902 section 5 and RFC 5789 section 2 require it, and it is what a server applying operations
+  one at a time gets wrong while looking correct, as the `null` removal was for merge patch.
+- The linkset tests send JSON Patch. `linkset-advertises-patch` expects
+  `application/json-patch+json` in `Accept-Patch`. The happy path, `linkset-patch-json-patch`,
+  adds a `license` member to `/linkset/0`. The draft does not say which link context object
+  is the resource's own, but a non-root resource's link to its parent is part of its metadata,
+  so its linkset has one, and the test takes it to be the first. Unlike the merge patch, which
+  replaced the whole `linkset` array, this leaves every other link alone. It stays a SHOULD,
+  since servers MAY restrict links. `linkset-up-not-redirected` sets `/linkset/0/up`, and
+  `linkset-patch-stays-linkset` replaces `/linkset` with a string; both accept refusal or
+  acceptance, as before.
+- The four index tests that give a resource `describedby` through its linkset add it at
+  `/linkset/0/describedby`.
+- The client rule `client-linkset-patch-format-advertised` keeps its rule. Its guidance names
+  JSON Patch as the format every server accepts.
+
+That is 204 server tests (162 MUST), one more than before; coverage is unchanged at 225 of the
+248 requirements that bind a server or an authorization server.
+
+**The reference deployment speaks JSON Patch only.** `RefLwsServer` applies RFC 6902 with RFC
+6901 pointers (`JsonPatch`, in harness-fixtures) to a copy of the document and stores it only
+when every operation succeeded. It answers:
+- 400 for a malformed patch document;
+- 409 when the patch does not fit the resource's state (RFC 5789 section 2.2);
+- 415 for any other format, or for a data resource whose representation is not JSON;
+- 422 for a linkset patch whose result is not a linkset document.
+
+`Accept-Patch` lists `application/json-patch+json` alone. Merge patch, now optional, is not
+offered, so a client session still advertises a single format (CLIENT-TESTING.md section
+6.1). `RefLwsClient` patches the linkset in JSON Patch; its twin
+`LINKSET_PATCH_FORMAT_UNADVERTISED` now sends JSON Merge Patch, which the session does not
+list.
+
+Verified:
+- `clause_hash.py --check` passes on all six catalogs;
+- `check_drift.py` against the 5 October snapshot reports no drift and no dead anchor;
+- `check_published.py` reports every catalog current;
+- `tools/definitions/check.py` passes 7 of 7;
+- `./mvnw install` is green in all five modules (77, 23, 107, 15 and 6 tests). That includes
+  `DefinitionsSelfTest`, where the reference deployment passes all 204 definitions but the
+  inapplicable single-page pagination test, with and without traps, and `ClientRulesSelfTest`,
+  where the merge-patch twin fails exactly its rule.
+
+Drafted by an agent; waits on branch `spec/wd-2026-10-05`.

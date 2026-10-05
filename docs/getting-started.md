@@ -50,7 +50,7 @@ The examples call the CLI as `touchstone`. Either define an alias, for example
 
 ## Run against the open reference server
 
-Touchstone includes an in-memory LWS server that follows the 21 September 2026 Working
+Touchstone includes an in-memory LWS server that follows the 5 October 2026 Working
 Draft. Start it in its own terminal:
 
 ```sh

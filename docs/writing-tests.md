@@ -50,8 +50,8 @@ This is `core/data_resources#deleteDataResource`, with its comment and some cita
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
     traits: [Delete, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional

@@ -231,7 +231,7 @@ what the recorder knows of a token request: where its credential came from
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Put, Linkset]
     area: core
     requirements:
@@ -289,7 +289,7 @@ without noticing; clients relying on unspecified behaviour trip over them.
 - **Opaque linkset URLs.** A linkset is reachable only through `rel="linkset"`.
 - **Only some methods advertised.** PUT on a linkset is optional: a data resource's linkset
   accepts it and lists it in `Allow`, a container's refuses it. Linksets take PATCH in JSON
-  Merge Patch only. Binary data resources (any media type but text, JSON, XML or an RDF syntax)
+  Patch only. Binary data resources (any media type but text, JSON, XML or an RDF syntax)
   refuse PUT and omit it from `Allow`. `Accept-Patch` lists a single format.
 - **A decoy resource** listed first in the root container, which answers `401` with a
   challenge whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant
@@ -326,7 +326,7 @@ The plan had four more faults that phase C3 dropped or moved (D-0081):
 - **`preconditionFailedOnce`.** A 412 tests only that the next write stays conditional, which
   `client-put-conditional` already judges on every PUT. Re-reading after a 412 is good
   practice that the drafts do not require.
-- **`unsupportedMediaTypeOnce`.** A 415 for JSON Merge Patch on a linkset would break a server
+- **`unsupportedMediaTypeOnce`.** A 415 for JSON Patch on a linkset would break a server
   MUST, and natural 415s, for an unadvertised format, already trigger the rule.
 - **`queryFormat415`.** Refusing the baseline query format would break a server MUST.
 - **`tokenExpired`.** It moved to phase C4, which built it (D-0082; the table above), because

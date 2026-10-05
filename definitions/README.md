@@ -75,7 +75,7 @@ test, which is lws-test-suite's shape.
     status: Proposed
     level: MUST                 # one level per test; SHOULD/MAY checks get their own test
     source:                     # dated spec snapshot + anchor (or an RFC section)
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]  # on an open target the test is inapplicable, not failed
     as: anonymous               # who sends the request; never a credential
@@ -251,7 +251,7 @@ lws-test-suite's context in ways its test group must agree to:
   MCP server, the Docker image and the GitHub Action (D-0054). It refuses a set of
   definitions that fails the checks of `EXECUTION.md` section 2 before sending anything.
 - **The reference deployment.** `harness-fixtures` holds a reference storage server and a
-  reference authorization server that follow the 21 September draft. Against them all
+  reference authorization server that follow the 5 October draft. Against them all
   definitions pass except `pagination-single-page`, which does not apply: the reference splits the
   test container into pages (D-0062). Against their broken twins, the tests that exist to
   catch each defect fail.
@@ -280,9 +280,12 @@ These affect how tests are written, and are worth raising with the WG:
    received precondition a MUST for any origin server. The definitions test the
    positive 304 as SHOULD, and "never a 304 for a non-matching validator" and "a stale
    If-Match never writes" as MUST.
-4. **Merge Patch on linksets.** A patch replaces the `linkset` array wholesale, and
-   servers MAY restrict links. How that combines with the MUST to support PATCH is
-   unclear, so the happy path is tested as SHOULD.
+4. **Patching linksets.** Since the 5 October draft a linkset takes JSON Patch, which can
+   add one link without replacing the rest (JSON Merge Patch replaced the whole `linkset`
+   array). Servers still MAY restrict links, and how that combines with the MUST to support
+   PATCH is unclear, so the happy path is tested as SHOULD. A patch addresses the first
+   link context object, `/linkset/0`, as the resource's own, which the draft implies but
+   does not say.
 5. **Grant scope.** Does an access grant on a container reach its members? The
    public-read tests target each resource directly.
 6. **CID suite `kid`.** Is it a fragment or a full verification-method IRI? The

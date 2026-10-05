@@ -417,7 +417,7 @@ the credential is in an `Authorization: Bearer` field and nowhere else:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-presentation
       - https://www.rfc-editor.org/rfc/rfc6750#section-2
     traits: [Authz]
     area: core

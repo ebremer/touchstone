@@ -65,7 +65,7 @@ A test that is one exchange is written as one, the way lws-test-suite writes its
     type: NegativeTest
     name: getContainer-private-unauthorized
     level: MUST
-    source: [https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery]
+    source: [https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery]
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
     as: anonymous

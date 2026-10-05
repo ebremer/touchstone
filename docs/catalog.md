@@ -19,7 +19,7 @@ links are all computed from those citations.
 
 | File | Source document | Requirements |
 |---|---|---:|
-| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 21 September 2026 | 190 |
+| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 5 October 2026 | 190 |
 | `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 3 August 2026 | 8 |
 | `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 21 September 2026 | 14 |
 | `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 3 August 2026 | 7 |
@@ -37,7 +37,7 @@ req:create-post-201-location-links
     touchstone:specModule "lws10-core" ;
     touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
     touchstone:clauseText """On success, the server MUST return the 201 status code with the new URI in the Location header. ...""" ;
     touchstone:clauseHash "sha256-6808523b25cc42196caf104571dd803d918e6237c1778147d809e65ace11dd87" ;
@@ -152,12 +152,15 @@ ones are removed or deprecated. Definitions that cite affected requirements are 
 Because re-baselining rewrites Approved entries, it is a reviewed change.
 
 {: .note }
-The catalog is based on the **21 September 2026** core and CID drafts and the
-**3 August 2026** OpenID Connect and SAML drafts, the versions W3C published as of
-28 September 2026 (D-0057). Against the 21 August baseline, the September core draft
-removed the `428` on an unconditional PUT, the parent ETag change after a delete, the
-new ETag after an update and the ETag on a `201`; it made conditional requests a SHOULD;
-and it added `subject_identifier_types_supported` to the authorization server metadata.
+The catalog is based on the **5 October 2026** core draft, the **21 September 2026** CID
+draft and the **3 August 2026** OpenID Connect and SAML drafts, the versions W3C published
+as of 5 October 2026 (D-0057, D-0086). The October core draft makes **JSON Patch**
+(RFC 6902, `application/json-patch+json`) the patch format every server must support, on
+data resources and on linksets, where the September draft named JSON Merge Patch. Against
+the 21 August baseline, the September core draft removed the `428` on an unconditional
+PUT, the parent ETag change after a delete, the new ETag after an update and the ETag on
+a `201`; it made conditional requests a SHOULD; and it added
+`subject_identifier_types_supported` to the authorization server metadata.
 
 The did:key suite is not catalogued. W3C published it as a **Discontinued Draft** on
 29 September 2026, in favour of the CID suite, which subsumes it, and Touchstone retired

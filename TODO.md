@@ -26,6 +26,28 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-05 — JSON Patch replaces JSON Merge Patch (D-0086)
+
+W3C published `https://www.w3.org/TR/2026/WD-lws10-core-20261005/` on 5 October 2026. Its one
+normative change (w3c/lws-protocol#255) makes JSON Patch (RFC 6902) the patch format every
+server must support and advertise, on data resources and linksets, where the 21 September
+draft named JSON Merge Patch. The other documents did not change.
+
+- [x] **Re-baseline the core catalog onto the 5 October WD.** Three blocks changed; two were
+  Approved seeds and now have Draft successors (`patch-json-patch-baseline`,
+  `linkset-accept-patch-json-patch`); `linkset-patch-merge-patch` became
+  `linkset-patch-json-patch`. → **Done (D-0086).**
+- [x] **Move the definitions and the reference deployment to JSON Patch.** The data-resource and
+  linkset PATCH tests, the four index tests that add `describedby` through a linkset, the
+  reference server, the reference client and its unadvertised-format twin. A new test,
+  `patch-json-patch-atomic`, checks that a patch whose `test` fails changes nothing.
+  → **Done (D-0086).**
+- [ ] **Erich: review the two seeds' successors.** D-0086 left them Draft because the
+  obligation changed (another format), as D-0057 did for `conditional-requests-supported`.
+  Promoting either to Approved is moving it above the generated marker.
+
+---
+
 ## 2026-09-23 — the spec moved again; YAML-LD definitions (D-0047)
 
 `check_drift.py` against `https://www.w3.org/TR/2026/WD-lws10-core-20260921/` reports 14

@@ -175,8 +175,8 @@ A test suite needs testing too. Touchstone checks that each test passes against 
 that does the right thing, and fails against one that does not. `harness-fixtures`
 provides both.
 
-- **`RefLwsServer`** is an in-memory LWS server on embedded Jetty that follows the 21
-  September 2026 Working Draft: containers, data resources, conditional requests, byte
+- **`RefLwsServer`** is an in-memory LWS server on embedded Jetty that follows the 5
+  October 2026 Working Draft: containers, data resources, conditional requests, byte
   ranges, linksets, the storage description, access grants and access requests. It has
   three modes:
   - `OPEN`: no authentication;
@@ -198,7 +198,7 @@ provides both.
 
 `./mvnw verify` runs the loop in `DefinitionsSelfTest`:
 
-- against the secured deployment, all 203 definitions run, and every one passes except the
+- against the secured deployment, all 204 definitions run, and every one passes except the
   single-page pagination test, which is inapplicable because the reference splits that
   container into pages;
 - against the same deployment with every trap set, the same holds: a definition that failed
