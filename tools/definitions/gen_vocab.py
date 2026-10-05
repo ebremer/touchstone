@@ -25,6 +25,7 @@ V = [
     ("ValidationTest", C, None, "Validation test", "A test whose steps exercise behaviour the specification requires and assert the responses a conforming server gives.", None, None),
     ("NegativeTest", C, None, "Negative test", "A test whose point is a refusal: at least one step expects a 4xx response, and the test also checks that the refused request had no effect.", None, None),
     ("ObservationTest", C, None, "Observation test", "A client rule (format 0.8.0, OBSERVATION.md): it judges the exchanges an LWS client sends to a client session. Every exchange its observe condition selects is a trial, and a trial passes when its expect condition holds.", None, None),
+    ("Task", C, None, "Task", "Something a developer is asked to do with their client during a client session, so that a rule needing intent or a fault can be tried.", None, None),
     ("ExchangeCondition", C, None, "Exchange condition", "A condition on one recorded exchange of a client session: on the request the client sent, the status the session answered, and the recorder's annotations. Every term present must hold.", None, None),
     ("Polling", C, None, "Polling", "How long and how often a step is re-sent while its expectations do not yet hold (EXECUTION.md section 4.4). Only the attempt that is judged leaves captures and cleanup behind.", None, None),
     ("Step", C, None, "Step", "One HTTP exchange of a test: a request, the expectations on its response, and the variables it captures. Steps run in order; a test fails at its first failing step.", None, None),
@@ -207,6 +208,12 @@ V = [
     ("patchFormatAdvertised", P, None, "patchFormatAdvertised", "Whether the request's Content-Type was listed in the Accept-Patch header of the session's last answer for this URL before the request.", "lwst:ExchangeCondition", "xsd:boolean"),
     ("queryFormatAdvertised", P, None, "queryFormatAdvertised", "Whether the request's Content-Type was listed in the Accept-Query header of the session's last answer for this URL before the request.", "lwst:ExchangeCondition", "xsd:boolean"),
 
+    ("repeat", P, None, "repeat", "Whether the request has the method, Content-Type and body of the previous request to the same URL (format 0.9.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("containerEmpty", P, None, "containerEmpty", "Whether the request addressed a container that had no members when it arrived (format 0.9.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("task", P, None, "task", "What the developer is asked to do so that the rule can be tried. Without after, each start of the task selects the next exchange observe holds of as a trial (format 0.9.0).", "lwst:ObservationTest", "lwst:Task"),
+    ("prompt", P, None, "prompt", "The task as the developer reads it.", "lwst:Task", "xsd:string"),
+    ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse or pageGone (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
+
     # ---- identity properties
     ("kind", P, None, "kind", "The identity's kind.", "lwst:Identity", "lwst:IdentityKind"),
     ("suite", P, None, "suite", "The authentication suite specification the credential follows.", "lwst:Identity", "rdfs:Resource"),
@@ -237,7 +244,7 @@ def q(s):
 
 
 defined = {t[0] for t in V}
-structural = {"ExchangeCondition", "Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Polling", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
+structural = {"Task", "ExchangeCondition", "Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Polling", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
               "ParameterExpectation", "JsonExpectation", "JwtExpectation", "LocationExpectation", "ConnegExpectation",
               "Level", "Trait", "Capability", "IdentityKind", "Fault"}
 ctx_terms = lwst_terms()

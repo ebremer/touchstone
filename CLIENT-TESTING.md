@@ -1,7 +1,7 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 to C2 are built ([D-0076](DECISIONS.md), D-0077, D-0080), and the rule
-format passed Gate C (D-0079). The rest is design (D-0075).**
+**Status: phases C0 to C3 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081), and the
+rule format passed Gate C (D-0079). The rest is design (D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -163,9 +163,8 @@ tested once.
 
 ### 4.4 Session API
 
-Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 and C2
-built everything here except faults, which come with phase C3, and the EARL and JUnit XML forms
-of the results, which come with C6;
+Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 to C3
+built everything here except the EARL and JUnit XML forms of the results, which come with C6;
 [harness-clients/README.md](harness-clients/README.md) documents what exists.
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
   tokens for alice and bob. It is rate-limited, and may need sign-in (§12).
@@ -175,7 +174,8 @@ of the results, which come with C6;
 - `GET {base}/sessions/{sid}/results` returns results as JSON, or as EARL or JUnit XML with
   `?format=`.
 - `GET {base}/sessions/{sid}/exchanges?after=N` returns the traffic log, paged and redacted.
-- `POST {base}/sessions/{sid}/faults` arms a fault, the same as ticking a fault task.
+- `POST {base}/sessions/{sid}/tasks/{rule}` starts a rule's task, arming its fault if it has
+  one; `POST {base}/sessions/{sid}/faults/{fault}` arms a fault alone.
 - `POST {base}/sessions/{sid}/reset` resets results; `DELETE {base}/sessions/{sid}` ends
   the session.
 
@@ -207,8 +207,9 @@ Both conditions use one vocabulary:
 - `anyOf`, for alternatives.
 
 `after` in `observe` makes the trial "the next matching exchange after a trigger". Rules have
-no variables and no captures. Phase C3 adds tasks, faults and an absence check within a window
-(`followedBy`) as a later format version.
+no variables and no captures. Format 0.9.0 (phase C3, D-0081) adds a rule's `task`, which may
+`arm` a fault, and the conditions `repeat` and `containerEmpty`. The absence check within a
+window planned as `followedBy` turned out unnecessary.
 
 ```yaml
   - id: "#client-linkset-put-only-when-advertised"
@@ -286,21 +287,30 @@ without noticing; clients relying on unspecified behaviour trip over them.
 
 ### 6.2 Faults (armed on request)
 
-A fault fires once, on the next matching exchange after the developer arms it from a task
-or the API, and the page says when it fired.
+A fault fires once, on the next request it applies to, after the developer arms it by
+starting a task or through the API. The traffic log marks the exchange it fired on. Each fault
+is something a server may legally do, so a conformant client meets it in the wild too.
+[`definitions/OBSERVATION.md`](definitions/OBSERVATION.md) section 6.2 defines them.
 
-| Fault | What the server does | Exercises |
+| Fault | What the session does | Exercises |
 |---|---|---|
-| `preconditionFailedOnce` | answers the next conditional write `412` | `put-clients-use-conditional-requests` |
-| `methodNotAllowedOnce` / `unsupportedMediaTypeOnce` | answers the next write `405` / `415` | `client-no-assumed-methods-405-415` |
-| `tokenExpired` | answers the next authenticated request `401 invalid_token` | the challenge's realm check, then a new token in the `Authorization` header |
+| `methodNotAllowed` | answers the next PUT to a linkset that supports PUT with `405`, as a server that withdrew the optional PUT | `client-no-assumed-methods-405-415` |
 | `lostCreateResponse` | performs the next POST create, then answers `503` | `create-post-not-idempotent` |
-| `pageGoneOnce` | refuses the next search or type-index page | `client-restart` |
-| `queryFormat415` | refuses the next QUERY `415` | `client-415-accept-query`, `client-baseline-only` |
-| `forgedDelivery` (variants) | sends the inbox a delivery signed with an unpublished key, with an altered body, a stale `created`, or a wrong `keyid` | `inbox-verifies-signature`, `receiver-verification-steps` |
+| `pageGone` | answers the next request for a page of search results with `410` | `client-restart` |
+| `forgedDelivery` (variants, phase C5) | sends the inbox a delivery signed with an unpublished key, with an altered body, a stale `created`, or a wrong `keyid` | `inbox-verifies-signature`, `receiver-verification-steps` |
 
 "Handles 405 and 415 gracefully" cannot be seen directly. Its rule checks the observable
 part: the client does not repeat the refused request unchanged. The guidance says so.
+
+The plan had four more faults that phase C3 dropped (D-0081):
+- **`preconditionFailedOnce`.** A 412 tests only that the next write stays conditional, which
+  `client-put-conditional` already judges on every PUT. Re-reading after a 412 is good
+  practice that the drafts do not require.
+- **`unsupportedMediaTypeOnce`.** A 415 for JSON Merge Patch on a linkset would break a server
+  MUST, and natural 415s, for an unadvertised format, already trigger the rule.
+- **`queryFormat415`.** Refusing the baseline query format would break a server MUST.
+- **`tokenExpired`.** It moves to phase C4. Until then a client's fresh token comes from the
+  session API, which is not recorded, so the refresh could not be seen.
 
 ## 7. Limits
 
@@ -363,9 +373,9 @@ The same discipline as the server side: each rule must pass against a client tha
 right thing, and fail against one that does not.
 
 - **`RefLwsClient`** (in `harness-fixtures`) is a scripted, conformant client on the JDK
-  `HttpClient`. Its script gives every rule a trial; from phase C3 it also performs every task
-  in the checklist and arms every fault through the session API. It reports nothing itself:
-  the session judges it.
+  `HttpClient`. Its script gives every rule a trial, and it starts every task in the checklist
+  through the session API before doing what the task asks. It reports nothing itself: the
+  session judges it.
 - **Broken twins** each get one thing wrong, for example:
   - one builds page URLs;
   - one drops `If-Match` after a 412;
@@ -407,16 +417,16 @@ clients; only the client half is judged here.
 | `lws10-core/subscription-create-post-lws-json`, `subscription-request-*`; `lws10-notifications-webhook/subscription-type-and-fields`, `subscription-inbox-required`, `subscription-type-identifier` (some half) | MUST | passive: subscription bodies | C2 |
 | `lws10-core/access-jsonld-context-lws-v1`, `access-type-values`, and the other access and policy data-model clauses (half) | MUST | passive: the access requests and grants the client POSTs | C2 |
 | `lws10-index/client-baseline-only`, `query-content-type-required` (half) | MUST | passive: a QUERY without `Content-Type`, or in a format the server did not advertise and kept after a 415 | C2, C3 |
-| `lws10-core/put-clients-use-conditional-requests` | SHOULD | passive: a PUT replacing a resource carries `If-Match`; fault 412 (§5.1) | C2, C3 |
+| `lws10-core/put-clients-use-conditional-requests` | SHOULD | passive: a PUT replacing a resource carries `If-Match` | C2 |
 | `lws10-core/linkset-precondition-failed-412` (half) | SHOULD | passive: PUT and PATCH on a linkset are conditional | C2 |
 | `lws10-core/pagination-uris-opaque` | SHOULD | trap: page requests use issued URLs | C2 |
 | `lws10-core/uri-independent-of-hierarchy` (half) | SHOULD | trap: no request to an unissued URL built from another URL's path | C2 |
 | `lws10-core/create-container-type-link` | MUST | task "create a container" | C3 |
 | `lws10-core/delete-non-empty-container-409-depth` (half) | MUST | task "delete a container and its contents": `Depth: infinity`, or the members first | C3 |
 | `lws10-core/create-post-not-idempotent` | SHOULD | fault `lostCreateResponse`: no identical blind retry | C3 |
-| `lws10-index/client-restart` | SHOULD | fault `pageGoneOnce` | C3 |
-| `lws10-index/client-415-accept-query` | MAY | fault `queryFormat415`: noted when the retry uses an advertised format | C3 |
-| `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C3, C4 |
+| `lws10-index/client-restart` | SHOULD | fault `pageGone` | C3 |
+| `lws10-index/client-415-accept-query` | MAY | no rule: indistinguishable from `client-query-baseline-after-415` while the session accepts only the baseline (D-0078) | — |
+| `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C4 |
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
 | `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-saml2`, `token-type-jwt` | MUST | passive: token requests | C4 |
 | `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | fault `forgedDelivery`: forged deliveries refused, genuine ones accepted | C5 |
@@ -459,6 +469,17 @@ the draft, so nothing can be checked. `client-415-accept-query` cannot be told a
 | `client-subscription-inbox` | MUST | webhook `subscription-inbox-required` | webhook subscription POSTs | `inbox` is a URI |
 | `client-query-content-type` | MUST | `query-content-type-required` | QUERY to the Type Search Service | `Content-Type` is present |
 | `client-query-baseline-after-415` | MUST | `client-baseline-only` | the next QUERY to it after a 415 | the baseline format, `application/lws-query+json` |
+
+**The C3 rules** each have a task (D-0081). The first two take the developer's word for what the
+client meant; the other three arm a fault.
+
+| Rule | Level | Cites | Task | Trials (`observe`) | Passes when (`expect`) |
+|---|---|---|---|---|---|
+| `client-create-container-type-link` | MUST | `create-container-type-link` | create a container | the first POST into a container after the task starts | `Link: <…lws#Container>; rel="type"` |
+| `client-delete-container-depth` | MUST | `delete-non-empty-container-409-depth` | delete a container with its contents | the first DELETE of a container after the task starts | `Depth: infinity`, or the container was empty |
+| `client-no-repeat-after-405-415` | MUST | `client-no-assumed-methods-405-415` | replace a linkset; `methodNotAllowed` | the next request to a linkset after it answered 405 or 415 | not the refused request again |
+| `client-no-blind-retry-of-create` | SHOULD | `create-post-not-idempotent` | create a data resource; `lostCreateResponse` | the next request to a container after a POST to it got a 5xx | not the same POST again |
+| `client-restart-after-refused-page` | SHOULD | `client-restart` | follow search results to a next page; `pageGone` | the next request to the search or index after a page got 404 or 410 | a fresh QUERY, or the type index again |
 
 ## 12. Open questions (for Erich)
 
@@ -514,8 +535,10 @@ Gate 2 did for the server-side schema.
 
   *Done when:* every C2 rule passes for the reference client and fails for its twin. All 25
   pass for `RefLwsClient`, and each of its 25 twins fails exactly the rule aimed at it.
-- **C3: tasks and faults.** The checklist, the faults of §6.2 except `forgedDelivery`, and
-  the task-based rules. *Done when:* every C3 rule discriminates in the self-test.
+- **C3: tasks and faults. Done 2026-10-05 (D-0081).** The checklist, the faults of §6.2 except
+  `forgedDelivery`, and the task-based rules. *Done when:* every C3 rule discriminates in the
+  self-test. All five pass for `RefLwsClient`, and each of its five C3 twins fails exactly the
+  rules aimed at it.
 - **C4: authentication.**
   - The session OpenID Provider and client registration (§12.3).
   - Hosted CID documents and key download.

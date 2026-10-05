@@ -1,7 +1,8 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.8.0 (2026-10-05, DECISIONS.md D-0079; proposed in D-0078 and reviewed
-at Gate C).** This
+**Status: frozen, format 0.9.0 (2026-10-05, DECISIONS.md D-0081; 0.8.0 the same day, D-0079,
+after Gate C).** 0.9.0 adds tasks and faults (section 6) and two annotations, `repeat` and
+`containerEmpty` (sections 4.6 and 4.7), and changes nothing a 0.8.0 rule relies on. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -16,7 +17,8 @@ client under test.
 
 The service records every exchange of a session (section 3). It annotates each with facts
 only the server knows (section 4) and judges it against every rule in scope. A rule selects
-exchanges, its *trials*, and states what must hold of each (sections 5 to 7). Over the
+exchanges, its *trials*, and states what must hold of each (sections 5 to 7). Some rules need
+a task, which the developer starts, and some tasks arm a fault (section 6). Over the
 session, a rule's trials decide its outcome (section 8).
 
 Everything a rule asserts is in its definition. The service adds no assertions and softens
@@ -168,6 +170,24 @@ From those values, as they stood before the request:
 Each is false when the field was never seen for the URL, or when the request has no
 `Content-Type`.
 
+### 4.6 `repeat` (since 0.9.0)
+
+For every URL, the recorder keeps the method, the essence of the `Content-Type` and the
+SHA-256 of the body of the latest request to it. `repeat` is true when the request has the
+same three as the request to the same URL before it. Preflights and requests a bound refused
+are left out of this, as they are left out of trials.
+
+### 4.7 `containerEmpty` (since 0.9.0)
+
+True when the request addressed a container, its role being `container`, that had no members
+when the request arrived. False for anything else.
+
+### 4.8 `fault`
+
+The fault that fired on the exchange (section 6.2), or none. It appears in the traffic log. A
+rule does not name it: a rule's trigger is the answer a fault produces, such as a 503, so a
+server that gives the same answer for a reason of its own triggers the rule as well.
+
 ## 5. Conditions
 
 `observe`, `expect` and a trigger's `after` are conditions on one exchange. A condition holds
@@ -178,8 +198,8 @@ when every term it has holds. The terms, in the order they are checked:
    nothing.
 2. **`statusCode`:** the status the session answered, matched as in `EXECUTION.md` section
    7.1.
-3. **`issued`, `methodAdvertised`, `patchFormatAdvertised`, `queryFormatAdvertised`:** the
-   annotation equals the boolean.
+3. **`issued`, `methodAdvertised`, `patchFormatAdvertised`, `queryFormatAdvertised`,
+   `repeat`, `containerEmpty`:** the annotation equals the boolean.
 4. **`presentation`:** a value or a list. Every place in the annotation is listed, so
    `presentation: bearer` fails a request that also carried its token in the query string.
 5. **`contentType`:** the essence of the request's `Content-Type` equals the value, as in
@@ -212,6 +232,33 @@ for each exchange, in order:
 
 So no exchange is the trial of its own trigger, and a trigger yields at most one trial. A
 trigger that never meets a matching exchange stays open. It is evidence of nothing.
+
+### 6.1 Tasks (since 0.9.0)
+
+A rule's `task` is something the developer is asked to do so the rule can be tried. Its
+`prompt` is what they read. They start it on the session page, or with
+`POST {base}/sessions/{sid}/tasks/{rule name}`, and then do what it says with their client.
+
+- **A task without `arm`** stands for the developer's intent, for a rule that needs to know
+  what the client meant: a POST without `Link: rel="type"` creates a data resource, legal
+  unless a container was meant. Such a rule has no `after`. Each start of its task opens a
+  trigger, and the first exchange after it that satisfies `observe` is the trial. A rule like
+  this is never tried until its task starts.
+- **A task with `arm`** arms that fault when it starts (section 6.2). Such a rule selects its
+  trials with `after` as above, its trigger being the answer the fault produces. The task only
+  makes that answer happen on demand.
+
+### 6.2 Faults (since 0.9.0)
+
+A fault fires once, on the next request it applies to, after a task arms it or
+`POST {base}/sessions/{sid}/faults/{fault}` does. Each makes the session do something a server
+may legally do. The exchange it fired on carries its name (section 4.8).
+
+| Fault | Applies to | What the session does |
+|---|---|---|
+| `methodNotAllowed` | a PUT to a linkset that supports PUT | answers 405, with an `Allow` that leaves PUT out, as a server that stopped supporting the optional PUT would |
+| `lostCreateResponse` | a POST that creates a resource in a container | creates it, then answers 503 with `Retry-After` and no `Location`, as if the answer had been lost |
+| `pageGone` | a request for a page of search results | answers 410, as for a page link that expired |
 
 ## 7. Judging a trial
 
@@ -328,6 +375,39 @@ an array from failing this rule as well as the one about `access`:
             - pointer: /assignee
               jsonType: string
               matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+```
+
+A task for intent. The rule is tried on the first POST into a container after the developer
+starts the task:
+
+```yaml
+    task:
+      prompt: Create a container, in any container you like.
+    observe:
+      method: POST
+      role: container
+    expect:
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
+```
+
+A task that arms a fault. The session creates the resource and then answers 503; the client's
+next request to the container is the trial:
+
+```yaml
+    task:
+      prompt: >-
+        Create a data resource. The session will create it and then answer 503, as if the answer
+        had been lost.
+      arm: lostCreateResponse
+    observe:
+      after:
+        method: POST
+        statusCode: 5xx
+        sameTarget: true
+    expect:
+      repeat: false
 ```
 
 The next search after a refused format. Each 415 opens a trigger, and the next QUERY to the

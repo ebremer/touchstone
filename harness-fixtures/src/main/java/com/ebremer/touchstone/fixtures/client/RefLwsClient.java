@@ -23,8 +23,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * A scripted LWS client that does what the client rules ask (CLIENT-TESTING.md section 9): it
  * reads before it writes, makes its writes conditional, follows the links it is given, composes
  * access requests, grants and subscriptions as the drafts define them, and falls back to the
- * baseline search format when a richer one is refused. Its script touches every rule of phase
- * C2, so a session judging it has a trial for each.
+ * baseline search format when a richer one is refused. It starts each rule's task before doing
+ * what the task asks, and handles the faults the tasks arm: it checks a container before
+ * retrying a lost create, re-reads a linkset that refused it, and restarts a search whose page
+ * was refused. Its script touches every rule of phases C2 and C3, so a session judging it has a
+ * trial for each.
  *
  * <p>It reports nothing itself: the session judges it. With a {@link Flaw} it is a broken twin,
  * which gets exactly one thing wrong and is otherwise the same client.
@@ -84,7 +87,26 @@ public final class RefLwsClient {
         /** Sends its first search without a Content-Type. */
         QUERY_WITHOUT_CONTENT_TYPE,
         /** Repeats its search in the refused format before falling back. */
-        QUERY_KEEPS_REFUSED_FORMAT
+        QUERY_KEEPS_REFUSED_FORMAT,
+        /** Answers the task to create a container with a POST that has no Link rel="type", then tries again. */
+        CREATES_CONTAINER_WITHOUT_TYPE_LINK,
+        /** Deletes the container and its contents without Depth: infinity. */
+        DELETES_CONTAINER_WITHOUT_DEPTH,
+        /** Sends the refused linkset PUT again, unchanged. */
+        REPEATS_REFUSED_PUT,
+        /** POSTs the lost create again at once, unchanged, without checking the container. */
+        RETRIES_LOST_CREATE_BLINDLY,
+        /** Asks for the refused page of search results again instead of restarting the search. */
+        DOES_NOT_RESTART_SEARCH
+    }
+
+    /** Starts the task of a client rule in the client's session, as a developer would on the session page. */
+    @FunctionalInterface
+    public interface Tasks {
+        /** For a client with no session API to call: tasks are never started, so their rules stay untested. */
+        Tasks NONE = rule -> { };
+
+        void start(String rule) throws IOException, InterruptedException;
     }
 
     /** An agent the client acts for: its access token and its WebID. */
@@ -108,19 +130,22 @@ public final class RefLwsClient {
     private final Agent bob;
     private final URI inbox;
     private final Flaw flaw;
+    private final Tasks tasks;
 
     /**
      * @param storage the storage URL, the only URL the client is given
      * @param alice   the storage's owner
      * @param bob     another agent, who asks alice for access
      * @param inbox   where the client wants notifications, for its subscription and its grant
+     * @param tasks   starts a rule's task in the session
      */
-    public RefLwsClient(URI storage, Agent alice, Agent bob, URI inbox, Flaw flaw) {
+    public RefLwsClient(URI storage, Agent alice, Agent bob, URI inbox, Flaw flaw, Tasks tasks) {
         this.storage = storage;
         this.alice = alice;
         this.bob = bob;
         this.inbox = inbox;
         this.flaw = flaw;
+        this.tasks = tasks;
     }
 
     /** Runs the whole script. */
@@ -129,12 +154,23 @@ public final class RefLwsClient {
         Map<String, URI> services = services(send("GET", storage, alice, null, null, "application/lws+cid", Map.of()));
 
         // A container with six notes, so that its listing has two pages.
+        tasks.start("client-create-container-type-link");
+        if (flaw == Flaw.CREATES_CONTAINER_WITHOUT_TYPE_LINK) {
+            send("POST", storage, alice, null, null, null, Map.of());
+        }
         Reply made = send("POST", storage, alice, null, null, null,
                 Map.of("Link", "<" + LWS + "Container>; rel=\"type\""));
         URI notes = made.location();
         List<URI> created = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
             created.add(send("POST", notes, alice, "text/plain", "note " + i, null, Map.of()).location());
+        }
+        // One more, whose answer the session loses: the listing that follows is the check that
+        // shows whether it was created before anything is sent again.
+        tasks.start("client-no-blind-retry-of-create");
+        Reply lost = send("POST", notes, alice, "text/plain", "note 6", null, Map.of());
+        if (lost.status() / 100 == 5 && flaw == Flaw.RETRIES_LOST_CREATE_BLINDLY) {
+            send("POST", notes, alice, "text/plain", "note 6", null, Map.of());
         }
         Reply listing = send("GET", notes, alice, null, null, LWS_JSON, Map.of());
         if (flaw == Flaw.BUILDS_PAGE_URL) {
@@ -163,7 +199,17 @@ public final class RefLwsClient {
                 null, flaw == Flaw.LINKSET_WRITE_UNCONDITIONAL ? Map.of() : Map.of("If-Match", ls.etag()));
         Reply again = send("GET", linkset, alice, null, null, LINKSET_JSON, Map.of());
         if (again.allows("PUT")) {
-            send("PUT", linkset, alice, LINKSET_JSON, again.body(), null, Map.of("If-Match", again.etag()));
+            tasks.start("client-no-repeat-after-405-415");
+            Reply put = send("PUT", linkset, alice, LINKSET_JSON, again.body(), null, Map.of("If-Match", again.etag()));
+            if (put.status() == 405 && flaw == Flaw.REPEATS_REFUSED_PUT) {
+                send("PUT", linkset, alice, LINKSET_JSON, again.body(), null, Map.of("If-Match", again.etag()));
+            } else if (put.status() == 405) {
+                // Refused after all: read what the linkset supports now, and go by that.
+                Reply now = send("GET", linkset, alice, null, null, LINKSET_JSON, Map.of());
+                if (now.allows("PUT")) {
+                    send("PUT", linkset, alice, LINKSET_JSON, now.body(), null, Map.of("If-Match", now.etag()));
+                }
+            }
         }
         if (flaw == Flaw.LINKSET_PUT_UNADVERTISED) {
             URI containerLinkset = send("GET", notes, alice, null, null, LWS_JSON, Map.of()).link("linkset");
@@ -189,13 +235,40 @@ public final class RefLwsClient {
         if (flaw == Flaw.QUERY_KEEPS_REFUSED_FORMAT) {
             send("QUERY", search, alice, RICHER_QUERY, "SELECT * WHERE { ?s ?p ?o }", null, Map.of());
         }
-        send("QUERY", search, alice, BASELINE_QUERY, "{}", null, Map.of());
+        Reply results = send("QUERY", search, alice, BASELINE_QUERY, "{}", null, Map.of());
+        // The index may lag behind writes; a client tolerates that and asks again.
+        for (int i = 0; i < 10 && results.link("next") == null; i++) {
+            Thread.sleep(500);
+            results = send("QUERY", search, alice, BASELINE_QUERY, "{}", null, Map.of());
+        }
+        URI nextPage = results.link("next");
+        if (nextPage != null) {
+            tasks.start("client-restart-after-refused-page");
+            Reply page = send("GET", nextPage, alice, null, null, LWS_JSON, Map.of());
+            if (page.status() == 404 || page.status() == 410) {
+                if (flaw == Flaw.DOES_NOT_RESTART_SEARCH) {
+                    send("GET", nextPage, alice, null, null, LWS_JSON, Map.of());
+                } else {
+                    send("QUERY", search, alice, BASELINE_QUERY, "{}", null, Map.of());
+                }
+            }
+        }
 
         // Delete a note, conditionally on what was read.
         URI doomed = created.get(1);
         Reply before = send("GET", doomed, alice, null, null, null, Map.of());
         send("DELETE", doomed, alice, null, null, null,
                 flaw == Flaw.DELETE_UNCONDITIONAL ? Map.of() : Map.of("If-Match", before.etag()));
+
+        // Last, the container and everything in it.
+        tasks.start("client-delete-container-depth");
+        Reply container = send("GET", notes, alice, null, null, LWS_JSON, Map.of());
+        Map<String, String> conditions = new LinkedHashMap<>();
+        conditions.put("If-Match", container.etag());
+        if (flaw != Flaw.DELETES_CONTAINER_WITHOUT_DEPTH) {
+            conditions.put("Depth", "infinity");
+        }
+        send("DELETE", notes, alice, null, null, null, conditions);
     }
 
     // ---- documents ----

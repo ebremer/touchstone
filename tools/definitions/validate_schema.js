@@ -57,6 +57,7 @@ const dataPre = t => pre(t) && 'dataResource' in t.prereqs.hierarchy[0];
 const chal = t => short(t) && 'authenticationChallenge' in t.response;
 const rule = t => t.type === 'ObservationTest';
 const ruleAnyOf = t => rule(t) && 'anyOf' in t.expect;
+const ruleTask = t => rule(t) && 'task' in t;
 const controls = {
   'typo key statusCod': [flow, t => { t.steps[0].response.statusCod = 200; }],
   'malformed template ${test.container': [flow, t => { t.steps[0].request.url = '${test.container'; }],
@@ -91,6 +92,9 @@ const controls = {
   'client rule with a lower-case method': [rule, t => { t.observe.method = 'put'; }],
   'client rule with anyOf of one': [ruleAnyOf, t => { t.expect.anyOf = t.expect.anyOf.slice(0, 1); }],
   'server test with observe': [rule, t => { t.type = 'ValidationTest'; }],
+  'task without a prompt': [ruleTask, t => { delete t.task.prompt; }],
+  'task arming an unknown fault': [ruleTask, t => { t.task.arm = 'tokenExpired'; }],
+  'task with an unknown key': [ruleTask, t => { t.task.repeat = true; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

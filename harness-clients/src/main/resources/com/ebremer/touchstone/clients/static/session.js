@@ -174,6 +174,14 @@
       const tr = el('tr');
       const label = el('td');
       label.append(el('div', r.label), el('code', r.rule, 'note'));
+      if (r.task) {
+        const task = el('div', null, 'task');
+        const start = el('button', 'Start task', 'copy');
+        start.type = 'button';
+        start.addEventListener('click', () => startTask(r.rule));
+        task.append(el('span', 'Task: ' + r.task.prompt + ' '), start);
+        label.append(task);
+      }
       const evidence = el('td');
       if (r.evidence) {
         evidence.append(el('div', '#' + r.evidence.seq + ' ' + r.evidence.method + ' ' + relative(r.evidence.url)),
@@ -183,6 +191,15 @@
       tr.append(label, el('td', r.level), el('td', OUTCOMES[r.outcome] || r.outcome, 'o-' + r.outcome),
         el('td', r.trials, 'num'), evidence);
       rows.append(tr);
+    }
+  }
+
+  async function startTask(rule) {
+    try {
+      await call('POST', '/tasks/' + encodeURIComponent(rule));
+      status.textContent = 'Task started: do what it says with your client now.';
+    } catch (e) {
+      status.textContent = 'Could not start the task: ' + e.message;
     }
   }
 

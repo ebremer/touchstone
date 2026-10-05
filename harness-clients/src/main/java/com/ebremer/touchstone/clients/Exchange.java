@@ -51,12 +51,16 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * @param methodAdvertised whether Allow listed the request's method
      * @param patchFormatAdvertised whether Accept-Patch listed the request's Content-Type
      * @param queryFormatAdvertised whether Accept-Query listed the request's Content-Type
-     * @param fault the fault that fired on this exchange, or null (phase C3)
+     * @param repeat whether the request has the method, Content-Type and body of the previous
+     *     request to the same URL
+     * @param containerEmpty whether the request addressed a container with no members
+     * @param fault the fault that fired on this exchange, or null
      * @param limit the bound that refused the request (rate, body, storage), or null
      */
     record Annotations(String server, String role, String identity, String token, List<String> presentation,
                        boolean issued, String issuedVia, String builtBy, String builtFrom, String builtFromRole,
                        Map<String, String> advertised, boolean methodAdvertised, boolean patchFormatAdvertised,
-                       boolean queryFormatAdvertised, String fault, String limit) {
+                       boolean queryFormatAdvertised, boolean repeat, boolean containerEmpty, String fault,
+                       String limit) {
     }
 }

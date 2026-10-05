@@ -80,6 +80,7 @@ td.built { background: var(--built); }
 .verdict { font-weight: 600; }
 .rules { font-size: 0.9rem; }
 .rules code { display: block; }
+.rules .task { margin-top: 0.3rem; color: var(--muted); font-size: 0.85rem; }
 .o-passed { color: var(--ok); }
 .o-failed { color: var(--bad); font-weight: 600; }
 .o-cantTell { color: var(--warn); }

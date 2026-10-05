@@ -2783,3 +2783,83 @@ linkset that refuses PUT, and would otherwise be inapplicable.
   the page that phase C6 builds.
 
 Drafted by an agent; waits on branch `clients/c2-rules`.
+
+### D-0081 — client tasks and faults (phase C3), and format 0.9.0
+Phase C3 is built. Its acceptance criterion, that every C3 rule discriminates in the self-test,
+holds: the reference client passes all five, and each of the five C3 twins fails exactly the
+rules aimed at it. The 25 rules of phase C2 still discriminate as before.
+
+**Format 0.9.0** adds three things to client rules and changes nothing a 0.8.0 rule relies on:
+- **`task`**, with a `prompt` and an optional `arm`: what the developer is asked to do so the
+  rule can be tried (`OBSERVATION.md` section 6.1).
+  - A task without `arm` stands for the developer's intent. Each start of it opens a trigger,
+    and the first exchange after it that satisfies `observe` is the trial.
+  - A task with `arm` arms a fault (section 6.2). The rule still selects its trials with
+    `after`, its trigger being the answer the fault produces, so a server that gives that
+    answer for its own reasons triggers the rule too.
+- **`repeat`**: whether the request has the method, Content-Type and body digest of the
+  previous request to the same URL (section 4.6).
+- **`containerEmpty`**: whether a container had no members when the request arrived (section
+  4.7).
+
+The schema `$id` is `…/0-9-0`. As for 0.4.0 to 0.7.0, the additions are frozen with this
+entry, not at a gate. Like the rest of C3, they wait on the branch for review before they
+merge.
+
+**Five rules** (`definitions/lws10/clients/`):
+- `client-create-container-type-link` (MUST): after the task "create a container", the first
+  POST into a container carries `Link: rel="type"` to `lws#Container`;
+- `client-delete-container-depth` (MUST): after the task "delete a container with its
+  contents", the first DELETE of a container sends `Depth: infinity`, or the container was
+  already empty;
+- `client-no-repeat-after-405-415` (MUST): after a linkset answers 405 or 415, the client's next
+  request to it is not the same request again. This is the visible part of "MUST handle 405 or
+  415 gracefully".
+- `client-no-blind-retry-of-create` (SHOULD): after a POST to a container gets a 5xx, the next
+  request to the container is not the same POST again, so a client that checks the listing
+  first passes. The clause also allows unique identifiers. The session cannot see an
+  identifier inside a body, and the comment says so.
+- `client-restart-after-refused-page` (SHOULD): after a page of search results gets 404 or 410,
+  the next request to the search or index service is a fresh QUERY, or the type index again.
+
+**Three faults**, each something a server may legally do (`RefLwsServer.Fault`):
+- `methodNotAllowed`: a 405 for a PUT on a linkset that supported the optional PUT;
+- `lostCreateResponse`: a create performed, then a 503;
+- `pageGone`: a 410 for a page link, as for one that expired, which the index draft allows.
+
+The session API gains `POST …/tasks/{rule}` and `POST …/faults/{fault}`. Its description
+lists the faults armed, the results give each rule's task, and the session page shows each
+task with a Start button.
+
+**Four faults of the plan were dropped**, and CLIENT-TESTING.md section 6.2 says why:
+- **`preconditionFailedOnce`.** All a 412 could judge is that the next write stays
+  conditional. `client-put-conditional` already judges that on every PUT. Re-reading after a
+  412 is good practice that no clause requires.
+- **`unsupportedMediaTypeOnce`.** Refusing JSON Merge Patch on a linkset would break a server
+  MUST. Natural 415s still trigger the 405/415 rule.
+- **`queryFormat415`.** Refusing the baseline query format would break a server MUST.
+- **`tokenExpired`.** It moves to phase C4 with the realm check. Until a client can obtain
+  tokens through the session's own OpenID Provider or CID documents, a refresh goes through
+  the session API, which is not recorded.
+
+The window-bounded absence check D-0078 deferred (`followedBy`) proved unnecessary. "Not the
+same request again", judged on the next request to the target, covers every C3 rule.
+
+**The proof.** `RefLwsClient` gains a `Tasks` callback, which the self-test wires to the
+session API, and five flaws:
+- a POST without the container link;
+- a DELETE without `Depth`;
+- resending the refused PUT;
+- re-POSTing the lost create at once;
+- asking for the refused page again.
+
+The twin that resends a refused PUT also fails `client-linkset-put-only-when-advertised`,
+because the 405 told it PUT is not supported. `ClientRulesSelfTest` aims it at both rules.
+
+As for phase C2, the evidence was read, not only the outcomes. The page twin, for example,
+fails at `search?…&page=2` on "role: expected typeSearch or typeIndex, was searchPage". The
+self-test runs its sessions without index lag, so that a search has a second page at once. The
+reference client also tolerates the lag: it asks again, up to five seconds, until the results
+have a next page.
+
+Drafted by an agent; waits on branch `clients/c3-tasks`.

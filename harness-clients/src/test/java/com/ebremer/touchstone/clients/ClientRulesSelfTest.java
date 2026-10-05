@@ -29,8 +29,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 /**
  * The client rules, tested the way the server tests are (CLIENT-TESTING.md section 9): the
  * reference client, in a session of its own, passes every rule, because its script gives each a
- * trial; and each broken twin, in a session of its own, fails exactly the rules aimed at it and
- * nothing else. A rule no twin fails could never fail.
+ * trial and starts each task; and each broken twin, in a session of its own, fails exactly the
+ * rules aimed at it and nothing else. A rule no twin fails could never fail.
  */
 class ClientRulesSelfTest {
 
@@ -60,7 +60,14 @@ class ClientRulesSelfTest {
             entry(Flaw.SUBSCRIPTION_TOPIC_NOT_ARRAY, Set.of("client-subscription-topic")),
             entry(Flaw.SUBSCRIPTION_WITHOUT_INBOX, Set.of("client-subscription-inbox")),
             entry(Flaw.QUERY_WITHOUT_CONTENT_TYPE, Set.of("client-query-content-type")),
-            entry(Flaw.QUERY_KEEPS_REFUSED_FORMAT, Set.of("client-query-baseline-after-415")));
+            entry(Flaw.QUERY_KEEPS_REFUSED_FORMAT, Set.of("client-query-baseline-after-415")),
+            entry(Flaw.CREATES_CONTAINER_WITHOUT_TYPE_LINK, Set.of("client-create-container-type-link")),
+            entry(Flaw.DELETES_CONTAINER_WITHOUT_DEPTH, Set.of("client-delete-container-depth")),
+            // Resending a PUT the 405 told it is not supported also assumes PUT is supported.
+            entry(Flaw.REPEATS_REFUSED_PUT, Set.of("client-no-repeat-after-405-415",
+                    "client-linkset-put-only-when-advertised")),
+            entry(Flaw.RETRIES_LOST_CREATE_BLINDLY, Set.of("client-no-blind-retry-of-create")),
+            entry(Flaw.DOES_NOT_RESTART_SEARCH, Set.of("client-restart-after-refused-page")));
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
@@ -73,11 +80,12 @@ class ClientRulesSelfTest {
         int port = freePort();
         base = "http://localhost:" + port + "/touchstone/clients";
         ClientLabConfig d = ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port);
-        // One session per client, all from this address.
+        // One session per client, all from this address; an index without lag, so a search sees
+        // what the client just wrote and has a second page at once.
         ClientLabConfig config = new ClientLabConfig(d.publicBase(), d.bindHost(), d.port(), false, 100, 100,
                 d.idleTimeout(), d.maxLifetime(), d.maxBodyBytes(), d.maxRecordedResponseBytes(), d.maxExchanges(),
                 d.maxResources(), d.maxStorageBytes(), d.requestBurst(), d.requestsPerSecond(), d.tokenLifetime(),
-                d.indexLag());
+                java.time.Duration.ZERO);
         lab = ClientLab.start(config, TestRules.RULES);
     }
 
@@ -97,7 +105,7 @@ class ClientRulesSelfTest {
         }
         assertThat(notPassed).as(results.toPrettyString()).isEmpty();
         assertThat(results.get("rules")).hasSize(TestRules.RULES.rules().size());
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 18 MUST rules exercised, of 18 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 21 MUST rules exercised, of 21 that apply");
     }
 
     @ParameterizedTest
@@ -129,10 +137,17 @@ class ClientRulesSelfTest {
                 .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
         assertThat(created.statusCode()).as(created.body()).isEqualTo(201);
         JsonNode session = JSON.readTree(created.body());
+        String key = session.get("key").asText();
+        RefLwsClient.Tasks tasks = rule -> {
+            HttpResponse<String> started = HTTP.send(HttpRequest.newBuilder(URI.create(session.get("api").asText()
+                            + "/tasks/" + rule)).header("Authorization", "Bearer " + key)
+                    .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(started.statusCode()).as(rule + ": " + started.body()).isEqualTo(204);
+        };
         new RefLwsClient(URI.create(session.get("storage").asText()),
                 new RefLwsClient.Agent(session.at("/tokens/alice").asText(), session.at("/identities/alice/webid").asText()),
                 new RefLwsClient.Agent(session.at("/tokens/bob").asText(), session.at("/identities/bob/webid").asText()),
-                INBOX, flaw).run();
+                INBOX, flaw, tasks).run();
         HttpResponse<String> results = HTTP.send(HttpRequest.newBuilder(URI.create(session.get("results").asText()))
                 .header("Authorization", "Bearer " + session.get("key").asText()).build(),
                 HttpResponse.BodyHandlers.ofString());

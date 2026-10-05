@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @param observe      the condition that selects trials, {@code after} included
  * @param expect       the condition each trial must satisfy
  * @param guidance     how a client fixes a failure
+ * @param task         what the developer is asked to do so the rule can be tried, or null (since 0.9.0)
  */
 public record RuleDefinition(
         String id,
@@ -33,5 +34,20 @@ public record RuleDefinition(
         List<String> requirements,
         JsonNode observe,
         JsonNode expect,
-        String guidance) {
+        String guidance,
+        Task task) {
+
+    /**
+     * A rule's task (OBSERVATION.md section 6.1).
+     *
+     * @param prompt what the developer reads
+     * @param arm    the fault starting the task arms, or null
+     */
+    public record Task(String prompt, String arm) {
+    }
+
+    /** Whether each start of the task opens a trial: a task without {@code after} (section 6.1). */
+    public boolean taskTriggered() {
+        return task != null && !observe.has("after");
+    }
 }

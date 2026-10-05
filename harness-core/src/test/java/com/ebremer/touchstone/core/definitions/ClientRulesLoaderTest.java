@@ -22,7 +22,7 @@ class ClientRulesLoaderTest {
     @Test
     void loadsEveryClientRuleInTraversalOrder() {
         ClientRules rules = DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG);
-        assertThat(rules.rules()).hasSize(25);
+        assertThat(rules.rules()).hasSize(30);
         assertThat(rules.rules().getFirst().id()).isEqualTo("clients/core#client-token-in-authorization-header");
         assertThat(rules.rules().stream().map(RuleDefinition::area).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder("core", "notifications", "index");
@@ -30,6 +30,11 @@ class ClientRulesLoaderTest {
         assertThat(r.observe().path("after").path("statusCode").asInt()).isEqualTo(415);
         assertThat(r.iri()).isEqualTo(Definitions.BASE + "clients/index#client-query-baseline-after-415");
         assertThat(r.guidance()).contains("application/lws-query+json");
+        assertThat(r.task()).isNull();
+        RuleDefinition lost = rules.find("client-no-blind-retry-of-create").orElseThrow();
+        assertThat(lost.task().arm()).isEqualTo("lostCreateResponse");
+        assertThat(lost.taskTriggered()).isFalse();
+        assertThat(rules.find("client-create-container-type-link").orElseThrow().taskTriggered()).isTrue();
     }
 
     @Test

@@ -160,6 +160,11 @@
     "methodAdvertised":      {"@id": "lwst:methodAdvertised", "@type": "xsd:boolean"},
     "patchFormatAdvertised": {"@id": "lwst:patchFormatAdvertised", "@type": "xsd:boolean"},
     "queryFormatAdvertised": {"@id": "lwst:queryFormatAdvertised", "@type": "xsd:boolean"},
+    "repeat":                {"@id": "lwst:repeat", "@type": "xsd:boolean"},
+    "containerEmpty":        {"@id": "lwst:containerEmpty", "@type": "xsd:boolean"},
+    "task":                  {"@id": "lwst:task"},
+    "prompt":                {"@id": "lwst:prompt"},
+    "arm":                   {"@id": "lwst:arm"},
 
     "kind":               {"@id": "lwst:kind", "@type": "@vocab"},
     "NoCredential":       "lwst:NoCredential",

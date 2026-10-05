@@ -122,7 +122,7 @@ Every tool carries MCP annotations that tell a client whether to ask before call
 | Prompt | Argument | Purpose |
 |---|---|---|
 | `triage_run` | `run_id` | Walks the agent through triage: counts, failures, the clause behind each failure, the trace, then grouping by root cause and proposing the smallest server fix. |
-| `draft_test` | `requirement_iri` | Drafts a YAML-LD test definition for one requirement. The prompt states the rules of format 0.8.0, and that the draft must pass the definition checks, run green against the reference deployment and arrive as a pull request before it is committed. |
+| `draft_test` | `requirement_iri` | Drafts a YAML-LD test definition for one requirement. The prompt states the rules of format 0.9.0, and that the draft must pass the definition checks, run green against the reference deployment and arrive as a pull request before it is committed. |
 
 ### Resources
 

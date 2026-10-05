@@ -15,10 +15,10 @@ import com.ebremer.touchstone.core.Touchstone;
 public final class Definitions {
 
     /** The format this engine implements (DECISIONS.md D-0053). */
-    public static final String FORMAT_VERSION = "0.8.0";
+    public static final String FORMAT_VERSION = "0.9.0";
 
     /** The schema {@code $id} of that format; definitions whose schema names another are refused. */
-    public static final String SCHEMA_ID = "https://example.org/touchstone/schema/definitions/0-8-0";
+    public static final String SCHEMA_ID = "https://example.org/touchstone/schema/definitions/0-9-0";
 
     /**
      * Base of every definition IRI: a manifest's IRI is this plus its path under

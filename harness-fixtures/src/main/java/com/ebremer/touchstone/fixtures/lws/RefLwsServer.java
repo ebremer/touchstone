@@ -112,6 +112,51 @@ public final class RefLwsServer implements AutoCloseable {
     public static final String SUBJECT_ATTRIBUTE = "touchstone.lws.subject";
     /** Request attribute: the client_id of a validated access token. */
     public static final String CLIENT_ATTRIBUTE = "touchstone.lws.client";
+    /** Request attribute: for a request to a container, how many members it had when the request arrived. */
+    public static final String MEMBERS_ATTRIBUTE = "touchstone.lws.members";
+    /** Request attribute: the {@link Fault} that fired on the request, by its term. */
+    public static final String FAULT_ATTRIBUTE = "touchstone.lws.fault";
+
+    /**
+     * Faults a client session arms (CLIENT-TESTING.md section 6.2, OBSERVATION.md section 6.2):
+     * each fires once, on the next request it applies to, and each is behaviour a server may
+     * legally show.
+     */
+    public enum Fault {
+        /**
+         * The next PUT to a linkset that supports PUT is refused 405, with an {@code Allow} that
+         * leaves PUT out, as from a server that stopped supporting the optional PUT.
+         */
+        METHOD_NOT_ALLOWED("methodNotAllowed"),
+        /**
+         * The next POST that creates a resource creates it, then answers 503 with no
+         * {@code Location}, as if the answer had been lost.
+         */
+        LOST_CREATE_RESPONSE("lostCreateResponse"),
+        /** The next request for a page of search results is answered 410, as for an expired page. */
+        PAGE_GONE("pageGone");
+
+        private final String term;
+
+        Fault(String term) {
+            this.term = term;
+        }
+
+        /** The fault's name in the client rules and the session API. */
+        public String term() {
+            return term;
+        }
+
+        /** The fault named {@code term}, or null. */
+        public static Fault of(String term) {
+            for (Fault f : values()) {
+                if (f.term.equals(term)) {
+                    return f;
+                }
+            }
+            return null;
+        }
+    }
     private static final String TYPE_SEARCH = "/_types/search";
     private static final String LWS_QUERY = "application/lws-query+json";
     /** Groups a type search may hold before it is refused with 422 (lws10-index section 7.2). */
@@ -150,6 +195,8 @@ public final class RefLwsServer implements AutoCloseable {
     private volatile java.util.function.Predicate<URI> deliveryGuard = uri -> true;
     /** Whether the linksets of data resources support PUT; containers' never do. */
     private volatile boolean linksetPut;
+    /** The faults armed and not yet fired. */
+    private final Set<Fault> armed = ConcurrentHashMap.newKeySet();
     /** Opaque page URLs: token to page, and container path and page number to token. */
     private final ConcurrentMap<String, PageRef> pageRefs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> pageTokens = new ConcurrentHashMap<>();
@@ -392,6 +439,25 @@ public final class RefLwsServer implements AutoCloseable {
         this.linksetPut = supported;
     }
 
+    /** Arms {@code fault}: it fires once, on the next request it applies to. */
+    public void arm(Fault fault) {
+        armed.add(fault);
+    }
+
+    /** The faults armed that have not fired yet. */
+    public Set<Fault> armed() {
+        return Set.copyOf(armed);
+    }
+
+    /** Fires {@code fault} on this request if it is armed, marking the request; returns whether it fired. */
+    private boolean fire(Request request, Fault fault) {
+        if (armed.remove(fault)) {
+            request.setAttribute(FAULT_ATTRIBUTE, fault.term());
+            return true;
+        }
+        return false;
+    }
+
     /** Lets notifications go only to the inboxes {@code guard} accepts. */
     public void deliverOnlyTo(java.util.function.Predicate<URI> guard) {
         this.deliveryGuard = guard;
@@ -606,6 +672,9 @@ public final class RefLwsServer implements AutoCloseable {
                 role(request, linkset ? "linkset" : description ? "storageDescription"
                         : addressed == null || builtPage ? "unknown" : !addressed.container ? "dataResource"
                         : requestedPage(request) > 1 ? "page" : "container");
+                if (addressed != null && addressed.container && !linkset && !description) {
+                    request.setAttribute(MEMBERS_ATTRIBUTE, addressed.children.size());
+                }
             }
             if (authMode == AuthMode.SECURED && !description) {
                 String action = switch (method) {
@@ -1075,6 +1144,10 @@ public final class RefLwsServer implements AutoCloseable {
                         methodNotAllowed(response, callback, allow);
                         return;
                     }
+                    if (fire(request, Fault.METHOD_NOT_ALLOWED)) {
+                        methodNotAllowed(response, callback, "GET, HEAD, PATCH");
+                        return;
+                    }
                     String contentType = request.getHeaders().get("Content-Type");
                     if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(LINKSET_JSON)) {
                         status(request, response, callback, 415);
@@ -1156,6 +1229,12 @@ public final class RefLwsServer implements AutoCloseable {
             parent.etag = newEtag();
             parent.modified = now();
             announce(request, "Create", childPath, child, "target", path);
+            if (fire(request, Fault.LOST_CREATE_RESPONSE)) {
+                // Created, but the client never learns it: no Location, a server error.
+                response.getHeaders().put(HttpHeader.RETRY_AFTER, "1");
+                status(request, response, callback, 503);
+                return;
+            }
 
             response.setStatus(201);
             response.getHeaders().put(HttpHeader.LOCATION, absolute(request, childPath));
@@ -1729,6 +1808,10 @@ public final class RefLwsServer implements AutoCloseable {
                 List<List<String>> typeGroups = List.of();
                 java.util.Map<String, List<List<String>>> relationGroups = new java.util.LinkedHashMap<>();
                 byte[] filterBytes = null;
+                if (pageLink && fire(request, Fault.PAGE_GONE)) {
+                    status(request, response, callback, 410);
+                    return;
+                }
                 if (pageLink) {
                     try {
                         filterBytes = java.util.Base64.getUrlDecoder().decode(q);

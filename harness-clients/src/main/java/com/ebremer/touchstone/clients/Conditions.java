@@ -44,7 +44,9 @@ final class Conditions {
         if ((f = bool(condition, "issued", a.issued())) != null
                 || (f = bool(condition, "methodAdvertised", a.methodAdvertised())) != null
                 || (f = bool(condition, "patchFormatAdvertised", a.patchFormatAdvertised())) != null
-                || (f = bool(condition, "queryFormatAdvertised", a.queryFormatAdvertised())) != null) {
+                || (f = bool(condition, "queryFormatAdvertised", a.queryFormatAdvertised())) != null
+                || (f = bool(condition, "repeat", a.repeat())) != null
+                || (f = bool(condition, "containerEmpty", a.containerEmpty())) != null) {
             return f;
         }
         // 4. presentation: every place the request carried a credential is listed

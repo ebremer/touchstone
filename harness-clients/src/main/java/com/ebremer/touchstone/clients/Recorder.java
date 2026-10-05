@@ -59,6 +59,7 @@ final class Recorder {
     private final Map<String, Issue> issued = new ConcurrentHashMap<>();
     private final Map<String, Map<String, String>> advertised = new ConcurrentHashMap<>();
     private final Map<String, String> roles = new ConcurrentHashMap<>();
+    private final Map<String, String> lastRequests = new ConcurrentHashMap<>();
 
     /**
      * @param inSession whether a URL is one of the session's, the only ones the ledger tracks
@@ -126,6 +127,16 @@ final class Recorder {
             }
         }
         return byQuery != null ? new Built("query", byQuery) : byPath != null ? new Built("path", byPath) : null;
+    }
+
+    /**
+     * Records {@code signature} (method, Content-Type and body digest) as the latest request to
+     * {@code url}, and says whether the previous request to it had the same (OBSERVATION.md
+     * section 4.6).
+     */
+    boolean repeats(String url, String signature) {
+        String key = withoutFragment(url);
+        return key != null && signature.equals(lastRequests.put(key, signature));
     }
 
     /** What {@code url}'s answers advertised, before the exchange now being recorded. */

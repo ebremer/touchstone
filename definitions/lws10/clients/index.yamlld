@@ -64,3 +64,35 @@ entries:
     guidance: >-
       When a search is refused with 415, retry it in application/lws-query+json, the baseline
       format every server accepts.
+
+  - id: "#client-restart-after-refused-page"
+    type: ObservationTest
+    name: client-restart-after-refused-page
+    label: After a page of search results is refused, the client restarts the search
+    comment: >-
+      A page link the server no longer recognises, or that expired, gets 404 or 410. Trials are
+      the client's next request to the Type Search or Type Index Service after such a refusal.
+      The task makes the session refuse the next page link once with 410.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors
+    traits: [Discovery]
+    area: index
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/client-restart
+    task:
+      prompt: >-
+        Search, and follow the results to their next page. The session will refuse that page
+        once with 410, as if it had expired.
+      arm: pageGone
+    observe:
+      role: [typeSearch, typeIndex, searchPage]
+      after:
+        role: searchPage
+        statusCode: [404, 410]
+    expect:
+      role: [typeSearch, typeIndex]
+    guidance: >-
+      When a page link is refused with 404 or 410, start again: send the QUERY again, or request
+      the type index again. Do not ask for further pages of the old result.

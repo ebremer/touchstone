@@ -65,6 +65,31 @@ final class Judge {
         states = fresh;
     }
 
+    /**
+     * Starts the task of rule {@code name} (OBSERVATION.md section 6.1): for a rule without
+     * {@code after}, the next exchange its {@code observe} holds of becomes a trial. Returns
+     * false when there is no such rule, or it has no task.
+     */
+    synchronized boolean startTask(String name) {
+        for (State s : states) {
+            if (s.rule.name().equals(name) && s.rule.task() != null) {
+                if (s.rule.taskTriggered()) {
+                    s.triggers.addLast("");
+                    while (s.triggers.size() > MAX_TRIGGERS) {
+                        s.triggers.removeFirst();
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The task of rule {@code name}, if it has one. */
+    java.util.Optional<RuleDefinition.Task> taskOf(String name) {
+        return rules.find(name).map(RuleDefinition::task);
+    }
+
     /** Judges one exchange against every rule in scope; returns the verdicts of the rules it was a trial of. */
     synchronized List<Verdict> judge(Observed x) {
         String role = x.annotations().role();
@@ -93,12 +118,20 @@ final class Judge {
     }
 
     /**
-     * Section 6: without {@code after}, a trial is an exchange {@code observe} holds of. With it,
-     * the exchange must also close an open trigger, and then may open one itself.
+     * Section 6: without {@code after}, a trial is an exchange {@code observe} holds of, or, for
+     * a rule with a task, the first such exchange after each start of the task. With
+     * {@code after}, the exchange must also close an open trigger, and then may open one itself.
      */
     private static boolean isTrial(State s, Observed x) {
         JsonNode observe = s.rule.observe();
         JsonNode after = observe.get("after");
+        if (s.rule.taskTriggered()) {
+            if (s.triggers.isEmpty() || Conditions.check(observe, x) != null) {
+                return false;
+            }
+            s.triggers.clear();
+            return true;
+        }
         if (after == null) {
             return Conditions.check(observe, x) == null;
         }
@@ -169,6 +202,11 @@ final class Judge {
             ArrayNode reqs = item.putArray("requirements");
             r.requirements().forEach(reqs::add);
             item.set("evidence", s.evidence == null ? null : JSON.valueToTree(s.evidence));
+            if (r.task() != null) {
+                ObjectNode task = item.putObject("task");
+                task.put("prompt", r.task().prompt());
+                task.put("arm", r.task().arm());
+            }
             item.put("guidance", r.guidance());
         }
         ObjectNode verdict = body.putObject("verdict");

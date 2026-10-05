@@ -43,8 +43,9 @@
     <p id="verdict" class="verdict"></p>
     <p class="note">Each rule judges every request it applies to. A rule passes once a request has
       tried it and none has failed it; a failure keeps the first offending request, and
-      <em>untested</em> means your client has not done what the rule is about yet. Only MUST rules
-      decide the verdict. <button type="button" id="reset" class="copy">Reset results</button></p>
+      <em>untested</em> means your client has not done what the rule is about yet. A rule with a
+      task needs you to start the task, then do what it says: some tasks make the session refuse
+      your next request once, to see how your client copes. Only MUST rules decide the verdict. <button type="button" id="reset" class="copy">Reset results</button></p>
     <div class="scroll">
       <table class="rules">
         <thead><tr>

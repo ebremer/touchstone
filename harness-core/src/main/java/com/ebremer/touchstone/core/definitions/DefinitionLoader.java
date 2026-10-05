@@ -160,7 +160,9 @@ public final class DefinitionLoader {
                     strings(r.path("requirements")),
                     r.get("observe"),
                     r.get("expect"),
-                    r.path("guidance").asText()));
+                    r.path("guidance").asText(),
+                    r.has("task") ? new RuleDefinition.Task(r.path("task").path("prompt").asText(),
+                            text(r.path("task"), "arm")) : null));
         }
     }
 

@@ -94,6 +94,32 @@ final class Session {
         return token;
     }
 
+    /**
+     * Starts the task of rule {@code name}: opens its trigger and arms its fault (OBSERVATION.md
+     * sections 6.1 and 6.2). Returns false when the rule has no task.
+     */
+    boolean startTask(String name) {
+        if (!judge.startTask(name)) {
+            return false;
+        }
+        judge.taskOf(name).ifPresent(t -> {
+            if (t.arm() != null) {
+                armFault(t.arm());
+            }
+        });
+        return true;
+    }
+
+    /** Arms the fault named {@code term}; returns false when there is none by that name. */
+    boolean armFault(String term) {
+        RefLwsServer.Fault fault = RefLwsServer.Fault.of(term);
+        if (fault == null) {
+            return false;
+        }
+        storage.arm(fault);
+        return true;
+    }
+
     boolean keyMatches(String presented) {
         return presented != null && MessageDigest.isEqual(sha256(presented), keyHash);
     }

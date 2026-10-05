@@ -4,8 +4,8 @@ The service that tests LWS clients ([CLIENT-TESTING.md](../CLIENT-TESTING.md)). 
 developer starts a session, points their client at the session's storage, and watches every
 request it sends on the session's page. Every request is judged against the client rules,
 `definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
-Phases C1 and C2 are built: sessions, the traffic log and the rules. Tasks and faults come in
-phase C3.
+Phases C1 to C3 are built: sessions, the traffic log, the rules, and the tasks and faults that
+let a developer try every rule on purpose.
 
 ## Running it
 
@@ -55,6 +55,8 @@ The session API takes the key as a Bearer token:
 | `GET <base>/sessions/{id}/exchanges?after=N&limit=M` | the traffic log after exchange `N`, at most `M` (≤ 500) |
 | `GET <base>/sessions/{id}/results` | each rule's outcome, trials and first failure with how to fix it, and the verdict |
 | `POST <base>/sessions/{id}/reset` | starts the results over; the storage and the log stay |
+| `POST <base>/sessions/{id}/tasks/{rule}` | starts a rule's task, arming its fault if it has one; `204`, or `404` for a rule without a task |
+| `POST <base>/sessions/{id}/faults/{fault}` | arms a fault alone: `methodNotAllowed`, `lostCreateResponse` or `pageGone` |
 | `POST <base>/sessions/{id}/tokens/{alice\|bob}` | a fresh access token |
 | `DELETE <base>/sessions/{id}` | ends the session |
 | `GET <base>/sessions/{id}/page` | the session page; it reads the key from its fragment, `#key=…` |
@@ -70,7 +72,12 @@ hex digits of their SHA-256. It is annotated with:
 - the rules it was a trial of, and how each judged it.
 
 A rule's outcome is *passed* once a request has tried it and none failed it, *failed* with the
-first failing request kept as evidence, or *untested*. Only MUST rules decide the verdict,
+first failing request kept as evidence, or *untested*. Five rules need a task. Two take the
+developer's word for what the client is about to do: create a container, or delete one with its
+contents. Three arm a fault, which makes the session answer the next request it applies to once
+in a way a server may legally answer: refuse a linkset PUT it advertised, lose a create's
+answer, or refuse an expired page of search results. A developer starts a task on the session
+page, or a CI job through the API, then has the client do what the task says. Only MUST rules decide the verdict,
 which reads, for example, "no MUST failure in 12 MUST rules exercised, of 18 that apply".
 
 ## Traps

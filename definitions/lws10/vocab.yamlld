@@ -51,6 +51,13 @@
       sends to a client session. Every exchange its observe condition selects is a trial,
       and a trial passes when its expect condition holds.
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:Task
+    type: rdfs:Class
+    label: "Task"
+    comment: >-
+      Something a developer is asked to do with their client during a client session, so
+      that a rule needing intent or a fault can be tried.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:ExchangeCondition
     type: rdfs:Class
     label: "Exchange condition"
@@ -1265,6 +1272,51 @@
       session's last answer for this URL before the request.
     domain: lwst:ExchangeCondition
     range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:repeat
+    type: rdf:Property
+    label: "repeat"
+    comment: >-
+      Whether the request has the method, Content-Type and body of the previous request to
+      the same URL (format 0.9.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:containerEmpty
+    type: rdf:Property
+    label: "containerEmpty"
+    comment: >-
+      Whether the request addressed a container that had no members when it arrived
+      (format 0.9.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:task
+    type: rdf:Property
+    label: "task"
+    comment: >-
+      What the developer is asked to do so that the rule can be tried. Without after, each
+      start of the task selects the next exchange observe holds of as a trial (format
+      0.9.0).
+    domain: lwst:ObservationTest
+    range: lwst:Task
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:prompt
+    type: rdf:Property
+    label: "prompt"
+    comment: >-
+      The task as the developer reads it.
+    domain: lwst:Task
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:arm
+    type: rdf:Property
+    label: "arm"
+    comment: >-
+      A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse
+      or pageGone (OBSERVATION.md section 6.2).
+    domain: lwst:Task
+    range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:kind
     type: rdf:Property

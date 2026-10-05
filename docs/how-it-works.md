@@ -22,7 +22,7 @@ Touchstone is a Java 21 Maven project with four modules, plus the data they oper
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`), built as one runnable jar. |
 | `harness-mcp` | A Model Context Protocol server over the same engine, for AI agents. |
 | `catalog/` | The requirements catalog: one Turtle file per specification document. |
-| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.8.0, and the contract that says how to run them; and the client rules, judged by client sessions ([`OBSERVATION.md`]({% include src.html path="definitions/OBSERVATION.md" %})). |
+| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.9.0, and the contract that says how to run them; and the client rules, judged by client sessions ([`OBSERVATION.md`]({% include src.html path="definitions/OBSERVATION.md" %})). |
 | `tools/` | Python and Node scripts that check the definitions, extract clauses from a draft, and detect drift. |
 | `targets.yaml` | The registry of servers Touchstone is allowed to test. |
 
@@ -211,8 +211,8 @@ provides both.
   signature test fail.
 
 `ClientRulesSelfTest` does the same for the client rules. In client sessions of their own,
-`RefLwsClient`, a scripted client that does what the rules ask, passes all 25, and each of its
-25 broken twins, which gets one thing wrong, fails exactly the rule aimed at it.
+`RefLwsClient`, a scripted client that does what the rules ask and starts every task, passes all
+30. Each of its 30 broken twins gets one thing wrong and fails exactly the rules aimed at it.
 
 Each broken twin fails exactly the tests that exist to catch it, which is what shows those
 tests can fail.

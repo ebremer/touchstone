@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.ebremer.touchstone.core.definitions.ClientRules;
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpFields;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code /}: the start page; {@code /static/...}: its scripts and styles;</li>
  *   <li>{@code POST /sessions}: starts a session (section 4.4);</li>
  *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results}, {@code .../reset},
- *       {@code .../tokens/{name}}: the session API,
+ *       {@code .../tasks/{rule}}, {@code .../faults/{fault}}, {@code .../tokens/{name}}: the session API,
  *       which takes the session key as a Bearer token; {@code .../page}: the session page, which
  *       reads the key from its URL's fragment;</li>
  *   <li>{@code /s/{sid}/storage/...} and {@code /s/{sid}/as/...}: the session's storage and
@@ -440,6 +441,25 @@ public final class ClientLab implements AutoCloseable {
                 callback.succeeded();
                 return;
             }
+            if (parts.length == 3 && parts[1].equals("tasks") && method.equals("POST")) {
+                if (!s.startTask(parts[2])) {
+                    error(response, callback, 404, "not_found", "no rule named " + parts[2] + " has a task");
+                    return;
+                }
+                LOG.info("session {}: task {} started", s.id, parts[2]);
+                response.setStatus(204);
+                callback.succeeded();
+                return;
+            }
+            if (parts.length == 3 && parts[1].equals("faults") && method.equals("POST")) {
+                if (!s.armFault(parts[2])) {
+                    error(response, callback, 404, "not_found", "no fault named " + parts[2]);
+                    return;
+                }
+                response.setStatus(204);
+                callback.succeeded();
+                return;
+            }
             if (parts.length == 3 && parts[1].equals("tokens") && method.equals("POST")
                     && Session.IDENTITIES.contains(parts[2])) {
                 ObjectNode body = JSON.createObjectNode();
@@ -489,6 +509,8 @@ public final class ClientLab implements AutoCloseable {
             limits.put("maxResources", config.maxResources());
             limits.put("maxStorageBytes", config.maxStorageBytes());
             limits.put("maxExchanges", config.maxExchanges());
+            ArrayNode faults = body.putArray("armedFaults");
+            s.storage.armed().forEach(f -> faults.add(f.term()));
             body.put("recorded", s.recorder.recorded());
             return body;
         }
@@ -594,6 +616,10 @@ public final class ClientLab implements AutoCloseable {
             Presented presented = presentation(request, requestType, requestBody, session.tokens);
             String method = request.getMethod();
             String essence = essence(requestType);
+            boolean judged = !role.equals("preflight") && !role.equals("limited");
+            boolean repeat = judged && session.recorder.repeats(url, method + "\n" + essence + "\n" + digest(requestBody));
+            Object members = request.getAttribute(RefLwsServer.MEMBERS_ATTRIBUTE);
+            Object fault = request.getAttribute(RefLwsServer.FAULT_ATTRIBUTE);
             Exchange.Annotations annotations = new Exchange.Annotations(server, role,
                     subject == null ? null : session.identityOf(subject.toString()),
                     presented.fingerprint(), presented.places(), issuedVia != null, issuedVia,
@@ -602,7 +628,8 @@ public final class ClientLab implements AutoCloseable {
                     listed(advertised.get("Allow"), method, false),
                     essence != null && listed(advertised.get("Accept-Patch"), essence, true),
                     essence != null && listed(advertised.get("Accept-Query"), essence, true),
-                    null, limit);
+                    repeat, role.equals("container") && Integer.valueOf(0).equals(members),
+                    fault == null ? null : fault.toString(), limit);
             int cap = config.maxRecordedResponseBytes();
             Exchange.Body req = body(requestText, requestBody.length, requestBody.length, cap);
             Exchange.Body res = body(responseText, responseLength, responseBody == null ? 0 : responseBody.length, cap);
@@ -630,6 +657,15 @@ public final class ClientLab implements AutoCloseable {
             } catch (IOException e) {
                 // no JSON, no token
             }
+        }
+    }
+
+    /** A body's SHA-256, for telling a repeated request (OBSERVATION.md section 4.6). */
+    private static String digest(byte[] body) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(body));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 

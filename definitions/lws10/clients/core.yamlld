@@ -584,3 +584,133 @@ entries:
     guidance: >-
       Sending If-Match with the ETag of your last read stops a delete of something that
       changed since you looked at it.
+
+  # ---- rules that need a task (format 0.9.0): the developer's word, or a fault ----
+
+  - id: "#client-create-container-type-link"
+    type: ObservationTest
+    name: client-create-container-type-link
+    label: When the client creates a container, its POST carries Link rel="type" to lws#Container
+    comment: >-
+      A POST without the link creates a data resource, which is legal unless a container was
+      meant, so the rule needs the developer's word: it judges the first POST into a container
+      after its task starts.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post, Container]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-container-type-link
+    task:
+      prompt: Create a container, in any container you like.
+    observe:
+      method: POST
+      role: container
+    expect:
+      linkHeaders:
+        - rel: type
+          href: https://www.w3.org/ns/lws#Container
+    guidance: >-
+      Send Link: <https://www.w3.org/ns/lws#Container>; rel="type" with the POST. Without it,
+      the server creates a data resource.
+
+  - id: "#client-delete-container-depth"
+    type: ObservationTest
+    name: client-delete-container-depth
+    label: When the client deletes a container with everything in it, it sends Depth infinity, or deletes the members first
+    comment: >-
+      A DELETE without Depth asks for the container alone, which is how a client deletes a
+      container only if it is empty, so the rule needs the developer's word: it judges the first
+      DELETE of a container after its task starts.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+    traits: [Delete, Container]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
+    task:
+      prompt: Delete a container that still has something in it, together with everything in it.
+    observe:
+      method: DELETE
+      role: container
+    expect:
+      anyOf:
+        - otherHeaders:
+            - headerName: Depth
+              matches: '(?i)^\s*infinity\s*$'
+        - containerEmpty: true
+    guidance: >-
+      Send Depth: infinity to delete a container and everything in it, or delete its members
+      first. Without either, a server refuses a non-empty container with 409.
+
+  - id: "#client-no-repeat-after-405-415"
+    type: ObservationTest
+    name: client-no-repeat-after-405-415
+    label: After a linkset refuses a request with 405 or 415, the client does not send the same request again
+    comment: >-
+      Handling the refusal gracefully cannot be seen directly. Its visible part is that the
+      client's next request to the linkset is not the refused one again: a client that reads the
+      linkset's Allow and Accept-Patch, or gives up, handles it. The task makes the session
+      refuse a PUT the linkset advertised, once, as a server that withdraws its optional PUT may.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Put, Patch, Linkset]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+    task:
+      prompt: >-
+        Replace a data resource's linkset with PUT. The session will refuse the PUT once with
+        405, as a server that stopped supporting it would.
+      arm: methodNotAllowed
+    observe:
+      role: linkset
+      after:
+        role: linkset
+        statusCode: [405, 415]
+        sameTarget: true
+    expect:
+      repeat: false
+    guidance: >-
+      On a 405 or 415, read the linkset's Allow and Accept-Patch headers and change the request to
+      fit them, or report the refusal. Do not send the same request again.
+
+  - id: "#client-no-blind-retry-of-create"
+    type: ObservationTest
+    name: client-no-blind-retry-of-create
+    label: After a create fails with a server error, the client checks before it POSTs the same thing again
+    comment: >-
+      When a create's answer is lost, the resource may exist. The clause allows checks or unique
+      identifiers; the session cannot see an identifier a client puts in its content, so this
+      rule asks that the next request to the container after a failed create is not the same
+      POST again. Reading the container's listing first passes. The task makes the session
+      create a resource and then answer 503.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+    traits: [Post]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-post-not-idempotent
+    task:
+      prompt: >-
+        Create a data resource. The session will create it and then answer 503, as if the answer
+        had been lost.
+      arm: lostCreateResponse
+    observe:
+      after:
+        method: POST
+        statusCode: 5xx
+        sameTarget: true
+    expect:
+      repeat: false
+    guidance: >-
+      When a create fails without an answer you can trust, look at the container's listing before
+      you POST again: the first POST may have worked.
