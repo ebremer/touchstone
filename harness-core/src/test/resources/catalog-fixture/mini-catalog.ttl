@@ -6,6 +6,7 @@ req:alpha
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "test-module" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://example.org/spec#alpha> ;
     touchstone:summary "Alpha requirement." ;
     touchstone:status touchstone:Approved .

@@ -8,7 +8,9 @@ in the catalog before Gate 1), skipped (with a reason), or curated (slug + summa
 Levels derive from the strongest BCP 14 keyword in the block (MUST-family >
 SHOULD-family > MAY) unless the curation entry overrides with "level". clauseText
 is the full block text unless the entry overrides with "text" (trimming to the
-normative sentences). Hashes follow DECISIONS.md D-0008. An entry's "created"
+normative sentences). Every curated entry names who the clause binds in
+"appliesTo", a list of roles from the catalog vocabulary (DECISIONS.md D-0076); the
+extraction cannot tell, so a reviewer must. Hashes follow DECISIONS.md D-0008. An entry's "created"
 overrides the file's, so a re-baseline keeps the date an unchanged entry was
 written. The dated source URL comes from the extraction's file name, which is the
 draft's (catalog/sources/WD-lws10-core-YYYYMMDD.clauses.json).
@@ -30,6 +32,7 @@ DRAFT_RE = re.compile(r"(WD-lws10-core-((\d{4})\d{4}))\.clauses\.json$")
 MUST_KW = {"MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED"}
 SHOULD_KW = {"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED"}
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*$")
+ROLES = {"Server", "AuthorizationServer", "Client", "IdentityProvider", "Receiver", "Specification"}
 
 
 def normalize(text: str) -> str:
@@ -84,6 +87,9 @@ def main() -> int:
         if slug in slugs or slug in existing_slugs:
             problems.append(f"duplicate slug: {slug}")
         slugs.add(slug)
+        roles = e.get("appliesTo")
+        if not roles or not isinstance(roles, list) or not set(roles) <= ROLES:
+            problems.append(f"{slug}: appliesTo must list roles from {sorted(ROLES)}")
         if '"' in summary or "\\" in summary:
             problems.append(f"{slug}: summary unsafe for a quoted literal")
         text = e.get("text", block["text"])
@@ -127,6 +133,7 @@ def main() -> int:
             "    a touchstone:Requirement ;",
             f"    touchstone:level \"{level}\" ;",
             "    touchstone:specModule \"lws10-core\" ;",
+            "    touchstone:appliesTo " + ", ".join(f"touchstone:{r}" for r in e["appliesTo"]) + " ;",
             f"    touchstone:section <{TR}#{sec}> ;",
             f"    touchstone:sourceDraft <{dated}#{sec}> ;",
             f"    touchstone:summary \"{e['summary']}\" ;",

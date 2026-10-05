@@ -84,8 +84,17 @@ public final class HtmlReport {
 
         List<Map<String, Object>> requirements = new ArrayList<>();
         Map<String, long[]> levelStats = new TreeMap<>((a, b) -> Integer.compare(levelRank(a), levelRank(b)));
+        long leftOut = 0;
         for (Requirement req : catalog) {
             List<Map<String, Object>> linked = testsByRequirement.getOrDefault(req.iri(), List.of());
+            // A server run answers for server-side clauses only (D-0076), so coverage leaves the
+            // others out. One a test here cites as a premise stays in the matrix, for the link.
+            if (!req.bindsServerSide()) {
+                leftOut++;
+                if (linked.isEmpty()) {
+                    continue;
+                }
+            }
             String result = requirementResult(linked);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("iri", req.iri());
@@ -97,6 +106,9 @@ public final class HtmlReport {
             row.put("tests", linked);
             row.put("result", result);
             requirements.add(row);
+            if (!req.bindsServerSide()) {
+                continue;
+            }
 
             long[] stats = levelStats.computeIfAbsent(req.level(), k -> new long[3]);
             stats[0]++;
@@ -138,6 +150,7 @@ public final class HtmlReport {
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("run", runInfo);
         model.put("levels", levels);
+        model.put("leftOut", leftOut);
         model.put("requirements", requirements);
         model.put("tests", tests);
         return model;

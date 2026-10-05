@@ -39,6 +39,7 @@ req:conneg-media-type-equivalence
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#media-type-equivalence> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#media-type-equivalence> ;
     touchstone:summary "Container representations are equivalent across application/lws+json, application/ld+json and application/json: one body, and the Content-Type echoes the requested type." ;
@@ -53,6 +54,7 @@ req:create-post-201-location-links
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
@@ -65,6 +67,7 @@ req:create-container-type-link
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "Creating a container is signalled by a request Link header rel=type pointing at lws#Container; the server materializes a container accordingly." ;
@@ -77,6 +80,7 @@ req:create-post-missing-container-404
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "POST into a nonexistent container yields 404 unless another status code is more appropriate." ;
@@ -91,6 +95,7 @@ req:get-data-resource-content-range-etag
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "GET on a data resource returns 200 with the stored Content-Type; range-request support and an ETag header are mandatory." ;
@@ -103,6 +108,7 @@ req:head-parity-with-get
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "HEAD is supported for containers and data resources, returning the same headers as GET (Content-Type, Link metadata) without a body." ;
@@ -117,6 +123,7 @@ req:patch-json-merge-patch-baseline
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#update-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource> ;
     touchstone:summary "PATCH minimally supports JSON Merge Patch (application/merge-patch+json)." ;
@@ -131,6 +138,7 @@ req:link-up-on-non-root-resources
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Every response for a non-root resource carries a Link header rel=up pointing at the parent container." ;
@@ -143,6 +151,7 @@ req:linkset-accept-patch-advertised
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Servers advertise JSON Merge Patch support on the linkset resource via the Accept-Patch header." ;
@@ -157,6 +166,7 @@ req:delete-non-empty-container-409-depth
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#delete-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource> ;
     touchstone:summary "Non-recursive DELETE of a non-empty container is rejected with 409; recursive deletion is requested via Depth: infinity." ;
@@ -172,6 +182,7 @@ req:delete-removes-from-parent-listing
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#delete-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource> ;
     touchstone:summary "Deleting a resource atomically removes it from the parent container items list; the parent totalItems SHOULD update." ;
@@ -186,6 +197,7 @@ req:container-empty-items-array
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#container-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties> ;
     touchstone:summary "A container representation's items is an array of contained-resource descriptions; an empty container yields an empty array." ;
@@ -198,6 +210,7 @@ req:contained-resource-type-values
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#contained-resource-description> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description> ;
     touchstone:summary "A contained resource description's type is DataResource or Container (or an array containing at least one of the two)." ;
@@ -217,6 +230,7 @@ req:conformance-server-class
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#conformance> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#conformance> ;
     touchstone:summary "An LWS Server is an HTTP server that complies with all relevant MUST statements, specifically those in the Operations section." ;
@@ -229,6 +243,7 @@ req:conformance-client-class
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#conformance> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#conformance> ;
     touchstone:summary "An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section." ;
@@ -243,6 +258,7 @@ req:authn-credential-tamper-evident-claims
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model> ;
     touchstone:summary "An authentication credential includes tamper-evident claims about a subject." ;
@@ -255,6 +271,7 @@ req:authn-subject-claim-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model> ;
     touchstone:summary "The subject claim is required and its value is a URI." ;
@@ -267,6 +284,7 @@ req:authn-issuer-claim-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model> ;
     touchstone:summary "The issuer claim is required and its value is a URI." ;
@@ -279,6 +297,7 @@ req:authn-client-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model> ;
     touchstone:summary "The client claim is required and should be a URI." ;
@@ -291,6 +310,7 @@ req:authn-audience-restriction-recommended
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model> ;
     touchstone:summary "Audience restriction is recommended and its list should include an authorization server identifier." ;
@@ -303,6 +323,7 @@ req:authn-issuer-trust-out-of-band
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-validation> ;
     touchstone:summary "Verifier-issuer trust may be established out of band; authentication suites define additional mechanisms." ;
@@ -315,6 +336,7 @@ req:authn-credential-signed
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client, touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-validation> ;
     touchstone:summary "Authentication credentials are signed; asymmetric cryptography is recommended." ;
@@ -327,6 +349,7 @@ req:authn-suite-token-type-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Specification ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authentication-type-identifier> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-type-identifier> ;
     touchstone:summary "Each authentication suite is associated with a token type URI, preferably from the IANA OAuth URI registry." ;
@@ -341,6 +364,7 @@ req:authz-oauth2-baseline
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization> ;
     touchstone:summary "OAuth 2.0 is the baseline authorization framework; servers may support additional mechanisms." ;
@@ -353,6 +377,7 @@ req:authz-401-www-authenticate-challenge
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery> ;
     touchstone:summary "A storage server generating a 401 sends a WWW-Authenticate header with at least one conforming challenge." ;
@@ -365,6 +390,7 @@ req:authz-challenge-as-uri-param
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery> ;
     touchstone:summary "The as_uri challenge parameter is required and identifies the authorization server that issues access tokens." ;
@@ -377,6 +403,7 @@ req:authz-challenge-realm-param
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery> ;
     touchstone:summary "The realm challenge parameter is required; clients verify the request URI is logically within the realm." ;
@@ -389,6 +416,7 @@ req:authz-challenge-extra-params
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery> ;
     touchstone:summary "Challenges may include other headers and parameters." ;
@@ -401,6 +429,7 @@ req:authz-server-metadata-well-known
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata> ;
     touchstone:summary "Authorization servers provide RFC 8414 metadata at /.well-known/lws-configuration." ;
@@ -413,6 +442,7 @@ req:authz-metadata-subject-token-types
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata> ;
     touchstone:summary "An authorization server SHOULD advertise the subject token types its token endpoint accepts via subject_token_types_supported in its metadata." ;
@@ -425,6 +455,7 @@ req:authz-metadata-subject-identifier-types
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-server-metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata> ;
     touchstone:summary "An authorization server SHOULD advertise the subject identifier types it supports (URI schemes, or did: plus method) via subject_identifier_types_supported; omitted means [https]." ;
@@ -437,6 +468,7 @@ req:authz-token-exchange-grant
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request> ;
     touchstone:summary "The token endpoint supports the RFC 8693 token-exchange grant type." ;
@@ -449,6 +481,7 @@ req:authz-token-exchange-resource-param
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request> ;
     touchstone:summary "The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected." ;
@@ -461,6 +494,7 @@ req:authz-token-exchange-subject-token-param
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request> ;
     touchstone:summary "The subject_token parameter is required and carries a valid subject token such as an authentication credential." ;
@@ -473,6 +507,7 @@ req:authz-validate-before-issuing
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request> ;
     touchstone:summary "All presented tokens are validated before an access token is returned." ;
@@ -485,6 +520,7 @@ req:authz-token-response-rfc6749-rfc9068
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "Token responses conform to RFC 6749 section 5.1; access tokens conform to RFC 9068." ;
@@ -497,6 +533,7 @@ req:authz-access-token-sub-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The access token sub claim is a required URI identifying the acting agent." ;
@@ -509,6 +546,7 @@ req:authz-access-token-iss-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The access token iss claim is required and is the authorization server URI." ;
@@ -521,6 +559,7 @@ req:authz-access-token-client-id-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The access token client_id claim is a required URI identifying the client." ;
@@ -533,6 +572,7 @@ req:authz-access-token-aud-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The access token aud claim includes the resource-parameter URI (the storage realm)." ;
@@ -545,6 +585,7 @@ req:authz-access-token-exp-short-lived
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The exp claim is required; short lifetimes are recommended (300 seconds or less)." ;
@@ -557,6 +598,7 @@ req:authz-access-token-iat-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The iat claim is required." ;
@@ -569,6 +611,7 @@ req:authz-access-token-jti-claim
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "The jti claim is required." ;
@@ -581,6 +624,7 @@ req:authz-token-error-rfc6749
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-exchange-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response> ;
     touchstone:summary "Invalid or unauthorized token requests produce RFC 6749 section 5.2 error responses." ;
@@ -593,6 +637,7 @@ req:authz-bearer-presentation-rfc6750
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-validation-presentation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation> ;
     touchstone:summary "Clients present access tokens via the Authorization header per RFC 6750." ;
@@ -605,6 +650,7 @@ req:authz-token-validation-checklist
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-validation-verification> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification> ;
     touchstone:summary "Storage servers validate access tokens with the defined checks, rejecting the request on any failure." ;
@@ -617,6 +663,7 @@ req:authz-jwt-signature-jwks-rotation
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-validation-verification> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification> ;
     touchstone:summary "JWT signatures are verified against the jwks_uri from server metadata; keys should be cached and key rotation is supported." ;
@@ -629,6 +676,7 @@ req:authz-invalid-token-401-error-param
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-validation-verification> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification> ;
     touchstone:summary "Failed validation yields 401 with a WWW-Authenticate error parameter such as invalid_token." ;
@@ -641,6 +689,7 @@ req:authz-policy-denial-rejected
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#authorization-token-validation-verification> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification> ;
     touchstone:summary "A valid token whose authorization policy disallows the operation is rejected." ;
@@ -655,6 +704,7 @@ req:storage-description-id-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "The storage description id is REQUIRED and MUST be the canonical URI of the storage, which is also the canonical URL of its controlled identifier document." ;
@@ -667,6 +717,7 @@ req:storage-description-type-storage
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "The storage description type equals or includes the string Storage (case-sensitive)." ;
@@ -679,6 +730,7 @@ req:storage-capability-id-optional
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "A capability object id, if present, is a URI." ;
@@ -691,6 +743,7 @@ req:storage-capability-type-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "A capability object type is a required string or set of strings." ;
@@ -703,6 +756,7 @@ req:storage-capability-property
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "The capability property, if present, is a set of capability maps; additional properties are allowed." ;
@@ -715,6 +769,7 @@ req:storage-service-id-optional
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "A service object id, if present, is a URI." ;
@@ -727,6 +782,7 @@ req:storage-service-type-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "A service object type is a required string or set of strings." ;
@@ -739,6 +795,7 @@ req:storage-service-endpoint-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "A service object serviceEndpoint is a required URI." ;
@@ -751,6 +808,7 @@ req:storage-service-property
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model> ;
     touchstone:summary "The service property is a required set of service maps; additional properties are allowed." ;
@@ -763,6 +821,7 @@ req:storage-description-link-header
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-binding> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding> ;
     touchstone:summary "GET/HEAD responses on storage resources include a Link header whose target is the canonical storage URI, with rel=https://www.w3.org/ns/lws#storage." ;
@@ -775,6 +834,7 @@ req:storage-uri-returns-lws-cid-document
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-binding> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding> ;
     touchstone:summary "A request for the storage URI returns a storage description document with media type application/lws+cid unless content negotiation requires otherwise." ;
@@ -787,6 +847,7 @@ req:storage-description-storageroot-service
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-services> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-services> ;
     touchstone:summary "A storage description contains a StorageRoot service whose serviceEndpoint is the URI of the storage root container." ;
@@ -799,6 +860,7 @@ req:storage-description-lws-cid
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#storage-description-representation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-representation> ;
     touchstone:summary "A storage description is serializable as application/lws+cid, and its @context is an array starting with the CID and LWS context URIs." ;
@@ -813,6 +875,7 @@ req:container-model-members
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#container-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-model> ;
     touchstone:summary "A container holds references to its members, which may be data resources or further containers; storage may itself act as the root container." ;
@@ -825,6 +888,7 @@ req:containment-rel-up-get-head
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment> ;
     touchstone:summary "Containment is expressed via a Link header rel=up on GET and HEAD responses of any non-root resource." ;
@@ -837,6 +901,7 @@ req:containment-integrity
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment-integrity> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity> ;
     touchstone:summary "The server maintains containment integrity at all times." ;
@@ -849,6 +914,7 @@ req:containment-create-atomic-items
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment-integrity> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity> ;
     touchstone:summary "Creating a resource atomically adds it to the parent container items list." ;
@@ -861,6 +927,7 @@ req:containment-delete-atomic-items
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment-integrity> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity> ;
     touchstone:summary "Deleting a resource atomically removes it from the parent items list; container deletion requires emptiness unless recursion is requested." ;
@@ -873,6 +940,7 @@ req:containment-no-orphans
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment-integrity> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity> ;
     touchstone:summary "Every non-root resource is reachable from the storage root through the containment hierarchy." ;
@@ -885,6 +953,7 @@ req:containment-no-cycles
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#containment-integrity> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity> ;
     touchstone:summary "A container never directly or indirectly contains itself." ;
@@ -897,6 +966,7 @@ req:uri-independent-of-hierarchy
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#resource-identification-0> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#resource-identification-0> ;
     touchstone:summary "Resource URIs are independent of containment position; servers may use client hints but clients must not assume URI structure reflects containment." ;
@@ -909,6 +979,7 @@ req:container-listing-authorization-visibility
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#container-membership-and-authorization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-membership-and-authorization> ;
     touchstone:summary "A readable container lists all members the client can access and may include members the client cannot access." ;
@@ -923,6 +994,7 @@ req:container-representation-required-properties
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#container-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties> ;
     touchstone:summary "A container representation includes the required property set defined by the Containers section." ;
@@ -935,6 +1007,7 @@ req:container-totalitems-accuracy
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#container-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-properties> ;
     touchstone:summary "totalItems is the disclosable contained-resource count; it should be accurate but may be approximate." ;
@@ -947,6 +1020,7 @@ req:contained-description-required-members
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#contained-resource-description> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description> ;
     touchstone:summary "Each items entry includes the required contained-resource description members." ;
@@ -959,6 +1033,7 @@ req:contained-description-recommended-members
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#contained-resource-description> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description> ;
     touchstone:summary "Contained-resource descriptions should include the recommended members." ;
@@ -971,6 +1046,7 @@ req:contained-format-for-dataresources
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#contained-resource-description> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#contained-resource-description> ;
     touchstone:summary "A contained resource description carries format, the member's media type, which must be present for DataResources." ;
@@ -985,6 +1061,7 @@ req:operations-core-four-atomic
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#operations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#operations> ;
     touchstone:summary "Servers support the four core operations, handling each atomically and consistently; error responses inform without leaking sensitive detail." ;
@@ -997,6 +1074,7 @@ req:linkset-standalone-rfc9264
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Per-resource metadata links are available as a standalone linkset resource per RFC 9264." ;
@@ -1009,6 +1087,7 @@ req:linkset-media-type-json
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Linkset resources are available as application/linkset+json." ;
@@ -1021,6 +1100,7 @@ req:linkset-server-managed-atomic
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "The linkset link targets a server-managed resource; linkset updates are atomic with the associated resource operations." ;
@@ -1033,6 +1113,7 @@ req:link-storage-on-responses
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Relevant responses carry a Link header with rel=https://www.w3.org/ns/lws#storage." ;
@@ -1045,6 +1126,7 @@ req:prefer-link-relations-filtering
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Clients may use Prefer with lws#PreferLinkRelations to include or omit specific relations." ;
@@ -1057,6 +1139,7 @@ req:metadata-capability-advertising
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Core metadata may be client-modifiable; servers advertise their capabilities via standard HTTP headers." ;
@@ -1069,6 +1152,7 @@ req:linkset-allow-get-patch
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Servers advertise GET and PATCH support on the linkset resource via the Allow header." ;
@@ -1081,6 +1165,7 @@ req:linkset-optional-methods-advertised
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Optional PUT or alternative patch formats, when supported, appear in Allow and Accept-Patch." ;
@@ -1093,6 +1178,7 @@ req:client-no-assumed-methods-405-415
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully." ;
@@ -1105,6 +1191,7 @@ req:linkset-etag-get-head
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Responses to GET and HEAD on a linkset resource carry an ETag header as defined in RFC 9110." ;
@@ -1117,6 +1204,7 @@ req:linkset-patch-merge-patch
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "PATCH with application/merge-patch+json is the primary metadata-management mechanism on the linkset." ;
@@ -1129,6 +1217,7 @@ req:linkset-put-405-if-unsupported
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed." ;
@@ -1141,6 +1230,7 @@ req:linkset-restricted-links
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Servers may restrict modification of specific links (such as up or items) to maintain integrity." ;
@@ -1153,6 +1243,7 @@ req:linkset-lifecycle-tied-to-resource
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#metadata> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata> ;
     touchstone:summary "Deleting a resource automatically removes its associated linkset metadata." ;
@@ -1165,6 +1256,7 @@ req:create-server-managed-metadata-protected
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden." ;
@@ -1177,6 +1269,7 @@ req:create-post-not-idempotent
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "POST is not idempotent; clients should avoid unintentional retries or use unique identifiers." ;
@@ -1189,6 +1282,7 @@ req:create-linkset-before-success
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "The linkset resource is created and populated with mandatory server-managed fields before creation success is returned." ;
@@ -1201,6 +1295,7 @@ req:create-401-storage-link
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "401 responses should include a Link header with rel=https://www.w3.org/ns/lws#storage so clients can discover the storage without hardcoded URIs." ;
@@ -1213,6 +1308,7 @@ req:read-container-listing-authz-filtered
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "A container GET returns a member listing that may be authorization-filtered, with core metadata per member." ;
@@ -1225,6 +1321,7 @@ req:read-type-distinction-metadata-links
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "Servers distinguish resource types via metadata; all read responses integrate Link headers rel=linkset, rel=up and rel=type, atomically with resource state." ;
@@ -1237,6 +1334,7 @@ req:read-container-listing-member-metadata
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "Container listings include member identifiers and types (required), media types for DataResources (required), and sizes and timestamps (recommended)." ;
@@ -1249,6 +1347,7 @@ req:read-container-etag-type-links
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "Container responses carry an ETag plus Link headers rel=linkset, rel=up and rel=type indicating a container." ;
@@ -1261,6 +1360,7 @@ req:conditional-requests-supported
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "Servers SHOULD support RFC 9110 conditional requests (entity tags, date validators) and answer 304 Not Modified when nothing changed." ;
@@ -1273,6 +1373,7 @@ req:read-401-www-authenticate-discoverability
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#read-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource> ;
     touchstone:summary "401 responses should carry WWW-Authenticate parameters that guide clients without hardcoded URIs." ;
@@ -1285,6 +1386,7 @@ req:update-content-vs-metadata-prefer-set-linkset
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#update-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource> ;
     touchstone:summary "PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501)." ;
@@ -1297,6 +1399,7 @@ req:put-clients-use-conditional-requests
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#update-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource> ;
     touchstone:summary "Clients SHOULD make PUT conditional (RFC 9110) to avoid overwriting concurrent changes; PUT is idempotent for existing resources." ;
@@ -1309,6 +1412,7 @@ req:linkset-precondition-failed-412
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#update-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource> ;
     touchstone:summary "A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there." ;
@@ -1321,6 +1425,7 @@ req:delete-if-match-optional
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#delete-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource> ;
     touchstone:summary "DELETE targets the resource URI; clients may include If-Match for concurrency checks." ;
@@ -1333,6 +1438,7 @@ req:delete-success-204-conditional
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#delete-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource> ;
     touchstone:summary "Successful DELETE responds 204 No Content; conditional requests should be supported." ;
@@ -1345,6 +1451,7 @@ req:delete-401-403-404-semantics
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#delete-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource> ;
     touchstone:summary "Unauthorized deletes yield 403 for a known identity with insufficient permission or 401 without valid authentication; 404 may hide existence." ;
@@ -1357,6 +1464,7 @@ req:status-204-410-deletions
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#summary-of-http-status-mappings> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings> ;
     touchstone:summary "204 indicates success without a body; servers may use 410 Gone for permanent deletions." ;
@@ -1369,6 +1477,7 @@ req:error-rfc9457-problem-details
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#summary-of-http-status-mappings> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings> ;
     touchstone:summary "Error responses should use the RFC 9457 problem-details format." ;
@@ -1383,6 +1492,7 @@ req:notifications-advertise-notificationservice
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#notification-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-discovery> ;
     touchstone:summary "A storage supporting notifications advertises a NotificationService service object in its storage description." ;
@@ -1395,6 +1505,7 @@ req:notificationservice-endpoint-and-subscription-types
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#notification-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-discovery> ;
     touchstone:summary "A NotificationService includes a serviceEndpoint for the subscription endpoint and a subscriptionType array of supported subscription types." ;
@@ -1407,6 +1518,7 @@ req:notificationservice-additional-properties
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#notification-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-discovery> ;
     touchstone:summary "Additional properties may appear on the notification service object." ;
@@ -1419,6 +1531,7 @@ req:notification-envelope-type
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#envelope-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#envelope-properties> ;
     touchstone:summary "A notification envelope carries a required type whose value is the string Notification." ;
@@ -1431,6 +1544,7 @@ req:notification-envelope-storage
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#envelope-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#envelope-properties> ;
     touchstone:summary "A notification envelope carries a required storage property identifying the LWS storage it concerns." ;
@@ -1443,6 +1557,7 @@ req:notification-envelope-activity
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#envelope-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#envelope-properties> ;
     touchstone:summary "A notification envelope carries a required activity property: one or more Activity Streams 2.0 objects describing what occurred." ;
@@ -1455,6 +1570,7 @@ req:notification-activity-as2-conformance
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "Each activity object conforms to the Activity Streams 2.0 data model and includes the required activity properties." ;
@@ -1467,6 +1583,7 @@ req:notification-activity-id
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "An activity object carries a required id uniquely identifying the activity." ;
@@ -1479,6 +1596,7 @@ req:notification-activity-type
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "An activity object carries a required type: an array holding at least one Activity Streams 2.0 activity type." ;
@@ -1491,6 +1609,7 @@ req:notification-activity-object-id
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "The activity object property carries a required id: the URI of the resource the notification is about." ;
@@ -1503,6 +1622,7 @@ req:notification-activity-object-type
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "The activity object property carries a required type array holding at least one resource type, such as Container or DataResource." ;
@@ -1515,6 +1635,7 @@ req:notification-activity-object
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "An activity carries a required object identifying the resource the notification is about, with its own required properties." ;
@@ -1527,6 +1648,7 @@ req:notification-activity-published
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "An activity carries a required published datetime, per RFC 3339, saying when it occurred." ;
@@ -1539,6 +1661,7 @@ req:notification-activity-optional-properties
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-properties> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties> ;
     touchstone:summary "The remaining activity properties are optional." ;
@@ -1551,6 +1674,7 @@ req:notification-activity-types-supported
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-types> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types> ;
     touchstone:summary "A server supports the listed Activity Streams 2.0 activity types for signalling LWS resource changes." ;
@@ -1563,6 +1687,7 @@ req:notification-activity-types-additional
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#activity-types> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types> ;
     touchstone:summary "A server may support activity types beyond the ones this specification lists." ;
@@ -1575,6 +1700,7 @@ req:notification-batching
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#batching> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#batching> ;
     touchstone:summary "A server may batch several activities into one envelope by giving the activity property an array." ;
@@ -1587,6 +1713,7 @@ req:subscription-create-post-lws-json
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscriptions> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions> ;
     touchstone:summary "A subscription is created by an authenticated POST to the NotificationService endpoint with an application/lws+json body." ;
@@ -1599,6 +1726,7 @@ req:subscription-request-required-fields
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request> ;
     touchstone:summary "A subscription request contains the required subscription fields." ;
@@ -1611,6 +1739,7 @@ req:subscription-request-type
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request> ;
     touchstone:summary "A subscription request carries a required type, one of the subscription types the NotificationService advertises." ;
@@ -1623,6 +1752,7 @@ req:subscription-request-topic
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request> ;
     touchstone:summary "A subscription request carries a required topic: an array of URIs naming the resources in scope." ;
@@ -1635,6 +1765,7 @@ req:subscription-request-additional-fields
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-request> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request> ;
     touchstone:summary "A subscription request may carry further fields required by its subscription type." ;
@@ -1647,6 +1778,7 @@ req:subscription-authorization-on-create
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-authorization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization> ;
     touchstone:summary "A server enforces resource authorization when a subscription is created, rejecting one whose topic includes resources the subscriber cannot read." ;
@@ -1659,6 +1791,7 @@ req:subscription-authorization-on-delivery
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-authorization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization> ;
     touchstone:summary "A server enforces authorization at delivery time and never delivers a notification for a resource the subscriber cannot read when the event occurs." ;
@@ -1671,6 +1804,7 @@ req:subscription-authorization-revoked
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-authorization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization> ;
     touchstone:summary "When access is revoked the server stops delivering for the affected resources, without terminating the whole subscription unless all access in the topic is lost." ;
@@ -1683,6 +1817,7 @@ req:subscription-response-lws-json
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-response> ;
     touchstone:summary "A successful subscription response conforms to application/lws+json and carries the required response fields." ;
@@ -1695,6 +1830,7 @@ req:subscription-response-type
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-response> ;
     touchstone:summary "A subscription response carries a required type equal to the subscription type from the request." ;
@@ -1707,6 +1843,7 @@ req:subscription-response-subscription-url
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#subscription-response> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-response> ;
     touchstone:summary "A subscription response carries a required subscription property: the URL representing the subscription." ;
@@ -1719,6 +1856,7 @@ req:notification-suite-subscription-type-identifier
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Specification ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#notification-subscription-type-identifier> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-subscription-type-identifier> ;
     touchstone:summary "Every notification suite is associated with a subscription type string, used in subscriptionType arrays and in subscription requests." ;
@@ -1733,6 +1871,7 @@ req:access-services-advertised
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-discovery> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-discovery> ;
     touchstone:summary "Advertised access endpoints use service objects typed AccessRequestService / AccessGrantService, with conformsTo listing supported access profiles." ;
@@ -1745,6 +1884,7 @@ req:access-extra-properties-allowed
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-data-model> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model> ;
     touchstone:summary "Other properties may be present on access requests and access grants." ;
@@ -1757,6 +1897,7 @@ req:access-type-values
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-type-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property> ;
     touchstone:summary "The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed." ;
@@ -1769,6 +1910,7 @@ req:access-type-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-type-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property> ;
     touchstone:summary "The type property on access requests and grants is required." ;
@@ -1781,6 +1923,7 @@ req:access-storage-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-storage-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property> ;
     touchstone:summary "The storage property value is a URI." ;
@@ -1793,6 +1936,7 @@ req:access-storage-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-storage-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property> ;
     touchstone:summary "The storage property is required." ;
@@ -1805,6 +1949,7 @@ req:access-inbox-uri
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-inbox-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property> ;
     touchstone:summary "The inbox property value is a URI." ;
@@ -1817,6 +1962,7 @@ req:access-inbox-optional
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-inbox-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property> ;
     touchstone:summary "The inbox property is optional." ;
@@ -1829,6 +1975,7 @@ req:access-access-collection
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property> ;
     touchstone:summary "The access property is a collection of one or more objects." ;
@@ -1841,6 +1988,7 @@ req:access-access-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-property> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property> ;
     touchstone:summary "The access property is required." ;
@@ -1853,6 +2001,7 @@ req:policy-type-access-policy
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-type> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type> ;
     touchstone:summary "A policy type includes AccessPolicy; additional types are allowed." ;
@@ -1865,6 +2014,7 @@ req:policy-type-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-type> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type> ;
     touchstone:summary "The policy type property is required." ;
@@ -1877,6 +2027,7 @@ req:policy-action-values
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-action> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action> ;
     touchstone:summary "The action property is a collection of server-recognized operation strings; read, modify, create and delete are mandatory to support." ;
@@ -1889,6 +2040,7 @@ req:policy-action-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-action> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action> ;
     touchstone:summary "The action property is required." ;
@@ -1901,6 +2053,7 @@ req:policy-assignee-uri-foaf-agent
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-assignee> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee> ;
     touchstone:summary "The assignee is a URI; public access may be assigned via foaf:Agent." ;
@@ -1913,6 +2066,7 @@ req:policy-assignee-required
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-assignee> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee> ;
     touchstone:summary "The assignee property is required." ;
@@ -1925,6 +2079,7 @@ req:policy-target-object
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-target> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target> ;
     touchstone:summary "The target property is an object containing the defined properties." ;
@@ -1937,6 +2092,7 @@ req:policy-target-extra-types
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-target> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target> ;
     touchstone:summary "Servers may support additional target type values." ;
@@ -1949,6 +2105,7 @@ req:policy-target-optional
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-target> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target> ;
     touchstone:summary "The target property is optional." ;
@@ -1961,6 +2118,7 @@ req:policy-constraint-objects
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-constraint> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint> ;
     touchstone:summary "The constraint property, if present, is a collection of constraint objects with the defined members." ;
@@ -1973,6 +2131,7 @@ req:policy-constraints-all-satisfied
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-constraint> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint> ;
     touchstone:summary "When multiple constraint objects are present, all must be satisfied." ;
@@ -1985,6 +2144,7 @@ req:policy-constraint-left-operands
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-constraint> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint> ;
     touchstone:summary "Servers advertising this profile support the defined leftOperand values." ;
@@ -1997,6 +2157,7 @@ req:policy-constraint-optional
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#odrl-constraint> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint> ;
     touchstone:summary "The constraint property is optional." ;
@@ -2009,6 +2170,7 @@ req:policy-constraints-conjunction-semantics
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#constraint-combining> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-combining> ;
     touchstone:summary "All constraint objects must be satisfied for access to be permitted." ;
@@ -2021,6 +2183,7 @@ req:access-jsonld-context-lws-v1
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#json-ld-serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#json-ld-serialization> ;
     touchstone:summary "Access request/grant JSON-LD documents include an @context ordered set containing https://www.w3.org/ns/lws/v1; extension contexts are allowed." ;
@@ -2033,6 +2196,7 @@ req:access-endpoints-are-lws-containers
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-protocol> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol> ;
     touchstone:summary "Access request and grant endpoints are LWS containers conforming to this specification." ;
@@ -2045,6 +2209,7 @@ req:access-endpoints-get-post-delete
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-protocol> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol> ;
     touchstone:summary "Access endpoints minimally support GET and POST; DELETE is recommended; other operations may be supported." ;
@@ -2057,6 +2222,7 @@ req:access-endpoints-jsonld-payloads
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-protocol> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol> ;
     touchstone:summary "Access request and grant endpoints support the JSON-LD serialization for request and response payloads; other serializations are optional." ;
@@ -2069,6 +2235,7 @@ req:access-post-location-header
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-protocol> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol> ;
     touchstone:summary "A successful POST to an access endpoint responds with a Location header for the new resource." ;
@@ -2081,6 +2248,7 @@ req:access-inbox-notifications
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notifications> ;
     touchstone:summary "When an inbox property is present, the server should deliver notifications to that endpoint." ;
@@ -2093,6 +2261,7 @@ req:access-notification-data-model
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notifications> ;
     touchstone:summary "Notification serialization conforms to the LWS notification data model." ;
@@ -2105,6 +2274,7 @@ req:access-notification-delivery
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notifications> ;
     touchstone:summary "Inbox notifications conform to the LWS notification delivery requirements." ;
@@ -2117,6 +2287,7 @@ req:access-notification-events
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notification-events> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events> ;
     touchstone:summary "Servers should send notifications for the defined access lifecycle events." ;
@@ -2129,6 +2300,7 @@ req:access-notify-request-created
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notification-events> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events> ;
     touchstone:summary "The storage controller should be notified when a new access request is submitted." ;
@@ -2141,6 +2313,7 @@ req:access-notify-grant-created
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notification-events> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events> ;
     touchstone:summary "The requesting agent should be notified at the access-request inbox when a grant is created." ;
@@ -2153,6 +2326,7 @@ req:access-notify-other-events
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#access-notification-events> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events> ;
     touchstone:summary "Servers may send notifications for other events." ;
@@ -2167,6 +2341,7 @@ req:lws-cid-media-type-storage-description
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#lws-media-type-0> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0> ;
     touchstone:summary "A storage description is serializable as application/lws+cid, a specialization of a W3C Controlled Identifier document extended with the LWS vocabulary." ;
@@ -2179,6 +2354,7 @@ req:lws-json-media-type-container-representation
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#lws-media-type-0> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0> ;
     touchstone:summary "A container representation supports the media type application/lws+json." ;
@@ -2191,6 +2367,7 @@ req:lws-profile-equivalence
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#lws-media-type-0> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0> ;
     touchstone:summary "application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json." ;
@@ -2203,6 +2380,7 @@ req:conneg-vary-accept
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#media-type-equivalence> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#media-type-equivalence> ;
     touchstone:summary "Container responses should carry Vary: Accept, since their Content-Type depends on the request Accept header." ;
@@ -2215,6 +2393,7 @@ req:pagination-over-threshold
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination> ;
     touchstone:summary "Servers should paginate containers whose membership exceeds a server-determined threshold." ;
@@ -2227,6 +2406,7 @@ req:pagination-link-first
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination-link-relations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations> ;
     touchstone:summary "rel=first is present on paginated responses." ;
@@ -2239,6 +2419,7 @@ req:pagination-link-last
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination-link-relations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations> ;
     touchstone:summary "rel=last may be present on paginated responses." ;
@@ -2251,6 +2432,7 @@ req:pagination-link-next
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination-link-relations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations> ;
     touchstone:summary "rel=next is present when subsequent pages exist and omitted on the last page." ;
@@ -2263,6 +2445,7 @@ req:pagination-link-prev
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination-link-relations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations> ;
     touchstone:summary "rel=prev may be present with preceding pages and is omitted on the first page." ;
@@ -2275,6 +2458,7 @@ req:pagination-uris-opaque
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#pagination-link-relations> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations> ;
     touchstone:summary "Pagination URIs are opaque; clients use the URIs the server provides." ;
@@ -2287,6 +2471,7 @@ req:pagination-first-page-flow
     a touchstone:Requirement ;
     touchstone:level "MAY" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#requesting-pages> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages> ;
     touchstone:summary "The composite resource URI yields the first page; servers may support direct access to specific pages." ;
@@ -2299,6 +2484,7 @@ req:pagination-200-totalitems-all-pages
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#requesting-pages> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages> ;
     touchstone:summary "Paginated responses are 200 OK; totalItems should reflect the total across all pages." ;
@@ -2313,6 +2499,7 @@ req:security-notification-access-control
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#security-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications> ;
     touchstone:summary "Access control on subscriptions and on notification delivery is consistent with access control on the underlying resources." ;
@@ -2327,6 +2514,7 @@ req:privacy-notification-authorized-resources-only
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#privacy-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications> ;
     touchstone:summary "Subscribers should only receive notifications for resources they are authorized to access." ;
@@ -2339,6 +2527,7 @@ req:privacy-notification-actor-omitted
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#privacy-notifications> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications> ;
     touchstone:summary "The actor property should be omitted by default; servers may make its inclusion configurable." ;
@@ -2353,6 +2542,7 @@ req:iana-ld-json-profile-equivalence
     a touchstone:Requirement ;
     touchstone:level "SHOULD" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#iana-media-type-registry> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#iana-media-type-registry> ;
     touchstone:summary "Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json." ;

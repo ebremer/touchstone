@@ -14,7 +14,7 @@
     a owl:Ontology ;
     rdfs:label "Touchstone requirements-catalog vocabulary"@en ;
     rdfs:comment "Terms for recording RFC 2119 conformance clauses extracted from W3C Linked Web Storage (LWS) spec drafts, so tests can declare exactly which requirements they verify."@en ;
-    owl:versionInfo "0.1.0" .
+    owl:versionInfo "0.2.0" .
 
 touchstone:Requirement
     a rdfs:Class ;
@@ -35,6 +35,41 @@ touchstone:specModule
     rdfs:domain touchstone:Requirement ;
     rdfs:range xsd:string ;
     rdfs:comment "Key of the spec draft the clause comes from, e.g. lws10-core, lws10-authn-openid."@en .
+
+touchstone:appliesTo
+    a rdf:Property ;
+    rdfs:label "applies to"@en ;
+    rdfs:domain touchstone:Requirement ;
+    rdfs:range touchstone:Role ;
+    rdfs:comment "Who the clause obliges: the role whose behaviour can break it. One value per role the clause binds; a clause that obliges servers and clients alike names both. A clause that defines a message binds whoever produces it, so its validation by the receiving party is a separate requirement, or a negative test (DECISIONS.md D-0076). Server runs answer for Server and AuthorizationServer requirements; client sessions (CLIENT-TESTING.md) for Client and Receiver ones."@en .
+
+touchstone:Role a rdfs:Class ;
+    rdfs:label "Role"@en ;
+    rdfs:comment "A party a requirement can bind. The LWS drafts name the server and client conformance classes; the others are the parties around them that the drafts also oblige."@en .
+
+touchstone:Server a touchstone:Role ;
+    rdfs:label "Server"@en ;
+    rdfs:comment "An LWS server: the storage and the services its storage description advertises (notifications, access requests and grants, the type index and search)."@en .
+
+touchstone:AuthorizationServer a touchstone:Role ;
+    rdfs:label "Authorization server"@en ;
+    rdfs:comment "The authorization server of a storage: its metadata, token exchange, the access tokens it issues, and its validation of authentication credentials."@en .
+
+touchstone:Client a touchstone:Role ;
+    rdfs:label "Client"@en ;
+    rdfs:comment "An LWS client application: the requests it sends to a storage and an authorization server, the documents it creates, and, under the CID suite, the credentials it issues for itself."@en .
+
+touchstone:IdentityProvider a touchstone:Role ;
+    rdfs:label "Identity provider"@en ;
+    rdfs:comment "An issuer of end-user authentication credentials for another party: an OpenID Provider or a SAML identity provider."@en .
+
+touchstone:Receiver a touchstone:Role ;
+    rdfs:label "Receiver"@en ;
+    rdfs:comment "A webhook inbox: the endpoint that receives notification deliveries and verifies their signatures."@en .
+
+touchstone:Specification a touchstone:Role ;
+    rdfs:label "Specification"@en ;
+    rdfs:comment "Another specification, such as an authentication or notification suite. No implementation can break such a clause, so no test answers for it."@en .
 
 touchstone:section
     a rdf:Property ;

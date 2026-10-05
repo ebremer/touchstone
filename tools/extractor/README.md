@@ -13,9 +13,11 @@ requirements never enter the catalog unreviewed.
   `catalog/sources/<draft>.clauses.json`; `catalog/sources/README.md` lists the
   current ones.
 - `emit_candidates.py <clauses.json> <curation.json> <catalog.ttl>` — turns the
-  extraction plus the human curation file (slug + summary per block; the review
-  record) into generated catalog entries. Every block must be seeded, skipped, or
-  curated; levels derive from the strongest BCP 14 keyword (D-0014). Regeneration
+  extraction plus the human curation file (slug, summary and `appliesTo` per block;
+  the review record) into generated catalog entries. Every block must be seeded,
+  skipped, or curated; levels derive from the strongest BCP 14 keyword (D-0014).
+  `appliesTo` lists the roles the clause binds (D-0076), which only a reviewer can
+  tell, so an entry without it stops the emit. Regeneration
   replaces everything below the marker line — never hand-edit generated entries.
 - `clause_hash.py --update|--check <catalog.ttl>...` — fills in / verifies the
   `touchstone:clauseHash` drift hashes (rule: DECISIONS.md D-0008). `--check`

@@ -45,6 +45,9 @@
   <tr><td>${l.level}</td><td>${l.total}</td><td>${l.covered}</td><td>${l.failed}</td></tr>
   </#list>
 </table>
+<#if leftOut gt 0><p><small>${leftOut} catalog requirements bind only clients, receivers, identity providers or other
+   specifications, which a server run cannot break, so coverage leaves them out. Any that a test here cites
+   as a premise still appear in the matrix.</small></p></#if>
 
 <h2>Requirements matrix</h2>
 <table>

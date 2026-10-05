@@ -33,6 +33,13 @@ class CoverageCommandTest {
                     touchstone:level "SHOULD" ;
                     touchstone:specModule "test-module" ;
                     touchstone:summary "Gamma requirement." .
+
+                req:delta
+                    a touchstone:Requirement ;
+                    touchstone:level "MUST" ;
+                    touchstone:specModule "test-module" ;
+                    touchstone:appliesTo touchstone:Client ;
+                    touchstone:summary "A client requirement, which a server run does not count." .
                 """);
 
         StringWriter out = new StringWriter();
@@ -46,7 +53,8 @@ class CoverageCommandTest {
                 .contains("0 of 2 covered")
                 .contains("test-module")
                 .containsPattern("MUST\\s+0/1")
-                .containsPattern("SHOULD\\s+0/1");
+                .containsPattern("SHOULD\\s+0/1")
+                .contains("1 more requirement(s) bind only clients");
     }
 
     @Test

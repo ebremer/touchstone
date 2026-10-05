@@ -22,13 +22,26 @@ class HtmlReportTest {
     @TempDir
     Path tmp;
 
+    private static final String REQ_CLIENT = "https://example.org/touchstone/req/lws10-core/client-only";
+    private static final String REQ_CLIENT_CITED = "https://example.org/touchstone/req/lws10-core/client-cited";
+
     private static final List<Requirement> CATALOG = List.of(
             new Requirement(REQ_A, "MUST", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#read-resource", "Alpha requirement.", "Alpha clause.", "Approved"),
+                    "https://www.w3.org/TR/lws10-core/#read-resource", "Alpha requirement.", "Alpha clause.", "Approved",
+                    List.of("Server")),
             new Requirement(REQ_B, "SHOULD", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#metadata", "Beta requirement.", "Beta clause.", "Draft"),
+                    "https://www.w3.org/TR/lws10-core/#metadata", "Beta requirement.", "Beta clause.", "Draft",
+                    List.of("Server")),
             new Requirement(REQ_UNCOVERED, "MAY", "lws10-core",
-                    "https://www.w3.org/TR/lws10-core/#containers", "Gamma requirement.", "Gamma clause.", "Draft"));
+                    "https://www.w3.org/TR/lws10-core/#containers", "Gamma requirement.", "Gamma clause.", "Draft",
+                    List.of("Server")),
+            new Requirement(REQ_CLIENT, "MUST", "lws10-core",
+                    "https://www.w3.org/TR/lws10-core/#pagination", "Client requirement.", "Clients MUST.", "Draft",
+                    List.of("Client")),
+            new Requirement(REQ_CLIENT_CITED, "MUST", "lws10-core",
+                    "https://www.w3.org/TR/lws10-core/#authorization", "Cited client requirement.", "Clients MUST.",
+                    "Draft", List.of("Client")));
+
 
     @Test
     void matrixLinksTestsToRequirementsToSpecSections() throws Exception {
@@ -49,6 +62,21 @@ class HtmlReportTest {
         assertThat(html).contains("UNCOVERED");
         // a MUST failure flips the verdict
         assertThat(html).contains("NON-CONFORMANT");
+    }
+
+    @Test
+    void aClientOnlyRequirementIsLeftOutUnlessATestCitesIt() throws Exception {
+        // A server run answers for server-side clauses (D-0076); a client clause a test cites as a
+        // premise stays in the matrix, so that the test's link to it resolves, but not in coverage.
+        RunResult run = run(test("core/x#pass", Outcome.PASSED, REQ_A, REQ_CLIENT_CITED));
+        Path file = tmp.resolve("roles.html");
+        HtmlReport.write(run, CATALOG, file);
+        String html = Files.readString(file);
+
+        assertThat(html).contains("id=\"r-client-cited\"").doesNotContain("id=\"r-client-only\"")
+                .contains("2 catalog requirements bind only clients")
+                // the coverage table counts the three server-side requirements only
+                .contains("<td>MUST</td><td>1</td>");
     }
 
     @Test

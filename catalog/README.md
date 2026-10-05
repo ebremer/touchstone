@@ -3,8 +3,9 @@
 Turtle files, one per spec module, derived from **dated spec snapshots** (see
 `sources/`). Every requirement has a stable IRI and records: level
 (MUST/SHOULD/MAY), spec module, section anchor, verbatim clause text, and a
-sha256 drift hash (normalization rule: DECISIONS.md D-0008). Tests declare the
-requirement IRIs they verify; coverage = requirements × tests.
+sha256 drift hash (normalization rule: DECISIONS.md D-0008), and the roles the clause
+binds (`touchstone:appliesTo`, D-0076). Tests declare the requirement IRIs they verify;
+coverage = requirements × tests, counted over the requirements a server run answers for.
 
 | File | Content |
 |---|---|
@@ -17,7 +18,10 @@ requirement IRIs they verify; coverage = requirements × tests.
 | `lws10-index.ttl` | Search and Type Index Services (editor's draft, not on /TR; snapshot rendered 2026-10-02) — 57 |
 | `sources/` | archived spec snapshots + raw extraction output (provenance) |
 
-296 requirements across six spec modules: 228 MUST, 30 SHOULD, 38 MAY. The webhook
+296 requirements across six spec modules: 228 MUST, 30 SHOULD, 38 MAY. By the roles they
+bind: Server 223, Client 75, AuthorizationServer 26, IdentityProvider 16, Receiver 4,
+Specification 2 (a clause binding several roles counts in each); 248 bind a server or an
+authorization server. The webhook
 notification suite (D-0066) and the search and type index services (D-0067) are baselined on
 editor's drafts: W3C has not published them, so their entries are Draft and `check_published.py` watches for publication. The
 did:key suite, discontinued by W3C on 2026-09-29, is retired (D-0058).

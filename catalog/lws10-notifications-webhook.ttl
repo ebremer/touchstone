@@ -22,6 +22,7 @@
 
 req:subscription-type-and-fields
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:summary "A webhook subscription request has type WebhookSubscription, and the server supports the webhook fields." ;
@@ -30,6 +31,7 @@ req:subscription-type-and-fields
 
 req:subscription-inbox-required
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:summary "A webhook subscription request carries a required inbox: the URI notifications are delivered to." ;
@@ -38,6 +40,7 @@ req:subscription-inbox-required
 
 req:subscription-expires-optional
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:summary "A webhook subscription request may carry an expires datetime." ;
@@ -46,6 +49,7 @@ req:subscription-expires-optional
 
 req:response-type-webhook
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:summary "A successful webhook subscription response has type equal to the string WebhookSubscription." ;
@@ -54,6 +58,7 @@ req:response-type-webhook
 
 req:response-expires-optional
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription> ;
     touchstone:summary "A webhook subscription response may carry an expires datetime." ;
@@ -62,6 +67,7 @@ req:response-expires-optional
 
 req:delivery-signed
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:summary "The server signs each outbound delivery with HTTP Message Signatures (RFC 9421)." ;
@@ -70,6 +76,7 @@ req:delivery-signed
 
 req:inbox-verifies-signature
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Receiver ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:summary "An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.)" ;
@@ -78,6 +85,7 @@ req:inbox-verifies-signature
 
 req:signing-key-published
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication> ;
     touchstone:summary "A server that signs deliveries publishes the key in its storage description as a verification method in verificationMethod, referenced from authentication." ;
@@ -86,6 +94,7 @@ req:signing-key-published
 
 req:signature-covered-components
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements> ;
     touchstone:summary "A signed delivery's signature base covers at least @method, @scheme, @authority, @path, content-type and content-digest." ;
@@ -94,6 +103,7 @@ req:signature-covered-components
 
 req:signature-input-created-keyid
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements> ;
     touchstone:summary "Signature-Input carries created and keyid, and keyid is the id of a key in the storage description's verificationMethod array." ;
@@ -102,6 +112,7 @@ req:signature-input-created-keyid
 
 req:receiver-verification-steps
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Receiver ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:summary "A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.)" ;
@@ -110,6 +121,7 @@ req:receiver-verification-steps
 
 req:keyid-url-with-fragment
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Receiver ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:summary "The keyid is a URL with a fragment component; without the fragment it is the storage identifier." ;
@@ -118,6 +130,7 @@ req:keyid-url-with-fragment
 
 req:storage-description-id-matches
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Receiver ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification> ;
     touchstone:summary "The storage description dereferenced from the keyid has a top-level id equal to the storage identifier." ;
@@ -126,6 +139,7 @@ req:storage-description-id-matches
 
 req:subscription-listing-container
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management> ;
     touchstone:summary "The NotificationService endpoint lists the subscriber's active webhook subscriptions with GET, serialized as an LWS container (paging SHOULD be supported)." ;
@@ -134,6 +148,7 @@ req:subscription-listing-container
 
 req:subscription-get-delete
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription-management> ;
     touchstone:summary "Each listed subscription supports GET, returning its current state, and DELETE, cancelling it." ;
@@ -142,6 +157,7 @@ req:subscription-get-delete
 
 req:delivery-lws-json
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:summary "A delivery is an HTTP POST to the inbox whose body, the notification envelope, conforms to application/lws+json." ;
@@ -150,6 +166,7 @@ req:delivery-lws-json
 
 req:delivery-retry-optional
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:summary "The server may retry a failed delivery." ;
@@ -158,6 +175,7 @@ req:delivery-retry-optional
 
 req:delivery-deactivation-optional
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery> ;
     touchstone:summary "After repeated delivery failures the server may deactivate the subscription." ;
@@ -166,6 +184,7 @@ req:delivery-deactivation-optional
 
 req:subscription-type-identifier
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#subscription-type> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#subscription-type> ;
     touchstone:summary "A webhook subscription uses the string WebhookSubscription as its subscription type with the NotificationService." ;
@@ -174,6 +193,7 @@ req:subscription-type-identifier
 
 req:per-subscription-inbox-urls
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-notifications-webhook" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#privacy-considerations> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#privacy-considerations> ;
     touchstone:summary "Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.)" ;

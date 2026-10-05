@@ -2,7 +2,9 @@
 
 Generates definitions/COVERAGE.md from the JSON form of the definitions (build/json/,
 written by validate_ld.js). It maps every lws-test-suite test and every retired manifests/ test
-to its counterparts, and lists every definition by module. It needs a lws-test-suite checkout
+to its counterparts, lists every definition by module, counts the catalog's requirements by the
+role they bind, and lists the ones client sessions will answer for (CLIENT-TESTING.md). It
+needs a lws-test-suite checkout
 (README.md). COVERAGE.md is generated, so edit the definitions or the notes below, not the
 file.
 
@@ -14,6 +16,8 @@ import json
 import os
 import sys
 from collections import Counter, defaultdict
+
+import rdflib
 
 from _paths import DEFS, JSON_OUT, REPO, lts_manifests, lws_test_suite, retired_manifests
 
@@ -75,7 +79,31 @@ def load():
     return tests
 
 
+def load_catalog():
+    T = rdflib.Namespace("https://example.org/touchstone/vocab#")
+    g = rdflib.Graph()
+    for path in sorted(glob.glob(os.path.join(TS, "catalog", "*.ttl"))):
+        g.parse(path, format="turtle")
+    out = {}
+    for s in g.subjects(rdflib.RDF.type, T.Requirement):
+        out[str(s)] = {
+            "level": str(g.value(s, T.level)),
+            "module": str(g.value(s, T.specModule)),
+            "summary": str(g.value(s, T.summary) or ""),
+            "roles": sorted((str(o).rsplit("#", 1)[1] for o in g.objects(s, T.appliesTo)), key=role_rank),
+        }
+    return out
+
+
+ROLES = ["Server", "AuthorizationServer", "Client", "IdentityProvider", "Receiver", "Specification"]
+
+
+def role_rank(r):
+    return ROLES.index(r) if r in ROLES else len(ROLES)
+
+
 tests = load()
+catalog = load_catalog()
 by_name = {t["name"]: t for t in tests}
 levels = Counter(t["level"] for t in tests)
 types = Counter(t["type"] for t in tests)
@@ -111,7 +139,9 @@ L.append("## Summary")
 L.append("")
 L.append(f"- **{len(tests)} tests**: {levels['MUST']} MUST, {levels['SHOULD']} SHOULD, {levels['MAY']} MAY; "
          f"{types['ValidationTest']} validation tests, {types['NegativeTest']} negative tests.")
-L.append(f"- **{len(cited)} catalog requirements** cited. For comparison, the retired `manifests/` covered 48 of 232.")
+server_side = {i for i, r in catalog.items() if {"Server", "AuthorizationServer"} & set(r["roles"])}
+L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_side)} of the {len(server_side)} that bind a "
+         "server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.")
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
 L.append(f"- **lws-test-suite:** all {covered} of {len(lts_order)} tests are accounted for "
          "(table 1). The definitions change what those tests assert wherever it contradicts the "
@@ -163,6 +193,40 @@ for m in sorted(mods):
         mir = ", ".join(x.split("#")[1] for x in t["_mirrors"])
         L.append(f"| `{t['name']}` | {t['type'].replace('Test', '')} | {t['level']} | {req} | {mir} |")
     L.append("")
+L.append("## 4. Requirements by role")
+L.append("")
+L.append("Each catalog requirement names the roles it binds (`touchstone:appliesTo`, D-0076). One that binds")
+L.append("several roles is counted in each. Server runs answer for the Server and AuthorizationServer rows;")
+L.append("client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) will answer for the Client and Receiver rows.")
+L.append("")
+L.append("| Role | Requirements | MUST | SHOULD | MAY | Cited by a test |")
+L.append("|---|---:|---:|---:|---:|---:|")
+for role in ROLES:
+    ids = [i for i, r in catalog.items() if role in r["roles"]]
+    lv = Counter(catalog[i]["level"] for i in ids)
+    L.append(f"| {role} | {len(ids)} | {lv['MUST']} | {lv['SHOULD']} | {lv['MAY']} | {sum(1 for i in ids if i in cited)} |")
+L.append("")
+L.append("### Client and receiver requirements")
+L.append("")
+L.append("What a client session can judge: the starting inventory of CLIENT-TESTING.md section 11. *Also binds*")
+L.append("names the other roles of a clause that binds more than one; *Cited by* names the server tests that")
+L.append("already cite it, as a premise or for its server half.")
+L.append("")
+L.append("| Requirement | Level | Also binds | Summary | Cited by |")
+L.append("|---|---|---|---|---|")
+citing = defaultdict(list)
+for t in tests:
+    for r in t.get("requirements", []):
+        citing[r].append(t["name"])
+client_side = sorted((i for i, r in catalog.items() if {"Client", "Receiver"} & set(r["roles"])),
+                     key=lambda i: (catalog[i]["module"], i))
+for i in client_side:
+    r = catalog[i]
+    also = ", ".join(x for x in r["roles"] if x not in ("Client", "Receiver"))
+    by = ", ".join(f"`{n}`" for n in sorted(citing.get(i, [])))
+    summary = r["summary"].replace("|", "\\|")
+    L.append(f"| `{r['module']}/{i.rsplit('/', 1)[1]}` | {r['level']} | {also} | {summary} | {by} |")
+L.append("")
 text = "\n".join(L).rstrip() + "\n"
 if "--check" in sys.argv:
     current = DST.read_text(encoding="utf-8") if DST.exists() else ""

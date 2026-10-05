@@ -185,6 +185,10 @@ them all, and CI runs it on every push and pull request (`tools/definitions/READ
    - identities exist, and grants name agents other than alice;
    - no executable value names an example host;
    - catalog IRIs exist and none has drifted;
+   - every catalog requirement names the roles it binds, and every test that cites
+     requirements cites one binding a server or an authorization server; a negative test
+     may instead rest on the clause of the client or identity provider whose message it
+     forges (D-0076);
    - `source` anchors resolve;
    - fixtures exist.
 5. `vocab.yamlld` defines exactly the `lwst:` terms of `context.jsonld`.

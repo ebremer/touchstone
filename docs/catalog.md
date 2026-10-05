@@ -35,6 +35,7 @@ req:create-post-201-location-links
     a touchstone:Requirement ;
     touchstone:level "MUST" ;
     touchstone:specModule "lws10-core" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
@@ -49,6 +50,7 @@ req:create-post-201-location-links
 | IRI | `https://example.org/touchstone/req/<module>/<slug>`. Stable: tests and reports cite it. |
 | `touchstone:level` | `MUST`, `SHOULD` or `MAY`: the strongest BCP 14 keyword in the clause. `MUST NOT` counts as `MUST`. The exact wording is in the clause text. |
 | `touchstone:specModule` | Which document the clause comes from, such as `lws10-core`. |
+| `touchstone:appliesTo` | Who the clause obliges: one or more [roles](#who-a-requirement-binds). |
 | `touchstone:section` | The section anchor in the undated `/TR/` URL. Reports link here. |
 | `touchstone:sourceDraft` | The same anchor in the dated snapshot the clause was extracted from. |
 | `touchstone:clauseText` | The clause, verbatim: Unicode NFC, whitespace collapsed. |
@@ -58,6 +60,38 @@ req:create-post-201-location-links
 
 `touchstone:Requirement` is a subclass of `earl:TestRequirement`, so the requirement IRIs
 fit directly into EARL reports.
+
+## Who a requirement binds
+
+Most clauses oblige the server, but not all. A client must present its token in the
+`Authorization` header, an OpenID Provider must not sign an ID Token with `none`, and a
+webhook inbox must verify the signature of a delivery. `touchstone:appliesTo` names who
+can break the clause, one value per role (D-0076):
+
+| Role | Who | Requirements |
+|---|---|---:|
+| `Server` | The LWS server: the storage and the services its storage description advertises | 223 |
+| `AuthorizationServer` | The storage's authorization server: metadata, token exchange, access tokens, credential validation | 26 |
+| `Client` | The client application, including the credentials it issues for itself under the CID suite | 75 |
+| `IdentityProvider` | An OpenID Provider or SAML identity provider that issues credentials for an end user | 16 |
+| `Receiver` | A webhook inbox | 4 |
+| `Specification` | Another specification, such as an authentication suite, which no implementation can break | 2 |
+
+A clause that obliges more than one role names each: 39 bind both servers and clients, such
+as `linkset-precondition-failed-412` ("servers and clients SHOULD use conditional
+requests"). A clause that defines a message binds whoever produces it, so "the ID Token MUST
+NOT use none" is the identity provider's, and the authorization server's duty to refuse such
+a token is its own requirement.
+
+The roles decide two things.
+
+- **Coverage.** A server run answers for `Server` and `AuthorizationServer` requirements,
+  so `touchstone coverage`, the MCP `coverage` tool and the reports count only those (248
+  of 296). The others are for [client testing]({% include src.html path="CLIENT-TESTING.md" %});
+  `definitions/COVERAGE.md` lists the client and receiver requirements separately.
+- **The lint.** A test that cites requirements must cite one that binds a server or an
+  authorization server. A negative test may instead rest on the clause of the client or
+  identity provider whose message it forges: refusing that message is what the test checks.
 
 ## Levels and verdicts
 

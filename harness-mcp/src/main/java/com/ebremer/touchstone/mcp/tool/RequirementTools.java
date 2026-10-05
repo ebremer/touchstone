@@ -34,16 +34,23 @@ public class RequirementTools {
 
     @McpTool(name = "list_requirements",
             description = "List catalog requirements as metadata, optionally filtered by spec module "
-                    + "(e.g. lws10-core, lws10-authn-openid) and/or level (MUST, SHOULD, MAY).",
+                    + "(e.g. lws10-core, lws10-authn-openid), level (MUST, SHOULD, MAY) and/or the role the "
+                    + "clause binds (Server, AuthorizationServer, Client, IdentityProvider, Receiver, "
+                    + "Specification).",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     public List<RequirementSummary> listRequirements(
             @McpToolParam(required = false, description = "spec module key") String module,
-            @McpToolParam(required = false, description = "MUST, SHOULD, or MAY") String level) {
+            @McpToolParam(required = false, description = "MUST, SHOULD, or MAY") String level,
+            @McpToolParam(required = false, description = "a role the clause binds, e.g. Server or Client")
+                    String role) {
         return catalog.all().stream()
                 .filter(r -> module == null || module.isBlank() || module.equals(r.specModule()))
                 .filter(r -> level == null || level.isBlank() || level.equalsIgnoreCase(r.level()))
-                .map(r -> new RequirementSummary(r.iri(), r.level(), r.specModule(), r.section(), r.summary()))
+                .filter(r -> role == null || role.isBlank()
+                        || r.appliesTo().stream().anyMatch(role::equalsIgnoreCase))
+                .map(r -> new RequirementSummary(r.iri(), r.level(), r.specModule(), r.section(), r.summary(),
+                        r.appliesTo()))
                 .toList();
     }
 
@@ -57,19 +64,21 @@ public class RequirementTools {
         Requirement r = catalog.find(iri).orElseThrow(
                 () -> new IllegalArgumentException("unknown requirement IRI: " + iri));
         return new RequirementDetail(r.iri(), r.level(), r.specModule(), r.section(), r.status(),
-                r.summary(), r.clauseText());
+                r.summary(), r.clauseText(), r.appliesTo());
     }
 
     @McpTool(name = "coverage",
             description = "Requirements-by-tests coverage matrix, per spec module and level, optionally "
-                    + "scoped to one module.",
+                    + "scoped to one module. It counts the requirements a server run answers for, those "
+                    + "binding a server or an authorization server; notCounted says how many others there are.",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     public CoverageReportDto coverage(
             @McpToolParam(required = false, description = "spec module key") String module) {
-        List<Requirement> requirements = catalog.all().stream()
+        List<Requirement> inModule = catalog.all().stream()
                 .filter(r -> module == null || module.isBlank() || module.equals(r.specModule()))
                 .toList();
+        List<Requirement> requirements = inModule.stream().filter(Requirement::bindsServerSide).toList();
         Set<String> covered = definitions.all().stream()
                 .map(TestDefinition::requirements)
                 .flatMap(List::stream)
@@ -78,6 +87,7 @@ public class RequirementTools {
         List<CoverageCell> cells = report.rows().stream()
                 .map(row -> new CoverageCell(row.specModule(), row.level(), row.covered(), row.total()))
                 .toList();
-        return new CoverageReportDto(report.totalCovered(), report.totalRequirements(), cells);
+        return new CoverageReportDto(report.totalCovered(), report.totalRequirements(), cells,
+                inModule.size() - requirements.size());
     }
 }

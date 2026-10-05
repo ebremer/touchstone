@@ -6,6 +6,9 @@ what the schema cannot:
 - variables are bound, by a prerequisite or an earlier capture;
 - identities exist, and grants name agents other than alice;
 - catalog IRIs exist and none has drifted;
+- every catalog requirement names the roles it binds, and every test that cites requirements
+  cites one a server run answers for, a Server or AuthorizationServer one; a negative test may
+  instead rest on the clause of the Client or IdentityProvider whose message it forges (D-0076);
 - every `source` anchor exists in its dated snapshot (anchors.json);
 - fixtures exist, and no executable value names an example host;
 - `mirrors` and `supersedes` name real lws-test-suite tests and retired manifests/ tests.
@@ -41,6 +44,20 @@ for f in glob.glob(os.path.join(TS, "catalog", "*.ttl")):
     g.parse(f, format="turtle")
 T = rdflib.Namespace("https://example.org/touchstone/vocab#")
 catalog = {str(s) for s in g.subjects(rdflib.RDF.type, T.Requirement)}
+
+# Who each requirement binds (D-0076): one or more of the vocabulary's roles.
+vocab = rdflib.Graph().parse(os.path.join(TS, "catalog", "vocab", "touchstone-vocab.ttl"), format="turtle")
+ROLES = {str(r).rsplit("#", 1)[1] for r in vocab.subjects(rdflib.RDF.type, T.Role)}
+SERVER_SIDE = {"Server", "AuthorizationServer"}
+FORGEABLE = {"Client", "IdentityProvider"}
+roles = {}
+for s in sorted(catalog):
+    rs = {str(o).rsplit("#", 1)[1] for o in g.objects(rdflib.URIRef(s), T.appliesTo)}
+    if not rs:
+        E(f"catalog: {s} names no role (touchstone:appliesTo)")
+    elif not rs <= ROLES:
+        E(f"catalog: {s} names unknown roles {sorted(rs - ROLES)}")
+    roles[s] = rs
 
 # manifests/ is retired (D-0055); retired-manifests.txt keeps the ids supersedes may name.
 ts_manifests = set(retired_manifests())
@@ -147,6 +164,12 @@ for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True))
                 E(f"{where}: requirement {r} not in catalog")
             if r.rsplit("/", 1)[-1] in DRIFTED:
                 E(f"{where}: cites drifted requirement {r}")
+        bound = set().union(*(roles.get(r, set()) for r in t.get("requirements", [])))
+        if t.get("requirements") and not bound & SERVER_SIDE \
+                and not (t.get("type") == "NegativeTest" and bound & FORGEABLE):
+            E(f"{where}: no requirement it cites binds a Server or AuthorizationServer (it cites "
+              f"{', '.join(sorted(bound)) or 'no role'}); a negative test may rest on a Client or "
+              "IdentityProvider clause instead, the party whose message it forges")
         ms = t.get("mirrors", [])
         for m in ([ms] if isinstance(ms, str) else ms):
             if lts_tests is not None and m not in lts_tests:
@@ -278,6 +301,8 @@ print(f"tests: {total} in {len(per_manifest)} manifests; levels {dict(levels)}")
 for m, c in per_manifest.items():
     print(f"   {m:40s} {c}")
 print(f"catalog requirements cited: {len(cited)} distinct")
+by_role = Counter(r for rs in roles.values() for r in rs)
+print("catalog requirements by role: " + ", ".join(f"{r} {by_role[r]}" for r in sorted(ROLES, key=lambda r: -by_role[r])))
 if lts_tests is None:
     print("lws-test-suite: no checkout found, so mirrors were not checked (set LWS_TEST_SUITE; see README.md)")
 else:

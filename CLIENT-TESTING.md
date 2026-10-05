@@ -401,17 +401,19 @@ quirk is a finding about one of the two.
 
 ## 11. Initial rule inventory
 
-From the catalog as of 2026-10-03. Phase C0 replaces this list with the conformance-class
-tags (§13). "Half" marks a clause that binds both servers and clients; only the client
-half is judged here.
+Phase C0 tagged every catalog requirement with the roles it binds (D-0076). The full list
+of the 79 that bind a client or a receiver is generated from those tags, in
+[`definitions/COVERAGE.md`](definitions/COVERAGE.md) section 4. This table is the plan for
+observing them, grouped by mechanism. "Half" marks a clause that binds both servers and
+clients; only the client half is judged here.
 
 | Requirement | Level | Observed by | Phase |
 |---|---|---|---|
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST | passive: a session token anywhere but `Authorization` (query string, form body) | C2 |
 | `lws10-core/client-no-assumed-methods-405-415` | MUST | passive: PUT, PATCH and a patch format only after the resource advertised them; faults 405 and 415: no unchanged repeat | C2, C3 |
-| `lws10-notifications-webhook/subscription-type-and-fields`, `subscription-inbox-required` | MUST | passive: subscription bodies | C2 |
-| `lws10-core/access-type-values`, `access-endpoints-jsonld-payloads` | MUST | passive: the access request bodies the client POSTs | C2 |
-| `lws10-index/client-baseline-only` | MUST | passive: a QUERY format the server did not advertise, kept after a 415 | C2, C3 |
+| `lws10-core/subscription-create-post-lws-json`, `subscription-request-*`; `lws10-notifications-webhook/subscription-type-and-fields`, `subscription-inbox-required`, `subscription-type-identifier` (some half) | MUST | passive: subscription bodies | C2 |
+| `lws10-core/access-jsonld-context-lws-v1`, `access-type-values`, and the other access and policy data-model clauses (half) | MUST | passive: the access requests and grants the client POSTs | C2 |
+| `lws10-index/client-baseline-only`, `query-content-type-required` (half) | MUST | passive: a QUERY without `Content-Type`, or in a format the server did not advertise and kept after a 415 | C2, C3 |
 | `lws10-core/put-clients-use-conditional-requests` | SHOULD | passive: a PUT replacing a resource carries `If-Match`; fault 412 (§5.1) | C2, C3 |
 | `lws10-core/linkset-precondition-failed-412` (half) | SHOULD | passive: PUT and PATCH on a linkset are conditional | C2 |
 | `lws10-core/pagination-uris-opaque` | SHOULD | trap: page requests use issued URLs | C2 |
@@ -423,7 +425,7 @@ half is judged here.
 | `lws10-index/client-415-accept-query` | MAY | fault `queryFormat415`: noted when the retry uses an advertised format | C3 |
 | `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C3, C4 |
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
-| token-exchange request clauses (core authorization section) | MUST | passive: token requests; their IRIs are identified in C0 | C4 |
+| `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-saml2`, `token-type-jwt` | MUST | passive: token requests | C4 |
 | `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | fault `forgedDelivery`: forged deliveries refused, genuine ones accepted | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
@@ -455,14 +457,18 @@ The phases run in order, and each has an acceptance criterion. **Gate C:** the
 `ObservationTest` schema waits for Erich's review before the first rule is written, as
 Gate 2 did for the server-side schema.
 
-- **C0: catalog.** Tag every requirement with the conformance class it binds,
-  `touchstone:appliesTo` with these values:
-  - server, client, authorization server, OpenID Provider, receiver;
-  - mixed, for blocks that bind more than one.
+- **C0: catalog. Done 2026-10-05 (D-0076).** Every requirement names the roles it binds,
+  `touchstone:appliesTo`, one value per role:
+  - `Server`, `AuthorizationServer`, `Client`, `Receiver`;
+  - `IdentityProvider`, for OpenID Providers and SAML identity providers;
+  - `Specification`, for the two clauses that bind other specifications.
 
-  `check.py` then enforces that server definitions cite server or mixed requirements, and
-  client rules cite client or mixed ones. *Done when:* COVERAGE.md lists client
-  requirements separately, and §11 is generated from the tags.
+  A clause binding several roles names each, instead of a "mixed" value. `check.py` enforces
+  that a server test citing requirements cites a server-side one; a negative test may rest on
+  the clause of the party whose message it forges. Client rules get the mirror-image check
+  when their type exists (C2). Coverage everywhere counts the server-side requirements only.
+  *Done when:* COVERAGE.md lists client requirements separately, generated from the tags.
+  Section 11 points to that list.
 - **C1: session deployment.**
   - `RefLwsServer`'s state split from its lifecycle, and the session manager.
   - The recorder and URL ledger, the traps, and quotas and expiry.

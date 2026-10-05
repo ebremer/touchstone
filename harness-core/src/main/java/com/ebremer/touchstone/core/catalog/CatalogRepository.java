@@ -43,6 +43,7 @@ public final class CatalogRepository {
         Property summary = model.createProperty(Touchstone.VOCAB_NS, "summary");
         Property clauseText = model.createProperty(Touchstone.VOCAB_NS, "clauseText");
         Property status = model.createProperty(Touchstone.VOCAB_NS, "status");
+        Property appliesTo = model.createProperty(Touchstone.VOCAB_NS, "appliesTo");
         Resource requirementClass = model.createResource(Touchstone.VOCAB_NS + "Requirement");
 
         List<Requirement> out = new ArrayList<>();
@@ -54,7 +55,8 @@ public final class CatalogRepository {
                         resourceUri(r, section),
                         literal(r, summary),
                         literal(r, clauseText),
-                        localName(r, status))));
+                        localName(r, status),
+                        localNames(r, appliesTo))));
         out.sort(Comparator.comparing(Requirement::iri));
         return List.copyOf(out);
     }
@@ -72,5 +74,17 @@ public final class CatalogRepository {
     private static String localName(Resource r, Property p) {
         Statement s = r.getProperty(p);
         return s == null || !s.getObject().isURIResource() ? null : s.getResource().getLocalName();
+    }
+
+    /** Every IRI value of {@code p}, by local name, sorted. */
+    private static List<String> localNames(Resource r, Property p) {
+        List<String> out = new ArrayList<>();
+        r.listProperties(p).forEachRemaining(s -> {
+            if (s.getObject().isURIResource()) {
+                out.add(s.getResource().getLocalName());
+            }
+        });
+        out.sort(Comparator.naturalOrder());
+        return out;
     }
 }

@@ -23,6 +23,7 @@
 
 req:services-optional
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:summary "A storage may support the Type Index Service, the Type Search Service, or both." ;
@@ -31,6 +32,7 @@ req:services-optional
 
 req:service-advertised
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:summary "A storage that supports either service advertises it in the storage description's service array, with type TypeIndexService or TypeSearchService." ;
@@ -39,6 +41,7 @@ req:service-advertised
 
 req:service-endpoint
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:summary "Each advertised service object carries a serviceEndpoint, the URI of the service." ;
@@ -47,6 +50,7 @@ req:service-endpoint
 
 req:service-extra-properties
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#discovery> ;
     touchstone:summary "A service object may carry additional properties." ;
@@ -55,6 +59,7 @@ req:service-extra-properties
 
 req:types-from-link-headers
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "The server derives resource types from the Link rel=type headers a client sends on create or update, together with intrinsic LWS classes such as lws:Container." ;
@@ -63,6 +68,7 @@ req:types-from-link-headers
 
 req:types-from-content
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "The server may also derive types from a resource's representation." ;
@@ -71,6 +77,7 @@ req:types-from-content
 
 req:content-types-identical
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "Types derived from content are treated exactly like those from Link headers for indexing, search and authorization filtering." ;
@@ -79,6 +86,7 @@ req:content-types-identical
 
 req:eventually-consistent
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "Type and indexed-relation membership may be eventually consistent." ;
@@ -87,6 +95,7 @@ req:eventually-consistent
 
 req:reflect-change-bounded
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "After a write that changes a resource's types or relation targets, the services reflect it within a bounded interval." ;
@@ -95,6 +104,7 @@ req:reflect-change-bounded
 
 req:client-no-read-your-writes
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "Clients do not assume read-your-writes consistency and tolerate transient staleness. (A client obligation.)" ;
@@ -103,6 +113,7 @@ req:client-no-read-your-writes
 
 req:consistency-not-for-authorization
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-derivation> ;
     touchstone:summary "The eventual-consistency allowance never applies to authorization filtering." ;
@@ -111,6 +122,7 @@ req:consistency-not-for-authorization
 
 req:query-content-type-required
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A search request carries a Content-Type identifying its query format; a server fails a request without one." ;
@@ -119,6 +131,7 @@ req:query-content-type-required
 
 req:baseline-format-supported
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Every Type Search Service supports the application/lws-query+json filter format." ;
@@ -127,6 +140,7 @@ req:baseline-format-supported
 
 req:other-formats
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server may accept further query formats, each with its own media type, all under the same authorization rules." ;
@@ -135,6 +149,7 @@ req:other-formats
 
 req:query-safe-idempotent
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "QUERY is safe and idempotent: a search never alters server state and may be repeated, retried or cached." ;
@@ -143,6 +158,7 @@ req:query-safe-idempotent
 
 req:at-members-ignored
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A filter member whose name begins with @ (such as @context) is ignored: neither a constraint nor a relation key." ;
@@ -151,6 +167,7 @@ req:at-members-ignored
 
 req:accept-query-advertised
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "The server advertises the query formats it accepts in an Accept-Query header, for example on OPTIONS of the search endpoint." ;
@@ -159,6 +176,7 @@ req:accept-query-advertised
 
 req:accept-query-no-disclosure
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Accept-Query lists only query-format media types, never the indexed relations or filter capabilities." ;
@@ -167,6 +185,7 @@ req:accept-query-no-disclosure
 
 req:client-415-accept-query
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A client refused with 415 may consult Accept-Query to pick a supported format. (A client permission.)" ;
@@ -175,6 +194,7 @@ req:client-415-accept-query
 
 req:type-filter
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server, touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "The optional type key is a conjunctive-normal-form filter over rdf:type: an array whose elements are ANDed, each a type IRI or an array of IRIs ORed; a filter with no constraints matches every resource visible to the client." ;
@@ -183,6 +203,7 @@ req:type-filter
 
 req:grammar-not-extended
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server does not extend the application/lws-query+json grammar; richer queries need their own media type." ;
@@ -191,6 +212,7 @@ req:grammar-not-extended
 
 req:client-baseline-only
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A portable client relies on no query format beyond the baseline. (A client obligation.)" ;
@@ -199,6 +221,7 @@ req:client-baseline-only
 
 req:no-match-not-error
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A type IRI that matches no resource yields no results and is not an error." ;
@@ -207,6 +230,7 @@ req:no-match-not-error
 
 req:duplicate-groups-ignored
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Duplicate groups in a filter are ignored." ;
@@ -215,6 +239,7 @@ req:duplicate-groups-ignored
 
 req:empty-group-rejected
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "An empty group (an empty array inside a key's value) is rejected with 400, not ignored." ;
@@ -223,6 +248,7 @@ req:empty-group-rejected
 
 req:type-key-supported
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Every Type Search Service supports the type key." ;
@@ -231,6 +257,7 @@ req:type-key-supported
 
 req:relations-may-be-indexed
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server may index other descriptive link relations, filtered with the relation as a key and the same CNF semantics, ANDed with the other keys." ;
@@ -239,6 +266,7 @@ req:relations-may-be-indexed
 
 req:relation-sources-identical
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Relation targets from Link headers, server state and parsed content are treated identically." ;
@@ -247,6 +275,7 @@ req:relation-sources-identical
 
 req:relations-not-enumerated
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server never enumerates its additional indexed relations, in the storage description or elsewhere." ;
@@ -255,6 +284,7 @@ req:relations-not-enumerated
 
 req:unindexed-relation-indistinguishable
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A relation the server does not index yields no results for that constraint, is not an error, and is indistinguishable from a target value that matches nothing." ;
@@ -263,6 +293,7 @@ req:unindexed-relation-indistinguishable
 
 req:structural-relations-not-indexed
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Structural and protocol relations (such as up) are never indexed." ;
@@ -271,6 +302,7 @@ req:structural-relations-not-indexed
 
 req:search-default-containerpage
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A successful search returns 200 with an application/lws+json ContainerPage, which every server can produce for a request with no Accept or one admitting lws+json." ;
@@ -279,6 +311,7 @@ req:search-default-containerpage
 
 req:other-response-formats
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server may honour an Accept asking for another response format." ;
@@ -287,6 +320,7 @@ req:other-response-formats
 
 req:result-item-id-type
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "Each item of a search result carries at least the matched resource's id and type." ;
@@ -295,6 +329,7 @@ req:result-item-id-type
 
 req:result-item-metadata
     a touchstone:Requirement ; touchstone:level "MAY" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A result item may carry more metadata, such as format, size or modified." ;
@@ -303,6 +338,7 @@ req:result-item-metadata
 
 req:content-location-protected
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-query> ;
     touchstone:summary "A server that exposes a results resource through Content-Location filters it by authorization on every access and prevents its reuse across clients." ;
@@ -311,6 +347,7 @@ req:content-location-protected
 
 req:malformed-filter-400
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A body that is not well-formed lws-query+json, a type that is not an array, or an element that is neither a string nor a non-empty array of strings, is rejected with 400." ;
@@ -319,6 +356,7 @@ req:malformed-filter-400
 
 req:unsupported-format-415
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A request in a query format the server does not support is rejected with 415." ;
@@ -327,6 +365,7 @@ req:unsupported-format-415
 
 req:unsupported-format-accept-query
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A 415 response carries an Accept-Query header listing the accepted query formats." ;
@@ -335,6 +374,7 @@ req:unsupported-format-accept-query
 
 req:missing-content-type-400
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A search request without a Content-Type is rejected with 400." ;
@@ -343,6 +383,7 @@ req:missing-content-type-400
 
 req:not-acceptable-406
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A request whose Accept excludes every response format the server can produce is rejected with 406; one that omits Accept or admits lws+json never is." ;
@@ -351,6 +392,7 @@ req:not-acceptable-406
 
 req:invalid-iri-400
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A type or relation target value that is not an absolute IRI is rejected with 400." ;
@@ -359,6 +401,7 @@ req:invalid-iri-400
 
 req:too-complex-422
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A well-formed filter beyond the complexity the server supports is rejected with 422." ;
@@ -367,6 +410,7 @@ req:too-complex-422
 
 req:no-silent-narrowing
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A server never silently truncates or narrows a filter it finds too complex." ;
@@ -375,6 +419,7 @@ req:no-silent-narrowing
 
 req:expired-page-404-410
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A page link of either service that the server no longer recognizes, or that has expired, gets 404 or 410." ;
@@ -383,6 +428,7 @@ req:expired-page-404-410
 
 req:client-restart
     a touchstone:Requirement ; touchstone:level "SHOULD" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A client refused a page restarts the search or listing. (A client obligation.)" ;
@@ -391,6 +437,7 @@ req:client-restart
 
 req:vary-accept
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#type-search-errors> ;
     touchstone:summary "A server that negotiates the search response on Accept lists Accept in Vary." ;
@@ -399,6 +446,7 @@ req:vary-accept
 
 req:authorization-enforced
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Both services enforce authorization: their responses include only types and resources the client is authorized to read." ;
@@ -407,6 +455,7 @@ req:authorization-enforced
 
 req:unauthorized-omitted
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Entries the client may not read are omitted entirely." ;
@@ -415,6 +464,7 @@ req:unauthorized-omitted
 
 req:no-existence-disclosure
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Neither service lets a client discover that a resource, or a type, exists without the authorization to read it." ;
@@ -423,6 +473,7 @@ req:no-existence-disclosure
 
 req:counts-filtered
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Any count, including totalItems, counts only the entries the client is authorized to see." ;
@@ -431,6 +482,7 @@ req:counts-filtered
 
 req:current-authorization
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Authorization filtering uses the client's access at the time of the request, not a cached view." ;
@@ -439,6 +491,7 @@ req:current-authorization
 
 req:revoked-not-shown
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Once access is revoked or narrowed, the affected types and resources appear in no later response." ;
@@ -447,6 +500,7 @@ req:revoked-not-shown
 
 req:derived-index-filtered
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "A server may keep a derived index, but filters it by current authorization on every request." ;
@@ -455,6 +509,7 @@ req:derived-index-filtered
 
 req:no-shared-cache
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "An authorization-filtered response is never served from a shared cache to another client." ;
@@ -463,6 +518,7 @@ req:no-shared-cache
 
 req:responses-private
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Responses of both services are marked against reuse across clients (e.g. Cache-Control: private or no-store), and cached entries vary on the credential." ;
@@ -471,6 +527,7 @@ req:responses-private
 
 req:extensions-uphold-authorization
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-index" ;
+    touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:sourceDraft <https://w3c.github.io/lws-protocol/lws10-index/#security-authorization> ;
     touchstone:summary "Any extension query mechanism over the storage upholds the same authorization filtering and indistinguishability." ;

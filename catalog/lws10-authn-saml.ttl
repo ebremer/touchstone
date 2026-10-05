@@ -18,6 +18,7 @@
 
 req:signed-and-required-assertions
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization> ;
     touchstone:summary "A SAML authentication credential is signed and includes the required assertions." ;
@@ -26,6 +27,7 @@ req:signed-and-required-assertions
 
 req:nameid-subject
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization> ;
     touchstone:summary "The saml:NameID assertion carries the LWS subject identifier." ;
@@ -34,6 +36,7 @@ req:nameid-subject
 
 req:issuer-assertion
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization> ;
     touchstone:summary "The saml:Issuer assertion carries the LWS issuer identifier." ;
@@ -42,6 +45,7 @@ req:issuer-assertion
 
 req:recipient-client-id
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization> ;
     touchstone:summary "The Recipient parameter in saml:SubjectConfirmationData carries the LWS client identifier." ;
@@ -50,6 +54,7 @@ req:recipient-client-id
 
 req:audience-restriction
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization> ;
     touchstone:summary "Any audience restriction uses the saml:Audience assertion (which should include the client and AS)." ;
@@ -58,6 +63,7 @@ req:audience-restriction
 
 req:validation-signature
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#validation> ;
     touchstone:summary "Using a trust relationship with the issuer, the credential signature is validated per SAML Core section 5." ;
@@ -66,6 +72,7 @@ req:validation-signature
 
 req:token-type-saml2
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#token-type> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#token-type> ;
     touchstone:summary "A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server." ;

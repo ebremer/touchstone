@@ -107,7 +107,8 @@ from, or the authorization server's key.
 ## `touchstone coverage`
 
 Prints how many catalogued requirements at least one test cites, for each spec module and
-level.
+level. It counts the requirements a server run answers for, those that bind a server or an
+authorization server, and says how many others it left out ([roles](catalog.md#who-a-requirement-binds)).
 
 ```text
 touchstone coverage [-c <catalogDir>] [--definitions <dir>]
@@ -120,15 +121,23 @@ touchstone coverage [-c <catalogDir>] [--definitions <dir>]
 
 ```text
 $ touchstone coverage
-Requirements coverage: 120 of 219 covered by 101 test(s)
+Requirements coverage: 225 of 248 covered by 203 test(s)
 
 module                   level    covered/total
-lws10-authn-openid       MUST     8/8
-lws10-authn-saml         MUST     7/7
-lws10-authn-ssi-cid      MUST     14/14
-lws10-core               MUST     82/144
-lws10-core               SHOULD   8/24
-lws10-core               MAY      1/22
+lws10-authn-openid       MUST     2/2
+lws10-authn-saml         MUST     1/1
+lws10-authn-ssi-cid      MUST     5/5
+lws10-core               MUST     127/130
+lws10-core               SHOULD   17/21
+lws10-core               MAY      9/19
+lws10-index              MUST     37/39
+lws10-index              SHOULD   4/4
+lws10-index              MAY      6/10
+lws10-notifications-webhook MUST     12/12
+lws10-notifications-webhook SHOULD   1/1
+lws10-notifications-webhook MAY      4/4
+
+48 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
 ```
 
 `coverage` is a report, not a gate. If a definition cites a requirement that is not in the

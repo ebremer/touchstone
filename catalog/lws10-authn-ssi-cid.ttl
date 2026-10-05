@@ -22,6 +22,7 @@
 
 req:alg-not-none
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The self-issued JWT must not use \"none\" as its signing algorithm." ;
@@ -30,6 +31,7 @@ req:alg-not-none
 
 req:sub-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The sub claim carries the subject identifier." ;
@@ -38,6 +40,7 @@ req:sub-claim
 
 req:iss-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The iss claim carries the issuer identifier." ;
@@ -46,6 +49,7 @@ req:iss-claim
 
 req:client-id-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The client_id claim carries the client identifier." ;
@@ -54,6 +58,7 @@ req:client-id-claim
 
 req:sub-iss-client-same-uri
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "For self-issued credentials, sub, iss, and client_id are the same URI." ;
@@ -62,6 +67,7 @@ req:sub-iss-client-same-uri
 
 req:aud-includes-as
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "Any audience restriction uses aud, which must include the target authorization server." ;
@@ -70,6 +76,7 @@ req:aud-includes-as
 
 req:exp-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The JWT includes an exp (expiration) claim." ;
@@ -78,6 +85,7 @@ req:exp-claim
 
 req:iat-claim
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#serialization> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization> ;
     touchstone:summary "The JWT includes an iat (issued at) claim." ;
@@ -86,6 +94,7 @@ req:iat-claim
 
 req:validation-dereference-sub-cid
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation> ;
     touchstone:summary "Absent prior trust, the verifier dereferences sub to a controlled identifier document whose id equals the subject." ;
@@ -94,6 +103,7 @@ req:validation-dereference-sub-cid
 
 req:validation-reject-alg-none
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation> ;
     touchstone:summary "The verifier rejects tokens whose alg header equals \"none\"." ;
@@ -102,6 +112,7 @@ req:validation-reject-alg-none
 
 req:validation-all-claims
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation> ;
     touchstone:summary "The verifier validates all claims in the credential data model." ;
@@ -110,6 +121,7 @@ req:validation-all-claims
 
 req:validation-kid-verification-method
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation> ;
     touchstone:summary "The verifier selects a verification method from the CID document by kid and validates the signature with it." ;
@@ -118,6 +130,7 @@ req:validation-kid-verification-method
 
 req:validation-exp-in-future
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#validation> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation> ;
     touchstone:summary "The verifier ensures the current time precedes exp (small clock-skew leeway allowed)." ;
@@ -126,6 +139,7 @@ req:validation-exp-in-future
 
 req:token-type-jwt
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-ssi-cid" ;
+    touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-ssi-cid/#token-type> ;
     touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type> ;
     touchstone:summary "A self-issued JWT credential uses the jwt token-type URI at the authorization server." ;

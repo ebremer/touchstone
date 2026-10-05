@@ -90,7 +90,9 @@ entries:
       "Each authentication suite MUST be associated with a token type URI", the value a
       client sends as subject_token_type. So every entry of subject_token_types_supported,
       when the metadata has it, names a suite's token type and must be a URI (the suites
-      use the IANA OAuth URI registry's urn:ietf:params:oauth:token-type values).
+      use the IANA OAuth URI registry's urn:ietf:params:oauth:token-type values). That
+      clause binds the suites; the metadata member it constrains, "a list of valid
+      subject_token_type values", is the authorization server's.
     status: Proposed
     level: MUST
     source:
@@ -101,6 +103,7 @@ entries:
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-core/authn-suite-token-type-uri
+      - https://example.org/touchstone/req/lws10-core/authz-metadata-subject-token-types
     request:
       method: GET
       url: "${as.metadataUrl}"

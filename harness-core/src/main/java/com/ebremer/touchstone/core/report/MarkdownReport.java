@@ -69,6 +69,10 @@ public final class MarkdownReport {
                         + str(l, "covered") + " | " + str(l, "failed") + " |\n");
             }
             out.write("\n");
+            if (model.get("leftOut") instanceof Number n && n.longValue() > 0) {
+                out.write(n + " catalog requirements bind only clients, receivers, identity providers or other"
+                        + " specifications, which a server run cannot break, so coverage leaves them out.\n\n");
+            }
         }
 
         List<Map<String, Object>> tests = (List<Map<String, Object>>) model.get("tests");

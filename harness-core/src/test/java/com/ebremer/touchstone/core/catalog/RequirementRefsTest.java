@@ -58,7 +58,7 @@ class RequirementRefsTest {
     }
 
     private static Requirement requirement(String iri) {
-        return new Requirement(iri, "MUST", "lws10-core", null, null, null, "Approved");
+        return new Requirement(iri, "MUST", "lws10-core", null, null, null, "Approved", List.of("Server"));
     }
 
     private static TestDefinition test(String id, String... requirements) {

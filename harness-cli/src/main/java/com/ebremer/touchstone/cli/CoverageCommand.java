@@ -24,7 +24,8 @@ import picocli.CommandLine.Spec;
         name = "coverage",
         mixinStandardHelpOptions = true,
         exitCodeOnExecutionException = TouchstoneCli.HARNESS_ERROR,
-        description = "Requirements-by-tests coverage matrix per spec module and level.",
+        description = "Requirements-by-tests coverage matrix per spec module and level, over the requirements"
+                + " a server run answers for: those binding a server or an authorization server.",
         exitCodeListHeading = "%nExit codes:%n",
         exitCodeList = {
                 "0:the matrix was printed",
@@ -53,7 +54,10 @@ final class CoverageCommand implements Callable<Integer> {
             spec.commandLine().getErr().println("catalog directory not found: " + catalogDir);
             return TouchstoneCli.HARNESS_ERROR;
         }
-        List<Requirement> requirements = CatalogRepository.load(catalogDir);
+        List<Requirement> catalog = CatalogRepository.load(catalogDir);
+        // Clauses binding only clients, receivers, identity providers or other specifications are
+        // not a server run's to cover (D-0076); client sessions answer for them (CLIENT-TESTING.md).
+        List<Requirement> requirements = catalog.stream().filter(Requirement::bindsServerSide).toList();
 
         Set<String> covered = new HashSet<>();
         int testCount = 0;
@@ -70,7 +74,7 @@ final class CoverageCommand implements Callable<Integer> {
             }
             testCount = tests.size();
             tests.forEach(t -> covered.addAll(t.requirements()));
-            List<RequirementRefs.Dangling> dangling = RequirementRefs.unresolved(tests, requirements);
+            List<RequirementRefs.Dangling> dangling = RequirementRefs.unresolved(tests, catalog);
             if (!dangling.isEmpty()) {
                 spec.commandLine().getErr().println("warning: " + RequirementRefs.describe(dangling));
             }
@@ -83,6 +87,11 @@ final class CoverageCommand implements Callable<Integer> {
         out.printf("%-24s %-8s %s%n", "module", "level", "covered/total");
         for (CoverageReport.Row row : report.rows()) {
             out.printf("%-24s %-8s %d/%d%n", row.specModule(), row.level(), row.covered(), row.total());
+        }
+        int leftOut = catalog.size() - requirements.size();
+        if (leftOut > 0) {
+            out.printf("%n%d more requirement(s) bind only clients, receivers, identity providers or other"
+                    + " specifications, which a server run cannot break, and are not counted.%n", leftOut);
         }
         return 0;
     }

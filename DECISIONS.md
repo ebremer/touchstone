@@ -2452,3 +2452,76 @@ Targets there come only from `targets.yaml`, per DESIGN.md section 7.1.
 - Hosting, gating session creation, and OpenID client registration are open questions for Erich.
 - **Gate C:** the `ObservationTest` schema waits for Erich's review before the first rule is
   written.
+
+### D-0076 — every requirement names the roles it binds (client testing phase C0)
+`touchstone:appliesTo` (catalog vocabulary 0.2.0) names who can break each clause, by role:
+
+| Role | Requirements |
+|---|---:|
+| `Server` | 223 |
+| `Client` | 75 |
+| `AuthorizationServer` | 26 |
+| `IdentityProvider` | 16 |
+| `Receiver` | 4 |
+| `Specification` | 2 |
+
+A clause binding several roles names each one, and counts in each row above. 39 bind both servers
+and clients, for example "servers and clients SHOULD use conditional requests". 248 of the 296 bind
+a server or an authorization server; 48 bind neither.
+
+**Deviation from CLIENT-TESTING.md as first written.** It proposed one value per requirement with
+"mixed" for clauses binding several roles. Listing each role says which ones, and a filter on one
+role then finds every clause that binds it. Two values the brief lacked are added:
+- `IdentityProvider` covers OpenID Providers and SAML identity providers alike;
+- `Specification` covers `authn-suite-token-type-uri` and
+  `notification-suite-subscription-type-identifier`, which oblige suites, not implementations.
+
+**How a clause was assigned.**
+- A clause that defines a message binds whoever produces the message:
+  - the ID Token and SAML assertion clauses bind the identity provider;
+  - the CID suite's JWT clauses bind the client, which issues that credential for itself;
+  - the core credential data model binds both the identity provider and the client;
+  - subscription request, access request and grant, query and token request clauses bind the
+    client. Where the server must also support or enforce the clause, it binds the server too.
+- A clause that validates or refuses binds the verifier:
+  - the suites' validation clauses bind the authorization server;
+  - the webhook verification steps bind the receiver. Two of those steps also constrain what the
+    server publishes, so they bind it as well.
+- The curation file of the core draft carries the roles of its generated entries.
+  `emit_candidates.py` refuses an entry without them, because only a reviewer can tell. The
+  regenerated file differs from the old one only by the new lines.
+
+**The lint** (`lint_definitions.py`) now checks two things:
+- every catalog requirement names roles from the vocabulary;
+- every test that cites requirements cites one binding a `Server` or `AuthorizationServer`.
+
+A negative test may instead rest on a `Client` or `IdentityProvider` clause: it forges that
+party's message, and refusing the message is what it checks. Nine tests do so:
+- three subscription refusals;
+- six refusals of malformed credentials.
+
+No core clause explicitly obliges a server to refuse a malformed subscription; that may be worth
+raising with the working group. One validation test cited only a `Specification` clause:
+`authz-metadata-subject-token-types-are-uris` now also cites
+`authz-metadata-subject-token-types`, the authorization server's clause for the metadata member
+it checks.
+
+**Coverage counts server-side requirements only:** 225 of 248 are cited. That applies to:
+- `touchstone coverage`, which also says how many it left out;
+- the MCP `coverage` tool, which returns them as `notCounted`;
+- every report, since the HTML, JSON, Markdown and PDF reports share one model.
+
+A report still lists a requirement of another role when one of its tests cites it, so the test's
+link resolves, but that row is not counted in coverage. A requirement with no roles, from an older
+or a fixture catalog, counts as server-side.
+
+**Elsewhere:**
+- MCP `list_requirements` gains a `role` filter, and requirement summaries and details carry
+  `appliesTo`.
+- `definitions/COVERAGE.md` gains section 4: the requirement counts by role, and the 79 client and
+  receiver requirements, each with the server tests that already cite it. That generated list
+  replaces the hand-made inventory in CLIENT-TESTING.md section 11. Checking §11 against the tags
+  showed one mistake: `access-endpoints-jsonld-payloads` binds servers, so the client row now
+  cites `access-jsonld-context-lws-v1`.
+
+Drafted by an agent; waits on branch `catalog/conformance-classes`.

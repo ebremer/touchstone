@@ -13,12 +13,14 @@ public final class Dtos {
     private Dtos() {
     }
 
-    public record RequirementSummary(String iri, String level, String module, String section, String summary) {
+    /** {@code appliesTo} names the roles the clause binds (D-0076), such as Server or Client. */
+    public record RequirementSummary(String iri, String level, String module, String section, String summary,
+            List<String> appliesTo) {
     }
 
     public record RequirementDetail(
             String iri, String level, String module, String section, String status,
-            String summary, String clauseText) {
+            String summary, String clauseText, List<String> appliesTo) {
     }
 
     /** A test's metadata: {@code requires} names the capabilities a target must declare for it to apply. */
@@ -30,7 +32,11 @@ public final class Dtos {
     public record CoverageCell(String module, String level, long covered, long total) {
     }
 
-    public record CoverageReportDto(long covered, long total, List<CoverageCell> byLevel) {
+    /**
+     * Coverage over the requirements a server run answers for; {@code notCounted} are those binding
+     * only clients, receivers, identity providers or other specifications (D-0076).
+     */
+    public record CoverageReportDto(long covered, long total, List<CoverageCell> byLevel, long notCounted) {
     }
 
     public record StartRunResult(String runId, String status, String target, String selector, int total) {
