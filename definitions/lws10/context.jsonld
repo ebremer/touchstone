@@ -171,6 +171,8 @@
     "audienceIncludesAs":    {"@id": "lwst:audienceIncludesAs", "@type": "xsd:boolean"},
     "identifiersAgree":      {"@id": "lwst:identifiersAgree", "@type": "xsd:boolean"},
     "realmContainsRequest":  {"@id": "lwst:realmContainsRequest", "@type": "xsd:boolean"},
+    "deliverySignature":     {"@id": "lwst:deliverySignature", "@container": "@set"},
+    "inboxShared":           {"@id": "lwst:inboxShared", "@type": "xsd:boolean"},
 
     "kind":               {"@id": "lwst:kind", "@type": "@vocab"},
     "NoCredential":       "lwst:NoCredential",

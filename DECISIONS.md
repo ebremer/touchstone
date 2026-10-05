@@ -2987,3 +2987,102 @@ A small fix rides along. A check on a credential-bearing member recorded its exp
 expected value now reads as it is, in server reports too.
 
 Drafted by an agent; waits on branch `clients/c4-authentication`.
+
+### D-0083 — notifications for client sessions (phase C5), and format 0.11.0
+Phase C5 is built. Its acceptance criterion holds: the self-test's reference inbox refuses every
+forgery and acknowledges every genuine notification, and a twin that accepts everything fails.
+The rules of phases C2 to C4 still discriminate as before.
+
+**Deliveries leave the service only through the outbound guard** (CLIENT-TESTING.md section 8.3,
+`Outbound`).
+- `RefLwsServer` now hands each signed notification to a `Courier`. A standalone storage still
+  sends it with the JDK client; a session's courier guards, sends, records and judges it.
+- The session sends with Jetty's HTTP client, whose version jetty-bom already manages. Its
+  address resolver filters the addresses the client connects to, so the check is made on what
+  is connected, not on an earlier lookup, and DNS rebinding gains nothing.
+- Only `https` URLs pass, to public unicast addresses. Excluded: loopback, RFC 1918,
+  link-local with the cloud metadata address, CGNAT, unique local, multicast, reserved and
+  documentation ranges, and the IPv6 prefixes that embed an IPv4 address.
+- Redirects are not followed and no cookie is kept. Jetty's protocol handlers are removed: its
+  authentication handler failed a 401 that carried no `WWW-Authenticate`, which is how an inbox
+  refuses a forgery, and turned the inbox's answer into no answer.
+- Each delivery is bounded: ten seconds, 64 KiB of answer kept, 500 per session.
+- `--allow-private-inboxes` lifts the scheme and address checks, for local development and the
+  self-test only.
+
+**Format 0.11.0** adds, for client rules only, and changes nothing an earlier rule relies on:
+- **deliveries as exchanges** (`OBSERVATION.md` section 3): the session's POST to an inbox and
+  the inbox's answer, with the role `delivery` and no server. `statusCode` is the inbox's
+  status, and 0 when nothing answered;
+- `deliverySignature`: `genuine`, or the forgery a delivery carries;
+- `inboxShared`: whether a subscription request names an inbox a subscription already
+  delivers to;
+- the role `keyDocument`, and four forgery faults;
+- **a task that arms a fault may select its trials by `observe` alone.** In 0.9.0 such a rule
+  needed `after`, its trigger the fault's answer. A forged notification is itself the trial,
+  which `deliverySignature` identifies; `RuleDefinition.taskTriggered` now leaves rules whose
+  task arms a fault to `observe`.
+
+The schema `$id` is `…/0-11-0`. As for 0.9.0 and 0.10.0, the additions are frozen with this
+entry, and like the rest of C5 they wait on the branch for review.
+
+**The forgeries are attacks, not server behaviour.** OBSERVATION.md section 6.2 said every fault
+is something a server may legally do. That still holds for the first four; the forgeries are what
+an attacker sends, which the inbox must withstand. Each targets one step of the webhook suite's
+section 5.2, so that each has a twin that skips exactly that step:
+- `forgedUnpublishedKey`: signed with a key the storage description does not publish, under the
+  published key's keyid (step 5, the signature);
+- `forgedAlteredBody`: altered after signing, its Content-Digest the signed one. The signature
+  covers the body only through content-digest (RFC 9421 section 7.2.8), so verifying it
+  includes checking the digest (RFC 9530);
+- `forgedKeyidWithoutFragment`: signed with the published key, but the keyid is the storage URL
+  alone (step 1). A lenient inbox that then takes the description's only key accepts it;
+- `forgedForeignKeyDocument`: signed with the key of a document under the storage, at
+  `{storage}_t/keys`, whose id is the storage's, not its own URL's (step 3). Anyone who can
+  write a resource under a storage could publish one.
+
+**The plan's stale `created` was dropped.** Checking `created` against a clock-skew window is
+encouraged only in the webhook suite's non-normative security considerations, so a rule would
+cite no clause.
+
+**Six rules**, in `notifications.yamlld`:
+- **four MUST**, one per forgery: the inbox does not answer it with a 2xx, since "a 2xx response
+  indicates successful receipt";
+- **one SHOULD**, citing `receiver-verification-steps`: a genuine notification gets a 2xx. It is
+  only a SHOULD because an inbox may refuse a genuine notification for reasons of its own, such
+  as a 410 to end a subscription;
+- **one MAY**, `per-subscription-inbox-urls`: each subscription's inbox is its own. It is
+  informational.
+
+`client-no-blind-retry-of-create` now observes the storage only. Without that, a delivery the
+session retried after an inbox's 5xx would have counted as the client re-sending a create.
+
+**A gap in the webhook suite.** Section 5.2 never ties the keyid to the storage the inbox
+subscribed to, or to the notification's `storage`. A notification signed with a key from any
+storage's own, self-consistent description passes all five steps. No rule can require more than
+the steps do, so CLIENT-TESTING.md section 12.4 takes this to the working group.
+
+**The proof.** `RefInbox`, in `harness-fixtures`, verifies as section 5.2 says. It was written
+apart from the storage's signer and from harness-core's verifier, so that a bug in either shows.
+`RefLwsClient` now:
+- subscribes twice, each subscription with its own inbox;
+- starts the four forgery tasks, creating a note after each;
+- waits for each notification.
+
+Seven more twins:
+- four inboxes that each skip one check;
+- one that accepts everything, aimed at all four forgery rules;
+- one that refuses everything;
+- a client that gives both subscriptions one inbox.
+
+`ClientRulesSelfTest` waits until no delivery is in flight before it reads results. The reference
+passes all 50 rules ("no MUST failure in 38 MUST rules exercised, of 38 that apply"), and each of
+the 51 twins fails exactly the rules aimed at it.
+
+The evidence was read. The digest twin, for example, fails `client-inbox-refuses-altered-body`
+on "statusCode: expected 3xx or 4xx or 5xx, was 204". The log shows each forged delivery once,
+with the inbox's 401 and its reason. `OutboundTest` covers the address ranges, the https rule, a
+private address refused at connect time, a redirect not followed, and a 401 kept. `ClientLabTest`
+records a refused http inbox and a loopback name, each with status 0 and the reason.
+
+Drafted by an agent; waits on branch `clients/c5-notifications`.

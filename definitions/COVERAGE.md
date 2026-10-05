@@ -7,7 +7,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 ## Summary
 
 - **203 tests**: 161 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 74 negative tests.
-- **44 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 34 MUST, 9 SHOULD, 1 MAY. They cite 55 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
+- **50 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 38 MUST, 10 SHOULD, 2 MAY. They cite 58 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
@@ -394,9 +394,9 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 |---|---:|---:|---:|---:|---:|---:|
 | Server | 223 | 167 | 24 | 32 | 201 | 26 |
 | AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
-| Client | 75 | 54 | 8 | 13 | 64 | 55 |
+| Client | 75 | 54 | 8 | 13 | 64 | 56 |
 | IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |
-| Receiver | 4 | 4 | 0 | 0 | 4 | 0 |
+| Receiver | 4 | 4 | 0 | 0 | 4 | 2 |
 | Specification | 2 | 2 | 0 | 0 | 2 | 0 |
 
 ### Client and receiver requirements
@@ -477,10 +477,10 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 | `lws10-index/query-content-type-required` | MUST | Server | A search request carries a Content-Type identifying its query format; a server fails a request without one. | `type-search-missing-content-type-rejected` | `client-query-content-type` |
 | `lws10-index/query-safe-idempotent` | MAY | Server | QUERY is safe and idempotent: a search never alters server state and may be repeated, retried or cached. | `type-search-safe` |  |
 | `lws10-index/type-filter` | MAY | Server | The optional type key is a conjunctive-normal-form filter over rdf:type: an array whose elements are ANDed, each a type IRI or an array of IRIs ORed; a filter with no constraints matches every resource visible to the client. | `type-search-and-or`, `type-search-by-type`, `type-search-empty-key-absent`, `type-search-native-classes`, `type-search-relation-cnf` |  |
-| `lws10-notifications-webhook/inbox-verifies-signature` | MUST |  | An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.) | `webhook-signature-verifies` |  |
+| `lws10-notifications-webhook/inbox-verifies-signature` | MUST |  | An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.) | `webhook-signature-verifies` | `client-inbox-refuses-altered-body`, `client-inbox-refuses-unpublished-key` |
 | `lws10-notifications-webhook/keyid-url-with-fragment` | MUST | Server | The keyid is a URL with a fragment component; without the fragment it is the storage identifier. | `webhook-signing-key-published` |  |
-| `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY |  | Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.) |  |  |
-| `lws10-notifications-webhook/receiver-verification-steps` | MUST |  | A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.) | `webhook-signature-verifies` |  |
+| `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY |  | Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.) |  | `client-subscription-own-inbox` |
+| `lws10-notifications-webhook/receiver-verification-steps` | MUST |  | A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.) | `webhook-signature-verifies` | `client-inbox-acknowledges-genuine-delivery`, `client-inbox-refuses-foreign-key-document`, `client-inbox-refuses-keyid-without-fragment`, `client-inbox-refuses-unpublished-key` |
 | `lws10-notifications-webhook/storage-description-id-matches` | MUST | Server | The storage description dereferenced from the keyid has a top-level id equal to the storage identifier. | `webhook-signing-key-published` |  |
 | `lws10-notifications-webhook/subscription-expires-optional` | MAY | Server | A webhook subscription request may carry an expires datetime. | `webhook-subscription-expires-supported` |  |
 | `lws10-notifications-webhook/subscription-inbox-required` | MUST | Server | A webhook subscription request carries a required inbox: the URI notifications are delivered to. | `webhook-subscription-response` | `client-subscription-inbox` |
@@ -555,3 +555,9 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 | `client-subscription-type` | MUST | notifications | `subscription-request-required-fields`, `subscription-request-type`, `subscription-type-and-fields`, `subscription-type-identifier` |
 | `client-subscription-topic` | MUST | notifications | `subscription-request-required-fields`, `subscription-request-topic` |
 | `client-subscription-inbox` | MUST | notifications | `subscription-inbox-required` |
+| `client-subscription-own-inbox` | MAY | notifications | `per-subscription-inbox-urls` |
+| `client-inbox-acknowledges-genuine-delivery` | SHOULD | notifications | `receiver-verification-steps` |
+| `client-inbox-refuses-unpublished-key` | MUST | notifications | `inbox-verifies-signature`, `receiver-verification-steps` |
+| `client-inbox-refuses-altered-body` | MUST | notifications | `inbox-verifies-signature` |
+| `client-inbox-refuses-keyid-without-fragment` | MUST | notifications | `receiver-verification-steps` |
+| `client-inbox-refuses-foreign-key-document` | MUST | notifications | `receiver-verification-steps` |

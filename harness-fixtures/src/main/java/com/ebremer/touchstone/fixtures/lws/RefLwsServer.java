@@ -11,8 +11,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -140,17 +142,43 @@ public final class RefLwsServer implements AutoCloseable {
          * with {@code error="invalid_token"}, and the token is refused from then on, as an expired
          * or revoked one would be.
          */
-        TOKEN_EXPIRED("tokenExpired");
+        TOKEN_EXPIRED("tokenExpired"),
+        /**
+         * The next notification is signed with a key the storage description does not publish,
+         * though its keyid names the published one. Like the three below, it is not something a
+         * server does but what an attacker does, which an inbox must withstand.
+         */
+        FORGED_UNPUBLISHED_KEY("forgedUnpublishedKey", "unpublishedKey"),
+        /** The next notification is signed, then its body altered; its Content-Digest is the signed one. */
+        FORGED_ALTERED_BODY("forgedAlteredBody", "alteredBody"),
+        /** The next notification is signed with the published key, but its keyid has no fragment. */
+        FORGED_KEYID_WITHOUT_FRAGMENT("forgedKeyidWithoutFragment", "keyidWithoutFragment"),
+        /**
+         * The next notification is signed with a key of a document under the storage that claims to
+         * be its description: the document's id is the storage's, not its own URL's.
+         */
+        FORGED_FOREIGN_KEY_DOCUMENT("forgedForeignKeyDocument", "foreignKeyDocument");
 
         private final String term;
+        private final String forgery;
 
         Fault(String term) {
+            this(term, null);
+        }
+
+        Fault(String term, String forgery) {
             this.term = term;
+            this.forgery = forgery;
         }
 
         /** The fault's name in the client rules and the session API. */
         public String term() {
             return term;
+        }
+
+        /** For a forged notification, how its signature is wrong; null for any other fault. */
+        public String forgery() {
+            return forgery;
         }
 
         /** The fault named {@code term}, or null. */
@@ -172,6 +200,32 @@ public final class RefLwsServer implements AutoCloseable {
     /** Delivers notifications off the request thread; one attempt each (section 10.3). */
     private static final java.net.http.HttpClient DELIVERY = java.net.http.HttpClient.newBuilder()
             .connectTimeout(java.time.Duration.ofSeconds(5)).build();
+    /** A document under the storage that claims to be its description, with a key of its own (Fault#FORGED_FOREIGN_KEY_DOCUMENT). */
+    private static final String FOREIGN_KEYS = "/_t/keys";
+
+    /**
+     * A notification on its way to an inbox: the request, and how its signature was made.
+     *
+     * @param forgery the forgery fault it carries, or null for a genuine one
+     */
+    public record Delivery(URI inbox, Map<String, String> headers, byte[] body, Fault forgery) {
+    }
+
+    /** Sends notifications: completes with the inbox's status, or 0 when nothing answered. */
+    @FunctionalInterface
+    public interface Courier {
+        java.util.concurrent.CompletableFuture<Integer> send(Delivery delivery);
+    }
+
+    /** Sends a delivery with the JDK client, as a standalone storage does. */
+    private static java.util.concurrent.CompletableFuture<Integer> sendDirectly(Delivery d) {
+        java.net.http.HttpRequest.Builder post = java.net.http.HttpRequest.newBuilder(d.inbox())
+                .timeout(java.time.Duration.ofSeconds(10))
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(d.body()));
+        d.headers().forEach(post::header);
+        return DELIVERY.sendAsync(post.build(), java.net.http.HttpResponse.BodyHandlers.discarding())
+                .handle((r, e) -> r == null ? 0 : r.statusCode());
+    }
     private static final Set<String> ACTIONS = Set.of("read", "modify", "create", "delete");
     /**
      * Members per page of a container listing. Small, so that the pagination definitions'
@@ -199,6 +253,8 @@ public final class RefLwsServer implements AutoCloseable {
     private final LwsHandler handler;
     /** Which inboxes a notification may be sent to; a storage open to strangers restricts them. */
     private volatile java.util.function.Predicate<URI> deliveryGuard = uri -> true;
+    /** How notifications are sent. */
+    private volatile Courier courier = RefLwsServer::sendDirectly;
     /** Whether the linksets of data resources support PUT; containers' never do. */
     private volatile boolean linksetPut;
     /** The faults armed and not yet fired. */
@@ -236,6 +292,8 @@ public final class RefLwsServer implements AutoCloseable {
     private final com.nimbusds.jose.jwk.ECKey signingKey = newSigningKey("notify-key");
     /** What the notification twin signs with instead, and never publishes. */
     private final com.nimbusds.jose.jwk.ECKey unpublishedKey = newSigningKey("notify-key");
+    /** The key the document at FOREIGN_KEYS publishes. */
+    private final com.nimbusds.jose.jwk.ECKey foreignKey = newSigningKey("notify-key");
 
     private static com.nimbusds.jose.jwk.ECKey newSigningKey(String kid) {
         try {
@@ -471,6 +529,32 @@ public final class RefLwsServer implements AutoCloseable {
         this.deliveryGuard = guard;
     }
 
+    /** Sends notifications through {@code courier}, as a client-testing session does, which guards and records them. */
+    public void deliverWith(Courier courier) {
+        this.courier = courier;
+    }
+
+    /** The armed forgery the next notification carries, disarmed; null when none is armed. */
+    private Fault nextForgery() {
+        for (Fault f : Fault.values()) {
+            if (f.forgery() != null && armed.remove(f)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    /** The inboxes the storage's webhook subscriptions deliver to now. */
+    public Set<String> subscriptionInboxes() {
+        Set<String> out = new java.util.HashSet<>();
+        subscriptions.values().forEach(s -> {
+            if (s.inbox() != null) {
+                out.add(s.inbox());
+            }
+        });
+        return out;
+    }
+
     /** What the storage holds now, not counting its root and the decoy. */
     public Usage usage() {
         int resources = grants.size() + requests.size() + subscriptions.size();
@@ -614,6 +698,11 @@ public final class RefLwsServer implements AutoCloseable {
                         invalidToken = true;
                     }
                 }
+            }
+            if (traps.decoy() && path.equals(FOREIGN_KEYS)) {
+                role(request, "keyDocument");
+                foreignKeys(request, response, callback, method);
+                return true;
             }
             if (traps.decoy() && path.equals(DECOY)) {
                 role(request, "decoy");
@@ -822,6 +911,39 @@ public final class RefLwsServer implements AutoCloseable {
             response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, c.toString());
             response.getHeaders().add("Link", storageLink(request));
             status(request, response, callback, 401);
+        }
+
+        /**
+         * A document that claims to be the storage description, with a key of its own: its id is
+         * the storage's, not its own URL's, so an inbox that follows lws10-notifications-webhook
+         * section 5.2 step 3 refuses a notification whose keyid names it. Anyone who can write a
+         * resource under a storage can publish one.
+         */
+        private void foreignKeys(Request request, Response response, Callback callback, String method) throws Exception {
+            if (!method.equals("GET") && !method.equals("HEAD")) {
+                methodNotAllowed(response, callback, "GET, HEAD");
+                return;
+            }
+            String self = absolute(request, FOREIGN_KEYS);
+            ObjectNode doc = mapper.createObjectNode();
+            doc.putArray("@context").add("https://www.w3.org/ns/cid/v1").add(LWS_CONTEXT);
+            doc.put("id", absolute(request, STORAGE_PATH));
+            doc.put("type", "Storage");
+            ObjectNode vm = doc.putArray("verificationMethod").addObject();
+            vm.put("id", self + "#notify-key");
+            vm.put("type", "JsonWebKey");
+            vm.put("controller", absolute(request, STORAGE_PATH));
+            vm.set("publicKeyJwk", mapper.readTree(foreignKey.toPublicJWK().toJSONString()));
+            doc.putArray("authentication").add(self + "#notify-key");
+            byte[] bytes = bytes(doc);
+            response.setStatus(200);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_CID);
+            response.getHeaders().put(HttpHeader.CONTENT_LENGTH, bytes.length);
+            if (method.equals("HEAD")) {
+                callback.succeeded();
+            } else {
+                response.write(true, ByteBuffer.wrap(bytes), callback);
+            }
         }
 
         private String storageLink(Request request) {
@@ -2144,24 +2266,35 @@ public final class RefLwsServer implements AutoCloseable {
                     return;
                 }
                 byte[] body = bytes(envelope);
-                attempt(target, body, absolute(request, STORAGE_PATH) + "#notify-key", subscription, 1);
+                Fault forgery = nextForgery();
+                String storage = absolute(request, STORAGE_PATH);
+                String keyid = forgery == Fault.FORGED_KEYID_WITHOUT_FRAGMENT ? storage
+                        : forgery == Fault.FORGED_FOREIGN_KEY_DOCUMENT ? absolute(request, FOREIGN_KEYS) + "#notify-key"
+                        : storage + "#notify-key";
+                attempt(target, body, keyid, subscription, 1, forgery);
             } catch (RuntimeException e) {
                 // best-effort: an inbox that cannot be reached loses the notification
             }
         }
 
-        private void attempt(URI target, byte[] body, String keyid, String subscription, int attempt) {
-            Signed signed = sign(target, body, keyid);
-            java.net.http.HttpRequest post = java.net.http.HttpRequest.newBuilder(target)
-                    .timeout(java.time.Duration.ofSeconds(10))
-                    .header("Content-Type", LWS_JSON)
-                    .header("Content-Digest", signed.contentDigest())
-                    .header("Signature-Input", signed.signatureInput())
-                    .header("Signature", signed.signature())
-                    .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(body))
-                    .build();
-            DELIVERY.sendAsync(post, java.net.http.HttpResponse.BodyHandlers.discarding()).whenComplete((resp, error) -> {
-                int status = resp == null ? 0 : resp.statusCode();
+        private void attempt(URI target, byte[] body, String keyid, String subscription, int attempt, Fault forgery) {
+            com.nimbusds.jose.jwk.ECKey key = forgery == Fault.FORGED_UNPUBLISHED_KEY || deliverToAnyone ? unpublishedKey
+                    : forgery == Fault.FORGED_FOREIGN_KEY_DOCUMENT ? foreignKey : signingKey;
+            Signed signed = sign(target, body, keyid, key);
+            byte[] sent = body;
+            if (forgery == Fault.FORGED_ALTERED_BODY) {
+                // Altered after signing: the Content-Digest and the signature are the original's.
+                String text = new String(body, StandardCharsets.UTF_8);
+                sent = (text.substring(0, text.lastIndexOf('}')) + ",\"summary\":\"altered after it was signed\"}")
+                        .getBytes(StandardCharsets.UTF_8);
+            }
+            Map<String, String> headers = new LinkedHashMap<>();
+            headers.put("Content-Type", LWS_JSON);
+            headers.put("Content-Digest", signed.contentDigest());
+            headers.put("Signature-Input", signed.signatureInput());
+            headers.put("Signature", signed.signature());
+            courier.send(new Delivery(target, headers, sent, forgery)).whenComplete((answered, error) -> {
+                int status = answered == null ? 0 : answered;
                 if (status / 100 == 2) {
                     if (subscription != null) {
                         deliveryFailures.remove(subscription);
@@ -2171,7 +2304,7 @@ public final class RefLwsServer implements AutoCloseable {
                 boolean retryable = status == 0 || status / 100 == 5;
                 if (retryable && attempt < DELIVERY_ATTEMPTS) {
                     java.util.concurrent.CompletableFuture.delayedExecutor(1, java.util.concurrent.TimeUnit.SECONDS)
-                            .execute(() -> attempt(target, body, keyid, subscription, attempt + 1));
+                            .execute(() -> attempt(target, body, keyid, subscription, attempt + 1, forgery));
                     return;
                 }
                 if (subscription == null) {
@@ -2193,7 +2326,7 @@ public final class RefLwsServer implements AutoCloseable {
          * An RFC 9421 signature over the components the webhook suite requires (@method, @scheme,
          * @authority, @path, content-type, content-digest), with created and keyid, ES256.
          */
-        private Signed sign(URI target, byte[] body, String keyid) {
+        private Signed sign(URI target, byte[] body, String keyid, com.nimbusds.jose.jwk.ECKey key) {
             try {
                 String digest = "sha-256=:" + java.util.Base64.getEncoder().encodeToString(
                         java.security.MessageDigest.getInstance("SHA-256").digest(body)) + ":";
@@ -2204,7 +2337,7 @@ public final class RefLwsServer implements AutoCloseable {
                         + target.getRawAuthority() + "\n\"@path\": " + path + "\n\"content-type\": " + LWS_JSON
                         + "\n\"content-digest\": " + digest + "\n\"@signature-params\": " + params;
                 java.security.Signature s = java.security.Signature.getInstance("SHA256withECDSAinP1363Format");
-                s.initSign((deliverToAnyone ? unpublishedKey : signingKey).toECPrivateKey());
+                s.initSign(key.toECPrivateKey());
                 s.update(base.getBytes(StandardCharsets.UTF_8));
                 return new Signed(digest, "sig1=" + params,
                         "sig1=:" + java.util.Base64.getEncoder().encodeToString(s.sign()) + ":");

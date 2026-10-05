@@ -1,11 +1,13 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.10.0 (2026-10-05, DECISIONS.md D-0082; 0.9.0 the same day, D-0081;
-0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and faults (section 6) and two
-annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7). 0.10.0 adds the session's
-OpenID Provider and identity documents (sections 4.1 and 4.2), what the recorder knows of a token
-request (sections 4.9 and 4.10), the conditions `form` and `credential` (section 5), and the fault
-`tokenExpired`. Neither changes anything an earlier rule relies on. This
+**Status: frozen, format 0.11.0 (2026-10-05, DECISIONS.md D-0083; 0.10.0 the same day, D-0082;
+0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and
+faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7).
+0.10.0 adds the session's OpenID Provider and identity documents (sections 4.1 and 4.2), what the
+recorder knows of a token request (sections 4.9 and 4.10), the conditions `form` and `credential`
+(section 5), and the fault `tokenExpired`. 0.11.0 adds deliveries, the notifications the session
+sends a client's inbox (sections 3, 4.11 and 4.12), and four forgery faults. None changes
+anything an earlier rule relies on. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -65,6 +67,13 @@ A rule sees the exchange as the developer sees it in the traffic log, redacted (
 The recorder computes annotations from the request before redaction, so no rule needs a raw
 credential.
 
+**A delivery** (since 0.11.0) is the other way round: a notification the session POSTs to an
+inbox a client named, in a subscription or an access grant, and the inbox's answer. Its role is
+`delivery` and it has no `server`; its URL is the inbox's, `statusCode` is the inbox's status,
+and the body judged is the session's. When nothing answered, because the outbound guard refused
+the inbox (CLIENT-TESTING.md section 8.3) or the connection failed, its status is 0, which no
+`statusCode` matches. The recorder computes for it only `deliverySignature` and `fault`.
+
 Two kinds of exchange stay in the log but are never trials:
 - CORS preflights (role `preflight`), which the browser sends rather than the client's code;
 - requests refused by a session bound (role `limited`: rate, body size or storage), which no
@@ -108,6 +117,8 @@ What the request addressed, as the session's server found it:
 | `asMetadata`, `asJwks`, `asToken` | authorizationServer | its metadata, JWKS and token endpoint |
 | `opDiscovery`, `opJwks`, `opAuthorize`, `opToken` | openidProvider | its OpenID Connect Discovery document, JWKS, authorization endpoint (with its sign-in form) and token endpoint |
 | `identityDocument` | identityHost | an identity's controlled identifier document |
+| `keyDocument` | storage | a document under the storage that claims to be its description, which the forgery `forgedForeignKeyDocument` names (since 0.11.0) |
+| `delivery` | none | a notification the session sent an inbox (section 3; since 0.11.0) |
 | `unknown` | any, or none | nothing: no resource and no endpoint |
 
 A role is the server's view, not the client's intent. A URL the client built that names
@@ -233,19 +244,35 @@ strings, as in `EXECUTION.md` section 8. This is what lws10-core section 5.2.1 a
 check before it asks for a token: "that the URI of the originating request is logically
 contained within the realm".
 
+### 4.11 `deliverySignature` (since 0.11.0)
+
+For a delivery, how the session made its HTTP Message Signature:
+- `genuine`: with the key the storage description publishes, as lws10-notifications-webhook
+  section 5 describes;
+- `unpublishedKey`, `alteredBody`, `keyidWithoutFragment`, `foreignKeyDocument`: forged, by the
+  fault of section 6.2 with the same name after `forged`.
+
+Absent for anything but a delivery.
+
+### 4.12 `inboxShared` (since 0.11.0)
+
+For a POST to the NotificationService whose JSON body has a string `inbox`: whether a
+subscription the storage held when the request arrived already delivers to that inbox. Absent for
+anything else.
+
 ## 5. Conditions
 
 `observe`, `expect` and a trigger's `after` are conditions on one exchange. A condition holds
 when every term it has holds. The terms, in the order they are checked:
 
-1. **`server`, `role`, `method`, `builtBy`, `builtFromRole`, `credentialSource`:** a value or a
-   list. The annotation, or the request's method, equals a value listed. An absent annotation
+1. **`server`, `role`, `method`, `builtBy`, `builtFromRole`, `credentialSource`,
+   `deliverySignature`:** a value or a list. The annotation, or the request's method, equals a value listed. An absent annotation
    equals nothing.
 2. **`statusCode`:** the status the session answered, matched as in `EXECUTION.md` section
    7.1.
 3. **`issued`, `methodAdvertised`, `patchFormatAdvertised`, `queryFormatAdvertised`,
    `repeat`, `containerEmpty`, `audienceIncludesAs`, `identifiersAgree`,
-   `realmContainsRequest`:** the annotation equals the boolean. An absent annotation equals
+   `realmContainsRequest`, `inboxShared`:** the annotation equals the boolean. An absent annotation equals
    neither `true` nor `false`.
 4. **`presentation`:** a value or a list. Every place in the annotation is listed, so
    `presentation: bearer` fails a request that also carried its token in the query string.
@@ -298,14 +325,16 @@ A rule's `task` is something the developer is asked to do so the rule can be tri
   trigger, and the first exchange after it that satisfies `observe` is the trial. A rule like
   this is never tried until its task starts.
 - **A task with `arm`** arms that fault when it starts (section 6.2). Such a rule selects its
-  trials with `after` as above, its trigger being the answer the fault produces. The task only
-  makes that answer happen on demand.
+  trials by `observe` alone, with or without `after`: as above, its trigger being the answer the
+  fault produces; or, for a forged notification, the delivery itself, which `deliverySignature`
+  describes (since 0.11.0). The task only makes the fault happen on demand.
 
 ### 6.2 Faults (since 0.9.0)
 
 A fault fires once, on the next request it applies to, after a task arms it or
-`POST {base}/sessions/{sid}/faults/{fault}` does. Each makes the session do something a server
-may legally do. The exchange it fired on carries its name (section 4.8).
+`POST {base}/sessions/{sid}/faults/{fault}` does. The first four make the session do something a
+server may legally do. The forgeries (since 0.11.0) make it do what an attacker does, which an
+inbox must withstand. The exchange a fault fired on carries its name (section 4.8).
 
 | Fault | Applies to | What the session does |
 |---|---|---|
@@ -313,6 +342,10 @@ may legally do. The exchange it fired on carries its name (section 4.8).
 | `lostCreateResponse` | a POST that creates a resource in a container | creates it, then answers 503 with `Retry-After` and no `Location`, as if the answer had been lost |
 | `pageGone` | a request for a page of search results | answers 410, as for a page link that expired |
 | `tokenExpired` (since 0.10.0) | a request to the storage with a valid access token, other than to the decoy | answers 401 with a challenge naming the storage's realm and `error="invalid_token"`, and refuses that token from then on, as for one that expired or was revoked |
+| `forgedUnpublishedKey` (since 0.11.0) | the next notification | signs it with a key the storage description does not publish, its keyid naming the published one |
+| `forgedAlteredBody` (since 0.11.0) | the next notification | signs it, then alters its body; the Content-Digest is the signed one |
+| `forgedKeyidWithoutFragment` (since 0.11.0) | the next notification | signs it with the published key, its keyid the storage's URL without a fragment |
+| `forgedForeignKeyDocument` (since 0.11.0) | the next notification | signs it with the key of a document under the storage whose id is the storage's, not its own URL's, and names that document's key in the keyid |
 
 ## 7. Judging a trial
 
@@ -363,6 +396,9 @@ for later terms that need more.
   JSON-LD context is ever fetched (D-0026). Nothing a client sends reaches a shell, a file path
   or a query language.
 - **Judging sends nothing.** Evaluating rules makes no request of any kind.
+- **Deliveries go only where CLIENT-TESTING.md section 8.3 allows** (since 0.11.0): https URLs
+  whose host resolves to public unicast addresses, checked as the connection is made, never
+  redirected, bounded in time, size and number. A refused one is recorded with status 0.
 - **The session's authorization server dereferences nothing outside the session** (since
   0.10.0). It validates a credential with the session's identity documents and the session's
   OpenID Provider, read in the same process, and refuses any subject, issuer or key elsewhere. No
@@ -465,7 +501,9 @@ next request to the container is the trial:
         had been lost.
       arm: lostCreateResponse
     observe:
+      server: storage
       after:
+        server: storage
         method: POST
         statusCode: 5xx
         sameTarget: true

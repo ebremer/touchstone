@@ -85,6 +85,7 @@ public final class ClientLab implements AutoCloseable {
     private final Server server;
     private final ServerConnector connector;
     private final ScheduledExecutorService sweeper;
+    private final Outbound outbound;
 
     private ClientLab(ClientLabConfig config, ClientRules rules, Clock clock) {
         this.config = config;
@@ -97,6 +98,7 @@ public final class ClientLab implements AutoCloseable {
         connector.setAcceptQueueSize(256);
         server.addConnector(connector);
         server.setHandler(new LabHandler());
+        this.outbound = new Outbound(config.allowPrivateInboxes(), java.time.Duration.ofSeconds(10));
         this.sweeper = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "client-session-sweeper");
             t.setDaemon(true);
@@ -146,7 +148,78 @@ public final class ClientLab implements AutoCloseable {
             server.stop();
         } catch (Exception e) {
             throw new IllegalStateException(e);
+        } finally {
+            outbound.close();
         }
+    }
+
+    // ---- deliveries: the session's requests to clients' inboxes ----
+
+    /**
+     * Sends one of the storage's notifications (CLIENT-TESTING.md section 8.3): only where the
+     * outbound guard allows and within the session's allowance. Each is recorded and judged as an
+     * exchange of the session's own, the inbox's answer its status (OBSERVATION.md section 3).
+     */
+    private java.util.concurrent.CompletableFuture<Integer> deliver(Session s, RefLwsServer.Delivery d) {
+        Instant at = sessions.now();
+        long started = System.nanoTime();
+        // The keyid's URL is the session's to hand out: an inbox dereferences it.
+        String input = d.headers().getOrDefault("Signature-Input", "");
+        java.util.regex.Matcher keyid = java.util.regex.Pattern.compile("keyid=\"([^\"#]*)").matcher(input);
+        if (keyid.find()) {
+            s.recorder.issue(keyid.group(1), "delivery:keyid");
+        }
+        String refusal = outbound.refusal(d.inbox());
+        String limit = refusal == null ? null : "inbox";
+        if (refusal == null && !s.takeDelivery(config.maxDeliveries())) {
+            refusal = "the session has sent the " + config.maxDeliveries() + " notifications it may send";
+            limit = "deliveries";
+        }
+        if (refusal != null) {
+            recordDelivery(s, d, at, started, Outbound.Answer.none(refusal), limit);
+            return java.util.concurrent.CompletableFuture.completedFuture(0);
+        }
+        s.inFlight().incrementAndGet();
+        return outbound.post(d.inbox(), d.headers(), d.body(), config.maxRecordedResponseBytes())
+                .handle((answer, error) -> {
+                    Outbound.Answer a = answer != null ? answer : Outbound.Answer.none(String.valueOf(error));
+                    try {
+                        recordDelivery(s, d, at, started, a, null);
+                    } finally {
+                        s.inFlight().decrementAndGet();
+                    }
+                    return a.status();
+                });
+    }
+
+    private void recordDelivery(Session s, RefLwsServer.Delivery d, Instant at, long started, Outbound.Answer answer,
+                                String limit) {
+        Map<String, List<String>> requestHeaders = new LinkedHashMap<>();
+        d.headers().forEach((k, v) -> requestHeaders.put(k, List.of(Redaction.header(k, v))));
+        Map<String, List<String>> responseHeaders = new LinkedHashMap<>();
+        answer.headers().forEach((k, v) -> responseHeaders.put(k, v.stream().map(x -> Redaction.header(k, x)).toList()));
+        String responseType = answer.headers().entrySet().stream().filter(e -> e.getKey().equalsIgnoreCase("Content-Type"))
+                .flatMap(e -> e.getValue().stream()).findFirst().orElse(null);
+        String requestText = text(d.body(), d.headers().get("Content-Type"), d.body().length);
+        String responseText = answer.status() == 0 ? answer.problem()
+                : text(answer.body(), responseType, answer.body().length);
+        String forgery = d.forgery() == null ? null : d.forgery().forgery();
+        Exchange.Annotations annotations = new Exchange.Annotations(null, "delivery", null, null, List.of("none"),
+                false, null, null, null, null, Map.of(), false, false, false, false, false, null, null, null, null, null,
+                forgery == null ? "genuine" : forgery, null, d.forgery() == null ? null : d.forgery().term(), limit);
+        int cap = config.maxRecordedResponseBytes();
+        Exchange.Body req = body(requestText, d.body().length, d.body().length, cap);
+        Exchange.Body res = answer.status() == 0
+                ? new Exchange.Body(0, responseText, false)
+                : body(responseText, answer.body().length, answer.body().length, cap);
+        long millis = (System.nanoTime() - started) / 1_000_000;
+        String url = d.inbox().toString();
+        byte[] body = d.body();
+        s.recorder.append(seq -> {
+            Observed observed = new Observed(seq, "POST", url, requestHeaders, body, answer.status(), annotations);
+            return new Exchange(seq, at.toString(), millis, "POST", url, requestHeaders, req, answer.status(),
+                    responseHeaders, res, annotations, s.judge.judge(observed));
+        });
     }
 
     private final class LabHandler extends Handler.Abstract {
@@ -276,6 +349,17 @@ public final class ClientLab implements AutoCloseable {
                 return;
             }
             pending.requestBody = body;
+            if (target == s.storage.handler() && method.equals("POST")) {
+                // Taken before the request is handled: whether a subscription already delivers to its inbox.
+                try {
+                    com.fasterxml.jackson.databind.JsonNode doc = JSON.readTree(body);
+                    if (doc != null && doc.path("inbox").isTextual()) {
+                        pending.inboxShared = s.storage.subscriptionInboxes().contains(doc.path("inbox").asText());
+                    }
+                } catch (IOException e) {
+                    // not JSON: no inbox
+                }
+            }
             if (target == s.storage.handler() && (method.equals("POST") || method.equals("PUT") || method.equals("PATCH"))) {
                 RefLwsServer.Usage usage = s.storage.usage();
                 if ((method.equals("POST") && usage.resources() >= config.maxResources())
@@ -388,6 +472,7 @@ public final class ClientLab implements AutoCloseable {
                 return;
             }
             Session s = created.session();
+            s.deliverWith(d -> deliver(s, d));
             LOG.info("session {} started; {} live", s.id, sessions.size());
             ObjectNode body = describe(s);
             body.put("key", created.key());
@@ -624,6 +709,10 @@ public final class ClientLab implements AutoCloseable {
             ArrayNode faults = body.putArray("armedFaults");
             s.storage.armed().forEach(f -> faults.add(f.term()));
             body.put("recorded", s.recorder.recorded());
+            ObjectNode deliveries = body.putObject("deliveries");
+            deliveries.put("sent", s.deliveries());
+            deliveries.put("inFlight", s.inFlight().get());
+            deliveries.put("max", config.maxDeliveries());
             return body;
         }
 
@@ -690,6 +779,8 @@ public final class ClientLab implements AutoCloseable {
         private final String builtFromRole;
         private final Map<String, String> advertised;
         byte[] requestBody = new byte[0];
+        /** For a POST naming an inbox, whether a subscription already delivered to it; else null. */
+        Boolean inboxShared;
 
         Pending(Session session, Request request, String url, Instant at, long started, String server) {
             this.session = session;
@@ -750,7 +841,9 @@ public final class ClientLab implements AutoCloseable {
                     essence != null && listed(advertised.get("Accept-Query"), essence, true),
                     repeat, role.equals("container") && Integer.valueOf(0).equals(members),
                     facts.credentialSource(), facts.credential(), facts.audienceIncludesAs(), facts.identifiersAgree(),
-                    facts.realmContainsRequest(), fault == null ? null : fault.toString(), limit);
+                    facts.realmContainsRequest(), null,
+                    role.equals("subscriptions") && method.equals("POST") ? inboxShared : null,
+                    fault == null ? null : fault.toString(), limit);
             int cap = config.maxRecordedResponseBytes();
             Exchange.Body req = body(requestText, requestBody.length, requestBody.length, cap);
             Exchange.Body res = body(responseText, responseLength, responseBody == null ? 0 : responseBody.length, cap);

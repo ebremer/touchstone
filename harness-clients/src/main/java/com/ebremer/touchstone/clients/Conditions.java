@@ -28,13 +28,14 @@ final class Conditions {
     static Failure check(JsonNode condition, Observed x) {
         Exchange.Annotations a = x.annotations();
         Failure f;
-        // 1. server, role, method, builtBy, builtFromRole, credentialSource
+        // 1. server, role, method, builtBy, builtFromRole, credentialSource, deliverySignature
         if ((f = oneOf(condition, "server", a.server())) != null
                 || (f = oneOf(condition, "role", a.role())) != null
                 || (f = oneOf(condition, "method", x.method())) != null
                 || (f = oneOf(condition, "builtBy", a.builtBy())) != null
                 || (f = oneOf(condition, "builtFromRole", a.builtFromRole())) != null
-                || (f = oneOf(condition, "credentialSource", a.credentialSource())) != null) {
+                || (f = oneOf(condition, "credentialSource", a.credentialSource())) != null
+                || (f = oneOf(condition, "deliverySignature", a.deliverySignature())) != null) {
             return f;
         }
         // 2. statusCode
@@ -50,7 +51,8 @@ final class Conditions {
                 || (f = bool(condition, "containerEmpty", a.containerEmpty())) != null
                 || (f = bool(condition, "audienceIncludesAs", a.audienceIncludesAs())) != null
                 || (f = bool(condition, "identifiersAgree", a.identifiersAgree())) != null
-                || (f = bool(condition, "realmContainsRequest", a.realmContainsRequest())) != null) {
+                || (f = bool(condition, "realmContainsRequest", a.realmContainsRequest())) != null
+                || (f = bool(condition, "inboxShared", a.inboxShared())) != null) {
             return f;
         }
         // 4. presentation: every place the request carried a credential is listed

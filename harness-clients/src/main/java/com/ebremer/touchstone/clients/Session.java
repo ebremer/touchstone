@@ -66,6 +66,9 @@ final class Session {
     final String clientId;
     private final byte[] keyHash;
     private volatile Instant lastActive;
+    /** Notifications sent to inboxes, and those still awaiting an answer. */
+    private final java.util.concurrent.atomic.AtomicInteger deliveries = new java.util.concurrent.atomic.AtomicInteger();
+    private final java.util.concurrent.atomic.AtomicInteger inFlight = new java.util.concurrent.atomic.AtomicInteger();
 
     Session(String id, String key, ClientLabConfig config, ClientRules rules, Instant now) {
         this.id = id;
@@ -199,6 +202,30 @@ final class Session {
         }
         storage.arm(fault);
         return true;
+    }
+
+    /**
+     * Sends the storage's notifications through {@code courier}, which guards and records them
+     * (CLIENT-TESTING.md section 8.3). Until then nothing is delivered.
+     */
+    void deliverWith(RefLwsServer.Courier courier) {
+        storage.deliverWith(courier);
+        storage.deliverOnlyTo(uri -> true);
+    }
+
+    /** Takes one delivery from the session's allowance; false when it is used up. */
+    boolean takeDelivery(int max) {
+        return deliveries.incrementAndGet() <= max;
+    }
+
+    /** Notifications sent, or refused for the allowance, so far. */
+    int deliveries() {
+        return deliveries.get();
+    }
+
+    /** Notifications awaiting their inbox's answer. */
+    java.util.concurrent.atomic.AtomicInteger inFlight() {
+        return inFlight;
     }
 
     boolean keyMatches(String presented) {

@@ -30,6 +30,12 @@
       <artifactId>jetty-server</artifactId>
     </dependency>
     <dependency>
+      <!-- Deliveries to clients' inboxes (CLIENT-TESTING.md section 8.3): its address resolver lets
+           the outbound guard check the address actually connected to. Version from jetty-bom. -->
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>

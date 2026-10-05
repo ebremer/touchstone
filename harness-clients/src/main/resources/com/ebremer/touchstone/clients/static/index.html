@@ -26,6 +26,8 @@
       it passed or failed, each failure with the clause it breaks and how to fix it.</li>
     <li>Tasks for the rules that need you to do something on purpose, some of which make the
       session refuse a request once, to see how your client copes.</li>
+    <li>Signed notifications to your client's inbox, which must be a public https URL, and on
+      request forged ones, to see that your inbox verifies what it receives.</li>
   </ul>
   <p>The storage behaves as the LWS drafts allow but a client cannot assume otherwise: page and
     linkset URLs are opaque, resource URLs do not mirror their containers, binary resources refuse
@@ -41,8 +43,7 @@
   <p>A session ends after two idle hours, or a day at most. Everything lives in memory and is gone
     when the session ends. Request bodies are capped at 1 MiB, and each session at 500 resources.
     Credentials are never shown in the log, only a fingerprint of each.</p>
-  <p class="note">Signed notifications to your client's inbox, and reports to export, come in later
-    phases of Touchstone's client testing.</p>
+  <p class="note">Reports to export come in a later phase of Touchstone's client testing.</p>
 </main>
 <script src="static/lab.js"></script>
 </body>

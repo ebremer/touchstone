@@ -146,7 +146,21 @@ public final class RefLwsClient {
         /** Sends its first credential as assertion instead of subject_token. */
         TOKEN_REQUEST_WITHOUT_SUBJECT_TOKEN,
         /** Asks for a token for the decoy's realm, which does not contain the decoy. */
-        TOKEN_FOR_FOREIGN_REALM
+        TOKEN_FOR_FOREIGN_REALM,
+        /** Its inbox does not verify the signature itself; it makes every other check. */
+        INBOX_SKIPS_SIGNATURE_CHECK,
+        /** Its inbox does not check the body against the Content-Digest the signature covers. */
+        INBOX_SKIPS_DIGEST_CHECK,
+        /** Its inbox takes a keyid without a fragment, and then the storage description's only key. */
+        INBOX_ACCEPTS_KEYID_WITHOUT_FRAGMENT,
+        /** Its inbox does not check that the key's document has the keyid's URL as its id. */
+        INBOX_SKIPS_STORAGE_ID_CHECK,
+        /** Its inbox acknowledges every notification, verifying nothing. */
+        INBOX_ACCEPTS_EVERYTHING,
+        /** Its inbox refuses every notification, genuine ones too. */
+        INBOX_REFUSES_EVERYTHING,
+        /** Gives its second subscription the first one's inbox. */
+        SHARES_INBOX
     }
 
     /** The flaws that break a self-issued credential, or the type it is presented with. */
@@ -201,7 +215,7 @@ public final class RefLwsClient {
     private final URI storage;
     private final Agent alice;
     private final Agent bob;
-    private final URI inbox;
+    private final RefInbox inbox;
     private final Flaw flaw;
     private final Tasks tasks;
     private final SecureRandom random = new SecureRandom();
@@ -216,10 +230,10 @@ public final class RefLwsClient {
      * @param storage the storage URL, the only URL the client is given
      * @param alice   the storage's owner
      * @param bob     another agent, who asks alice for access
-     * @param inbox   where the client wants notifications, for its subscription and its grant
+     * @param inbox   where the client receives notifications, for its subscriptions and its grant
      * @param tasks   starts a rule's task in the session
      */
-    public RefLwsClient(URI storage, Agent alice, Agent bob, URI inbox, Flaw flaw, Tasks tasks) {
+    public RefLwsClient(URI storage, Agent alice, Agent bob, RefInbox inbox, Flaw flaw, Tasks tasks) {
         this.storage = storage;
         this.alice = alice;
         this.bob = bob;
@@ -316,9 +330,24 @@ public final class RefLwsClient {
         send("POST", services.get("AccessGrantService"), alice, LWS_JSON, grant(note), null, Map.of());
         send("POST", services.get("AccessRequestService"), bob, LWS_JSON, request(note), null, Map.of());
 
-        // A webhook subscription to the container.
-        send("POST", services.get("NotificationService"), alice,
-                flaw == Flaw.SUBSCRIPTION_AS_PLAIN_JSON ? "application/json" : LWS_JSON, subscription(notes), null, Map.of());
+        // Webhook subscriptions to the container and to a note, each with an inbox of its own.
+        String subscriptionType = flaw == Flaw.SUBSCRIPTION_AS_PLAIN_JSON ? "application/json" : LWS_JSON;
+        boolean subscribed = send("POST", services.get("NotificationService"), alice, subscriptionType,
+                subscription(notes, inbox.uri("notes")), null, Map.of()).status() == 201;
+        send("POST", services.get("NotificationService"), alice, subscriptionType,
+                subscription(created.get(2), inbox.uri(flaw == Flaw.SHARES_INBOX ? "notes" : "note")), null, Map.of());
+
+        // Each new note is announced to the container's inbox. Four tasks make the session forge
+        // that notification, and the inbox must refuse it.
+        if (subscribed) {
+            for (String rule : List.of("client-inbox-refuses-unpublished-key", "client-inbox-refuses-altered-body",
+                    "client-inbox-refuses-keyid-without-fragment", "client-inbox-refuses-foreign-key-document")) {
+                tasks.start(rule);
+                int before = inbox.received();
+                send("POST", notes, alice, "text/plain", "a note for " + rule, null, Map.of());
+                inbox.awaitReceived(before + 1, Duration.ofSeconds(10));
+            }
+        }
 
         // A search: first in a richer format, then, refused, in the baseline every server accepts.
         URI search = services.get("TypeSearchService");
@@ -381,7 +410,7 @@ public final class RefLwsClient {
         if (flaw != Flaw.ACCESS_WITHOUT_STORAGE) {
             doc.put("storage", storage.toString());
         }
-        doc.put("inbox", flaw == Flaw.ACCESS_INBOX_NOT_URI ? "the inbox" : inbox.toString());
+        doc.put("inbox", flaw == Flaw.ACCESS_INBOX_NOT_URI ? "the inbox" : inbox.uri("grants").toString());
         ObjectNode policy = json.createObjectNode();
         if (flaw != Flaw.POLICY_WITHOUT_TYPE) {
             policy.putArray("type").add("AccessPolicy");
@@ -424,7 +453,7 @@ public final class RefLwsClient {
         return json.writeValueAsString(doc);
     }
 
-    private String subscription(URI topic) throws IOException {
+    private String subscription(URI topic, URI to) throws IOException {
         ObjectNode doc = json.createObjectNode();
         doc.put("type", flaw == Flaw.SUBSCRIPTION_UNADVERTISED_TYPE ? "Webhook" : "WebhookSubscription");
         if (flaw == Flaw.SUBSCRIPTION_TOPIC_NOT_ARRAY) {
@@ -433,7 +462,7 @@ public final class RefLwsClient {
             doc.putArray("topic").add(topic.toString());
         }
         if (flaw != Flaw.SUBSCRIPTION_WITHOUT_INBOX) {
-            doc.put("inbox", inbox.toString());
+            doc.put("inbox", to.toString());
         }
         return json.writeValueAsString(doc);
     }

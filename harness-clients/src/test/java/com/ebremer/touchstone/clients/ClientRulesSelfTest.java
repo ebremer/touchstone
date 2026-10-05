@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.ebremer.touchstone.core.definitions.RuleDefinition;
+import com.ebremer.touchstone.fixtures.client.RefInbox;
 import com.ebremer.touchstone.fixtures.client.RefLwsClient;
 import com.ebremer.touchstone.fixtures.client.RefLwsClient.Flaw;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -83,11 +84,20 @@ class ClientRulesSelfTest {
             entry(Flaw.ID_TOKEN_TYPED_AS_JWT, Set.of("client-oidc-token-type-id-token")),
             entry(Flaw.TOKEN_REQUEST_WITHOUT_RESOURCE, Set.of("client-token-exchange-resource")),
             entry(Flaw.TOKEN_REQUEST_WITHOUT_SUBJECT_TOKEN, Set.of("client-token-exchange-subject-token")),
-            entry(Flaw.TOKEN_FOR_FOREIGN_REALM, Set.of("client-token-for-containing-realm")));
+            entry(Flaw.TOKEN_FOR_FOREIGN_REALM, Set.of("client-token-for-containing-realm")),
+            entry(Flaw.INBOX_SKIPS_SIGNATURE_CHECK, Set.of("client-inbox-refuses-unpublished-key")),
+            entry(Flaw.INBOX_SKIPS_DIGEST_CHECK, Set.of("client-inbox-refuses-altered-body")),
+            entry(Flaw.INBOX_ACCEPTS_KEYID_WITHOUT_FRAGMENT, Set.of("client-inbox-refuses-keyid-without-fragment")),
+            entry(Flaw.INBOX_SKIPS_STORAGE_ID_CHECK, Set.of("client-inbox-refuses-foreign-key-document")),
+            // The twin of C5's acceptance criterion: an inbox that accepts everything.
+            entry(Flaw.INBOX_ACCEPTS_EVERYTHING, Set.of("client-inbox-refuses-unpublished-key",
+                    "client-inbox-refuses-altered-body", "client-inbox-refuses-keyid-without-fragment",
+                    "client-inbox-refuses-foreign-key-document")),
+            entry(Flaw.INBOX_REFUSES_EVERYTHING, Set.of("client-inbox-acknowledges-genuine-delivery")),
+            entry(Flaw.SHARES_INBOX, Set.of("client-subscription-own-inbox")));
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
-    private static final URI INBOX = URI.create("https://client.invalid/inbox/");
     /** Where the OpenID Provider sends the reference client back; it never listens, it reads the Location. */
     private static final URI REDIRECT = URI.create("http://127.0.0.1/callback");
     private static ClientLab lab;
@@ -99,11 +109,12 @@ class ClientRulesSelfTest {
         base = "http://localhost:" + port + "/touchstone/clients";
         ClientLabConfig d = ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port);
         // One session per client, all from this address; an index without lag, so a search sees
-        // what the client just wrote and has a second page at once.
+        // what the client just wrote and has a second page at once; and notifications to the
+        // reference inbox on this machine, which only a test or a developer's laptop allows.
         ClientLabConfig config = new ClientLabConfig(d.publicBase(), d.bindHost(), d.port(), false, 100, 100,
                 d.idleTimeout(), d.maxLifetime(), d.maxBodyBytes(), d.maxRecordedResponseBytes(), d.maxExchanges(),
                 d.maxResources(), d.maxStorageBytes(), d.requestBurst(), d.requestsPerSecond(), d.tokenLifetime(),
-                java.time.Duration.ZERO);
+                java.time.Duration.ZERO, d.maxDeliveries(), true);
         lab = ClientLab.start(config, TestRules.RULES);
     }
 
@@ -123,7 +134,7 @@ class ClientRulesSelfTest {
         }
         assertThat(notPassed).as(results.toPrettyString()).isEmpty();
         assertThat(results.get("rules")).hasSize(TestRules.RULES.rules().size());
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 34 MUST rules exercised, of 34 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 38 MUST rules exercised, of 38 that apply");
     }
 
     @ParameterizedTest
@@ -176,17 +187,40 @@ class ClientRulesSelfTest {
                     .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
             assertThat(started.statusCode()).as(rule + ": " + started.body()).isEqualTo(204);
         };
-        new RefLwsClient(URI.create(session.get("storage").asText()),
-                new RefLwsClient.Agent(session.at("/identities/alice/webid").asText(), session.at("/tokens/alice").asText(),
-                        aliceSecrets.get("privateKeyJwk").toString(), null),
-                new RefLwsClient.Agent(session.at("/identities/bob/webid").asText(), null, null,
-                        new RefLwsClient.Login(clientId, REDIRECT, "bob", bobSecrets.get("password").asText())),
-                INBOX, flaw, tasks).run();
+        try (RefInbox inbox = RefInbox.start(flaw)) {
+            new RefLwsClient(URI.create(session.get("storage").asText()),
+                    new RefLwsClient.Agent(session.at("/identities/alice/webid").asText(), session.at("/tokens/alice").asText(),
+                            aliceSecrets.get("privateKeyJwk").toString(), null),
+                    new RefLwsClient.Agent(session.at("/identities/bob/webid").asText(), null, null,
+                            new RefLwsClient.Login(clientId, REDIRECT, "bob", bobSecrets.get("password").asText())),
+                    inbox, flaw, tasks).run();
+            settle(api, key, inbox);
+        }
         HttpResponse<String> results = HTTP.send(HttpRequest.newBuilder(URI.create(session.get("results").asText()))
                 .header("Authorization", "Bearer " + session.get("key").asText()).build(),
                 HttpResponse.BodyHandlers.ofString());
         assertThat(results.statusCode()).as(results.body()).isEqualTo(200);
         return JSON.readTree(results.body());
+    }
+
+    /**
+     * Waits until the session has no notification in flight and the inbox has had none for a
+     * moment, so that every delivery is judged before the results are read.
+     */
+    private static void settle(String api, String key, RefInbox inbox) throws Exception {
+        long end = System.nanoTime() + java.time.Duration.ofSeconds(15).toNanos();
+        int seen = -1;
+        while (System.nanoTime() < end) {
+            HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api))
+                    .header("Authorization", "Bearer " + key).build(), HttpResponse.BodyHandlers.ofString());
+            int inFlight = JSON.readTree(r.body()).at("/deliveries/inFlight").asInt();
+            int now = inbox.received();
+            if (inFlight == 0 && now == seen) {
+                return;
+            }
+            seen = now;
+            Thread.sleep(300);
+        }
     }
 
     /** An identity's password and key, from the session API. */

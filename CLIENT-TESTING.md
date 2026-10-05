@@ -1,7 +1,7 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 to C4 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082),
-and the rule format passed Gate C (D-0079). The rest is design (D-0075).**
+**Status: phases C0 to C5 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
+D-0083), and the rule format passed Gate C (D-0079). The rest is design (D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -306,7 +306,14 @@ is something a server may legally do, so a conformant client meets it in the wil
 | `lostCreateResponse` | performs the next POST create, then answers `503` | `create-post-not-idempotent` |
 | `pageGone` | answers the next request for a page of search results with `410` | `client-restart` |
 | `tokenExpired` (C4) | answers the next storage request with a valid token, other than to the decoy, with `401` and `error="invalid_token"`, and refuses that token from then on | `authz-challenge-realm-param`: a client that keeps its token gets a reason to ask for a new one after meeting the decoy |
-| `forgedDelivery` (variants, phase C5) | sends the inbox a delivery signed with an unpublished key, with an altered body, a stale `created`, or a wrong `keyid` | `inbox-verifies-signature`, `receiver-verification-steps` |
+| `forgedUnpublishedKey` (C5) | signs the next notification with a key the storage description does not publish, its keyid naming the published one | `inbox-verifies-signature`, `receiver-verification-steps` |
+| `forgedAlteredBody` (C5) | signs the next notification, then alters its body | `inbox-verifies-signature` |
+| `forgedKeyidWithoutFragment` (C5) | signs the next notification with the published key, under a keyid without a fragment | `receiver-verification-steps` |
+| `forgedForeignKeyDocument` (C5) | signs the next notification with the key of a document under the storage that claims to be its description | `receiver-verification-steps` |
+
+The forgeries are not server behaviour: they are what an attacker sends, which an inbox must
+refuse. Phase C5 dropped the plan's stale `created` (D-0083): only the webhook suite's
+non-normative security considerations encourage checking it, so a rule would cite no clause.
 
 "Handles 405 and 415 gracefully" cannot be seen directly. Its rule checks the observable
 part: the client does not repeat the refused request unchanged. The guidance says so.
@@ -360,12 +367,19 @@ to §7:
      the session's own identity documents and OpenID Provider, in process, and refuses any
      subject, issuer or key elsewhere (D-0082).
    - Deliveries go only to `https` inbox URLs that resolve to public unicast addresses. That
-     excludes loopback, RFC 1918, link-local (including `169.254.169.254`), unique local
-     and CGNAT addresses.
-   - The address is checked again at connect time, against DNS rebinding.
-   - Redirects are never followed.
-   - Timeouts are short, and deliveries are capped per session.
-   - Inboxes come only from subscriptions the session's own identities created.
+     excludes loopback, RFC 1918, link-local (including `169.254.169.254`), unique local,
+     CGNAT, multicast, reserved and documentation addresses, and IPv6 prefixes that embed an
+     IPv4 address.
+   - The address is checked at connect time, on the addresses connected to, so DNS rebinding
+     gains nothing (phase C5: the delivery client's address resolver filters them).
+   - Redirects are never followed; no cookie is kept, and no proxy used.
+   - A delivery times out after ten seconds, keeps at most 64 KiB of the answer, and a session
+     sends at most 500.
+   - Inboxes come only from subscriptions and access grants, which need a session identity's
+     access to the storage.
+   - Each delivery is recorded, a refused one with status 0 and the reason.
+   - `--allow-private-inboxes` lifts the address and scheme checks for local development and the
+     self-test. A public service never sets it.
 4. **Redaction.** Stored and displayed exchanges carry `Authorization`, `Cookie` and
    `DPoP` values as a fingerprint, so rules can still tell tokens apart without showing
    them. Raw values exist only in memory, while rules evaluate.
@@ -442,7 +456,7 @@ clients; only the client half is judged here.
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
 | `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-jwt` | MUST | passive: token requests | C4 |
 | `lws10-authn-saml/token-type-saml2` | MUST | no rule: a session has no SAML identity provider, so no client presents an assertion it could accept (D-0082) | — |
-| `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | fault `forgedDelivery`: forged deliveries refused, genuine ones accepted | C5 |
+| `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | the forgery faults: forged deliveries refused, genuine ones acknowledged | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
 | `lws10-index/client-no-read-your-writes` | MUST | not observable; the lagging-index trap surfaces it to the developer; stays `untested` | — |
@@ -518,6 +532,25 @@ session's identities and that the session did not issue (`OBSERVATION.md` sectio
 The ID Token's own claims (`azp`, `aud` and the rest) bind the OpenID Provider, not the client,
 so no rule judges them. The session's provider issues them as the OpenID suite asks.
 
+**The C5 rules** judge the client's inbox, in the area `notifications` (D-0083). Their trials are
+deliveries: the session's notifications and the inbox's answers (`OBSERVATION.md` section 3).
+Each forgery rule has a task that arms its forgery for the next notification.
+
+| Rule | Level | Cites | Trials (`observe`) | Passes when (`expect`) |
+|---|---|---|---|---|
+| `client-inbox-acknowledges-genuine-delivery` | SHOULD | `receiver-verification-steps` | answered genuine notifications | a 2xx |
+| `client-inbox-refuses-unpublished-key` | MUST | `inbox-verifies-signature`, `receiver-verification-steps` | notifications signed with an unpublished key | not a 2xx |
+| `client-inbox-refuses-altered-body` | MUST | `inbox-verifies-signature` | notifications altered after signing | not a 2xx |
+| `client-inbox-refuses-keyid-without-fragment` | MUST | `receiver-verification-steps` | notifications whose keyid has no fragment | not a 2xx |
+| `client-inbox-refuses-foreign-key-document` | MUST | `receiver-verification-steps` | notifications whose key document names another id | not a 2xx |
+| `client-subscription-own-inbox` | MAY | `per-subscription-inbox-urls` | subscription requests naming an inbox | no subscription already delivers to it |
+
+Acknowledging a genuine notification is a SHOULD rule citing a MUST clause, because an inbox may
+refuse one for reasons of its own, such as a 410 to end a subscription. The verification steps
+also leave a gap the session does not test: nothing ties the keyid to the storage the inbox
+subscribed to, so a notification signed with a key from another storage's own description passes
+all five steps. §12.4 takes that to the working group.
+
 ## 12. Open questions (for Erich)
 
 1. **Hosting.** Options:
@@ -533,7 +566,10 @@ so no rule judges them. The session's provider issues them as the OpenID suite a
    the session assigns. Client identifiers dereferenced to metadata documents can come later,
    if lws10-authn-openid comes to require them (`id-token-azp-claim` says only that `azp`
    carries one).
-4. **The working group.** Ask whether lws-test-suite plans client tests. If so, contribute
+4. **The working group.** Raise the webhook suite's gap (D-0083): section 5.2 never ties the
+   keyid to the storage the inbox subscribed to, or to the notification's `storage`, so a
+   notification signed with a key from any storage's own description passes all five steps.
+   Ask whether lws-test-suite plans client tests. If so, contribute
    the rule format back as JSON-LD, as D-0047 does for server tests.
 
 ## 13. Delivery plan
@@ -572,7 +608,7 @@ Gate 2 did for the server-side schema.
   *Done when:* every C2 rule passes for the reference client and fails for its twin. All 25
   pass for `RefLwsClient`, and each of its 25 twins fails exactly the rule aimed at it.
 - **C3: tasks and faults. Done 2026-10-05 (D-0081).** The checklist, the faults of §6.2 except
-  `forgedDelivery`, and the task-based rules. *Done when:* every C3 rule discriminates in the
+  the forged deliveries, and the task-based rules. *Done when:* every C3 rule discriminates in the
   self-test. All five pass for `RefLwsClient`, and each of its five C3 twins fails exactly the
   rules aimed at it.
 - **C4: authentication. Done 2026-10-05 (D-0082).**
@@ -584,10 +620,12 @@ Gate 2 did for the server-side schema.
   twin fails. `RefLwsClient` uses a token from the session, then credentials it signs with
   alice's key, and bob's OpenID sign-in. It passes all 44 rules, and each of its 14 C4 twins,
   ten of them with broken credentials, fails exactly the rule aimed at it.
-- **C5: notifications.** Signed deliveries under §8.3's guard, the `forgedDelivery`
-  variants, and the receiver rules. *Done when:* the self-test's reference inbox refuses
-  every forgery and accepts every genuine delivery, and a twin that accepts everything
-  fails.
+- **C5: notifications. Done 2026-10-05 (D-0083).** Signed deliveries under §8.3's guard, the
+  forgery faults, and the receiver rules. *Done when:* the self-test's reference inbox refuses
+  every forgery and accepts every genuine delivery, and a twin that accepts everything fails.
+  `RefInbox` refuses all four forgeries and acknowledges every genuine notification; its twin
+  that accepts everything fails the four forgery rules, and each twin that skips one check of
+  section 5.2 fails exactly that one.
 - **C6: page and reports.**
   - The live page with guidance.
   - EARL, JUnit XML and JSON export, and a docs-site page, "Testing a client".

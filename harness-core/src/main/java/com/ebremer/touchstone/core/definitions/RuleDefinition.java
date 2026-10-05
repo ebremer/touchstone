@@ -46,8 +46,12 @@ public record RuleDefinition(
     public record Task(String prompt, String arm) {
     }
 
-    /** Whether each start of the task opens a trial: a task without {@code after} (section 6.1). */
+    /**
+     * Whether each start of the task opens a trial: a task for intent, which arms no fault, in a
+     * rule without {@code after} (section 6.1). A rule whose task arms a fault selects its trials
+     * by {@code observe} alone; the fault only makes them happen.
+     */
     public boolean taskTriggered() {
-        return task != null && !observe.has("after");
+        return task != null && task.arm() == null && !observe.has("after");
     }
 }

@@ -1316,7 +1316,7 @@
     label: "arm"
     comment: >-
       A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse,
-      pageGone or tokenExpired (OBSERVATION.md section 6.2).
+      pageGone, tokenExpired, or a forged notification (OBSERVATION.md section 6.2).
     domain: lwst:Task
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
@@ -1371,6 +1371,25 @@
     comment: >-
       Whether a token request's resource is a realm the session presented in a 401 for a
       URL that realm contains (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:deliverySignature
+    type: rdf:Property
+    label: "deliverySignature"
+    comment: >-
+      For a delivery, the session's request to a client's inbox, how its signature was
+      made: genuine, or the forgery it carries (unpublishedKey, alteredBody,
+      keyidWithoutFragment, foreignKeyDocument) (format 0.11.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:inboxShared
+    type: rdf:Property
+    label: "inboxShared"
+    comment: >-
+      For a subscription request, whether a subscription the storage holds already
+      delivers to the inbox it names (format 0.11.0).
     domain: lwst:ExchangeCondition
     range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1

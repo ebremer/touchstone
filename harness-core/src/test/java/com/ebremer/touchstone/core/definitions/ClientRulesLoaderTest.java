@@ -22,7 +22,7 @@ class ClientRulesLoaderTest {
     @Test
     void loadsEveryClientRuleInTraversalOrder() {
         ClientRules rules = DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG);
-        assertThat(rules.rules()).hasSize(44);
+        assertThat(rules.rules()).hasSize(50);
         assertThat(rules.rules().getFirst().id()).isEqualTo("clients/core#client-token-in-authorization-header");
         assertThat(rules.rules().stream().map(RuleDefinition::area).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder("core", "authentication", "notifications", "index");
@@ -40,6 +40,11 @@ class ClientRulesLoaderTest {
         assertThat(realm.iri()).isEqualTo(Definitions.BASE + "clients/authentication#client-token-for-containing-realm");
         assertThat(rules.find("client-cid-credential-signed").orElseThrow().expect()
                 .at("/credential/header/0/pointer").asText()).isEqualTo("/alg");
+        // A task that arms a fault, without after: its trials are the exchanges observe selects.
+        RuleDefinition forged = rules.find("client-inbox-refuses-altered-body").orElseThrow();
+        assertThat(forged.task().arm()).isEqualTo("forgedAlteredBody");
+        assertThat(forged.taskTriggered()).isFalse();
+        assertThat(forged.observe().path("deliverySignature").asText()).isEqualTo("alteredBody");
     }
 
     @Test

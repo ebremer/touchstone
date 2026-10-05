@@ -1,14 +1,17 @@
-# Client rules for subscriptions (LWS core and lws10-notifications-webhook) (YAML-LD, format 0.8.0).
+# Client rules for subscriptions and the inboxes that receive notifications (LWS core and
+# lws10-notifications-webhook) (YAML-LD, format 0.11.0).
 "@context":
   - ../context.jsonld
   - ../touchstone.jsonld
 id: "#manifest"
 type: Manifest
-label: Subscriptions, as a client makes them
+label: Subscriptions, as a client makes them, and notifications, as its inbox receives them
 comment: >-
-  What the subscription requests a client POSTs to the session's NotificationService must
-  carry. The session advertises one subscription type, WebhookSubscription. It sends no
-  deliveries until phase C5, but subscribing works and is judged.
+  What the subscription requests a client POSTs to the session's NotificationService must carry,
+  and how the client's inbox must treat the notifications the session delivers to it. The session
+  advertises one subscription type, WebhookSubscription, and signs every notification with the
+  key its storage description publishes, unless a task makes it forge one. A delivery is the
+  session's request and the inbox's answer (OBSERVATION.md section 3).
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
   - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
@@ -125,3 +128,186 @@ entries:
           matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
     guidance: >-
       Set "inbox" to the URL the server is to deliver notifications to.
+
+  - id: "#client-subscription-own-inbox"
+    type: ObservationTest
+    name: client-subscription-own-inbox
+    label: Each of the client's webhook subscriptions has an inbox URL of its own
+    comment: >-
+      A permission, so the rule is informational: an inbox shared between subscriptions lets the
+      notification server tell that they belong together.
+    status: Proposed
+    level: MAY
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#privacy-considerations
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/per-subscription-inbox-urls
+    observe:
+      role: subscriptions
+      method: POST
+      json:
+        - pointer: /inbox
+          jsonType: string
+    expect:
+      inboxShared: false
+    guidance: >-
+      To keep the server from linking your subscriptions, give each its own inbox URL, such as one
+      with a random path segment.
+
+  # ---- the inbox: genuine and forged notifications (format 0.11.0) ----
+
+  - id: "#client-inbox-acknowledges-genuine-delivery"
+    type: ObservationTest
+    name: client-inbox-acknowledges-genuine-delivery
+    label: The client's inbox acknowledges a genuine notification with a 2xx
+    comment: >-
+      A notification the session signed with its published key verifies by the steps of section
+      5.2, and "a 2xx response indicates successful receipt". An inbox may refuse one for reasons
+      of its own, such as a 410 to end a subscription, so a refusal is a warning, not a failure.
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-delivery
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+    observe:
+      role: delivery
+      deliverySignature: genuine
+      statusCode: [2xx, 3xx, 4xx, 5xx]
+    expect:
+      statusCode: 2xx
+    guidance: >-
+      Answer a notification whose signature verifies with a 2xx. If your inbox refuses genuine
+      notifications, check how it rebuilds the signature base: the components are @method, @scheme,
+      @authority and @path of the inbox URL as subscribed, then content-type and content-digest.
+
+  - id: "#client-inbox-refuses-unpublished-key"
+    type: ObservationTest
+    name: client-inbox-refuses-unpublished-key
+    label: The client's inbox refuses a notification signed with a key the storage description does not publish
+    comment: >-
+      The keyid names the published key, but the signature was made with another. Only an inbox
+      that verifies the signature with the published key notices.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/inbox-verifies-signature
+      - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+    task:
+      prompt: >-
+        Change a resource one of your subscriptions covers. The session signs that notification
+        with a key its storage description does not publish.
+      arm: forgedUnpublishedKey
+    observe:
+      role: delivery
+      deliverySignature: unpublishedKey
+      statusCode: [2xx, 3xx, 4xx, 5xx]
+    expect:
+      statusCode: [3xx, 4xx, 5xx]
+    guidance: >-
+      Verify every notification's signature with the verification method its keyid names in the
+      storage description, and refuse it, with a 401 for instance, when it does not verify.
+
+  - id: "#client-inbox-refuses-altered-body"
+    type: ObservationTest
+    name: client-inbox-refuses-altered-body
+    label: The client's inbox refuses a notification whose body no longer matches its signed Content-Digest
+    comment: >-
+      The signature covers the body only through content-digest (RFC 9421 section 7.2.8), so
+      verifying it includes checking that the body has that digest (RFC 9530). The session signs
+      the notification, then changes its body.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-authentication
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-requirements
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/inbox-verifies-signature
+    task:
+      prompt: >-
+        Change a resource one of your subscriptions covers. The session signs that notification,
+        then alters its body.
+      arm: forgedAlteredBody
+    observe:
+      role: delivery
+      deliverySignature: alteredBody
+      statusCode: [2xx, 3xx, 4xx, 5xx]
+    expect:
+      statusCode: [3xx, 4xx, 5xx]
+    guidance: >-
+      Compute the SHA-256 of the body you received and compare it with the Content-Digest the
+      signature covers; refuse the notification when they differ.
+
+  - id: "#client-inbox-refuses-keyid-without-fragment"
+    type: ObservationTest
+    name: client-inbox-refuses-keyid-without-fragment
+    label: The client's inbox refuses a notification whose keyid is not a URL with a fragment
+    comment: >-
+      The signature verifies with the published key, but the keyid is the storage's URL alone. The
+      first step of section 5.2 requires a fragment, which names the verification method.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+    task:
+      prompt: >-
+        Change a resource one of your subscriptions covers. The session gives that notification a
+        keyid without a fragment.
+      arm: forgedKeyidWithoutFragment
+    observe:
+      role: delivery
+      deliverySignature: keyidWithoutFragment
+      statusCode: [2xx, 3xx, 4xx, 5xx]
+    expect:
+      statusCode: [3xx, 4xx, 5xx]
+    guidance: >-
+      Refuse a notification whose keyid has no fragment. Do not fall back to the storage
+      description's only key, or its first.
+
+  - id: "#client-inbox-refuses-foreign-key-document"
+    type: ObservationTest
+    name: client-inbox-refuses-foreign-key-document
+    label: The client's inbox refuses a notification whose keyid names a document that is not the storage description it claims to be
+    comment: >-
+      The keyid names a document under the storage whose id is the storage's URL, not its own, and
+      which publishes a key of its own. Anyone who can write a resource under a storage could
+      publish one. The third step of section 5.2 requires the document's id to match the keyid's
+      URL.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#signature-verification
+    traits: [Post, Notifications]
+    area: notifications
+    requirements:
+      - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+    task:
+      prompt: >-
+        Change a resource one of your subscriptions covers. The session signs that notification
+        with a key from a document that only claims to be the storage description.
+      arm: forgedForeignKeyDocument
+    observe:
+      role: delivery
+      deliverySignature: foreignKeyDocument
+      statusCode: [2xx, 3xx, 4xx, 5xx]
+    expect:
+      statusCode: [3xx, 4xx, 5xx]
+    guidance: >-
+      Dereference the keyid's URL without its fragment, and refuse the notification unless the
+      document's top-level id is exactly that URL.

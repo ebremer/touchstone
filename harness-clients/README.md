@@ -4,8 +4,9 @@ The service that tests LWS clients ([CLIENT-TESTING.md](../CLIENT-TESTING.md)). 
 developer starts a session, points their client at the session's storage, and watches every
 request it sends on the session's page. Every request is judged against the client rules,
 `definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
-Phases C1 to C4 are built: sessions, the traffic log, the rules, the tasks and faults that let a
-developer try every rule on purpose, and three ways for a client to authenticate.
+Phases C1 to C5 are built: sessions, the traffic log, the rules, the tasks and faults that let a
+developer try every rule on purpose, three ways for a client to authenticate, and signed
+notifications to the client's inbox.
 
 ## Running it
 
@@ -24,6 +25,7 @@ java -jar harness-clients/target/touchstone-clients.jar \
 | `--trust-forwarded-for` | off | Take the client's address from `X-Forwarded-For`, for the per-address session limit. Only behind a proxy that sets it. |
 | `--definitions` | `definitions` | The definitions directory; the client rules are under `lws10/clients/`. |
 | `--catalog` | `catalog` | The requirements catalog the rules cite. |
+| `--allow-private-inboxes` | off | Deliver notifications to http URLs and private addresses, such as an inbox on the same machine. For local development only: never on a public service. |
 
 The rules are loaded and checked at start: YAML, schema, JSON-LD and the lint of
 `OBSERVATION.md` section 2. A rule that fails stops the service with exit code 2.
@@ -56,7 +58,7 @@ The session API takes the key as a Bearer token:
 | `GET <base>/sessions/{id}/results` | each rule's outcome, trials and first failure with how to fix it, and the verdict |
 | `POST <base>/sessions/{id}/reset` | starts the results over; the storage and the log stay |
 | `POST <base>/sessions/{id}/tasks/{rule}` | starts a rule's task, arming its fault if it has one; `204`, or `404` for a rule without a task |
-| `POST <base>/sessions/{id}/faults/{fault}` | arms a fault alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone` or `tokenExpired` |
+| `POST <base>/sessions/{id}/faults/{fault}` | arms a fault alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone`, `tokenExpired`, or a forgery: `forgedUnpublishedKey`, `forgedAlteredBody`, `forgedKeyidWithoutFragment`, `forgedForeignKeyDocument` |
 | `POST <base>/sessions/{id}/tokens/{alice\|bob}` | a fresh access token |
 | `GET <base>/sessions/{id}/credentials/{alice\|bob}` | the identity's username and password for the OpenID Provider, and the private JWK of the key its identity document lists |
 | `POST <base>/sessions/{id}/clients` | registers a client with the OpenID Provider: `{"redirect_uris": [...], "client_id": "..."}`, the identifier optional; `GET` lists them |
@@ -76,11 +78,12 @@ hex digits of their SHA-256. It is annotated with:
 - the rules it was a trial of, and how each judged it.
 
 A rule's outcome is *passed* once a request has tried it and none failed it, *failed* with the
-first failing request kept as evidence, or *untested*. Six rules need a task. Two take the
+first failing request kept as evidence, or *untested*. Ten rules need a task. Two take the
 developer's word for what the client is about to do: create a container, or delete one with its
 contents. Four arm a fault, which makes the session answer the next request it applies to once
 in a way a server may legally answer: refuse a linkset PUT it advertised, lose a create's
-answer, refuse an expired page of search results, or refuse an access token as expired. A developer starts a task on the session
+answer, refuse an expired page of search results, or refuse an access token as expired. Four
+more make it forge its next notification, which the client's inbox must refuse. A developer starts a task on the session
 page, or a CI job through the API, then has the client do what the task says. Only MUST rules decide the verdict,
 which reads, for example, "no MUST failure in 12 MUST rules exercised, of 18 that apply".
 
@@ -104,6 +107,27 @@ A client exchanges an ID Token or a self-issued credential at the authorization 
 `as_uri` and `realm` the storage's 401 names (RFC 8693 token exchange). The authorization
 server trusts the session's identities and provider only. It fetches nothing, so a credential
 about anyone else is refused.
+
+## Notifications
+
+The storage delivers a webhook notification for every change a subscription covers, and for an
+access grant that names an inbox, signed with RFC 9421 HTTP Message Signatures under the key its
+storage description publishes. Each delivery is recorded in the traffic log, with the inbox's
+answer, and judged.
+
+Notifications go only to `https` inbox URLs whose host resolves to public unicast addresses. The
+addresses are checked as the connection is made, so DNS rebinding gains nothing. Redirects are
+not followed, a delivery times out after ten seconds, and a session sends at most 500. A
+refused delivery is recorded with status 0 and the reason. An inbox on a laptop needs a public
+https endpoint, such as a tunnel, unless the service runs locally with `--allow-private-inboxes`.
+
+Four tasks make the session forge the next notification:
+- signed with a key the storage description does not publish;
+- altered after it was signed;
+- under a keyid without a fragment;
+- signed with the key of a document under the storage that claims to be its description.
+
+An inbox that verifies as lws10-notifications-webhook section 5.2 says refuses each.
 
 ## Traps
 
@@ -137,5 +161,4 @@ the self-test leaves it off, because one server test needs a linkset that refuse
 
 Everything is in memory; an ended session leaves nothing. The OpenID Provider holds at most 10
 clients, with 5 redirect URIs each, and 100 sign-ins in progress; a sign-in lasts 10 minutes and
-an authorization code one minute. Notifications are not delivered
-until phase C5 brings the outbound guard of CLIENT-TESTING.md section 8.3.
+an authorization code one minute. A session sends at most 500 notifications.

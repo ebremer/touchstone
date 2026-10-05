@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/definitions/0-10-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), format 0.10.0",
-  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "$id": "https://example.org/touchstone/schema/definitions/0-11-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.11.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). 0.11.0 adds deliveries, the session's requests to a client's inbox: the roles delivery and keyDocument, the conditions deliverySignature and inboxShared, and the four forgery faults (D-0083). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/identityRegistry"}
@@ -420,6 +420,13 @@
           ]
         },
         "builtFromRole": {"$ref": "#/$defs/roles"},
+        "deliverySignature": {
+          "description": "since 0.11.0: for a delivery, how its signature was made (OBSERVATION.md section 4.11)",
+          "oneOf": [
+            {"$ref": "#/$defs/deliverySignatureName"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/deliverySignatureName"}}
+          ]
+        },
         "credentialSource": {
           "description": "since 0.10.0: where a token request's subject token came from (OBSERVATION.md section 4.9)",
           "oneOf": [
@@ -441,6 +448,7 @@
         "audienceIncludesAs": {"description": "since 0.10.0", "type": "boolean"},
         "identifiersAgree": {"description": "since 0.10.0", "type": "boolean"},
         "realmContainsRequest": {"description": "since 0.10.0", "type": "boolean"},
+        "inboxShared": {"description": "since 0.11.0", "type": "boolean"},
         "contentType": {"$ref": "#/$defs/response/properties/contentType"},
         "linkHeaders": {"$ref": "#/$defs/response/properties/linkHeaders"},
         "otherHeaders": {"$ref": "#/$defs/response/properties/otherHeaders"},
@@ -495,12 +503,14 @@
       "enum": ["storageDescription", "container", "page", "dataResource", "linkset",
                "accessGrants", "accessGrant", "accessRequests", "accessRequest", "subscriptions", "subscription",
                "typeIndex", "typeSearch", "searchPage", "decoy", "asMetadata", "asJwks", "asToken",
-               "opDiscovery", "opJwks", "opAuthorize", "opToken", "identityDocument", "unknown"]
+               "opDiscovery", "opJwks", "opAuthorize", "opToken", "identityDocument", "keyDocument", "delivery", "unknown"]
     },
     "methodName": {"type": "string", "pattern": "^[A-Z][A-Z-]*$"},
     "derivation": {"enum": ["query", "path"]},
     "presentationName": {"enum": ["bearer", "otherScheme", "query", "form", "otherHeader", "none"]},
-    "faultName": {"enum": ["methodNotAllowed", "lostCreateResponse", "pageGone", "tokenExpired"]},
+    "faultName": {"enum": ["methodNotAllowed", "lostCreateResponse", "pageGone", "tokenExpired",
+                           "forgedUnpublishedKey", "forgedAlteredBody", "forgedKeyidWithoutFragment", "forgedForeignKeyDocument"]},
+    "deliverySignatureName": {"enum": ["genuine", "unpublishedKey", "alteredBody", "keyidWithoutFragment", "foreignKeyDocument"]},
     "credentialSourceName": {"enum": ["selfIssued", "openidProvider", "authorizationServer", "other"]},
 
     "identityRegistry": {

@@ -32,7 +32,7 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * a few more for the traffic log.
      *
      * @param server storage, authorizationServer, openidProvider or identityHost, or null for
-     *     another URL of the session
+     *     another URL of the session and for a delivery
      * @param role what the request addressed (OBSERVATION.md section 4.2), or preflight, or
      *     limited (refused by a bound)
      * @param identity alice or bob, the subject IRI of another valid token, or null when no valid
@@ -63,6 +63,10 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * @param identifiersAgree whether the credential's sub, iss and client_id agree, or null
      * @param realmContainsRequest whether a token request's resource is a realm the session
      *     presented for a URL it contains, or null
+     * @param deliverySignature for a delivery, how its signature was made: genuine, or the forgery it
+     *     carries; null for anything else
+     * @param inboxShared for a subscription request, whether a subscription the storage holds
+     *     already delivers to its inbox; null for anything else
      * @param fault the fault that fired on this exchange, or null
      * @param limit the bound that refused the request (rate, body, storage), or null
      */
@@ -71,6 +75,7 @@ record Exchange(long seq, String at, long millis, String method, String url,
                        Map<String, String> advertised, boolean methodAdvertised, boolean patchFormatAdvertised,
                        boolean queryFormatAdvertised, boolean repeat, boolean containerEmpty, String credentialSource,
                        com.fasterxml.jackson.databind.JsonNode credential, Boolean audienceIncludesAs,
-                       Boolean identifiersAgree, Boolean realmContainsRequest, String fault, String limit) {
+                       Boolean identifiersAgree, Boolean realmContainsRequest, String deliverySignature,
+                       Boolean inboxShared, String fault, String limit) {
     }
 }

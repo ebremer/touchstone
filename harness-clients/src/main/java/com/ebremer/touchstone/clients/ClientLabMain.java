@@ -11,11 +11,14 @@ import com.ebremer.touchstone.core.definitions.InvalidDefinitionsException;
 /**
  * Runs the client-session service:
  * {@code java -jar touchstone-clients.jar --public-base https://host/touchstone/clients [--bind 127.0.0.1]
- * [--port 18090] [--trust-forwarded-for] [--definitions definitions] [--catalog catalog]}. The client
+ * [--port 18090] [--trust-forwarded-for] [--definitions definitions] [--catalog catalog]
+ * [--allow-private-inboxes]}. The client
  * rules are read from the definitions directory, and checked against the catalog, at start; a
  * rule that fails the checks stops the service (exit code 2). Behind a reverse proxy, proxy the public base path
  * and {@code /.well-known/lws-configuration} followed by it, keeping the paths, and pass
- * {@code --trust-forwarded-for} when the proxy sets X-Forwarded-For.
+ * {@code --trust-forwarded-for} when the proxy sets X-Forwarded-For. {@code --allow-private-inboxes} lets
+ * notifications go to http URLs and private addresses, such as a client's inbox on the same
+ * machine: for local development only, never on a public service.
  */
 public final class ClientLabMain {
 
@@ -27,6 +30,7 @@ public final class ClientLabMain {
         String bind = "127.0.0.1";
         int port = 18090;
         boolean trust = false;
+        boolean privateInboxes = false;
         Path definitions = Path.of("definitions");
         Path catalog = Path.of("catalog");
         for (int i = 0; i < args.length; i++) {
@@ -35,6 +39,7 @@ public final class ClientLabMain {
                 case "--bind" -> bind = args[++i];
                 case "--port" -> port = Integer.parseInt(args[++i]);
                 case "--trust-forwarded-for" -> trust = true;
+                case "--allow-private-inboxes" -> privateInboxes = true;
                 case "--definitions" -> definitions = Path.of(args[++i]);
                 case "--catalog" -> catalog = Path.of(args[++i]);
                 default -> {
@@ -46,7 +51,8 @@ public final class ClientLabMain {
         if (publicBase == null) {
             publicBase = "http://localhost:" + port + "/touchstone/clients";
         }
-        ClientLabConfig config = ClientLabConfig.defaults(URI.create(publicBase), bind, port).withTrustForwardedFor(trust);
+        ClientLabConfig config = ClientLabConfig.defaults(URI.create(publicBase), bind, port).withTrustForwardedFor(trust)
+                .withPrivateInboxes(privateInboxes);
         ClientRules rules;
         try {
             rules = DefinitionLoader.loadClientRules(definitions, CatalogRepository.load(catalog));

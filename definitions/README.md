@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.10.0, frozen on 2026-10-05 (DECISIONS.md D-0082).** The
+**Status: format version 0.11.0, frozen on 2026-10-05 (DECISIONS.md D-0083).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
@@ -11,7 +11,7 @@ only how a did:key subject's credential is made, since W3C discontinued the did:
 records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QUERY method and Link headers on prerequisites; 0.7.0 lets a test script
 its inbox's answers; 0.8.0 adds client rules, which judge the requests an LWS client sends
 (`OBSERVATION.md`); 0.9.0 gives client rules tasks and faults; 0.10.0 lets them judge a
-client's token requests and credentials. A test that is one
+client's token requests and credentials; 0.11.0, the notifications its inbox receives. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -322,6 +322,15 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.11.0 (2026-10-05, D-0083) adds, for client rules only, what judging a client's
+inbox needs, and changes nothing a 0.10.0 definition relies on:
+- deliveries: the notifications the session sends an inbox, and the inbox's answers, recorded as
+  exchanges with the role `delivery` (`OBSERVATION.md` section 3);
+- the conditions `deliverySignature`, genuine or the forgery a delivery carries, and
+  `inboxShared`, whether a subscription request reuses an inbox;
+- four forgery faults, and the role `keyDocument` for the document one of them names;
+- a task that arms a fault may select its trials by `observe` alone, without `after`.
 
 Format version 0.10.0 (2026-10-05, D-0082) adds, for client rules only, what judging a client's
 authentication needs, and changes nothing a 0.9.0 definition relies on:

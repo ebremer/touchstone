@@ -705,7 +705,9 @@ entries:
         had been lost.
       arm: lostCreateResponse
     observe:
+      server: storage
       after:
+        server: storage
         method: POST
         statusCode: 5xx
         sameTarget: true

@@ -169,23 +169,38 @@
   }
 
   function statusClass(code) {
-    return code >= 500 ? 's5' : code >= 400 ? 's4' : code >= 300 ? 's3' : 's2';
+    return !code ? 's5' : code >= 500 ? 's5' : code >= 400 ? 's4' : code >= 300 ? 's3' : 's2';
+  }
+
+  const SIGNATURES = {
+    unpublishedKey: 'forged: unpublished key', alteredBody: 'forged: body altered',
+    keyidWithoutFragment: 'forged: keyid without fragment', foreignKeyDocument: 'forged: foreign key document',
+  };
+
+  function addressed(a) {
+    if (a.role === 'delivery') {
+      const what = a.deliverySignature === 'genuine' ? 'notification' : SIGNATURES[a.deliverySignature] || a.deliverySignature;
+      return a.limit ? what + ', not sent (' + a.limit + ')' : what;
+    }
+    return a.limit ? 'refused: ' + a.limit : a.role;
   }
 
   function row(exchange) {
     const a = exchange.annotations;
+    const delivery = a.role === 'delivery';
     const tr = el('tr', null, 'exchange');
     tr.tabIndex = 0;
     tr.append(
       el('td', exchange.seq, 'num'),
       el('td', new Date(exchange.at).toLocaleTimeString(), 'num'),
       el('td'),
-      el('td', exchange.status, 'num ' + statusClass(exchange.status)),
-      el('td', a.limit ? 'refused: ' + a.limit : a.role),
-      el('td', a.identity || '—'),
+      el('td', exchange.status || '—', 'num ' + statusClass(exchange.status)),
+      el('td', addressed(a)),
+      el('td', delivery ? 'the session' : a.identity || '—'),
       el('td', presented(a)),
-      el('td', a.issued ? a.issuedVia : 'built by client' + (a.builtBy ? ' (by ' + a.builtBy + ')' : ''),
-        a.issued ? '' : 'built'),
+      delivery ? el('td', 'your inbox')
+        : el('td', a.issued ? a.issuedVia : 'built by client' + (a.builtBy ? ' (by ' + a.builtBy + ')' : ''),
+          a.issued ? '' : 'built'),
       el('td'),
     );
     const verdicts = tr.children[8];
@@ -198,7 +213,7 @@
       verdicts.append(el('div', '✓ ' + passed + ' passed', 'o-passed'));
     }
     const request = tr.children[2];
-    request.append(el('span', exchange.method + ' ', 'method'), el('code', relative(exchange.url)));
+    request.append(el('span', (delivery ? '→ ' : '') + exchange.method + ' ', 'method'), el('code', relative(exchange.url)));
     const detail = el('tr', null, 'detail');
     detail.hidden = true;
     const cell = el('td');

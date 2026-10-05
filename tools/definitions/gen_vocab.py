@@ -212,7 +212,7 @@ V = [
     ("containerEmpty", P, None, "containerEmpty", "Whether the request addressed a container that had no members when it arrived (format 0.9.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("task", P, None, "task", "What the developer is asked to do so that the rule can be tried. Without after, each start of the task selects the next exchange observe holds of as a trial (format 0.9.0).", "lwst:ObservationTest", "lwst:Task"),
     ("prompt", P, None, "prompt", "The task as the developer reads it.", "lwst:Task", "xsd:string"),
-    ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse, pageGone or tokenExpired (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
+    ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse, pageGone, tokenExpired, or a forged notification (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
 
     ("form", P, None, "form", "A condition on an application/x-www-form-urlencoded request body, seen as a JSON object of each parameter's first value (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JsonExpectation"),
     ("credential", P, None, "credential", "Conditions on the header and claims of the JWT a token request presents as its subject token (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JwtExpectation"),
@@ -220,6 +220,8 @@ V = [
     ("audienceIncludesAs", P, None, "audienceIncludesAs", "Whether the aud claim of a token request's subject token names the session's authorization server (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("identifiersAgree", P, None, "identifiersAgree", "Whether the sub, iss and client_id claims of a token request's subject token are the same string (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("realmContainsRequest", P, None, "realmContainsRequest", "Whether a token request's resource is a realm the session presented in a 401 for a URL that realm contains (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("deliverySignature", P, None, "deliverySignature", "For a delivery, the session's request to a client's inbox, how its signature was made: genuine, or the forgery it carries (unpublishedKey, alteredBody, keyidWithoutFragment, foreignKeyDocument) (format 0.11.0).", "lwst:ExchangeCondition", "xsd:string"),
+    ("inboxShared", P, None, "inboxShared", "For a subscription request, whether a subscription the storage holds already delivers to the inbox it names (format 0.11.0).", "lwst:ExchangeCondition", "xsd:boolean"),
 
     # ---- identity properties
     ("kind", P, None, "kind", "The identity's kind.", "lwst:Identity", "lwst:IdentityKind"),

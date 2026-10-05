@@ -59,6 +59,7 @@ const rule = t => t.type === 'ObservationTest';
 const ruleAnyOf = t => rule(t) && 'anyOf' in t.expect;
 const ruleTask = t => rule(t) && 'task' in t;
 const ruleCredential = t => rule(t) && 'credential' in t.expect;
+const ruleDelivery = t => rule(t) && t.observe.role === 'delivery';
 const controls = {
   'typo key statusCod': [flow, t => { t.steps[0].response.statusCod = 200; }],
   'malformed template ${test.container': [flow, t => { t.steps[0].request.url = '${test.container'; }],
@@ -101,6 +102,9 @@ const controls = {
   'empty credential': [ruleCredential, t => { t.expect.credential = {}; }],
   'form that is not a list': [ruleCredential, t => { t.expect.form = { pointer: '/resource', jsonType: 'string' }; }],
   'realmContainsRequest that is not a boolean': [ruleCredential, t => { t.expect.realmContainsRequest = 'yes'; }],
+  'client rule with an unknown delivery signature': [ruleDelivery, t => { t.observe.deliverySignature = 'forged'; }],
+  'inboxShared that is not a boolean': [ruleDelivery, t => { t.expect.inboxShared = 'no'; }],
+  'task arming the dropped stale-created forgery': [ruleTask, t => { t.task.arm = 'forgedStaleCreated'; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

@@ -38,7 +38,12 @@ class ClientLabTest {
     static void start() {
         int port = freePort();
         base = "http://localhost:" + port + "/touchstone/clients";
-        lab = ClientLab.start(ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port), TestRules.RULES);
+        ClientLabConfig d = ClientLabConfig.defaults(URI.create(base), "127.0.0.1", port);
+        // The defaults, but more sessions from this one address than the tests start.
+        lab = ClientLab.start(new ClientLabConfig(d.publicBase(), d.bindHost(), d.port(), false, d.maxSessions(), 100,
+                d.idleTimeout(), d.maxLifetime(), d.maxBodyBytes(), d.maxRecordedResponseBytes(), d.maxExchanges(),
+                d.maxResources(), d.maxStorageBytes(), d.requestBurst(), d.requestsPerSecond(), d.tokenLifetime(),
+                d.indexLag(), d.maxDeliveries(), false), TestRules.RULES);
     }
 
     @AfterAll
@@ -250,7 +255,7 @@ class ClientLabTest {
         ClientLabConfig d = ClientLabConfig.defaults(URI.create(tightBase), "127.0.0.1", port);
         ClientLabConfig tight = new ClientLabConfig(d.publicBase(), d.bindHost(), d.port(), false, 10, 2,
                 d.idleTimeout(), d.maxLifetime(), 1000, d.maxRecordedResponseBytes(), d.maxExchanges(), 2,
-                d.maxStorageBytes(), 8, 0.001, d.tokenLifetime(), d.indexLag());
+                d.maxStorageBytes(), 8, 0.001, d.tokenLifetime(), d.indexLag(), d.maxDeliveries(), false);
         try (ClientLab small = ClientLab.start(tight, TestRules.RULES)) {
             JsonNode session = startSession(tightBase);
             String storage = session.get("storage").asText();
@@ -496,6 +501,36 @@ class ClientLabTest {
         JsonNode fired = all.stream().filter(e -> "tokenExpired".equals(e.at("/annotations/fault").asText())).findFirst().orElseThrow();
         assertThat(fired.at("/annotations/role").asText()).isEqualTo("container");
         assertThat(fired.at("/annotations/identity").isNull()).isTrue();
+    }
+
+    @Test
+    void notificationsGoNowhereTheGuardForbids() throws Exception {
+        JsonNode session = startSession(base);
+        String storage = session.get("storage").asText();
+        String alice = session.at("/tokens/alice").asText();
+        String subscriptions = storage + "_subscriptions/";
+        for (String inbox : new String[] {"http://inbox.example/plain", "https://localhost:9/loopback"}) {
+            HttpResponse<String> made = send("POST", subscriptions, alice, "{\"type\": \"WebhookSubscription\", \"topic\": [\""
+                    + storage + "\"], \"inbox\": \"" + inbox + "\"}", "application/lws+json");
+            assertThat(made.statusCode()).as(made.body()).isEqualTo(201);
+        }
+        assertThat(send("POST", storage, alice, "a change", "text/plain").statusCode()).isEqualTo(201);
+        List<JsonNode> deliveries = new ArrayList<>();
+        for (int i = 0; i < 50 && deliveries.stream().noneMatch(d -> d.get("url").asText().contains("localhost")); i++) {
+            Thread.sleep(100);
+            deliveries = list(log(session).get("exchanges")).stream()
+                    .filter(e -> e.at("/annotations/role").asText().equals("delivery")).toList();
+        }
+        JsonNode plain = deliveries.stream().filter(d -> d.get("url").asText().startsWith("http://inbox.example"))
+                .findFirst().orElseThrow();
+        assertThat(plain.get("status").asInt()).isZero();
+        assertThat(plain.at("/annotations/limit").asText()).isEqualTo("inbox");
+        assertThat(plain.at("/responseBody/text").asText()).contains("https");
+        JsonNode loopback = deliveries.stream().filter(d -> d.get("url").asText().contains("localhost")).findFirst().orElseThrow();
+        assertThat(loopback.get("status").asInt()).isZero();
+        assertThat(loopback.at("/responseBody/text").asText()).contains("no public address");
+        assertThat(loopback.at("/annotations/deliverySignature").asText()).isEqualTo("genuine");
+        assertThat(loopback.at("/requestHeaders/Signature-Input/0").asText()).contains("keyid=\"" + storage + "#notify-key\"");
     }
 
     // ---- helpers ----

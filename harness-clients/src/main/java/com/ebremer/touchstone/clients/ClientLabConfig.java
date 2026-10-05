@@ -26,12 +26,16 @@ import java.time.Duration;
  * @param requestsPerSecond the sustained rate after a burst
  * @param tokenLifetime how long an access token handed out by the session lives
  * @param indexLag how long a write takes to reach the type index and search (Traps#indexLag)
+ * @param maxDeliveries notifications one session may send to inboxes
+ * @param allowPrivateInboxes whether notifications may go to http URLs and private addresses: for
+ *     local development and the self-test only, never on a public service (section 8.3)
  */
 public record ClientLabConfig(URI publicBase, String bindHost, int port, boolean trustForwardedFor,
                               int maxSessions, int sessionsPerAddressPerHour, Duration idleTimeout,
                               Duration maxLifetime, int maxBodyBytes, int maxRecordedResponseBytes,
                               int maxExchanges, int maxResources, long maxStorageBytes, int requestBurst,
-                              double requestsPerSecond, Duration tokenLifetime, Duration indexLag) {
+                              double requestsPerSecond, Duration tokenLifetime, Duration indexLag,
+                              int maxDeliveries, boolean allowPrivateInboxes) {
 
     public ClientLabConfig {
         String base = publicBase.toString();
@@ -47,7 +51,7 @@ public record ClientLabConfig(URI publicBase, String bindHost, int port, boolean
         return new ClientLabConfig(publicBase, bindHost, port, false,
                 100, 10, Duration.ofHours(2), Duration.ofHours(24),
                 1 << 20, 64 << 10, 5000, 500, 16L << 20, 200, 20,
-                Duration.ofHours(1), Duration.ofSeconds(3));
+                Duration.ofHours(1), Duration.ofSeconds(3), 500, false);
     }
 
     /** The path every request to the service starts with: the public base's path. */
@@ -63,6 +67,14 @@ public record ClientLabConfig(URI publicBase, String bindHost, int port, boolean
     public ClientLabConfig withTrustForwardedFor(boolean trust) {
         return new ClientLabConfig(publicBase, bindHost, port, trust, maxSessions, sessionsPerAddressPerHour,
                 idleTimeout, maxLifetime, maxBodyBytes, maxRecordedResponseBytes, maxExchanges, maxResources,
-                maxStorageBytes, requestBurst, requestsPerSecond, tokenLifetime, indexLag);
+                maxStorageBytes, requestBurst, requestsPerSecond, tokenLifetime, indexLag, maxDeliveries,
+                allowPrivateInboxes);
+    }
+
+    /** The same, with private inboxes allowed or not: allowed only for local development and the self-test. */
+    public ClientLabConfig withPrivateInboxes(boolean allow) {
+        return new ClientLabConfig(publicBase, bindHost, port, trustForwardedFor, maxSessions, sessionsPerAddressPerHour,
+                idleTimeout, maxLifetime, maxBodyBytes, maxRecordedResponseBytes, maxExchanges, maxResources,
+                maxStorageBytes, requestBurst, requestsPerSecond, tokenLifetime, indexLag, maxDeliveries, allow);
     }
 }
