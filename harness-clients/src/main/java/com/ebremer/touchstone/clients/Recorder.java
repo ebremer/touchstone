@@ -42,6 +42,14 @@ final class Recorder {
     private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
     private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*(?:\"([^\"]*)\"|([^\\s,]+))");
     private static final ObjectMapper JSON = new ObjectMapper();
+    /** The characters of body text the log allows for each exchange it may keep, on average. */
+    static final int CHARS_PER_EXCHANGE = 8 << 10;
+    /**
+     * The URLs the ledger remembers anything about, in each of its maps. A session's own storage
+     * hands out far fewer; beyond it, a URL first seen is not remembered, so that a client
+     * requesting endless made-up URLs cannot grow the session without bound.
+     */
+    static final int MAX_URLS = 10_000;
 
     /** How a URL was first handed out, and when, in the order of handing out. */
     private record Issue(String how, long order) {
@@ -54,6 +62,9 @@ final class Recorder {
     private final Predicate<String> inSession;
     private final int capacity;
     private final ArrayDeque<Exchange> log = new ArrayDeque<>();
+    /** The most the log holds, in characters (size(Exchange)): {@link #CHARS_PER_EXCHANGE} for each exchange it may keep. */
+    private final long maxSize;
+    private long size;
     private long nextSeq = 1;
     private long dropped;
     private final AtomicLong issues = new AtomicLong();
@@ -71,13 +82,16 @@ final class Recorder {
     Recorder(Predicate<String> inSession, int capacity) {
         this.inSession = inSession;
         this.capacity = capacity;
+        this.maxSize = (long) capacity * CHARS_PER_EXCHANGE;
     }
 
     /** Records that the session handed out {@code url}, and how; the first way is kept. */
     void issue(String url, String how) {
         String key = withoutFragment(url);
         if (key != null && inSession.test(key)) {
-            issued.computeIfAbsent(key, k -> new Issue(how, issues.incrementAndGet()));
+            if (room(issued, key)) {
+                issued.computeIfAbsent(key, k -> new Issue(how, issues.incrementAndGet()));
+            }
         }
     }
 
@@ -139,7 +153,7 @@ final class Recorder {
      */
     boolean repeats(String url, String signature) {
         String key = withoutFragment(url);
-        return key != null && signature.equals(lastRequests.put(key, signature));
+        return key != null && room(lastRequests, key) && signature.equals(lastRequests.put(key, signature));
     }
 
     /**
@@ -184,7 +198,9 @@ final class Recorder {
     void learn(String url, String role, int status, Map<String, List<String>> headers, String body) {
         String key = withoutFragment(url);
         if (key != null && !role.equals("preflight") && !role.equals("limited")) {
-            roles.put(key, role);
+            if (room(roles, key)) {
+                roles.put(key, role);
+            }
         }
         URI base = URI.create(url);
         for (String location : values(headers, "Location")) {
@@ -252,7 +268,7 @@ final class Recorder {
                     a.put(name, String.join(", ", v));
                 }
             }
-            if (!a.isEmpty() && key != null) {
+            if (!a.isEmpty() && key != null && room(advertised, key)) {
                 advertised.merge(key, a, (old, now) -> {
                     Map<String, String> merged = new LinkedHashMap<>(old);
                     merged.putAll(now);
@@ -286,11 +302,21 @@ final class Recorder {
     synchronized Exchange append(java.util.function.LongFunction<Exchange> build) {
         Exchange e = build.apply(nextSeq++);
         log.addLast(e);
-        while (log.size() > capacity) {
-            log.removeFirst();
+        size += size(e);
+        while (log.size() > capacity || (size > maxSize && log.size() > 1)) {
+            size -= size(log.removeFirst());
             dropped++;
         }
         return e;
+    }
+
+    /** About how much of the log an exchange takes, in characters: its bodies' text, and a kilobyte for the rest. */
+    private static long size(Exchange e) {
+        return 1024 + length(e.requestBody()) + length(e.responseBody());
+    }
+
+    private static long length(Exchange.Body body) {
+        return body == null || body.text() == null ? 0 : body.text().length();
     }
 
     /** Up to {@code limit} exchanges numbered after {@code seq}, oldest first. */
@@ -312,6 +338,11 @@ final class Recorder {
 
     synchronized long recorded() {
         return nextSeq - 1;
+    }
+
+    /** Whether {@code map} may hold {@code key}: it does already, or has room for one more (MAX_URLS). */
+    private static boolean room(Map<String, ?> map, String key) {
+        return map.containsKey(key) || map.size() < MAX_URLS;
     }
 
     private static List<String> values(Map<String, List<String>> headers, String name) {

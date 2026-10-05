@@ -31,6 +31,8 @@ import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 final class Session {
 
     static final List<String> IDENTITIES = List.of("alice", "bob");
+    /** The areas a rule belongs to, any of which a developer may declare out of scope (CLIENT-TESTING.md section 5.1). */
+    static final List<String> AREAS = List.of("core", "authentication", "notifications", "index");
     /** The service type naming an agent's OpenID Provider in its identity document (lws10-authn-openid section 5). */
     static final String OPENID_PROVIDER = "https://www.w3.org/ns/lws#OpenIdProvider";
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -42,6 +44,16 @@ final class Session {
      * identity document lists, for self-issued credentials (the CID suite).
      */
     record Identity(String name, String webid, String password, ECKey key, String document) {
+    }
+
+    /**
+     * The client under test as its developer names it (CLIENT-TESTING.md section 3), the subject
+     * of the session's EARL report. Any part may be null.
+     *
+     * @param homepage an absolute http(s) URL
+     */
+    record ClientUnderTest(String name, String version, String homepage) {
+        static final ClientUnderTest UNNAMED = new ClientUnderTest(null, null, null);
     }
 
     final String id;
@@ -66,6 +78,10 @@ final class Session {
     final String clientId;
     private final byte[] keyHash;
     private volatile Instant lastActive;
+    /** The client under test, as its developer last named it. */
+    volatile ClientUnderTest clientUnderTest = ClientUnderTest.UNNAMED;
+    /** When the results began: the session's start, or the latest reset. */
+    private volatile Instant resultsSince;
     /** Notifications sent to inboxes, and those still awaiting an answer. */
     private final java.util.concurrent.atomic.AtomicInteger deliveries = new java.util.concurrent.atomic.AtomicInteger();
     private final java.util.concurrent.atomic.AtomicInteger inFlight = new java.util.concurrent.atomic.AtomicInteger();
@@ -75,6 +91,7 @@ final class Session {
         this.base = config.publicBase() + "/s/" + id;
         this.created = now;
         this.lastActive = now;
+        this.resultsSince = now;
         this.keyHash = sha256(key);
         this.traps = Traps.all(config.indexLag());
         this.as = RefAuthorizationServer.mounted(URI.create(base + "/as"));
@@ -176,6 +193,22 @@ final class Session {
         String token = as.issue(webid(name), clientId, storage.realm(), lifetime);
         tokens.add(token);
         return token;
+    }
+
+    /** Starts the results over (CLIENT-TESTING.md section 3): the storage and the log stay. */
+    void resetResults(Instant now) {
+        judge.reset();
+        resultsSince = now;
+    }
+
+    Instant resultsSince() {
+        return resultsSince;
+    }
+
+    /** The areas in scope, in the order of {@link #AREAS}. */
+    List<String> areas() {
+        Set<String> out = judge.outOfScope();
+        return AREAS.stream().filter(a -> !out.contains(a)).toList();
     }
 
     /**

@@ -12,7 +12,10 @@ public final class Results {
         if (result.level() != null) {
             sb.append(" [").append(result.level()).append(']');
         }
-        sb.append(" (").append(result.durationMillis()).append(" ms)");
+        // A client rule's result has no duration: it gathers trials over a session.
+        if (result.durationMillis() > 0) {
+            sb.append(" (").append(result.durationMillis()).append(" ms)");
+        }
         if (result.reason() != null) {
             sb.append("\n  ").append(result.outcome().earl()).append(": ").append(result.reason());
         }

@@ -535,6 +535,114 @@ class ClientLabTest {
 
     // ---- helpers ----
 
+    @Test
+    void theResultsExportAsJsonEarlAndJunitAboutTheNamedClient() throws Exception {
+        String rule = "client-token-in-authorization-header";
+        // Settings are checked whole before a session starts.
+        for (String bad : new String[] {"[1]", "{\"areas\": []}", "{\"areas\": [\"everything\"]}", "{\"colour\": 1}",
+                "{\"clientUnderTest\": {\"homepage\": \"javascript:alert(1)\"}}", "{\"clientUnderTest\": {\"name\": 7}}",
+                "not json"}) {
+            HttpResponse<String> refused = HTTP.send(HttpRequest.newBuilder(URI.create(base + "/sessions"))
+                    .POST(HttpRequest.BodyPublishers.ofString(bad)).build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(refused.statusCode()).as(bad).isEqualTo(400);
+            assertThat(JSON.readTree(refused.body()).get("error").asText()).isEqualTo("invalid_settings");
+        }
+        JsonNode session = startSession(base, "{\"clientUnderTest\": {\"name\": \"Example client\", \"version\": \"1.2.3\","
+                + " \"homepage\": \"https://client.example/\"}, \"areas\": [\"authentication\", \"core\"]}");
+        assertThat(session.at("/clientUnderTest/name").asText()).isEqualTo("Example client");
+        assertThat(session.get("areas").toString()).isEqualTo("[\"core\",\"authentication\"]");
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        assertThat(session.at("/exports/earl").asText()).isEqualTo(api + "/results?format=earl");
+        String storage = session.get("storage").asText();
+        String alice = session.at("/tokens/alice").asText();
+
+        // One trial of the rule passes, one fails: the token in the query string.
+        assertThat(send("GET", storage, alice, null, "application/lws+json").statusCode()).isEqualTo(200);
+        send("GET", storage + "?access_token=" + alice, null, null, "application/lws+json");
+
+        JsonNode results = JSON.readTree(get(api + "/results", key).body());
+        JsonNode judged = list(results.get("rules")).stream().filter(r -> r.get("rule").asText().equals(rule)).findFirst()
+                .orElseThrow();
+        assertThat(judged.get("outcome").asText()).isEqualTo("failed");
+        assertThat(judged.at("/evidence/status").asInt()).isPositive();
+        assertThat(judged.get("source").get(0).asText()).startsWith("https://www.w3.org/TR/");
+        assertThat(list(results.get("rules")).stream().filter(r -> r.get("area").asText().equals("notifications"))
+                .map(r -> r.get("outcome").asText()).distinct().toList()).containsExactly("inapplicable");
+        assertThat(results.at("/clientUnderTest/version").asText()).isEqualTo("1.2.3");
+        assertThat(results.at("/harness/name").asText()).isEqualTo("Touchstone");
+        assertThat(results.get("since").asText()).isEqualTo(session.get("created").asText());
+        int rules = results.get("rules").size();
+
+        HttpResponse<String> json = get(api + "/results?format=json", key);
+        assertThat(json.headers().firstValue("Content-Disposition").orElseThrow())
+                .isEqualTo("attachment; filename=\"touchstone-client-session-" + session.get("id").asText() + ".json\"");
+
+        // EARL: one assertion per rule, semi-automatic, about the client by its homepage.
+        HttpResponse<String> earl = get(api + "/results?format=earl", key);
+        assertThat(earl.statusCode()).isEqualTo(200);
+        assertThat(earl.headers().firstValue("Content-Type").orElseThrow()).startsWith("text/turtle");
+        assertThat(earl.body()).doesNotContain(alice);
+        org.apache.jena.rdf.model.Model m = org.apache.jena.rdf.model.ModelFactory.createDefaultModel();
+        org.apache.jena.riot.RDFParser.fromString(earl.body(), org.apache.jena.riot.Lang.TURTLE).parse(m);
+        String earlNs = "http://www.w3.org/ns/earl#";
+        org.apache.jena.rdf.model.Property mode = m.createProperty(earlNs, "mode");
+        assertThat(m.listResourcesWithProperty(org.apache.jena.vocabulary.RDF.type, m.createResource(earlNs + "Assertion"))
+                .toList()).hasSize(rules);
+        assertThat(m.listObjectsOfProperty(mode).toList()).containsExactly(m.createResource(earlNs + "semiAuto"));
+        org.apache.jena.rdf.model.Resource client = m.createResource("https://client.example/");
+        assertThat(m.contains(client, m.createProperty("http://usefulinc.com/ns/doap#", "name"), "Example client")).isTrue();
+        org.apache.jena.rdf.model.Resource testCase = m.createResource(judged.get("iri").asText());
+        assertThat(m.contains(testCase, org.apache.jena.vocabulary.RDF.type, m.createResource(earlNs + "TestCase"))).isTrue();
+        org.apache.jena.rdf.model.Resource assertion = m.listResourcesWithProperty(m.createProperty(earlNs, "test"), testCase)
+                .next();
+        org.apache.jena.rdf.model.Resource result = assertion.getPropertyResourceValue(m.createProperty(earlNs, "result"));
+        assertThat(result.getPropertyResourceValue(m.createProperty(earlNs, "outcome")).getURI()).isEqualTo(earlNs + "failed");
+        assertThat(result.getProperty(m.createProperty(earlNs, "info")).getString()).contains("exchange #").contains("presentation");
+
+        // JUnit XML: one case per rule, the failure among them.
+        HttpResponse<String> junit = get(api + "/results?format=junit", key);
+        assertThat(junit.headers().firstValue("Content-Type").orElseThrow()).startsWith("application/xml");
+        assertThat(junit.body()).doesNotContain(alice);
+        org.w3c.dom.Document xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(new java.io.ByteArrayInputStream(junit.body().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        assertThat(xml.getDocumentElement().getAttribute("tests")).isEqualTo(String.valueOf(rules));
+        boolean failure = false;
+        org.w3c.dom.NodeList cases = xml.getElementsByTagName("testcase");
+        for (int i = 0; i < cases.getLength(); i++) {
+            org.w3c.dom.Element c = (org.w3c.dom.Element) cases.item(i);
+            if (c.getAttribute("name").equals(rule)) {
+                assertThat(c.getAttribute("classname")).isEqualTo("clients/core");
+                failure = c.getElementsByTagName("failure").getLength() == 1;
+            }
+        }
+        assertThat(failure).isTrue();
+        assertThat(get(api + "/results?format=pdf", key).statusCode()).isEqualTo(400);
+
+        // PATCH changes the settings; a bad one changes nothing.
+        HttpResponse<String> patched = patch(api, key, "{\"areas\": [\"authentication\"], \"clientUnderTest\": null}");
+        assertThat(patched.statusCode()).as(patched.body()).isEqualTo(200);
+        assertThat(JSON.readTree(patched.body()).get("areas").toString()).isEqualTo("[\"authentication\"]");
+        assertThat(JSON.readTree(patched.body()).at("/clientUnderTest/name").isNull()).isTrue();
+        assertThat(patch(api, key, "{\"areas\": [\"core\"], \"clientUnderTest\": {\"name\": \"" + "x".repeat(101) + "\"}}")
+                .statusCode()).isEqualTo(400);
+        JsonNode after = JSON.readTree(get(api + "/results", key).body());
+        assertThat(list(after.get("rules")).stream().filter(r -> r.get("rule").asText().equals(rule)).findFirst().orElseThrow()
+                .get("outcome").asText()).isEqualTo("inapplicable");
+        assertThat(get(api + "/results?format=earl", key).body()).contains("the client tested in session " + session.get("id").asText());
+
+        // A reset starts the results, and their date, over.
+        assertThat(send("POST", api + "/reset", key, null, null).statusCode()).isEqualTo(204);
+        assertThat(JSON.readTree(get(api + "/results", key).body()).get("since").asText())
+                .isNotEqualTo(session.get("created").asText());
+    }
+
+    private static HttpResponse<String> patch(String api, String key, String body) throws IOException, InterruptedException {
+        return HTTP.send(HttpRequest.newBuilder(URI.create(api)).header("Authorization", "Bearer " + key)
+                .header("Content-Type", "application/json").method("PATCH", HttpRequest.BodyPublishers.ofString(body)).build(),
+                HttpResponse.BodyHandlers.ofString());
+    }
+
     private static HttpResponse<String> register(String api, String key, String body) throws IOException, InterruptedException {
         HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(api + "/clients")).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body));
@@ -549,8 +657,14 @@ class ClientLabTest {
     }
 
     private static JsonNode startSession(String serviceBase) throws Exception {
+        return startSession(serviceBase, null);
+    }
+
+    private static JsonNode startSession(String serviceBase, String settings) throws Exception {
         HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(serviceBase + "/sessions"))
-                .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+                .header("Content-Type", "application/json")
+                .POST(settings == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(settings))
+                .build(), HttpResponse.BodyHandlers.ofString());
         assertThat(r.statusCode()).as(r.body()).isEqualTo(201);
         return JSON.readTree(r.body());
     }

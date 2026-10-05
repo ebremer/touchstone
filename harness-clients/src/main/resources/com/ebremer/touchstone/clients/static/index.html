@@ -10,40 +10,84 @@
 <main class="narrow">
   <h1>Touchstone client sessions</h1>
   <p class="lead">Test an LWS client against a storage of your own. Start a session, point your
-    client at its storage URL, and watch every request your client sends judged against the
-    client requirements of the LWS drafts.</p>
-  <p><button id="start" type="button">Start a session</button></p>
-  <p id="message" role="status"></p>
+    client at its storage URL, and watch each request it sends judged against the client
+    requirements of the W3C Linked Web Storage drafts. When you are done, export the results as
+    EARL, JUnit XML or JSON.</p>
+
+  <form id="start-form" class="box">
+    <h2 class="in-box">Start a session</h2>
+    <p class="note">Naming your client is optional. The name, version and homepage become the subject of
+      the reports you export, and you can change them later.</p>
+    <label for="name">Client name</label>
+    <input id="name" maxlength="100" autocomplete="off" placeholder="for example, My LWS client">
+    <label for="version">Version</label>
+    <input id="version" maxlength="50" autocomplete="off" placeholder="for example, 0.3.1">
+    <label for="homepage">Homepage</label>
+    <input id="homepage" type="url" maxlength="500" autocomplete="off" placeholder="https://…">
+    <fieldset class="areas">
+      <legend>Areas to test</legend>
+      <label class="check"><input type="checkbox" name="area" value="core" checked> Core: containers,
+        resources, metadata, pagination, access requests and grants</label>
+      <label class="check"><input type="checkbox" name="area" value="authentication" checked> Authentication:
+        tokens, OpenID sign-in, self-issued CID credentials</label>
+      <label class="check"><input type="checkbox" name="area" value="notifications" checked> Notifications:
+        subscriptions, and the signed notifications your inbox receives</label>
+      <label class="check"><input type="checkbox" name="area" value="index" checked> Index: the type index
+        and search</label>
+    </fieldset>
+    <p class="note">The rules of an area you leave out show as inapplicable.</p>
+    <p><button id="start" type="submit">Start a session</button></p>
+    <p id="message" role="status"></p>
+  </form>
+
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><strong>Start a session.</strong> It opens on its own page, whose address holds the session's
+      key. Bookmark it to come back, and keep it to yourself: whoever has it controls the session.</li>
+    <li><strong>Point your client at the storage URL</strong> the page shows. The storage asks for
+      authentication the way an LWS storage does. Your client can act as alice, who owns it, or as
+      bob, and has three ways to authenticate: an OpenID sign-in, a key to sign its own credentials
+      with, or a ready-made access token.</li>
+    <li><strong>Use your client as you normally would.</strong> Each request is judged as it arrives,
+      and the traffic log shows it as the server saw it. Then work through the checklist: some rules
+      need you to do something on purpose, and some tasks make the session refuse a request once, to
+      see how your client copes.</li>
+    <li><strong>Read the results.</strong> Every failure shows the request, the clause it breaks with a
+      link to the specification, what was expected against what was sent, and how to fix it.</li>
+    <li><strong>Fix, reset, repeat, then export</strong> the results as EARL (for implementation
+      reports), JUnit XML (for CI) or JSON.</li>
+  </ol>
+  <p>The guide <a href="https://ebremer.github.io/touchstone/testing-a-client.html">Testing a client</a>
+    explains each step in detail.</p>
 
   <h2>What you get</h2>
   <ul>
     <li>A storage, its authorization server and an OpenID Provider, private to your session, with
       two identities: alice, who owns the storage, and bob.</li>
-    <li>Three ways to authenticate as either: an OpenID sign-in, a key to sign credentials with
-      yourself (the CID suite), or an access token to use until your client authenticates by
-      itself.</li>
-    <li>A page that records every request your client sends, as the server saw it, and the rules
-      it passed or failed, each failure with the clause it breaks and how to fix it.</li>
-    <li>Tasks for the rules that need you to do something on purpose, some of which make the
-      session refuse a request once, to see how your client copes.</li>
+    <li>A page that records every request your client sends and the rules it passed or failed.</li>
+    <li>Tasks for the rules that need you to do something on purpose.</li>
     <li>Signed notifications to your client's inbox, which must be a public https URL, and on
       request forged ones, to see that your inbox verifies what it receives.</li>
   </ul>
-  <p>The storage behaves as the LWS drafts allow but a client cannot assume otherwise: page and
+  <p>The storage behaves as the LWS drafts allow, which is not always what a client expects: page and
     linkset URLs are opaque, resource URLs do not mirror their containers, binary resources refuse
     PUT, the search index lags a little, and one resource in the root container is a decoy that
     challenges with a realm that does not contain it.</p>
 
   <h2>From a script or CI</h2>
-  <p>Everything the page does is plain HTTP. Start a session with
-    <code>curl -X POST <span id="sessions-url">…/sessions</span></code>: the answer holds the
-    storage URL, the tokens, and the session key, which the session API takes as a Bearer token.</p>
+  <p>Everything the page does is plain HTTP, so your client's own test suite can drive a session:</p>
+<pre class="box">curl -s -X POST <span id="sessions-url">…/sessions</span> \
+  -H 'Content-Type: application/json' \
+  -d '{"clientUnderTest": {"name": "My LWS client", "version": "0.3.1"}}'</pre>
+  <p>The answer holds the storage URL, access tokens for alice and bob, and the session key, which
+    the session API takes as a Bearer token. Run your tests against the storage, then fetch
+    <code>results?format=junit</code> and fail the build on a MUST failure.</p>
 
   <h2>Limits</h2>
   <p>A session ends after two idle hours, or a day at most. Everything lives in memory and is gone
-    when the session ends. Request bodies are capped at 1 MiB, and each session at 500 resources.
-    Credentials are never shown in the log, only a fingerprint of each.</p>
-  <p class="note">Reports to export come in a later phase of Touchstone's client testing.</p>
+    when the session ends; keep what you need by exporting it. Request bodies are capped at 1 MiB,
+    and each session at 500 resources. Credentials never show in the log, only a fingerprint of
+    each.</p>
 </main>
 <script src="static/lab.js"></script>
 </body>

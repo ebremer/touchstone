@@ -1,7 +1,9 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 to C5 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
-D-0083), and the rule format passed Gate C (D-0079). The rest is design (D-0075).**
+**Status: phases C0 to C6 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
+D-0083, D-0084), except C6's pilot with real clients, and the rule format passed Gate C (D-0079).
+The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`. The rest is design
+(D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -80,7 +82,8 @@ These follow D-0075. Do not relitigate them without a new decision.
    triggered.
 6. **Reset and export.** *Reset results* clears outcomes but keeps the storage, so a
    developer can re-run after a fix. *Export* writes EARL, JUnit XML and JSON. An optional
-   read-only link can share the results without the session's controls.
+   read-only link could share the results without the session's controls; C6 left it out
+   (D-0084), since an export does that job for now.
 
 ## 4. Architecture
 
@@ -163,11 +166,12 @@ tested once.
 
 ### 4.4 Session API
 
-Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 to C4
-built everything here except the EARL and JUnit XML forms of the results, which come with C6;
-[harness-clients/README.md](harness-clients/README.md) documents what exists.
+Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 to C6
+built all of it; [harness-clients/README.md](harness-clients/README.md) documents it.
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
-  tokens for alice and bob. It is rate-limited, and may need sign-in (§12).
+  tokens for alice and bob. It is rate-limited and open, without sign-in (§12.2). Its optional
+  body names the client under test and the areas in scope; `PATCH {base}/sessions/{sid}`
+  changes them later (C6).
 - `GET {base}/sessions/{sid}` describes the session; `POST {base}/sessions/{sid}/tokens/{name}`
   hands out a fresh token; `GET {base}/sessions/{sid}/page` is the session page, which reads
   the key from its URL's fragment.
@@ -176,8 +180,8 @@ built everything here except the EARL and JUnit XML forms of the results, which 
 - `POST {base}/sessions/{sid}/clients` registers a client with the OpenID Provider:
   `{"redirect_uris": [...]}`, and optionally a `client_id`, an absolute URI. `GET` lists the
   registered clients.
-- `GET {base}/sessions/{sid}/results` returns results as JSON, or as EARL or JUnit XML with
-  `?format=`.
+- `GET {base}/sessions/{sid}/results` returns results as JSON, or the JSON, EARL or JUnit XML
+  export with `?format=json|earl|junit`.
 - `GET {base}/sessions/{sid}/exchanges?after=N` returns the traffic log, paged and redacted.
 - `POST {base}/sessions/{sid}/tasks/{rule}` starts a rule's task, arming its fault if it has
   one; `POST {base}/sessions/{sid}/faults/{fault}` arms a fault alone.
@@ -355,6 +359,8 @@ to §7:
 2. **Bounded everything:**
    - Requests: a body of at most 1 MiB, and a per-session request rate limit.
    - Storage: per-session caps on resources and on total bytes.
+   - The traffic log: a cap on exchanges and on the body text they hold, and on the URLs the
+     ledger remembers, so that a client sending endless made-up URLs gains nothing (C6).
    - Sessions:
      - they expire after two idle hours, and after 24 hours at most;
      - a global cap on live sessions;
@@ -553,14 +559,12 @@ all five steps. §12.4 takes that to the working group.
 
 ## 12. Open questions (for Erich)
 
-1. **Hosting.** Options:
-   - ebremer.com already runs Touchstone and proxies its fixture host. A public, always-on
-     service there shares Apache with regalbait. It would also need the site-wide
-     `Access-Control-Allow-*` headers unset for its path, as `/lws/` has, because browser
-     clients need the session's own CORS answers.
-   - vulcan is a dedicated VM, but it hosts a server Touchstone grades.
-   - A host of its own.
-2. **Session creation:** open and rate-limited, or behind a sign-in such as GitHub or ORCID.
+1. **Hosting. Decided 2026-10-05 (D-0084): vulcan.** The service runs there as its own process
+   and user, behind the nginx that fronts Halcyon, at `/touchstone/clients/`. It never talks to
+   Halcyon. ebremer.com was the other candidate, but it has 3 GB of memory for everything and
+   shares Apache with regalbait.
+2. **Session creation. Decided 2026-10-05 (D-0084): open and rate-limited**, as built: 10 sessions
+   per address per hour and 100 live at once. A sign-in can come later if it is abused.
 3. **OpenID client registration. Decided 2026-10-05 (D-0082):** per-session redirect URIs,
    entered on the page or through the API, with a client identifier the developer chooses or
    the session assigns. Client identifiers dereferenced to metadata documents can come later,
@@ -626,13 +630,17 @@ Gate 2 did for the server-side schema.
   `RefInbox` refuses all four forgeries and acknowledges every genuine notification; its twin
   that accepts everything fails the four forgery rules, and each twin that skips one check of
   section 5.2 fails exactly that one.
-- **C6: page and reports.**
-  - The live page with guidance.
+- **C6: page and reports. Built 2026-10-05 (D-0084), except the pilot.**
+  - The live page with guidance: a getting-started guide, the client's name and areas, a
+    checklist grouped by area, failures with their specification links, and export.
   - EARL, JUnit XML and JSON export, and a docs-site page, "Testing a client".
-  - Deployment, then a pilot with one or two real clients.
+  - Deployment on vulcan (§12.1). The pilot with one or two real clients waits for Erich to
+    choose them.
 
   *Done when:* a developer who has never seen Touchstone gets from the start page to an
-  exported report on their own.
+  exported report on their own. A scripted Firefox walk does it: it names a client on the start
+  page, takes a token from the session page, sends requests, finds the failure and opens its
+  exchange, starts a task, and downloads all three exports, with no script error.
 - **C7 (optional): proxy mode** (§10). Also read-only MCP tools over a session
   (`get_client_session`, `get_client_findings`, `get_client_exchange`), so a developer's
   coding agent can read the feedback. They are read-only and redacted, and they never

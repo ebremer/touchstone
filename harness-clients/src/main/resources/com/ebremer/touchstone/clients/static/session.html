@@ -9,9 +9,32 @@
 <body>
 <main>
   <header class="top">
-    <h1>Touchstone client session</h1>
+    <h1>Touchstone client session <span id="client-title" class="subtitle"></span></h1>
     <p id="status" role="status">Loading…</p>
   </header>
+
+  <section id="guide" hidden>
+    <details open class="box">
+      <summary>Getting started</summary>
+      <ol class="steps">
+        <li><strong>Keep this page's address.</strong> It holds the session key: bookmark it to come
+          back, and share it only with people who may control the session.</li>
+        <li><strong>Point your client at the storage</strong>, <code id="guide-storage"></code>. It is
+          the only URL your client should need: the storage's answers lead to everything else.</li>
+        <li><strong>Authenticate</strong> as alice, who owns the storage, or bob, in one of the
+          <a href="#connect">three ways below</a>. The quickest is a token from the identities table;
+          the OpenID sign-in needs your client registered first.</li>
+        <li><strong>Use your client</strong> as you normally would, then work through the
+          <a href="#checklist">checklist</a>. Each request is judged as it arrives, under
+          <a href="#rules">Rules</a>, and shows in the <a href="#traffic">traffic log</a>.</li>
+        <li><strong>Fix what fails, reset the results, and try again.</strong> When you are done,
+          <a href="#export">export</a> the results: EARL for an implementation report, JUnit XML for
+          CI, or JSON.</li>
+      </ol>
+      <p class="note">The guide <a href="https://ebremer.github.io/touchstone/testing-a-client.html">Testing
+        a client</a> explains each step in detail.</p>
+    </details>
+  </section>
 
   <section id="connect" hidden>
     <h2>Connect your client</h2>
@@ -64,18 +87,59 @@
     </form>
     <ul id="clients" class="note"></ul>
     <h3>Traps</h3>
+    <p class="note">The storage does what the LWS drafts allow, which is not always what a client
+      expects. A client that follows the specification never notices these.</p>
     <ul id="traps" class="note"></ul>
-    <p><button type="button" id="end" class="danger">End this session</button></p>
+  </section>
+
+  <section id="about" hidden>
+    <h2>Your client</h2>
+    <p class="note">The name, version and homepage become the subject of the reports you export. Rules
+      of an area you leave out show as inapplicable.</p>
+    <form id="settings" class="box">
+      <div class="row3">
+        <div><label for="set-name">Client name</label><input id="set-name" maxlength="100" autocomplete="off"></div>
+        <div><label for="set-version">Version</label><input id="set-version" maxlength="50" autocomplete="off"></div>
+        <div><label for="set-homepage">Homepage</label><input id="set-homepage" type="url" maxlength="500" autocomplete="off"></div>
+      </div>
+      <fieldset class="areas">
+        <legend>Areas to test</legend>
+        <label class="check"><input type="checkbox" name="set-area" value="core"> Core</label>
+        <label class="check"><input type="checkbox" name="set-area" value="authentication"> Authentication</label>
+        <label class="check"><input type="checkbox" name="set-area" value="notifications"> Notifications</label>
+        <label class="check"><input type="checkbox" name="set-area" value="index"> Index</label>
+      </fieldset>
+      <p><button type="submit">Save</button></p>
+    </form>
+  </section>
+
+  <section id="checklist" hidden>
+    <h2>Checklist</h2>
+    <p class="note">Most rules judge whatever your client does. These need you to do something on
+      purpose: start the task, then do what it says with your client. A task that arms a fault makes
+      the session answer one request differently, as a server may, to see how your client copes. The
+      order does not matter, and you can start a task again.</p>
+    <div id="tasks"></div>
   </section>
 
   <section id="rules" hidden>
     <h2>Rules</h2>
     <p id="verdict" class="verdict"></p>
-    <p class="note">Each rule judges every request it applies to. A rule passes once a request has
-      tried it and none has failed it; a failure keeps the first offending request, and
-      <em>untested</em> means your client has not done what the rule is about yet. A rule with a
-      task needs you to start the task, then do what it says: some tasks make the session refuse
-      your next request once, to see how your client copes. Only MUST rules decide the verdict. <button type="button" id="reset" class="copy">Reset results</button></p>
+    <p id="tally" class="note"></p>
+    <p class="note">A rule passes once a request has tried it and none has failed it. A failure keeps
+      the first offending request; <em>untested</em> means your client has not done what the rule is
+      about yet. Only MUST rules decide the verdict: SHOULD failures are warnings, and MAY rules are
+      information.</p>
+    <div class="toolbar">
+      <label for="filter">Show</label>
+      <select id="filter">
+        <option value="all">all rules</option>
+        <option value="failed">failures</option>
+        <option value="untested">rules not tried yet</option>
+        <option value="passed">rules passed</option>
+      </select>
+      <button type="button" id="reset" class="copy">Reset results</button>
+    </div>
     <div class="scroll">
       <table class="rules">
         <thead><tr>
@@ -85,6 +149,19 @@
         <tbody id="rule-rows"></tbody>
       </table>
     </div>
+  </section>
+
+  <section id="export" hidden>
+    <h2>Export</h2>
+    <p class="note">The results as they stand now, about the client named above. Nothing is kept after
+      the session ends, so save what you need.</p>
+    <p class="toolbar">
+      <button type="button" data-export="earl">EARL (Turtle)</button>
+      <button type="button" data-export="junit">JUnit XML</button>
+      <button type="button" data-export="json">JSON</button>
+    </p>
+    <p class="note">From a script, with the session key in <code>$KEY</code>:</p>
+    <pre class="box" id="export-curl"></pre>
   </section>
 
   <section id="traffic" hidden>
@@ -103,6 +180,13 @@
         <tbody id="log"></tbody>
       </table>
     </div>
+  </section>
+
+  <section id="end-session" hidden>
+    <h2>End the session</h2>
+    <p class="note">Ending it deletes its storage, its log and its results now, instead of after two
+      idle hours.</p>
+    <p><button type="button" id="end" class="danger">End this session</button></p>
   </section>
 </main>
 <script src="../../static/session.js"></script>

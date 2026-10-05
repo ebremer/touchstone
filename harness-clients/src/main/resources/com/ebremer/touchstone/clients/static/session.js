@@ -4,6 +4,7 @@
   const api = location.pathname.replace(/\/page$/, '');
   const $ = (id) => document.getElementById(id);
   const status = $('status');
+  let said = 0;
   let last = 0;
   let base = '';
   let timer = null;
@@ -16,6 +17,11 @@
     linksetPutOnlyForDataResources: 'Linksets of data resources accept PUT, linksets of containers do not: check Allow first.',
     decoy: 'The root container lists a decoy whose 401 names a realm that does not contain it: send it no token.',
   };
+
+  const AREAS = {
+    core: 'Core', authentication: 'Authentication', notifications: 'Notifications', index: 'Index',
+  };
+
 
   async function call(method, path, body) {
     const headers = { Authorization: 'Bearer ' + key };
@@ -40,6 +46,12 @@
     return answer;
   }
 
+  /** Shows a message in the status line, which the live status then leaves alone for a while. */
+  function say(text) {
+    status.textContent = text;
+    said = Date.now();
+  }
+
   function el(tag, text, className) {
     const node = document.createElement(tag);
     if (text !== undefined && text !== null) {
@@ -51,12 +63,21 @@
     return node;
   }
 
+  function button(text, className, onClick) {
+    const b = el('button', text, className);
+    b.type = 'button';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
   function show(session) {
     base = session.storage.replace(/storage\/$/, '');
     $('storage').textContent = session.storage;
+    $('guide-storage').textContent = session.storage;
     $('issuer').textContent = session.authorizationServer.issuer;
     $('op-issuer').textContent = session.openidProvider.issuer;
     showClients(session.openidProvider.clients);
+    showSettings(session);
     $('expires').textContent = new Date(session.expires).toLocaleString()
       + ' (after two idle hours, or a day at most)';
     const rows = $('identities');
@@ -66,14 +87,8 @@
       tr.append(el('th', name), el('td'), el('td', identity.role), el('td'), el('td'));
       tr.children[0].scope = 'row';
       tr.children[1].append(el('code', identity.webid));
-      const reveal = el('button', 'Show');
-      reveal.type = 'button';
-      reveal.addEventListener('click', () => secrets(name));
-      tr.children[3].append(reveal);
-      const button = el('button', 'Get a token');
-      button.type = 'button';
-      button.addEventListener('click', () => token(name));
-      tr.children[4].append(button);
+      tr.children[3].append(button('Show', '', () => secrets(name)));
+      tr.children[4].append(button('Get a token', '', () => token(name)));
       rows.append(tr);
     }
     const traps = $('traps');
@@ -87,10 +102,46 @@
       traps.append(el('li', 'The type index and search catch up with writes after '
         + session.traps.indexLagSeconds + ' s: do not assume read-your-writes.'));
     }
-    $('connect').hidden = false;
-    $('rules').hidden = false;
-    $('traffic').hidden = false;
+    $('export-curl').textContent = ['earl', 'junit', 'json'].map((f) => 'curl -sOJ -H "Authorization: Bearer $KEY" \\\n  \''
+      + session.exports[f] + '\'').join('\n');
+    for (const id of ['guide', 'connect', 'about', 'checklist', 'rules', 'export', 'traffic', 'end-session']) {
+      $(id).hidden = false;
+    }
   }
+
+  function showSettings(session) {
+    const c = session.clientUnderTest || {};
+    $('client-title').textContent = c.name ? '· ' + c.name + (c.version ? ' ' + c.version : '') : '';
+    $('set-name').value = c.name || '';
+    $('set-version').value = c.version || '';
+    $('set-homepage').value = c.homepage || '';
+    for (const box of document.querySelectorAll('input[name=set-area]')) {
+      box.checked = session.areas.includes(box.value);
+    }
+  }
+
+  $('settings').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const client = {};
+    for (const [field, id] of [['name', 'set-name'], ['version', 'set-version'], ['homepage', 'set-homepage']]) {
+      const value = $(id).value.trim();
+      if (value) {
+        client[field] = value;
+      }
+    }
+    const areas = [...document.querySelectorAll('input[name=set-area]:checked')].map((box) => box.value);
+    if (areas.length === 0) {
+      say('Choose at least one area to test.');
+      return;
+    }
+    try {
+      showSettings(await call('PATCH', '', { clientUnderTest: client, areas }));
+      say('Saved.');
+      showResults(await call('GET', '/results'));
+    } catch (e) {
+      say('Could not save: ' + e.message);
+    }
+  });
 
   async function token(name) {
     try {
@@ -99,7 +150,7 @@
       $('token').value = body.access_token;
       $('token-box').hidden = false;
     } catch (e) {
-      status.textContent = 'Could not get a token: ' + e.message;
+      say('Could not get a token: ' + e.message);
     }
   }
 
@@ -121,7 +172,7 @@
       $('secret-download').download = name + '.jwk.json';
       $('secrets-box').hidden = false;
     } catch (e) {
-      status.textContent = 'Could not get the credentials: ' + e.message;
+      say('Could not get the credentials: ' + e.message);
     }
   }
 
@@ -144,10 +195,10 @@
     }
     try {
       const made = await call('POST', '/clients', request);
-      status.textContent = 'Registered ' + made.client_id + '.';
+      say('Registered ' + made.client_id + '.');
       showClients((await call('GET', '/clients')).clients);
     } catch (e) {
-      status.textContent = 'Could not register the client: ' + e.message;
+      say('Could not register the client: ' + e.message);
     }
   });
 
@@ -184,6 +235,9 @@
     }
     return a.limit ? 'refused: ' + a.limit : a.role;
   }
+
+  /** The traffic log's rows by exchange number, to show the exchange a failure points at. */
+  const exchangeRows = new Map();
 
   function row(exchange) {
     const a = exchange.annotations;
@@ -233,47 +287,160 @@
         toggle();
       }
     });
+    exchangeRows.set(exchange.seq, [tr, detail]);
     return [tr, detail];
+  }
+
+  function reveal(seq) {
+    const found = exchangeRows.get(seq);
+    if (!found || !found[0].isConnected) {
+      say('Exchange #' + seq + ' is no longer in the log.');
+      return;
+    }
+    found[1].hidden = false;
+    found[0].scrollIntoView({ block: 'center' });
+    found[0].focus();
   }
 
   const OUTCOMES = {
     passed: 'passed', failed: 'failed', cantTell: 'cannot tell', untested: 'untested', inapplicable: 'inapplicable',
   };
 
-  function showResults(results) {
-    $('verdict').textContent = results.verdict.text.charAt(0).toUpperCase() + results.verdict.text.slice(1) + '.';
+  /** Each rule's row in the results table and its task in the checklist, built once and updated in place. */
+  const ruleViews = new Map();
+
+  function slug(iri) {
+    return iri.slice(iri.lastIndexOf('/') + 1);
+  }
+
+  function buildRules(results) {
     const rows = $('rule-rows');
+    const tasks = $('tasks');
     rows.replaceChildren();
-    for (const r of results.rules) {
-      const tr = el('tr');
-      const label = el('td');
-      label.append(el('div', r.label), el('code', r.rule, 'note'));
-      if (r.task) {
-        const task = el('div', null, 'task');
-        const start = el('button', 'Start task', 'copy');
-        start.type = 'button';
-        start.addEventListener('click', () => startTask(r.rule));
-        task.append(el('span', 'Task: ' + r.task.prompt + ' '), start);
-        label.append(task);
+    tasks.replaceChildren();
+    for (const area of Object.keys(AREAS)) {
+      const inArea = results.rules.filter((r) => r.area === area);
+      if (inArea.length === 0) {
+        continue;
       }
-      const evidence = el('td');
-      if (r.evidence) {
-        evidence.append(el('div', '#' + r.evidence.seq + ' ' + r.evidence.method + ' ' + relative(r.evidence.url)),
-          el('div', r.evidence.term + ': expected ' + r.evidence.expected + '; was ' + r.evidence.actual, 'note'),
-          el('div', r.guidance));
+      const head = el('tr', null, 'area');
+      const th = el('th', AREAS[area]);
+      th.colSpan = 5;
+      th.scope = 'rowgroup';
+      head.append(th);
+      rows.append(head);
+      const withTasks = inArea.filter((r) => r.task);
+      let list = null;
+      if (withTasks.length > 0) {
+        tasks.append(el('h3', AREAS[area]));
+        list = el('ul', null, 'tasks');
+        tasks.append(list);
       }
-      tr.append(label, el('td', r.level), el('td', OUTCOMES[r.outcome] || r.outcome, 'o-' + r.outcome),
-        el('td', r.trials, 'num'), evidence);
-      rows.append(tr);
+      for (const r of inArea) {
+        const view = { head };
+        const tr = el('tr');
+        const label = el('td');
+        label.append(el('div', r.label), el('code', r.rule, 'note'));
+        const refs = el('div', null, 'refs');
+        for (const req of r.requirements) {
+          refs.append(el('span', slug(req), 'req'));
+        }
+        r.source.forEach((url, i) => {
+          const a = el('a', r.source.length > 1 ? 'spec ' + (i + 1) : 'spec');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          refs.append(a);
+        });
+        label.append(refs);
+        view.outcome = el('td');
+        view.trials = el('td', null, 'num');
+        view.evidence = el('td');
+        tr.append(label, el('td', r.level), view.outcome, view.trials, view.evidence);
+        rows.append(tr);
+        view.row = tr;
+        if (r.task) {
+          const item = el('li', null, 'task');
+          const text = el('div');
+          text.append(el('span', r.task.prompt));
+          if (r.task.arm) {
+            const arms = el('div', 'Arms the fault ', 'note');
+            arms.append(el('code', r.task.arm));
+            text.append(arms);
+          }
+          const meta = el('div', null, 'note');
+          view.taskOutcome = el('span');
+          meta.append(el('span', r.level + ' · ' + r.label + ' · '), view.taskOutcome);
+          item.append(button('Start task', 'copy', () => startTask(r.rule)), text, meta);
+          list.append(item);
+          view.task = item;
+        }
+        view.shown = '';
+        ruleViews.set(r.rule, view);
+      }
     }
   }
+
+  function showResults(results) {
+    if (ruleViews.size !== results.rules.length || !results.rules.every((r) => ruleViews.has(r.rule))) {
+      ruleViews.clear();
+      buildRules(results);
+    }
+    $('verdict').textContent = results.verdict.text.charAt(0).toUpperCase() + results.verdict.text.slice(1) + '.';
+    const c = results.counts;
+    $('tally').textContent = c.passed + ' passed · ' + c.failed + ' failed · ' + c.untested + ' untested'
+      + (c.cantTell ? ' · ' + c.cantTell + ' undecided' : '') + (c.inapplicable ? ' · ' + c.inapplicable + ' inapplicable' : '')
+      + ' · results since ' + new Date(results.since).toLocaleTimeString() + '.';
+    const filter = $('filter').value;
+    const visibleAreas = new Set();
+    for (const r of results.rules) {
+      const view = ruleViews.get(r.rule);
+      const shown = JSON.stringify([r.outcome, r.trials, r.failed, r.evidence]);
+      if (shown !== view.shown) {
+        view.shown = shown;
+        view.outcome.replaceChildren(el('span', OUTCOMES[r.outcome] || r.outcome, 'o-' + r.outcome));
+        view.trials.textContent = r.trials;
+        view.evidence.replaceChildren();
+        if (r.evidence) {
+          const ev = r.evidence;
+          const link = button('#' + ev.seq + ' ' + ev.method + ' ' + relative(ev.url) + (ev.status ? ' → ' + ev.status : ''),
+            'evidence', () => reveal(ev.seq));
+          view.evidence.append(link,
+            el('div', ev.term + ': expected ' + ev.expected + '; was ' + ev.actual, 'note'),
+            el('div', r.guidance));
+          if (r.failed > 1) {
+            view.evidence.append(el('div', r.failed + ' of ' + r.trials + ' trials failed.', 'note'));
+          }
+        }
+        if (view.taskOutcome) {
+          view.taskOutcome.replaceChildren(el('span', OUTCOMES[r.outcome] || r.outcome, 'o-' + r.outcome));
+        }
+      }
+      const visible = filter === 'all' || r.outcome === filter || (filter === 'failed' && r.outcome === 'cantTell');
+      view.row.hidden = !visible;
+      if (visible) {
+        visibleAreas.add(view.head);
+      }
+    }
+    for (const view of ruleViews.values()) {
+      view.head.hidden = !visibleAreas.has(view.head);
+    }
+  }
+
+  let latest = null;
+
+  $('filter').addEventListener('change', () => {
+    if (latest) {
+      showResults(latest);
+    }
+  });
 
   async function startTask(rule) {
     try {
       await call('POST', '/tasks/' + encodeURIComponent(rule));
-      status.textContent = 'Task started: do what it says with your client now.';
+      say('Task started: do what it says with your client now.');
     } catch (e) {
-      status.textContent = 'Could not start the task: ' + e.message;
+      say('Could not start the task: ' + e.message);
     }
   }
 
@@ -287,31 +454,74 @@
         log.prepend(tr);
       }
       last = body.last;
-      showResults(await call('GET', '/results'));
+      latest = await call('GET', '/results');
+      showResults(latest);
       $('counts').textContent = body.recorded + ' recorded'
         + (body.dropped ? ', the oldest ' + body.dropped + ' dropped' : '') + '.';
-      status.textContent = 'Session ' + api.split('/').pop() + ' is live.';
+      if (Date.now() - said > 8000) {
+        status.textContent = 'Session ' + api.split('/').pop() + ' is live.';
+      }
       timer = setTimeout(poll, body.exchanges.length === 200 ? 100 : 2000);
     } catch (e) {
       if (e.status === 404 || e.status === 401) {
-        status.textContent = 'This session has ended.';
+        say('This session has ended.');
         return;
       }
-      status.textContent = 'Lost touch with the service; retrying…';
+      say('Lost touch with the service; retrying…');
       timer = setTimeout(poll, 5000);
     }
   }
 
-  for (const button of document.querySelectorAll('button.copy')) {
-    button.addEventListener('click', async () => {
-      const source = $(button.dataset.copy);
+  async function exportResults(format) {
+    try {
+      const response = await fetch(api + '/results?format=' + format, {
+        headers: { Authorization: 'Bearer ' + key },
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const named = /filename="([^"]+)"/.exec(disposition);
+      const url = URL.createObjectURL(await response.blob());
+      const a = el('a');
+      a.href = url;
+      a.download = named ? named[1] : 'touchstone-results.' + format;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      say('Exported ' + a.download + '.');
+    } catch (e) {
+      say('Could not export: ' + e.message);
+    }
+  }
+
+  for (const b of document.querySelectorAll('button[data-export]')) {
+    b.addEventListener('click', () => exportResults(b.dataset.export));
+  }
+
+  // In-page links scroll without touching the address, whose fragment holds the session key.
+  for (const a of document.querySelectorAll('a[href^="#"]')) {
+    a.addEventListener('click', (event) => {
+      event.preventDefault();
+      const target = $(a.getAttribute('href').slice(1));
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+      }
+    });
+  }
+
+  for (const b of document.querySelectorAll('button.copy[data-copy]')) {
+    b.addEventListener('click', async () => {
+      const source = $(b.dataset.copy);
       const text = source.value !== undefined ? source.value : source.textContent;
       try {
         await navigator.clipboard.writeText(text);
-        button.textContent = 'Copied';
-        setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+        b.textContent = 'Copied';
+        setTimeout(() => { b.textContent = 'Copy'; }, 1500);
       } catch (e) {
-        status.textContent = 'Copy failed; select the text instead.';
+        say('Copy failed; select the text instead.');
       }
     });
   }
@@ -319,14 +529,16 @@
   $('reset').addEventListener('click', async () => {
     try {
       await call('POST', '/reset');
-      showResults(await call('GET', '/results'));
+      latest = await call('GET', '/results');
+      showResults(latest);
+      say('Results reset: the storage and the log stay.');
     } catch (e) {
-      status.textContent = 'Could not reset the results: ' + e.message;
+      say('Could not reset the results: ' + e.message);
     }
   });
 
   $('end').addEventListener('click', async () => {
-    if (!confirm('End this session? Its storage and log are deleted.')) {
+    if (!confirm('End this session? Its storage, log and results are deleted.')) {
       return;
     }
     try {
@@ -335,21 +547,23 @@
       // already gone
     }
     clearTimeout(timer);
-    $('connect').hidden = true;
-    status.textContent = 'This session has ended.';
+    for (const id of ['guide', 'connect', 'about', 'checklist', 'export', 'end-session']) {
+      $(id).hidden = true;
+    }
+    say('This session has ended.');
   });
 
   (async () => {
     if (!key) {
-      status.textContent = 'This page needs the session key in its address (…/page#key=…).';
+      say('This page needs the session key in its address (…/page#key=…).');
       return;
     }
     try {
       show(await call('GET', ''));
       poll();
     } catch (e) {
-      status.textContent = e.status === 401 ? 'The session key in this address is wrong.'
-        : e.status === 404 ? 'This session has ended.' : 'The service could not be reached.';
+      say(e.status === 401 ? 'The session key in this address is wrong.'
+        : e.status === 404 ? 'This session has ended.' : 'The service could not be reached.');
     }
   })();
 })();

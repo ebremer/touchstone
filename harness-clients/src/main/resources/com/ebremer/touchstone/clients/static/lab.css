@@ -89,7 +89,28 @@ td.built { background: var(--built); }
 .o-failed { color: var(--bad); font-weight: 600; }
 .o-cantTell { color: var(--warn); }
 .o-untested, .o-inapplicable { color: var(--muted); }
+.subtitle { font-weight: 400; color: var(--muted); }
+.box h2.in-box { margin-top: 0; }
+.steps li { margin: 0.35rem 0; }
+details.box > summary { cursor: pointer; font-weight: 600; }
+fieldset.areas { margin: 0.75rem 0 0; border: 1px solid var(--line); border-radius: 6px; padding: 0.5rem 0.75rem; }
+fieldset.areas legend { font-weight: 600; padding: 0 0.25rem; }
+.box label.check { display: block; font-weight: 400; margin-top: 0.25rem; }
+.box label.check input { width: auto; margin-right: 0.4rem; }
+.row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 1rem; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
+select { font: inherit; padding: 0.25rem; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }
+tr.area th { font-size: 0.95rem; color: var(--fg); background: var(--panel); }
+.refs { margin-top: 0.2rem; font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; }
+.refs .req { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+ul.tasks { list-style: none; padding: 0; margin: 0; }
+ul.tasks li.task { display: grid; grid-template-columns: max-content 1fr; gap: 0.1rem 0.75rem; padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line); }
+ul.tasks li.task > button { grid-row: span 2; align-self: start; }
+button.evidence { background: transparent; color: var(--accent); border: 0; padding: 0; text-align: left;
+  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; text-decoration: underline; }
 @media (max-width: 640px) {
   .facts { grid-template-columns: 1fr; }
   .facts dd { margin-bottom: 0.5rem; }
+  .row3 { grid-template-columns: 1fr; }
 }

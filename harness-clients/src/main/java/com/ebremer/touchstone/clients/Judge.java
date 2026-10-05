@@ -24,8 +24,8 @@ final class Judge {
     record Verdict(String rule, String outcome, String term) {
     }
 
-    /** The first failing trial of a rule. */
-    record Evidence(long seq, String method, String url, String term, String expected, String actual) {
+    /** The first failing trial of a rule, and the status the session answered it with (0 for none). */
+    record Evidence(long seq, String method, String url, int status, String term, String expected, String actual) {
     }
 
     /** Open triggers a rule keeps at most; the oldest go first. */
@@ -48,7 +48,7 @@ final class Judge {
     }
 
     private final ClientRules rules;
-    private final Set<String> outOfScope;
+    private Set<String> outOfScope;
     private List<State> states;
 
     /** @param outOfScope the areas the developer declared out of scope, whose rules are inapplicable */
@@ -56,6 +56,18 @@ final class Judge {
         this.rules = rules;
         this.outOfScope = Set.copyOf(outOfScope);
         reset();
+    }
+
+    /**
+     * Declares the areas out of scope from now on (CLIENT-TESTING.md section 3): their rules are
+     * inapplicable and judge nothing. An area brought back keeps the trials it had.
+     */
+    synchronized void outOfScope(Set<String> areas) {
+        this.outOfScope = Set.copyOf(areas);
+    }
+
+    synchronized Set<String> outOfScope() {
+        return outOfScope;
     }
 
     /** Starts every rule over: no trials, no evidence, no open triggers. */
@@ -109,7 +121,7 @@ final class Judge {
             } else {
                 s.failed++;
                 if (s.evidence == null) {
-                    s.evidence = new Evidence(x.seq(), x.method(), x.url(), f.term(), f.expected(), f.actual());
+                    s.evidence = new Evidence(x.seq(), x.method(), x.url(), x.status(), f.term(), f.expected(), f.actual());
                 }
                 out.add(new Verdict(s.rule.name(), "failed", f.term()));
             }
@@ -201,6 +213,8 @@ final class Judge {
             item.put("failed", s.failed);
             ArrayNode reqs = item.putArray("requirements");
             r.requirements().forEach(reqs::add);
+            ArrayNode source = item.putArray("source");
+            r.source().forEach(source::add);
             item.set("evidence", s.evidence == null ? null : JSON.valueToTree(s.evidence));
             if (r.task() != null) {
                 ObjectNode task = item.putObject("task");

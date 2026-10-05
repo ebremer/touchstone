@@ -45,8 +45,10 @@ import org.slf4j.LoggerFactory;
  * <p>Paths under the public base path:
  * <ul>
  *   <li>{@code /}: the start page; {@code /static/...}: its scripts and styles;</li>
- *   <li>{@code POST /sessions}: starts a session (section 4.4);</li>
- *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results}, {@code .../reset},
+ *   <li>{@code POST /sessions}: starts a session (section 4.4), with optional settings
+ *       (SessionSettings), which {@code PATCH /sessions/{sid}} changes later;</li>
+ *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results} (JSON, or the JSON, EARL
+ *       or JUnit XML export with {@code ?format=}), {@code .../reset},
  *       {@code .../tasks/{rule}}, {@code .../faults/{fault}}, {@code .../tokens/{name}},
  *       {@code .../credentials/{name}}, {@code .../clients}: the session API, which takes the session
  *       key as a Bearer token; {@code .../page}: the session page, which reads the key from its
@@ -74,7 +76,7 @@ public final class ClientLab implements AutoCloseable {
     private static final String AS = "authorizationServer";
     private static final String OP = "openidProvider";
     private static final String IDENTITY_HOST = "identityHost";
-    /** The largest body the session API reads, for a client registration. */
+    /** The largest body the session API reads: a client registration, or a session's settings. */
     private static final int MAX_API_BODY = 16 << 10;
     private static final String EXPOSED = "Location, Link, ETag, Allow, Accept-Patch, Accept-Query, Accept-Ranges,"
             + " Content-Location, Content-Range, Last-Modified, WWW-Authenticate, Vary, Retry-After";
@@ -461,6 +463,11 @@ public final class ClientLab implements AutoCloseable {
             String address = config.trustForwardedFor() && request.getHeaders().get("X-Forwarded-For") != null
                     ? request.getHeaders().get("X-Forwarded-For").split(",")[0].trim()
                     : Request.getRemoteAddr(request);
+            // The settings are checked before the session counts against the address's allowance.
+            SessionSettings settings = settings(request, response, callback);
+            if (settings == null) {
+                return;
+            }
             SessionManager.Created created;
             try {
                 created = sessions.create(address);
@@ -472,6 +479,7 @@ public final class ClientLab implements AutoCloseable {
                 return;
             }
             Session s = created.session();
+            settings.applyTo(s);
             s.deliverWith(d -> deliver(s, d));
             LOG.info("session {} started; {} live", s.id, sessions.size());
             ObjectNode body = describe(s);
@@ -506,6 +514,14 @@ public final class ClientLab implements AutoCloseable {
             if (parts.length == 1) {
                 switch (method) {
                     case "GET" -> json(response, callback, 200, describe(s));
+                    case "PATCH" -> {
+                        SessionSettings settings = settings(request, response, callback);
+                        if (settings != null) {
+                            settings.applyTo(s);
+                            LOG.info("session {}: settings changed", s.id);
+                            json(response, callback, 200, describe(s));
+                        }
+                    }
                     case "DELETE" -> {
                         sessions.end(s.id);
                         LOG.info("session {} ended by its owner; {} live", s.id, sessions.size());
@@ -513,8 +529,8 @@ public final class ClientLab implements AutoCloseable {
                         callback.succeeded();
                     }
                     default -> {
-                        response.getHeaders().put(HttpHeader.ALLOW, "GET, DELETE");
-                        error(response, callback, 405, "method_not_allowed", "GET or DELETE");
+                        response.getHeaders().put(HttpHeader.ALLOW, "GET, PATCH, DELETE");
+                        error(response, callback, 405, "method_not_allowed", "GET, PATCH or DELETE");
                     }
                 }
                 return;
@@ -532,14 +548,11 @@ public final class ClientLab implements AutoCloseable {
                 return;
             }
             if (parts.length == 2 && parts[1].equals("results") && method.equals("GET")) {
-                ObjectNode body = s.judge.results();
-                body.put("session", s.id);
-                body.put("recorded", s.recorder.recorded());
-                json(response, callback, 200, body);
+                results(s, request, response, callback);
                 return;
             }
             if (parts.length == 2 && parts[1].equals("reset") && method.equals("POST")) {
-                s.judge.reset();
+                s.resetResults(sessions.now());
                 LOG.info("session {}: results reset", s.id);
                 response.setStatus(204);
                 callback.succeeded();
@@ -611,11 +624,8 @@ public final class ClientLab implements AutoCloseable {
          * already registered gets the new redirect URIs.
          */
         private void register(Session s, Request request, Response response, Callback callback) throws IOException {
-            byte[] raw;
-            try (InputStream in = Content.Source.asInputStream(request)) {
-                raw = in.readNBytes(MAX_API_BODY + 1);
-            }
-            if (raw.length > MAX_API_BODY) {
+            byte[] raw = apiBody(request);
+            if (raw == null) {
                 error(response, callback, 413, "too_large", "a registration is at most " + MAX_API_BODY + " bytes");
                 return;
             }
@@ -650,6 +660,48 @@ public final class ClientLab implements AutoCloseable {
             ArrayNode list = body.putArray("redirect_uris");
             client.redirectUris().forEach(list::add);
             json(response, callback, 201, body);
+        }
+
+        /**
+         * The settings a request's body gives (SessionSettings), none for an empty body; null when
+         * the body is refused, the refusal already sent.
+         */
+        private SessionSettings settings(Request request, Response response, Callback callback) throws IOException {
+            byte[] raw = apiBody(request);
+            if (raw == null) {
+                error(response, callback, 413, "too_large", "settings are at most " + MAX_API_BODY + " bytes");
+                return null;
+            }
+            try {
+                return SessionSettings.parse(JSON.readTree(raw));
+            } catch (IllegalArgumentException e) {
+                error(response, callback, 400, "invalid_settings", e.getMessage());
+            } catch (IOException e) {
+                error(response, callback, 400, "invalid_settings", "the body is not JSON");
+            }
+            return null;
+        }
+
+        /**
+         * The session's results (CLIENT-TESTING.md section 3.6): JSON, or with {@code ?format=} the
+         * JSON, EARL (Turtle) or JUnit XML export, named for saving.
+         */
+        private void results(Session s, Request request, Response response, Callback callback) throws IOException {
+            String format = param(request, "format");
+            ObjectNode body = SessionReports.results(s, sessions.now());
+            String file = "touchstone-client-session-" + s.id;
+            switch (format == null ? "" : format) {
+                case "" -> json(response, callback, 200, body);
+                case "json" -> {
+                    response.getHeaders().put(HttpHeader.CONTENT_DISPOSITION, "attachment; filename=\"" + file + ".json\"");
+                    json(response, callback, 200, body);
+                }
+                case "earl" -> text(response, callback, "text/turtle; charset=utf-8", file + "-earl.ttl",
+                        SessionReports.earl(s, body));
+                case "junit" -> text(response, callback, "application/xml; charset=utf-8", file + "-junit.xml",
+                        SessionReports.junit(s, body));
+                default -> error(response, callback, 400, "invalid_format", "format is json, earl or junit");
+            }
         }
 
         private ArrayNode clients(Session s) {
@@ -689,6 +741,13 @@ public final class ClientLab implements AutoCloseable {
                 id.put("role", name.equals("alice") ? "owns the storage" : "has no access until alice grants it");
             }
             body.put("client", s.clientId);
+            body.set("clientUnderTest", SessionReports.clientUnderTest(s.clientUnderTest));
+            ArrayNode areas = body.putArray("areas");
+            s.areas().forEach(areas::add);
+            ObjectNode exports = body.putObject("exports");
+            for (String format : List.of("json", "earl", "junit")) {
+                exports.put(format, config.publicBase() + "/sessions/" + s.id + "/results?format=" + format);
+            }
             body.put("created", s.created.toString());
             body.put("expires", sessions.expiry(s).toString());
             ObjectNode traps = body.putObject("traps");
@@ -717,19 +776,28 @@ public final class ClientLab implements AutoCloseable {
         }
 
         private long longParam(Request request, String name, long fallback) {
+            String value = param(request, name);
+            if (value != null) {
+                try {
+                    return Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    return fallback;
+                }
+            }
+            return fallback;
+        }
+
+        /** The first value of query parameter {@code name}, as it is (the API's values need no decoding), or null. */
+        private String param(Request request, String name) {
             String query = request.getHttpURI().getQuery();
             if (query != null) {
                 for (String p : query.split("&")) {
                     if (p.startsWith(name + "=")) {
-                        try {
-                            return Long.parseLong(p.substring(name.length() + 1));
-                        } catch (NumberFormatException e) {
-                            return fallback;
-                        }
+                        return p.substring(name.length() + 1);
                     }
                 }
             }
-            return fallback;
+            return null;
         }
 
         // ---- pages ----
@@ -1044,6 +1112,24 @@ public final class ClientLab implements AutoCloseable {
         response.getHeaders().put(HttpHeader.CACHE_CONTROL, "no-store");
         response.getHeaders().put("X-Content-Type-Options", "nosniff");
         response.write(true, ByteBuffer.wrap(JSON.writeValueAsBytes(body)), callback);
+    }
+
+    /** A text export, named {@code file} for saving. */
+    private static void text(Response response, Callback callback, String type, String file, String body) {
+        response.setStatus(200);
+        response.getHeaders().put(HttpHeader.CONTENT_TYPE, type);
+        response.getHeaders().put(HttpHeader.CONTENT_DISPOSITION, "attachment; filename=\"" + file + "\"");
+        response.getHeaders().put(HttpHeader.CACHE_CONTROL, "no-store");
+        response.getHeaders().put("X-Content-Type-Options", "nosniff");
+        response.write(true, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)), callback);
+    }
+
+    /** The request's body, or null when it is larger than a session API request may be. */
+    private static byte[] apiBody(Request request) throws IOException {
+        try (InputStream in = Content.Source.asInputStream(request)) {
+            byte[] raw = in.readNBytes(MAX_API_BODY + 1);
+            return raw.length > MAX_API_BODY ? null : raw;
+        }
     }
 
     private static void error(Response response, Callback callback, int status, String error, String message)

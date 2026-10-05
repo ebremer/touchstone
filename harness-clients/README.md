@@ -4,9 +4,11 @@ The service that tests LWS clients ([CLIENT-TESTING.md](../CLIENT-TESTING.md)). 
 developer starts a session, points their client at the session's storage, and watches every
 request it sends on the session's page. Every request is judged against the client rules,
 `definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
-Phases C1 to C5 are built: sessions, the traffic log, the rules, the tasks and faults that let a
-developer try every rule on purpose, three ways for a client to authenticate, and signed
-notifications to the client's inbox.
+Phases C1 to C6 are built: sessions, the traffic log, the rules, the tasks and faults that let a
+developer try every rule on purpose, three ways for a client to authenticate, signed
+notifications to the client's inbox, and the guided page and the EARL, JUnit XML and JSON
+exports. The guide for client developers is the docs site's
+[Testing a client](../docs/testing-a-client.md).
 
 ## Running it
 
@@ -41,7 +43,17 @@ on these paths.
 
 ## A session
 
-`POST <base>/sessions` starts one. The answer, `201`, holds:
+`POST <base>/sessions` starts one. Its body may name the client under test, which becomes the
+subject of the EARL report, and the areas in scope; both are optional, and an empty body will do:
+
+```json
+{"clientUnderTest": {"name": "My LWS client", "version": "0.3.1", "homepage": "https://example.org/my-client"},
+ "areas": ["core", "authentication", "notifications", "index"]}
+```
+
+The name is at most 100 characters, the version 50, and the homepage an absolute http or https
+URL. A rule whose area is left out is *inapplicable*. Settings that do not check out are refused
+with `400` before the session counts against the address's limit. The answer, `201`, holds:
 
 - `storage`: the storage URL, the one URL a client needs;
 - `tokens`: access tokens for alice, who owns the storage, and bob, who has no access until
@@ -53,10 +65,14 @@ The session API takes the key as a Bearer token:
 
 | Request | Answer |
 |---|---|
-| `GET <base>/sessions/{id}` | the session: URLs, identities, traps, limits, expiry |
+| `GET <base>/sessions/{id}` | the session: URLs, identities, the client under test, the areas in scope, the export URLs, traps, limits, expiry |
+| `PATCH <base>/sessions/{id}` | changes the settings, with a body like the one that starts a session; `clientUnderTest: null` forgets the name. Returns the session |
 | `GET <base>/sessions/{id}/exchanges?after=N&limit=M` | the traffic log after exchange `N`, at most `M` (≤ 500) |
-| `GET <base>/sessions/{id}/results` | each rule's outcome, trials and first failure with how to fix it, and the verdict |
-| `POST <base>/sessions/{id}/reset` | starts the results over; the storage and the log stay |
+| `GET <base>/sessions/{id}/results` | each rule's outcome, trials, specification links and first failure with how to fix it, and the verdict |
+| `GET <base>/sessions/{id}/results?format=earl` | the results as EARL, in Turtle: one `earl:Assertion` per rule, in `earl:semiAuto` mode, about the client as named, by its homepage when it has one |
+| `GET <base>/sessions/{id}/results?format=junit` | the results as JUnit XML, one test case per rule, for CI |
+| `GET <base>/sessions/{id}/results?format=json` | the JSON results, named for saving |
+| `POST <base>/sessions/{id}/reset` | starts the results over, and their date; the storage and the log stay |
 | `POST <base>/sessions/{id}/tasks/{rule}` | starts a rule's task, arming its fault if it has one; `204`, or `404` for a rule without a task |
 | `POST <base>/sessions/{id}/faults/{fault}` | arms a fault alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone`, `tokenExpired`, or a forgery: `forgedUnpublishedKey`, `forgedAlteredBody`, `forgedKeyidWithoutFragment`, `forgedForeignKeyDocument` |
 | `POST <base>/sessions/{id}/tokens/{alice\|bob}` | a fresh access token |
@@ -86,6 +102,28 @@ answer, refuse an expired page of search results, or refuse an access token as e
 more make it forge its next notification, which the client's inbox must refuse. A developer starts a task on the session
 page, or a CI job through the API, then has the client do what the task says. Only MUST rules decide the verdict,
 which reads, for example, "no MUST failure in 12 MUST rules exercised, of 18 that apply".
+
+## Exports
+
+The three exports come from one results document, so they agree. In each, a rule is one test:
+
+- **JSON** is the results as the API gives them, with the client under test, the areas in scope,
+  when the results began (the session's start or the latest reset), and the harness's version.
+- **EARL** is the format of W3C implementation reports. The subject is the client under test,
+  a `doap:Project` with its name, release and homepage, or the session when it has no name. A
+  rule's test case carries `touchstone:verifies` for each requirement it cites, and a result that
+  did not pass says why in `earl:info`.
+- **JUnit XML** has one test case per rule, classed by its manifest (`clients/core`). A failure
+  of any level is a JUnit failure, so CI shows it; *untested* and *inapplicable* rules are
+  skipped. Gate a build on the MUST failures: their message starts with `MUST`.
+
+```bash
+curl -s -X POST "$BASE/sessions" -H 'Content-Type: application/json' \
+     -d '{"clientUnderTest": {"name": "My LWS client", "version": "'"$VERSION"'"}}' > session.json
+# ... run the client's own tests against $(jq -r .storage session.json) ...
+curl -s -H "Authorization: Bearer $(jq -r .key session.json)" \
+     "$(jq -r .exports.junit session.json)" > touchstone-junit.xml
+```
 
 ## Authentication
 
@@ -156,7 +194,8 @@ the self-test leaves it off, because one server test needs a linkset that refuse
 | request body | 1 MiB (`413`) |
 | resources / bytes per storage | 500 / 16 MiB (`507`) |
 | requests | a burst of 200, then 20 a second (`429`) |
-| exchanges kept | 5,000; older ones are dropped and counted |
+| exchanges kept | 5,000, and 8 KiB of body text each on average, about 40 million characters; older ones are dropped and counted |
+| URLs the ledger remembers | 10,000 in each of its maps; a URL first seen beyond that is not remembered |
 | access token lifetime | 1 hour |
 
 Everything is in memory; an ended session leaves nothing. The OpenID Provider holds at most 10

@@ -3086,3 +3086,137 @@ private address refused at connect time, a redirect not followed, and a 401 kept
 records a refused http inbox and a loopback name, each with status 0 and the reason.
 
 Drafted by an agent; waits on branch `clients/c5-notifications`.
+
+### D-0084 — the page and reports for client sessions (phase C6), and where the service runs
+
+**2026-10-05.** Phase C6 of CLIENT-TESTING.md: the session page with guidance, the EARL, JUnit
+XML and JSON exports, the docs-site page "Testing a client", and deployment. Erich settled
+section 12's two open questions:
+- **Hosting (§12.1): vulcan.** The service runs there as its own process and system user,
+  `touchstone`, behind the nginx in front of Halcyon, at `/touchstone/clients/`. It never talks
+  to Halcyon, so section 8.6's separation holds. ebremer.com has 3 GB for everything and shares
+  Apache with regalbait.
+- **Session creation (§12.2): open and rate-limited**, as phase C1 built it. A sign-in can come
+  later if the service is abused.
+
+The pilot with real clients waits for Erich to choose them.
+
+**The developer names the client.** `POST /sessions` takes an optional body, which
+`PATCH /sessions/{sid}` can change later:
+- `clientUnderTest`: a name, version and homepage, the subject of the EARL report;
+- `areas`: the areas in scope. A rule of an area left out is *inapplicable*, and judges nothing
+  while it is out.
+
+The body is untrusted input, checked whole before anything applies. The name is at most 100
+characters and the version 50, neither with a control character. The homepage is an absolute
+http or https URL without user information or characters a Turtle IRI cannot hold. An unknown
+member is refused. The settings are checked before the session counts against the address's
+limit, so a typo does not cost one of its ten sessions.
+
+**The exports** come from one results document, so they cannot disagree.
+`results?format=json|earl|junit` names each for saving. EARL and JUnit XML reuse harness-core's
+writers, which server runs use, so a client report has the shape of a server report. Each rule
+becomes a `TestResult`:
+- its id is the rule's (`clients/core#…`), so the EARL test is the rule's IRI;
+- its first failing trial is the step that failed, with the term, the expected value, the
+  actual one, and the exchange's number, method, URL and status;
+- an *untested* rule's reason names its task, if it has one.
+
+`EarlReport` gained a subject and a mode. A server run still asserts about the target's storage
+in `earl:automatic`. A client session asserts about the client in `earl:semiAuto`, as
+OBSERVATION.md section 8 says. The subject is a `doap:Project` with `doap:name`, a `doap:release`
+with its `doap:revision`, and `doap:homepage`. Its IRI is the homepage when there is one, else a
+blank node. A session with no name has its own URL as the subject.
+
+Two changes reach server reports too:
+- **`earl:info`.** A result that did not pass says why. It is the failure's description, the
+  same text as the JUnit failure message, or the reason a test was inapplicable or untested. The
+  WG's implementation reports can show it.
+- **No "(0 ms)".** `Results.describe` leaves out a duration of 0, since a rule's result gathers
+  trials over a session and has none.
+
+**The results say more:**
+- each rule's `source`, the specification links its definition cites, so a failure links to its
+  clause;
+- the evidence's `status`;
+- `clientUnderTest`, `areas`, `since` (the session's start or its latest reset) and the
+  harness's name and version.
+
+A reset now also restarts `since`, the date of the EARL results and the JUnit timestamp.
+
+**The page.**
+- The start page takes the client's name, version, homepage and areas, explains the five steps
+  from starting a session to exporting, and shows the CI call.
+- The session page opens with the same steps as a getting-started guide, its in-page links
+  scrolling without touching the address, whose fragment holds the key. Then come:
+  - *Your client*, to change the settings;
+  - a **checklist**: the ten rules with tasks, grouped by area, each with its fault named and its
+    outcome;
+  - **the rules, grouped by area** and filtered by outcome, each with its requirements and
+    specification links. A failure's exchange is a button that opens it in the traffic log;
+  - *Export*, three buttons and the curl calls;
+  - the traffic log, and *End the session*.
+- The rule rows are built once and updated in place, so the 2-second poll no longer rebuilds the
+  table under the developer's cursor, and status messages stay up for eight seconds before the
+  poll's "live" replaces them.
+- A read-only share link (section 3, item 6) was left out: an export does that job for now.
+
+**Bounds for a public service** (section 8.2):
+- **The log is bounded by size, not only count.** It keeps 5,000 exchanges, and 8 KiB of body text
+  each on average, about 40 million characters; the oldest go first, but never the latest. A
+  session's worst case was 5,000 exchanges of 128 KiB of text each.
+- **The URL ledger is bounded.** It remembers at most 10,000 URLs in each of its maps. A client
+  requesting made-up URLs at the rate limit for a day could otherwise grow them by millions. A
+  real session's storage hands out far fewer.
+
+**The docs.** `docs/testing-a-client.md` walks a client developer through a session, the three
+ways to authenticate, the traps, the checklist and faults, the results, notifications, the
+exports, CI and running the service. The docs home links it, and the harness-clients README
+documents the settings, `PATCH` and the exports.
+
+**The proof.** `ClientLabTest` adds a test of the settings and exports:
+- seven bad settings, each refused with `400`;
+- settings that apply, and areas that make rules inapplicable;
+- a failure with its status and specification link;
+- the JSON export's file name;
+- EARL that Jena parses back: one assertion per rule, all `earl:semiAuto`, the client by its
+  homepage with its `doap:name`, and the failure's outcome and `earl:info`;
+- JUnit XML with one case per rule and the failure under `clients/core`;
+- `PATCH`, a refused `PATCH`, and a reset that moves `since`.
+
+None of the exports holds the token. `RecorderTest` covers both new bounds, and `EarlReportTest`
+the subject, the mode and `earl:info`.
+
+**"Done when" was walked in a browser.** The unit tests run no JavaScript, which is how phase
+C4's page shipped stuck on "Loading…". A puppeteer script drove Firefox through what a newcomer
+does:
+- names a client and leaves notifications out on the start page;
+- takes alice's token from the session page;
+- sends three requests, one with the token in the query string;
+- filters the rules to failures, opens a failure's exchange, starts a task;
+- downloads EARL, JUnit XML and JSON.
+
+There was no script error, and the address kept its key throughout. The walk found the status
+line's messages overwritten by the poll within two seconds, which is fixed.
+
+**Deployed on vulcan, 2026-10-05**, from this branch, at
+`https://vulcan.bmi.stonybrook.edu/touchstone/clients/`. Our deploy repository records the
+details; outside it, these points matter:
+- the service runs as its own system user under systemd, sandboxed, with an 8 GB heap. 100
+  sessions at their bounds need about 6 GB;
+- nginx forwards the base path and `/.well-known/lws-configuration/touchstone/clients/`, each
+  with `^~` ahead of Halcyon's `/`;
+- nginx *replaces* `X-Forwarded-For` with the connection's address. The service takes the
+  header's first entry as the client's address, so an appended header would let anyone dodge
+  the per-address limit;
+- Halcyon answered byte for byte as before the change.
+
+Against the public service:
+- `RefLwsClient`, authenticating all three ways through the proxy, gets "no MUST failure in 34
+  MUST rules exercised, of 38 that apply". The other four MUST rules, and the inbox SHOULD, judge
+  the inbox, and stay untested: its inbox is on `http://127.0.0.1`, which the guard refuses. The
+  log holds 21 deliveries with status 0 and "an inbox URL must use https";
+- the Firefox walk passes as it did locally;
+- a browser preflight gets the session's own CORS answer.
+
+Drafted by an agent; waits on branch `clients/c6-reports`.

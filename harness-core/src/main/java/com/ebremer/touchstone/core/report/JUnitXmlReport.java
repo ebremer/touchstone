@@ -29,7 +29,8 @@ public final class JUnitXmlReport {
         }
     }
 
-    static String render(RunResult run) {
+    /** The report as text, which a service can send without writing a file. */
+    public static String render(RunResult run) {
         long failures = run.count(Outcome.FAILED);
         long errors = run.count(Outcome.CANT_TELL);
         long skipped = run.count(Outcome.INAPPLICABLE) + run.count(Outcome.UNTESTED);
