@@ -31,7 +31,8 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * What the server knows about the exchange: the annotations of OBSERVATION.md section 4, and
      * a few more for the traffic log.
      *
-     * @param server storage or authorizationServer, or null for another URL of the session
+     * @param server storage, authorizationServer, openidProvider or identityHost, or null for
+     *     another URL of the session
      * @param role what the request addressed (OBSERVATION.md section 4.2), or preflight, or
      *     limited (refused by a bound)
      * @param identity alice or bob, the subject IRI of another valid token, or null when no valid
@@ -54,13 +55,22 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * @param repeat whether the request has the method, Content-Type and body of the previous
      *     request to the same URL
      * @param containerEmpty whether the request addressed a container with no members
+     * @param credentialSource for a token request, where its subject token came from:
+     *     selfIssued, openidProvider, authorizationServer or other; null when it presents none
+     * @param credential the subject token's JWT header and claims, or null
+     * @param audienceIncludesAs whether the credential's aud names the session's authorization
+     *     server, or null
+     * @param identifiersAgree whether the credential's sub, iss and client_id agree, or null
+     * @param realmContainsRequest whether a token request's resource is a realm the session
+     *     presented for a URL it contains, or null
      * @param fault the fault that fired on this exchange, or null
      * @param limit the bound that refused the request (rate, body, storage), or null
      */
     record Annotations(String server, String role, String identity, String token, List<String> presentation,
                        boolean issued, String issuedVia, String builtBy, String builtFrom, String builtFromRole,
                        Map<String, String> advertised, boolean methodAdvertised, boolean patchFormatAdvertised,
-                       boolean queryFormatAdvertised, boolean repeat, boolean containerEmpty, String fault,
-                       String limit) {
+                       boolean queryFormatAdvertised, boolean repeat, boolean containerEmpty, String credentialSource,
+                       com.fasterxml.jackson.databind.JsonNode credential, Boolean audienceIncludesAs,
+                       Boolean identifiersAgree, Boolean realmContainsRequest, String fault, String limit) {
     }
 }

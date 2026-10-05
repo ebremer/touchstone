@@ -134,7 +134,13 @@ public final class RefLwsServer implements AutoCloseable {
          */
         LOST_CREATE_RESPONSE("lostCreateResponse"),
         /** The next request for a page of search results is answered 410, as for an expired page. */
-        PAGE_GONE("pageGone");
+        PAGE_GONE("pageGone"),
+        /**
+         * The next request with a valid access token, to anything but the decoy, is answered 401
+         * with {@code error="invalid_token"}, and the token is refused from then on, as an expired
+         * or revoked one would be.
+         */
+        TOKEN_EXPIRED("tokenExpired");
 
         private final String term;
 
@@ -197,6 +203,8 @@ public final class RefLwsServer implements AutoCloseable {
     private volatile boolean linksetPut;
     /** The faults armed and not yet fired. */
     private final Set<Fault> armed = ConcurrentHashMap.newKeySet();
+    /** Access tokens refused from now on, though otherwise valid: those the tokenExpired fault fired on. */
+    private final Set<String> revoked = ConcurrentHashMap.newKeySet();
     /** Opaque page URLs: token to page, and container path and page number to token. */
     private final ConcurrentMap<String, PageRef> pageRefs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> pageTokens = new ConcurrentHashMap<>();
@@ -586,10 +594,14 @@ public final class RefLwsServer implements AutoCloseable {
             String subject = null;
             String client = null;
             boolean invalidToken = false;
+            String bearer = null;
             if (authMode == AuthMode.SECURED) {
-                String bearer = bearerToken(request);
+                bearer = bearerToken(request);
                 if (bearer != null) {
                     try {
+                        if (revoked.contains(bearer)) {
+                            throw new TokenValidator.InvalidTokenException("the token has expired");
+                        }
                         com.nimbusds.jwt.JWTClaimsSet claims = validator.claims(bearer);
                         subject = claims.getSubject();
                         Object c = claims.getClaim("client_id");
@@ -608,9 +620,14 @@ public final class RefLwsServer implements AutoCloseable {
                 decoy(request, response, callback);
                 return true;
             }
-            if (invalidToken) {
-                challenge(request, response, callback, "invalid_token");
-                return true;
+            // A refused token is answered as soon as the target's role is known, so that a recorded
+            // exchange says what was addressed. Nothing before that answers differently.
+            boolean refuse = invalidToken;
+            if (subject != null && fire(request, Fault.TOKEN_EXPIRED)) {
+                revoked.add(bearer);
+                request.removeAttribute(SUBJECT_ATTRIBUTE);
+                request.removeAttribute(CLIENT_ATTRIBUTE);
+                refuse = true;
             }
             // An opaque page URL stands for a container and a page of it; anything else under
             // the page prefix is unknown, and a page is only read.
@@ -619,10 +636,18 @@ public final class RefLwsServer implements AutoCloseable {
                 PageRef ref = pageRefs.get(path.substring(PAGE_PREFIX.length()));
                 if (ref == null || !store.containsKey(ref.path())) {
                     role(request, "unknown");
-                    status(request, response, callback, 404);
+                    if (refuse) {
+                        challenge(request, response, callback, "invalid_token");
+                    } else {
+                        status(request, response, callback, 404);
+                    }
                     return true;
                 }
                 role(request, "page");
+                if (refuse) {
+                    challenge(request, response, callback, "invalid_token");
+                    return true;
+                }
                 if (!method.equals("GET") && !method.equals("HEAD")) {
                     methodNotAllowed(response, callback, "GET, HEAD");
                     return true;
@@ -633,12 +658,20 @@ public final class RefLwsServer implements AutoCloseable {
 
             if (path.startsWith(SUBSCRIPTIONS)) {
                 role(request, path.equals(SUBSCRIPTIONS) ? "subscriptions" : "subscription");
+                if (refuse) {
+                    challenge(request, response, callback, "invalid_token");
+                    return true;
+                }
                 subscriptions(request, response, callback, path, method, subject, client);
                 return true;
             }
             if (path.equals(TYPE_INDEX) || path.equals(TYPE_SEARCH)) {
                 role(request, path.equals(TYPE_INDEX) ? "typeIndex"
                         : request.getHttpURI().getQuery() != null ? "searchPage" : "typeSearch");
+                if (refuse) {
+                    challenge(request, response, callback, "invalid_token");
+                    return true;
+                }
                 if (authMode == AuthMode.SECURED && subject == null) {
                     challenge(request, response, callback, null);
                 } else {
@@ -649,6 +682,10 @@ public final class RefLwsServer implements AutoCloseable {
             if (path.startsWith(GRANTS) || path.startsWith(REQUESTS)) {
                 boolean service = path.equals(GRANTS) || path.equals(REQUESTS);
                 role(request, (path.startsWith(GRANTS) ? "accessGrant" : "accessRequest") + (service ? "s" : ""));
+                if (refuse) {
+                    challenge(request, response, callback, "invalid_token");
+                    return true;
+                }
                 new Registry(path.startsWith(GRANTS)).handle(request, response, callback, path, method, subject);
                 return true;
             }
@@ -675,6 +712,10 @@ public final class RefLwsServer implements AutoCloseable {
                 if (addressed != null && addressed.container && !linkset && !description) {
                     request.setAttribute(MEMBERS_ATTRIBUTE, addressed.children.size());
                 }
+            }
+            if (refuse) {
+                challenge(request, response, callback, "invalid_token");
+                return true;
             }
             if (authMode == AuthMode.SECURED && !description) {
                 String action = switch (method) {

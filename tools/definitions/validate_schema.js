@@ -58,6 +58,7 @@ const chal = t => short(t) && 'authenticationChallenge' in t.response;
 const rule = t => t.type === 'ObservationTest';
 const ruleAnyOf = t => rule(t) && 'anyOf' in t.expect;
 const ruleTask = t => rule(t) && 'task' in t;
+const ruleCredential = t => rule(t) && 'credential' in t.expect;
 const controls = {
   'typo key statusCod': [flow, t => { t.steps[0].response.statusCod = 200; }],
   'malformed template ${test.container': [flow, t => { t.steps[0].request.url = '${test.container'; }],
@@ -93,8 +94,13 @@ const controls = {
   'client rule with anyOf of one': [ruleAnyOf, t => { t.expect.anyOf = t.expect.anyOf.slice(0, 1); }],
   'server test with observe': [rule, t => { t.type = 'ValidationTest'; }],
   'task without a prompt': [ruleTask, t => { delete t.task.prompt; }],
-  'task arming an unknown fault': [ruleTask, t => { t.task.arm = 'tokenExpired'; }],
+  'task arming an unknown fault': [ruleTask, t => { t.task.arm = 'preconditionFailed'; }],
   'task with an unknown key': [ruleTask, t => { t.task.repeat = true; }],
+  'client rule with an unknown credential source': [ruleCredential, t => { t.observe.credentialSource = 'selfSigned'; }],
+  'credential with a part other than header and claims': [ruleCredential, t => { t.expect.credential.payload = t.expect.credential.claims || t.expect.credential.header; }],
+  'empty credential': [ruleCredential, t => { t.expect.credential = {}; }],
+  'form that is not a list': [ruleCredential, t => { t.expect.form = { pointer: '/resource', jsonType: 'string' }; }],
+  'realmContainsRequest that is not a boolean': [ruleCredential, t => { t.expect.realmContainsRequest = 'yes'; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

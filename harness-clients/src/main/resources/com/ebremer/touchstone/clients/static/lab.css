@@ -61,6 +61,10 @@ button:focus-visible, tr.exchange:focus-visible { outline: 2px solid var(--accen
 .facts dd { margin: 0; }
 textarea { width: 100%; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 0.5rem; }
 #token-box { margin: 0.75rem 0; }
+.box { margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.box label { display: block; margin-top: 0.5rem; font-weight: 600; }
+.box input { width: 100%; font: inherit; padding: 0.35rem; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }
+a { color: var(--accent); }
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 thead th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }

@@ -14,17 +14,35 @@ import com.ebremer.touchstone.core.definitions.ClientRules;
 import com.ebremer.touchstone.fixtures.as.RefAuthorizationServer;
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.ebremer.touchstone.fixtures.lws.Traps;
+import com.ebremer.touchstone.fixtures.op.RefOpenIdProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 
 /**
- * One client developer's session (CLIENT-TESTING.md section 4.2): a storage and its
- * authorization server of their own, two identities, the log of everything their client sent, and
- * the judge of the client rules.
+ * One client developer's session (CLIENT-TESTING.md section 4.2): a storage, its authorization
+ * server and an OpenID Provider of their own, two identities with their identity documents, the
+ * log of everything their client sent, and the judge of the client rules.
  * Its id is public and appears in every URL it serves; its key is secret, unlocks the session's
  * page and API, and is kept only as a hash.
  */
 final class Session {
 
     static final List<String> IDENTITIES = List.of("alice", "bob");
+    /** The service type naming an agent's OpenID Provider in its identity document (lws10-authn-openid section 5). */
+    static final String OPENID_PROVIDER = "https://www.w3.org/ns/lws#OpenIdProvider";
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    /**
+     * An identity's secrets, which the session API hands to the key holder: the password it signs
+     * in to the session's OpenID Provider with, and the private key of the verification method its
+     * identity document lists, for self-issued credentials (the CID suite).
+     */
+    record Identity(String name, String webid, String password, ECKey key, String document) {
+    }
 
     final String id;
     /** The session's URLs start with this: the service's public base, then /s/ and the id. */
@@ -32,7 +50,9 @@ final class Session {
     final Instant created;
     final Traps traps;
     final RefAuthorizationServer as;
+    final RefOpenIdProvider op;
     final RefLwsServer storage;
+    final java.util.Map<String, Identity> identities = new java.util.LinkedHashMap<>();
     final Recorder recorder;
     final TokenBucket bucket;
     final Judge judge;
@@ -55,6 +75,16 @@ final class Session {
         this.keyHash = sha256(key);
         this.traps = Traps.all(config.indexLag());
         this.as = RefAuthorizationServer.mounted(URI.create(base + "/as"));
+        this.op = RefOpenIdProvider.mounted(URI.create(base + "/op"));
+        op.alsoAudience(as.issuer());
+        for (String name : IDENTITIES) {
+            Identity identity = identity(name);
+            identities.put(name, identity);
+            op.addUser(name, identity.webid(), identity.password());
+        }
+        // The session's authorization server trusts the session's identities and provider only, so
+        // that no subject token can make the service fetch a URL of a client's choosing (section 8.3).
+        as.dereferenceOnly(this::document);
         this.storage = RefLwsServer.mounted(URI.create(storageUrl()), as, webid("alice"), traps);
         // Notifications go nowhere until the outbound guard of section 8.3 exists (phase C5).
         this.storage.deliverOnlyTo(uri -> false);
@@ -75,6 +105,57 @@ final class Session {
 
     String webid(String name) {
         return base + "/id/" + name;
+    }
+
+    /** The verification method of {@code name}'s key: the identity document's URL and a fragment. */
+    String keyId(String name) {
+        return webid(name) + "#key-1";
+    }
+
+    /**
+     * A new identity: a password, a P-256 key, and its controlled identifier document, which names
+     * the key for authentication (lws10-authn-ssi-cid section 5) and the session's OpenID Provider
+     * as its issuer of ID Tokens (lws10-authn-openid section 5).
+     */
+    private Identity identity(String name) {
+        ECKey key;
+        try {
+            key = new ECKeyGenerator(Curve.P_256).keyID(keyId(name)).algorithm(com.nimbusds.jose.JWSAlgorithm.ES256)
+                    .generate();
+        } catch (Exception e) {
+            throw new IllegalStateException("cannot generate a key for " + name, e);
+        }
+        ObjectNode doc = JSON.createObjectNode();
+        doc.putArray("@context").add("https://www.w3.org/ns/cid/v1");
+        doc.put("id", webid(name));
+        ObjectNode method = doc.putArray("authentication").addObject();
+        method.put("id", keyId(name));
+        method.put("type", "JsonWebKey");
+        method.put("controller", webid(name));
+        method.set("publicKeyJwk", JSON.valueToTree(key.toPublicJWK().toJSONObject()));
+        ObjectNode service = doc.putArray("service").addObject();
+        service.put("type", OPENID_PROVIDER);
+        service.put("serviceEndpoint", op.issuer());
+        byte[] password = new byte[12];
+        RANDOM.nextBytes(password);
+        return new Identity(name, webid(name), java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(password),
+                key, doc.toString());
+    }
+
+    /**
+     * The document at {@code url} that the session's authorization server may dereference: an
+     * identity document, or the OpenID Provider's discovery document or JWKS. Null for any other.
+     */
+    String document(String url) {
+        for (Identity identity : identities.values()) {
+            if (identity.webid().equals(url)) {
+                return identity.document();
+            }
+        }
+        if (url.equals(op.discoveryUri())) {
+            return op.discovery();
+        }
+        return url.equals(op.jwksUri()) ? op.jwks() : null;
     }
 
     /** alice or bob for the session's identities; any other subject as it is. */

@@ -22,10 +22,10 @@ class ClientRulesLoaderTest {
     @Test
     void loadsEveryClientRuleInTraversalOrder() {
         ClientRules rules = DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG);
-        assertThat(rules.rules()).hasSize(30);
+        assertThat(rules.rules()).hasSize(44);
         assertThat(rules.rules().getFirst().id()).isEqualTo("clients/core#client-token-in-authorization-header");
         assertThat(rules.rules().stream().map(RuleDefinition::area).collect(Collectors.toSet()))
-                .containsExactlyInAnyOrder("core", "notifications", "index");
+                .containsExactlyInAnyOrder("core", "authentication", "notifications", "index");
         RuleDefinition r = rules.find("client-query-baseline-after-415").orElseThrow();
         assertThat(r.observe().path("after").path("statusCode").asInt()).isEqualTo(415);
         assertThat(r.iri()).isEqualTo(Definitions.BASE + "clients/index#client-query-baseline-after-415");
@@ -35,6 +35,11 @@ class ClientRulesLoaderTest {
         assertThat(lost.task().arm()).isEqualTo("lostCreateResponse");
         assertThat(lost.taskTriggered()).isFalse();
         assertThat(rules.find("client-create-container-type-link").orElseThrow().taskTriggered()).isTrue();
+        RuleDefinition realm = rules.find("client-token-for-containing-realm").orElseThrow();
+        assertThat(realm.task().arm()).isEqualTo("tokenExpired");
+        assertThat(realm.iri()).isEqualTo(Definitions.BASE + "clients/authentication#client-token-for-containing-realm");
+        assertThat(rules.find("client-cid-credential-signed").orElseThrow().expect()
+                .at("/credential/header/0/pointer").asText()).isEqualTo("/alg");
     }
 
     @Test

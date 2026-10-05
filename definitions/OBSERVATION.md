@@ -1,8 +1,11 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.9.0 (2026-10-05, DECISIONS.md D-0081; 0.8.0 the same day, D-0079,
-after Gate C).** 0.9.0 adds tasks and faults (section 6) and two annotations, `repeat` and
-`containerEmpty` (sections 4.6 and 4.7), and changes nothing a 0.8.0 rule relies on. This
+**Status: frozen, format 0.10.0 (2026-10-05, DECISIONS.md D-0082; 0.9.0 the same day, D-0081;
+0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and faults (section 6) and two
+annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7). 0.10.0 adds the session's
+OpenID Provider and identity documents (sections 4.1 and 4.2), what the recorder knows of a token
+request (sections 4.9 and 4.10), the conditions `form` and `credential` (section 5), and the fault
+`tokenExpired`. Neither changes anything an earlier rule relies on. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -77,10 +80,12 @@ before the exchange, so that an answer never vouches for its own request.
 Which of the session's servers the request addressed:
 - `storage`, for a URL under `{base}/s/{sid}/storage/`;
 - `authorizationServer`, for one under `{base}/s/{sid}/as/`, or for its RFC 8414 metadata
-  URL.
+  URL;
+- `openidProvider` (since 0.10.0), for one under `{base}/s/{sid}/op/`;
+- `identityHost` (since 0.10.0), for one under `{base}/s/{sid}/id/`, where the identities'
+  documents are.
 
-Any other URL of the session has no server, and its role is `unknown`. Phase C4 adds
-`openidProvider` and `identityHost`.
+Any other URL of the session has no server, and its role is `unknown`.
 
 ### 4.2 `role`
 
@@ -101,7 +106,9 @@ What the request addressed, as the session's server found it:
 | `searchPage` | storage | a page of index or search results |
 | `decoy` | storage | the decoy (CLIENT-TESTING.md section 6.1) |
 | `asMetadata`, `asJwks`, `asToken` | authorizationServer | its metadata, JWKS and token endpoint |
-| `unknown` | either, or none | nothing: no resource and no endpoint |
+| `opDiscovery`, `opJwks`, `opAuthorize`, `opToken` | openidProvider | its OpenID Connect Discovery document, JWKS, authorization endpoint (with its sign-in form) and token endpoint |
+| `identityDocument` | identityHost | an identity's controlled identifier document |
+| `unknown` | any, or none | nothing: no resource and no endpoint |
 
 A role is the server's view, not the client's intent. A URL the client built that names
 nothing is `unknown`, and `builtBy` says what it was built from.
@@ -116,7 +123,10 @@ fragment, and the first way it was handed out:
   - every `Link` target;
   - a challenge's `as_uri`, and the metadata URL that RFC 8414 section 3.1 derives from it;
   - every absolute `http` or `https` string in a JSON body that the server generated: a
-    listing, a page, the storage description, the metadata, a service's answer.
+    listing, a page, the storage description, the metadata, a service's answer, an identity
+    document, the OpenID Provider's discovery document;
+  - for an OpenID Provider an identity document names, the discovery URL that OpenID Connect
+    Discovery section 4 derives from its issuer.
 
 URLs are resolved against the request URL and compared as strings, as in `EXECUTION.md`
 section 8.
@@ -188,18 +198,55 @@ The fault that fired on the exchange (section 6.2), or none. It appears in the t
 rule does not name it: a rule's trigger is the answer a fault produces, such as a 503, so a
 server that gives the same answer for a reason of its own triggers the rule as well.
 
+### 4.9 The credential of a token request (since 0.10.0)
+
+For a POST to the session's token endpoint (role `asToken`) with an
+`application/x-www-form-urlencoded` body, the recorder reads the `subject_token` parameter, the
+authentication credential, before redaction. Each of these is absent when the request has no
+such body or no `subject_token`:
+
+- **`credentialSource`:** where the credential came from.
+  - `openidProvider`: an ID Token the session's OpenID Provider issued, compared by value.
+  - `authorizationServer`: an access token the session issued (section 4.4).
+  - `selfIssued`: any other JWT whose `kid` header, or `iss`, `sub` or `client_id` claim, names
+    one of the session's identities: its URL, or that URL with a fragment. That is a credential
+    the client signed itself, or tried to.
+  - `other`: anything else, such as a JWT about a subject outside the session.
+- **The credential's header and claims,** when it is a compact JWT: three base64url segments,
+  the first two of them JSON objects. The `credential` condition (section 5) judges them. The
+  signature is never kept.
+- **`audienceIncludesAs`:** the JWT's `aud` claim is the session's authorization server's issuer
+  identifier, or an array that contains it. False when `aud` is absent.
+- **`identifiersAgree`:** the JWT's `sub`, `iss` and `client_id` claims are the same string.
+  False when any is absent or is not a string.
+
+### 4.10 `realmContainsRequest` (since 0.10.0)
+
+For a token request whose form body has a `resource` parameter. The recorder keeps, for each
+realm a 401 answer's challenge named, the URL of the latest request answered with it.
+`realmContainsRequest` is true when that URL is logically contained within the realm, and false
+when it is not. It is absent when no 401 named the realm.
+
+A URL, without its query and fragment, is contained within a realm when it equals the realm or
+starts with it. A realm that does not end in `/` must be followed by `/`. URLs compare as
+strings, as in `EXECUTION.md` section 8. This is what lws10-core section 5.2.1 asks a client to
+check before it asks for a token: "that the URI of the originating request is logically
+contained within the realm".
+
 ## 5. Conditions
 
 `observe`, `expect` and a trigger's `after` are conditions on one exchange. A condition holds
 when every term it has holds. The terms, in the order they are checked:
 
-1. **`server`, `role`, `method`, `builtBy`, `builtFromRole`:** a value or a list. The
-   annotation, or the request's method, equals a value listed. An absent annotation equals
-   nothing.
+1. **`server`, `role`, `method`, `builtBy`, `builtFromRole`, `credentialSource`:** a value or a
+   list. The annotation, or the request's method, equals a value listed. An absent annotation
+   equals nothing.
 2. **`statusCode`:** the status the session answered, matched as in `EXECUTION.md` section
    7.1.
 3. **`issued`, `methodAdvertised`, `patchFormatAdvertised`, `queryFormatAdvertised`,
-   `repeat`, `containerEmpty`:** the annotation equals the boolean.
+   `repeat`, `containerEmpty`, `audienceIncludesAs`, `identifiersAgree`,
+   `realmContainsRequest`:** the annotation equals the boolean. An absent annotation equals
+   neither `true` nor `false`.
 4. **`presentation`:** a value or a list. Every place in the annotation is listed, so
    `presentation: bearer` fails a request that also carried its token in the query string.
 5. **`contentType`:** the essence of the request's `Content-Type` equals the value, as in
@@ -207,10 +254,16 @@ when every term it has holds. The terms, in the order they are checked:
 6. **`linkHeaders`, `otherHeaders`:** as in `EXECUTION.md` sections 7.4 and 7.5, applied to the
    request's header fields, with link targets resolved against the request URL. Redacted
    fields are seen redacted (section 9).
-7. **`bodyMatches`, `json`:** as in `EXECUTION.md` sections 7.7 and 7.8, applied to the request
-   body. `equalsIri` resolves against the request URL. A body that is not JSON fails every
-   `json` term.
-8. **`anyOf`:** at least one of the listed conditions holds.
+7. **`bodyMatches`, `json`, `form`:** as in `EXECUTION.md` sections 7.7 and 7.8, applied to the
+   request body. `equalsIri` resolves against the request URL. A body that is not JSON fails
+   every `json` term. `form` (since 0.10.0) takes `json` expectations and applies them to an
+   `application/x-www-form-urlencoded` body seen as a JSON object: each parameter name, decoded,
+   with its first value, a string. Any other body fails it. Credentials in it are seen redacted
+   (section 9).
+8. **`credential`** (since 0.10.0): `header` and `claims`, each a list of `json` expectations, as
+   in `EXECUTION.md` section 7.9, applied to the header and claims of the token request's
+   credential (section 4.9). A request without a credential that is a JWT fails it.
+9. **`anyOf`:** at least one of the listed conditions holds.
 
 A rule has no variables, so every template in it is a literal. Regular expressions are
 those of `EXECUTION.md` section 8.
@@ -259,6 +312,7 @@ may legally do. The exchange it fired on carries its name (section 4.8).
 | `methodNotAllowed` | a PUT to a linkset that supports PUT | answers 405, with an `Allow` that leaves PUT out, as a server that stopped supporting the optional PUT would |
 | `lostCreateResponse` | a POST that creates a resource in a container | creates it, then answers 503 with `Retry-After` and no `Location`, as if the answer had been lost |
 | `pageGone` | a request for a page of search results | answers 410, as for a page link that expired |
+| `tokenExpired` (since 0.10.0) | a request to the storage with a valid access token, other than to the decoy | answers 401 with a challenge naming the storage's realm and `error="invalid_token"`, and refuses that token from then on, as for one that expired or was revoked |
 
 ## 7. Judging a trial
 
@@ -295,15 +349,24 @@ for later terms that need more.
 ## 9. Redaction and safety
 
 - **Rules see redacted exchanges.** `Authorization`, `Cookie`, `DPoP` and
-  `Proxy-Authorization` values appear as `[redacted <fingerprint>]`, and so do tokens anywhere
-  else: an `access_token` query parameter, and the `access_token`, `subject_token`,
-  `refresh_token` and `id_token` members of form and JSON bodies. The fingerprint is the first
-  12 hexadecimal digits of the value's SHA-256. Raw values exist only in memory, while
-  annotations are computed.
+  `Proxy-Authorization` values appear as `[redacted <fingerprint>]`, and so do credentials
+  anywhere else:
+  - query parameters and the members of form bodies named `access_token`, `refresh_token`,
+    `id_token`, `subject_token`, `actor_token`, `client_secret`, `code`, `code_verifier`,
+    `password` or `assertion`, in every request and in a `Location` header;
+  - the same members of the JSON answers of the token endpoints.
+
+  The fingerprint is the first 12 hexadecimal digits of the value's SHA-256. Raw values exist
+  only in memory, while annotations are computed. A credential's JWT header and claims are kept
+  (section 4.9), since they are not secret, but its signature is not.
 - **Request bodies are untrusted input.** They are parsed with the offline loaders, and no
   JSON-LD context is ever fetched (D-0026). Nothing a client sends reaches a shell, a file path
   or a query language.
 - **Judging sends nothing.** Evaluating rules makes no request of any kind.
+- **The session's authorization server dereferences nothing outside the session** (since
+  0.10.0). It validates a credential with the session's identity documents and the session's
+  OpenID Provider, read in the same process, and refuses any subject, issuer or key elsewhere. No
+  credential a client presents can make the service send a request.
 
 ## 10. Examples
 
@@ -408,6 +471,46 @@ next request to the container is the trial:
         sameTarget: true
     expect:
       repeat: false
+```
+
+A credential's claims. Only credentials the client signed itself are trials, and the claim
+must be a URI:
+
+```yaml
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /sub
+            jsonType: string
+            matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+```
+
+The realm check. Each 401 from the storage opens a trigger, and the client's next token request
+naming a realm is the trial. The decoy's 401 names a realm that does not contain it, so a client
+that does not check asks for a token for that realm:
+
+```yaml
+    task:
+      prompt: >-
+        Open the first entry of the storage's root container, then any resource you can read. The
+        session answers that request once with 401, as if your access token had expired: get a
+        new token and try again.
+      arm: tokenExpired
+    observe:
+      role: asToken
+      method: POST
+      form:
+        - pointer: /resource
+          jsonType: string
+      after:
+        server: storage
+        statusCode: 401
+    expect:
+      realmContainsRequest: true
 ```
 
 The next search after a refused format. Each 415 opens a trigger, and the next QUERY to the

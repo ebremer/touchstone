@@ -7,7 +7,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 ## Summary
 
 - **203 tests**: 161 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 74 negative tests.
-- **30 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 21 MUST, 8 SHOULD, 1 MAY. They cite 36 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
+- **44 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 34 MUST, 9 SHOULD, 1 MAY. They cite 55 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
 - **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
@@ -392,10 +392,10 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 
 | Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |
 |---|---:|---:|---:|---:|---:|---:|
-| Server | 223 | 167 | 24 | 32 | 201 | 25 |
-| AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 0 |
-| Client | 75 | 54 | 8 | 13 | 64 | 36 |
-| IdentityProvider | 16 | 15 | 1 | 0 | 16 | 0 |
+| Server | 223 | 167 | 24 | 32 | 201 | 26 |
+| AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
+| Client | 75 | 54 | 8 | 13 | 64 | 55 |
+| IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |
 | Receiver | 4 | 4 | 0 | 0 | 4 | 0 |
 | Specification | 2 | 2 | 0 | 0 | 2 | 0 |
 
@@ -407,17 +407,17 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 
 | Requirement | Level | Also binds | Summary | Cited by | Judged by |
 |---|---|---|---|---|---|
-| `lws10-authn-openid/id-token-token-type-uri` | MUST |  | An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server. | `authn-oidc-valid-id-token` |  |
+| `lws10-authn-openid/id-token-token-type-uri` | MUST |  | An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server. | `authn-oidc-valid-id-token` | `client-oidc-token-type-id-token` |
 | `lws10-authn-saml/token-type-saml2` | MUST |  | A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server. | `authn-saml-valid-assertion` |  |
-| `lws10-authn-ssi-cid/alg-not-none` | MUST |  | The self-issued JWT must not use "none" as its signing algorithm. | `authn-cid-alg-none`, `authn-cid-didkey-alg-none` |  |
-| `lws10-authn-ssi-cid/aud-includes-as` | MUST |  | Any audience restriction uses aud, which must include the target authorization server. | `authn-cid-didkey-audience-excludes-as`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/client-id-claim` | MUST |  | The client_id claim carries the client identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/exp-claim` | MUST |  | The JWT includes an exp (expiration) claim. | `authn-cid-didkey-missing-exp`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/iat-claim` | MUST |  | The JWT includes an iat (issued at) claim. | `authn-cid-didkey-missing-iat`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/iss-claim` | MUST |  | The iss claim carries the issuer identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/sub-claim` | MUST |  | The sub claim carries the subject identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/sub-iss-client-same-uri` | MUST |  | For self-issued credentials, sub, iss, and client_id are the same URI. | `authn-cid-claims-mismatch`, `authn-cid-didkey-claims-mismatch`, `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
-| `lws10-authn-ssi-cid/token-type-jwt` | MUST |  | A self-issued JWT credential uses the jwt token-type URI at the authorization server. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` |  |
+| `lws10-authn-ssi-cid/alg-not-none` | MUST |  | The self-issued JWT must not use "none" as its signing algorithm. | `authn-cid-alg-none`, `authn-cid-didkey-alg-none` | `client-cid-credential-signed` |
+| `lws10-authn-ssi-cid/aud-includes-as` | MUST |  | Any audience restriction uses aud, which must include the target authorization server. | `authn-cid-didkey-audience-excludes-as`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-audience-includes-as` |
+| `lws10-authn-ssi-cid/client-id-claim` | MUST |  | The client_id claim carries the client identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-client-id-claim` |
+| `lws10-authn-ssi-cid/exp-claim` | MUST |  | The JWT includes an exp (expiration) claim. | `authn-cid-didkey-missing-exp`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-expiry-claim` |
+| `lws10-authn-ssi-cid/iat-claim` | MUST |  | The JWT includes an iat (issued at) claim. | `authn-cid-didkey-missing-iat`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-issued-at-claim` |
+| `lws10-authn-ssi-cid/iss-claim` | MUST |  | The iss claim carries the issuer identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-issuer-claim` |
+| `lws10-authn-ssi-cid/sub-claim` | MUST |  | The sub claim carries the subject identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-subject-claim` |
+| `lws10-authn-ssi-cid/sub-iss-client-same-uri` | MUST |  | For self-issued credentials, sub, iss, and client_id are the same URI. | `authn-cid-claims-mismatch`, `authn-cid-didkey-claims-mismatch`, `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-identifiers-agree` |
+| `lws10-authn-ssi-cid/token-type-jwt` | MUST |  | A self-issued JWT credential uses the jwt token-type URI at the authorization server. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-token-type-jwt` |
 | `lws10-core/access-access-collection` | MUST | Server | The access property is a collection of one or more objects. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-document-access` |
 | `lws10-core/access-access-required` | MUST | Server | The access property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-document-access` |
 | `lws10-core/access-extra-properties-allowed` | MAY | Server | Other properties may be present on access requests and access grants. | `access-grant-extra-properties-accepted` |  |
@@ -428,16 +428,16 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 | `lws10-core/access-storage-uri` | MUST | Server | The storage property value is a URI. | `access-grant-create` | `client-access-document-storage` |
 | `lws10-core/access-type-required` | MUST | Server | The type property on access requests and grants is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-grant-type`, `client-access-request-type` |
 | `lws10-core/access-type-values` | MUST | Server | The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed. | `access-grant-create`, `access-request-create` | `client-access-grant-type`, `client-access-request-type` |
-| `lws10-core/authn-audience-restriction-recommended` | SHOULD | IdentityProvider | Audience restriction is recommended and its list should include an authorization server identifier. | `authn-cid-didkey-audience-excludes-as` |  |
-| `lws10-core/authn-client-claim` | MUST | IdentityProvider | The client claim is required and should be a URI. | `authn-cid-didkey-missing-client-id`, `authn-oidc-missing-azp` |  |
-| `lws10-core/authn-credential-signed` | MUST | IdentityProvider | Authentication credentials are signed; asymmetric cryptography is recommended. | `authn-cid-alg-none`, `authn-cid-bad-signature`, `authn-cid-didkey-alg-none`, `authn-cid-didkey-invalid-signature`, `authn-oidc-alg-none`, `authn-oidc-bad-signature`, `authn-saml-invalid-signature`, `authn-saml-unsigned` |  |
-| `lws10-core/authn-credential-tamper-evident-claims` | MUST | IdentityProvider | An authentication credential includes tamper-evident claims about a subject. | `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject` |  |
-| `lws10-core/authn-issuer-claim-uri` | MUST | IdentityProvider | The issuer claim is required and its value is a URI. | `authn-cid-didkey-missing-issuer` |  |
-| `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` |  |
+| `lws10-core/authn-audience-restriction-recommended` | SHOULD | IdentityProvider | Audience restriction is recommended and its list should include an authorization server identifier. | `authn-cid-didkey-audience-excludes-as` | `client-cid-audience-restricted` |
+| `lws10-core/authn-client-claim` | MUST | IdentityProvider | The client claim is required and should be a URI. | `authn-cid-didkey-missing-client-id`, `authn-oidc-missing-azp` | `client-cid-client-id-claim` |
+| `lws10-core/authn-credential-signed` | MUST | IdentityProvider | Authentication credentials are signed; asymmetric cryptography is recommended. | `authn-cid-alg-none`, `authn-cid-bad-signature`, `authn-cid-didkey-alg-none`, `authn-cid-didkey-invalid-signature`, `authn-oidc-alg-none`, `authn-oidc-bad-signature`, `authn-saml-invalid-signature`, `authn-saml-unsigned` | `client-cid-credential-signed` |
+| `lws10-core/authn-credential-tamper-evident-claims` | MUST | IdentityProvider | An authentication credential includes tamper-evident claims about a subject. | `authn-cid-didkey-missing-client-id`, `authn-cid-didkey-missing-issuer`, `authn-cid-didkey-missing-subject` | `client-cid-subject-claim` |
+| `lws10-core/authn-issuer-claim-uri` | MUST | IdentityProvider | The issuer claim is required and its value is a URI. | `authn-cid-didkey-missing-issuer` | `client-cid-issuer-claim` |
+| `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` | `client-cid-subject-claim` |
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST |  | Clients present access tokens via the Authorization header per RFC 6750. | `getContainer-authenticated-owner` | `client-token-in-authorization-header` |
-| `lws10-core/authz-challenge-realm-param` | MUST | Server | The realm challenge parameter is required; clients verify the request URI is logically within the realm. | `getContainer-private-unauthorized` |  |
-| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` |  |
-| `lws10-core/authz-token-exchange-subject-token-param` | MUST | AuthorizationServer | The subject_token parameter is required and carries a valid subject token such as an authentication credential. | `authz-token-exchange-missing-subject-token`, `authz-token-exchange-valid` |  |
+| `lws10-core/authz-challenge-realm-param` | MUST | Server | The realm challenge parameter is required; clients verify the request URI is logically within the realm. | `getContainer-private-unauthorized` | `client-token-for-containing-realm` |
+| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` | `client-token-exchange-resource` |
+| `lws10-core/authz-token-exchange-subject-token-param` | MUST | AuthorizationServer | The subject_token parameter is required and carries a valid subject token such as an authentication credential. | `authz-token-exchange-missing-subject-token`, `authz-token-exchange-valid` | `client-token-exchange-subject-token` |
 | `lws10-core/client-no-assumed-methods-405-415` | MUST |  | Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully. |  | `client-linkset-patch-format-advertised`, `client-linkset-put-only-when-advertised`, `client-no-repeat-after-405-415` |
 | `lws10-core/conformance-client-class` | MUST |  | An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section. |  |  |
 | `lws10-core/create-container-type-link` | MUST | Server | Creating a container is signalled by a request Link header rel=type pointing at lws#Container; the server materializes a container accordingly. | `createContainer` | `client-create-container-type-link` |
@@ -491,6 +491,25 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 
 Each rule judges the exchanges an LWS client sends to a client session (definitions/OBSERVATION.md);
 *Area* is what a developer may declare out of scope.
+
+### `clients/authentication`
+
+| Rule | Level | Area | Requirements |
+|---|---|---|---|
+| `client-token-exchange-resource` | MUST | authentication | `authz-token-exchange-resource-param` |
+| `client-token-exchange-subject-token` | MUST | authentication | `authz-token-exchange-subject-token-param` |
+| `client-token-for-containing-realm` | MUST | authentication | `authz-challenge-realm-param` |
+| `client-cid-token-type-jwt` | MUST | authentication | `token-type-jwt` |
+| `client-cid-credential-signed` | MUST | authentication | `alg-not-none`, `authn-credential-signed` |
+| `client-cid-subject-claim` | MUST | authentication | `sub-claim`, `authn-subject-claim-uri`, `authn-credential-tamper-evident-claims` |
+| `client-cid-issuer-claim` | MUST | authentication | `iss-claim`, `authn-issuer-claim-uri` |
+| `client-cid-client-id-claim` | MUST | authentication | `client-id-claim`, `authn-client-claim` |
+| `client-cid-identifiers-agree` | MUST | authentication | `sub-iss-client-same-uri` |
+| `client-cid-audience-includes-as` | MUST | authentication | `aud-includes-as` |
+| `client-cid-audience-restricted` | SHOULD | authentication | `authn-audience-restriction-recommended` |
+| `client-cid-expiry-claim` | MUST | authentication | `exp-claim` |
+| `client-cid-issued-at-claim` | MUST | authentication | `iat-claim` |
+| `client-oidc-token-type-id-token` | MUST | authentication | `id-token-token-type-uri` |
 
 ### `clients/core`
 

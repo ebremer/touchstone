@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.9.0, frozen on 2026-10-05 (DECISIONS.md D-0081).** The
+**Status: format version 0.10.0, frozen on 2026-10-05 (DECISIONS.md D-0082).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
@@ -10,7 +10,8 @@ only how a did:key subject's credential is made, since W3C discontinued the did:
 0.4.0 added what testing notification delivery needs (a polled step, a per-test inbox); 0.5.0
 records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QUERY method and Link headers on prerequisites; 0.7.0 lets a test script
 its inbox's answers; 0.8.0 adds client rules, which judge the requests an LWS client sends
-(`OBSERVATION.md`); 0.9.0 gives client rules tasks and faults. A test that is one
+(`OBSERVATION.md`); 0.9.0 gives client rules tasks and faults; 0.10.0 lets them judge a
+client's token requests and credentials. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -321,6 +322,16 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.10.0 (2026-10-05, D-0082) adds, for client rules only, what judging a client's
+authentication needs, and changes nothing a 0.9.0 definition relies on:
+- the session's OpenID Provider and identity documents as servers, with their roles;
+- what the recorder knows of a token request (`OBSERVATION.md` sections 4.9 and 4.10): where its
+  credential came from, the credential's header and claims, whether its audience names the
+  authorization server, whether its `sub`, `iss` and `client_id` agree, and whether the realm
+  asked for contains the URL a 401 refused;
+- the conditions `form`, on a form body's parameters, and `credential`;
+- the fault `tokenExpired`.
 
 Format version 0.9.0 (2026-10-05, D-0081) adds three things to client rules and changes nothing
 a 0.8.0 definition relies on: a rule's `task`, which the developer starts so the rule can be

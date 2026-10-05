@@ -34,12 +34,13 @@ final class Recorder {
     /** Roles whose bodies the server generated, so the URLs in them were handed out by it. */
     private static final Set<String> GENERATED = Set.of("storageDescription", "container", "page", "linkset",
             "typeIndex", "typeSearch", "searchPage", "subscriptions", "subscription", "accessGrants", "accessGrant",
-            "accessRequests", "accessRequest", "asMetadata");
+            "accessRequests", "accessRequest", "asMetadata", "identityDocument", "opDiscovery");
     /** The headers that say what a resource supports. */
     private static final List<String> ADVERTISING = List.of("Allow", "Accept-Patch", "Accept-Query", "ETag");
     private static final Pattern LINK = Pattern.compile("<([^>]*)>\\s*((?:;[^,<]*)*)");
     private static final Pattern REL = Pattern.compile("(?i)\\brel\\s*=\\s*\"?([^\";,]+)\"?");
     private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
+    private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*(?:\"([^\"]*)\"|([^\\s,]+))");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** How a URL was first handed out, and when, in the order of handing out. */
@@ -60,6 +61,8 @@ final class Recorder {
     private final Map<String, Map<String, String>> advertised = new ConcurrentHashMap<>();
     private final Map<String, String> roles = new ConcurrentHashMap<>();
     private final Map<String, String> lastRequests = new ConcurrentHashMap<>();
+    /** Each realm a 401 presented, and the URL of the latest request it was presented for. */
+    private final Map<String, String> realms = new ConcurrentHashMap<>();
 
     /**
      * @param inSession whether a URL is one of the session's, the only ones the ledger tracks
@@ -139,6 +142,29 @@ final class Recorder {
         return key != null && signature.equals(lastRequests.put(key, signature));
     }
 
+    /**
+     * Whether {@code realm} logically contains the URL of the latest request a 401 presented it
+     * for (OBSERVATION.md section 4.10); null when no 401 presented it.
+     */
+    Boolean realmContains(String realm) {
+        String url = realms.get(realm);
+        return url == null ? null : contains(realm, url);
+    }
+
+    /**
+     * Whether {@code url}, its query and fragment dropped, is within {@code realm}: the realm
+     * itself, or below it, a path segment boundary following the realm when it does not end in a
+     * slash. URLs compare as strings, as in EXECUTION.md section 8.
+     */
+    static boolean contains(String realm, String url) {
+        String u = url;
+        int cut = u.indexOf('#');
+        u = cut < 0 ? u : u.substring(0, cut);
+        cut = u.indexOf('?');
+        u = cut < 0 ? u : u.substring(0, cut);
+        return realm.endsWith("/") ? u.startsWith(realm) : u.equals(realm) || u.startsWith(realm + "/");
+    }
+
     /** What {@code url}'s answers advertised, before the exchange now being recorded. */
     Map<String, String> advertisedFor(String url) {
         Map<String, String> a = advertised.get(withoutFragment(url));
@@ -178,6 +204,12 @@ final class Recorder {
             }
         }
         for (String challenge : values(headers, "WWW-Authenticate")) {
+            if (status == 401 && key != null) {
+                Matcher r = REALM.matcher(challenge);
+                while (r.find()) {
+                    realms.put(r.group(1) != null ? r.group(1) : r.group(2), key);
+                }
+            }
             Matcher m = AS_URI.matcher(challenge);
             while (m.find()) {
                 String issuer = resolve(base, m.group(1));
@@ -193,7 +225,19 @@ final class Recorder {
         }
         if (body != null && GENERATED.contains(role) && status / 100 == 2) {
             try {
-                collect(JSON.readTree(body), "body:" + role);
+                JsonNode doc = JSON.readTree(body);
+                collect(doc, "body:" + role);
+                if (role.equals("identityDocument")) {
+                    // OpenID Connect Discovery section 4 derives the configuration's URL from the
+                    // provider's issuer, as RFC 8414 does the metadata's.
+                    for (JsonNode service : doc.path("service")) {
+                        if (service.path("serviceEndpoint").isTextual()
+                                && service.path("type").toString().contains("OpenIdProvider")) {
+                            issue(service.path("serviceEndpoint").asText().replaceAll("/$", "")
+                                    + "/.well-known/openid-configuration", "body:" + role);
+                        }
+                    }
+                }
             } catch (Exception e) {
                 // not JSON after all: nothing handed out
             }

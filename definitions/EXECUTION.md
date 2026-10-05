@@ -1,10 +1,10 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.9.0 (2026-10-05, DECISIONS.md D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+**Status: frozen, format 0.10.0 (2026-10-05, DECISIONS.md D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
 frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
 2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
-0.8.0 added client rules, which `OBSERVATION.md` governs, and 0.9.0 gave them tasks and faults;
-neither changes anything in this document.
+0.8.0 added client rules, which `OBSERVATION.md` governs, 0.9.0 gave them tasks and faults, and
+0.10.0 let them judge token requests; none changes anything in this document.
 0.7.0 adds one thing and changes nothing a 0.6.0 definition relies on: a test can script the
 statuses its inbox answers deliveries with, and each delivery record says which it got
 (section 5.4), so a server's retry and deactivation can be observed. 0.6.0 added two things

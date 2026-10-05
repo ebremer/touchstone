@@ -170,6 +170,25 @@ public final class RefAuthorizationServer implements AutoCloseable {
         resources.add(realm);
     }
 
+    /**
+     * The documents a validator dereferences (CID documents, OpenID Connect discovery and JWKS),
+     * when they come from the same process instead of the network.
+     */
+    @FunctionalInterface
+    public interface Documents {
+        /** The document at {@code url}, or null when this server does not trust that URL. */
+        String get(String url);
+    }
+
+    /**
+     * Makes this server dereference nothing but what {@code documents} holds: a subject, issuer or
+     * key it does not hold is untrusted. A client-testing session uses this, so that a client
+     * cannot make the session fetch a URL of its choosing (CLIENT-TESTING.md section 8.3).
+     */
+    public void dereferenceOnly(Documents documents) {
+        subjectTokens.dereferenceOnly(documents);
+    }
+
     /** Trusts a SAML identity provider's signing key; the SAML suite leaves this to configuration. */
     public void trustSamlIdentityProvider(String entityId, PublicKey signingKey) {
         samlIdps.put(entityId, signingKey);

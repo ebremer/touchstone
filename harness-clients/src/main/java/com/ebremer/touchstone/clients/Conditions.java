@@ -28,12 +28,13 @@ final class Conditions {
     static Failure check(JsonNode condition, Observed x) {
         Exchange.Annotations a = x.annotations();
         Failure f;
-        // 1. server, role, method, builtBy, builtFromRole
+        // 1. server, role, method, builtBy, builtFromRole, credentialSource
         if ((f = oneOf(condition, "server", a.server())) != null
                 || (f = oneOf(condition, "role", a.role())) != null
                 || (f = oneOf(condition, "method", x.method())) != null
                 || (f = oneOf(condition, "builtBy", a.builtBy())) != null
-                || (f = oneOf(condition, "builtFromRole", a.builtFromRole())) != null) {
+                || (f = oneOf(condition, "builtFromRole", a.builtFromRole())) != null
+                || (f = oneOf(condition, "credentialSource", a.credentialSource())) != null) {
             return f;
         }
         // 2. statusCode
@@ -46,7 +47,10 @@ final class Conditions {
                 || (f = bool(condition, "patchFormatAdvertised", a.patchFormatAdvertised())) != null
                 || (f = bool(condition, "queryFormatAdvertised", a.queryFormatAdvertised())) != null
                 || (f = bool(condition, "repeat", a.repeat())) != null
-                || (f = bool(condition, "containerEmpty", a.containerEmpty())) != null) {
+                || (f = bool(condition, "containerEmpty", a.containerEmpty())) != null
+                || (f = bool(condition, "audienceIncludesAs", a.audienceIncludesAs())) != null
+                || (f = bool(condition, "identifiersAgree", a.identifiersAgree())) != null
+                || (f = bool(condition, "realmContainsRequest", a.realmContainsRequest())) != null) {
             return f;
         }
         // 4. presentation: every place the request carried a credential is listed
@@ -78,7 +82,7 @@ final class Conditions {
                 return new Failure("otherHeaders: " + r.description(), r.expected(), r.actual());
             }
         }
-        // 7. bodyMatches, json
+        // 7. bodyMatches, json, form
         if (condition.has("bodyMatches")) {
             String pattern = condition.get("bodyMatches").asText();
             if (!Matching.find(pattern, x.bodyText())) {
@@ -95,7 +99,35 @@ final class Conditions {
                 return new Failure("json: " + r.description(), r.expected(), r.actual());
             }
         }
-        // 8. anyOf
+        if (condition.has("form")) {
+            JsonNode root = x.form();
+            if (root == null) {
+                String type = x.firstHeader("Content-Type");
+                return new Failure("form", "an application/x-www-form-urlencoded body",
+                        type == null ? "no Content-Type" : Matching.essence(type));
+            }
+            AssertionResult r = Matching.json(condition.get("form"), root, x.uri());
+            if (r != null) {
+                return new Failure("form: " + r.description(), r.expected(), r.actual());
+            }
+        }
+        // 8. credential: the subject token's header and claims
+        if (condition.has("credential")) {
+            JsonNode credential = a.credential();
+            if (credential == null) {
+                return new Failure("credential", "a subject token that is a JWT",
+                        a.credentialSource() == null ? "no subject token" : "a subject token that is not a JWT");
+            }
+            for (String part : List.of("header", "claims")) {
+                if (condition.get("credential").has(part)) {
+                    AssertionResult r = Matching.json(condition.get("credential").get(part), credential.get(part), x.uri());
+                    if (r != null) {
+                        return new Failure("credential " + part + ": " + r.description(), r.expected(), r.actual());
+                    }
+                }
+            }
+        }
+        // 9. anyOf
         if (condition.has("anyOf")) {
             List<String> misses = new ArrayList<>();
             for (JsonNode alternative : condition.get("anyOf")) {
@@ -119,11 +151,13 @@ final class Conditions {
                 : new Failure(term, String.join(" or ", allowed), Objects.requireNonNullElse(actual, "none"));
     }
 
-    private static Failure bool(JsonNode condition, String term, boolean actual) {
-        if (!condition.has(term) || condition.get(term).asBoolean() == actual) {
+    /** A boolean annotation; an absent one (null) equals neither true nor false. */
+    private static Failure bool(JsonNode condition, String term, Boolean actual) {
+        if (!condition.has(term) || (actual != null && condition.get(term).asBoolean() == actual)) {
             return null;
         }
-        return new Failure(term, String.valueOf(!actual), String.valueOf(actual));
+        return new Failure(term, String.valueOf(condition.get(term).asBoolean()),
+                actual == null ? "none" : String.valueOf(actual));
     }
 
     private static List<String> values(JsonNode node) {

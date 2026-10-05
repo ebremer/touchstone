@@ -165,6 +165,12 @@
     "task":                  {"@id": "lwst:task"},
     "prompt":                {"@id": "lwst:prompt"},
     "arm":                   {"@id": "lwst:arm"},
+    "form":                  {"@id": "lwst:form", "@container": "@set"},
+    "credential":            {"@id": "lwst:credential"},
+    "credentialSource":      {"@id": "lwst:credentialSource", "@container": "@set"},
+    "audienceIncludesAs":    {"@id": "lwst:audienceIncludesAs", "@type": "xsd:boolean"},
+    "identifiersAgree":      {"@id": "lwst:identifiersAgree", "@type": "xsd:boolean"},
+    "realmContainsRequest":  {"@id": "lwst:realmContainsRequest", "@type": "xsd:boolean"},
 
     "kind":               {"@id": "lwst:kind", "@type": "@vocab"},
     "NoCredential":       "lwst:NoCredential",

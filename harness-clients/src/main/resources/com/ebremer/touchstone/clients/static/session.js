@@ -17,22 +17,27 @@
     decoy: 'The root container lists a decoy whose 401 names a realm that does not contain it: send it no token.',
   };
 
-  async function call(method, path) {
+  async function call(method, path, body) {
+    const headers = { Authorization: 'Bearer ' + key };
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
     const response = await fetch(api + path, {
       method,
-      headers: { Authorization: 'Bearer ' + key },
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
       cache: 'no-store',
     });
     if (response.status === 204) {
       return null;
     }
-    const body = await response.json();
+    const answer = await response.json();
     if (!response.ok) {
-      const error = new Error(body.message || ('HTTP ' + response.status));
+      const error = new Error(answer.message || ('HTTP ' + response.status));
       error.status = response.status;
       throw error;
     }
-    return body;
+    return answer;
   }
 
   function el(tag, text, className) {
@@ -50,19 +55,25 @@
     base = session.storage.replace(/storage\/$/, '');
     $('storage').textContent = session.storage;
     $('issuer').textContent = session.authorizationServer.issuer;
+    $('op-issuer').textContent = session.openidProvider.issuer;
+    showClients(session.openidProvider.clients);
     $('expires').textContent = new Date(session.expires).toLocaleString()
       + ' (after two idle hours, or a day at most)';
     const rows = $('identities');
     rows.replaceChildren();
     for (const [name, identity] of Object.entries(session.identities)) {
       const tr = el('tr');
-      tr.append(el('th', name), el('td'), el('td', identity.role), el('td'));
+      tr.append(el('th', name), el('td'), el('td', identity.role), el('td'), el('td'));
       tr.children[0].scope = 'row';
       tr.children[1].append(el('code', identity.webid));
+      const reveal = el('button', 'Show');
+      reveal.type = 'button';
+      reveal.addEventListener('click', () => secrets(name));
+      tr.children[3].append(reveal);
       const button = el('button', 'Get a token');
       button.type = 'button';
       button.addEventListener('click', () => token(name));
-      tr.children[3].append(button);
+      tr.children[4].append(button);
       rows.append(tr);
     }
     const traps = $('traps');
@@ -91,6 +102,54 @@
       status.textContent = 'Could not get a token: ' + e.message;
     }
   }
+
+  let download = null;
+
+  async function secrets(name) {
+    try {
+      const body = await call('GET', '/credentials/' + name);
+      $('secret-user').textContent = body.username;
+      $('secret-password').textContent = body.password;
+      $('secret-kid').textContent = body.verificationMethod;
+      const jwk = JSON.stringify(body.privateKeyJwk, null, 2);
+      $('secret-key').value = jwk;
+      if (download) {
+        URL.revokeObjectURL(download);
+      }
+      download = URL.createObjectURL(new Blob([jwk], { type: 'application/jwk+json' }));
+      $('secret-download').href = download;
+      $('secret-download').download = name + '.jwk.json';
+      $('secrets-box').hidden = false;
+    } catch (e) {
+      status.textContent = 'Could not get the credentials: ' + e.message;
+    }
+  }
+
+  function showClients(clients) {
+    const list = $('clients');
+    list.replaceChildren();
+    for (const c of clients) {
+      const item = el('li');
+      item.append(el('code', c.client_id), el('span', ' → '), el('code', c.redirect_uris.join(', ')));
+      list.append(item);
+    }
+  }
+
+  $('register').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const uris = $('redirect-uris').value.split('\n').map((u) => u.trim()).filter((u) => u);
+    const request = { redirect_uris: uris };
+    if ($('client-id').value.trim()) {
+      request.client_id = $('client-id').value.trim();
+    }
+    try {
+      const made = await call('POST', '/clients', request);
+      status.textContent = 'Registered ' + made.client_id + '.';
+      showClients((await call('GET', '/clients')).clients);
+    } catch (e) {
+      status.textContent = 'Could not register the client: ' + e.message;
+    }
+  });
 
   function relative(url) {
     return base && url.startsWith(base) ? url.slice(base.length - 1) : url;

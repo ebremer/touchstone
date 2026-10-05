@@ -1,4 +1,4 @@
-# Root manifest for the LWS 1.0 client rules (YAML-LD, format 0.8.0).
+# Root manifest for the LWS 1.0 client rules (YAML-LD, format 0.10.0).
 #
 # Client rules judge the exchanges an LWS client sends to a client session
 # (CLIENT-TESTING.md, definitions/OBSERVATION.md). The server root manifest does not include
@@ -16,10 +16,13 @@ comment: >-
   session; a developer may declare an area out of scope.
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
   - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
   - https://w3c.github.io/lws-protocol/lws10-index/
 include:
   - core.yamlld
+  - authentication.yamlld
   - notifications.yamlld
   - index.yamlld
 entries: []

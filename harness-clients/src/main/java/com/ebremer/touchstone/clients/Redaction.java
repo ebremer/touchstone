@@ -44,8 +44,16 @@ final class Redaction {
         return "[redacted " + fingerprint(secret) + "]";
     }
 
-    /** A credential header's value, its scheme kept: {@code Bearer [redacted 1a2b3c4d5e6f]}. */
+    /**
+     * A credential header's value, its scheme kept: {@code Bearer [redacted 1a2b3c4d5e6f]}; and a
+     * {@code Location}'s query with the values of credential fields replaced, such as the
+     * authorization code an OpenID Provider redirects with.
+     */
     static String header(String name, String value) {
+        if (name.equalsIgnoreCase("location")) {
+            int q = value.indexOf('?');
+            return q < 0 ? value : value.substring(0, q + 1) + form(value.substring(q + 1));
+        }
         if (!HEADERS.contains(name.toLowerCase(Locale.ROOT))) {
             return value;
         }

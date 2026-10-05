@@ -314,7 +314,204 @@ class ClientLabTest {
         }
     }
 
+    @Test
+    void theOpenIdProviderSignsInRegisteredClientsOnly() throws Exception {
+        JsonNode session = startSession(base);
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        String issuer = session.at("/openidProvider/issuer").asText();
+        assertThat(issuer).isEqualTo(base + "/s/" + session.get("id").asText() + "/op");
+
+        // Registration takes the session key, and absolute redirect URIs without fragments.
+        assertThat(register(api, null, "{\"redirect_uris\": [\"http://127.0.0.1/cb\"]}").statusCode()).isEqualTo(401);
+        assertThat(register(api, key, "{\"redirect_uris\": [\"javascript:alert(1)\"]}").statusCode()).isEqualTo(400);
+        assertThat(register(api, key, "{\"redirect_uris\": [\"https://app.example/cb#x\"]}").statusCode()).isEqualTo(400);
+        assertThat(register(api, key, "{\"redirect_uris\": [\"https://app.example/cb\"], \"client_id\": \"my app\"}")
+                .statusCode()).isEqualTo(400);
+        HttpResponse<String> made = register(api, key, "{\"redirect_uris\": [\"http://127.0.0.1/cb\"]}");
+        assertThat(made.statusCode()).as(made.body()).isEqualTo(201);
+        String clientId = JSON.readTree(made.body()).get("client_id").asText();
+        assertThat(JSON.readTree(get(api + "/clients", key).body()).at("/clients/0/client_id").asText()).isEqualTo(clientId);
+        assertThat(get(api + "/credentials/bob", null).statusCode()).isEqualTo(401);
+        JsonNode bob = JSON.readTree(get(api + "/credentials/bob", key).body());
+
+        // bob's identity document names the provider; its discovery names the endpoints.
+        HttpResponse<String> doc = send("GET", bob.get("webid").asText(), null, null, null);
+        assertThat(doc.statusCode()).isEqualTo(200);
+        assertThat(doc.headers().firstValue("Content-Type").orElseThrow()).isEqualTo("application/cid");
+        assertThat(JSON.readTree(doc.body()).at("/service/0/serviceEndpoint").asText()).isEqualTo(issuer);
+        assertThat(JSON.readTree(doc.body()).at("/authentication/0/id").asText()).isEqualTo(bob.get("verificationMethod").asText());
+        JsonNode discovery = JSON.readTree(send("GET", issuer + "/.well-known/openid-configuration", null, null, null).body());
+        assertThat(discovery.get("issuer").asText()).isEqualTo(issuer);
+        String authorize = discovery.get("authorization_endpoint").asText();
+
+        String verifier = "a-verifier-of-at-least-forty-three-characters-0123456789";
+        String challenge = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+                java.security.MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+        String enc = java.net.URLEncoder.encode(clientId, java.nio.charset.StandardCharsets.UTF_8);
+        String common = "?response_type=code&scope=openid&state=s1&client_id=" + enc;
+        // An unknown client or redirect URI gets a page, never a redirect.
+        HttpResponse<String> unknown = send("GET", authorize + "?response_type=code&scope=openid&client_id=nobody"
+                + "&redirect_uri=http%3A%2F%2F127.0.0.1%2Fcb&code_challenge=" + challenge + "&code_challenge_method=S256", null, null, null);
+        assertThat(unknown.statusCode()).isEqualTo(400);
+        assertThat(unknown.headers().firstValue("Location")).isEmpty();
+        assertThat(send("GET", authorize + common + "&redirect_uri=https%3A%2F%2Fevil.example%2Fcb&code_challenge=" + challenge
+                + "&code_challenge_method=S256", null, null, null).statusCode()).isEqualTo(400);
+        // Without PKCE: back to the client with an error.
+        HttpResponse<String> noPkce = send("GET", authorize + common + "&redirect_uri=http%3A%2F%2F127.0.0.1%2Fcb", null, null, null);
+        assertThat(noPkce.statusCode()).isEqualTo(303);
+        assertThat(noPkce.headers().firstValue("Location").orElseThrow()).startsWith("http://127.0.0.1/cb?error=invalid_request");
+
+        // A loopback redirect URI may use any port (RFC 8252 section 7.3).
+        String redirect = "http://127.0.0.1:5555/cb";
+        HttpResponse<String> form = send("GET", authorize + common + "&redirect_uri="
+                + java.net.URLEncoder.encode(redirect, java.nio.charset.StandardCharsets.UTF_8)
+                + "&nonce=n1&code_challenge=" + challenge + "&code_challenge_method=S256", null, null, null);
+        assertThat(form.statusCode()).isEqualTo(200);
+        assertThat(form.headers().firstValue("Content-Security-Policy").orElseThrow()).contains("default-src 'none'");
+        java.util.regex.Matcher handle = java.util.regex.Pattern.compile("name=\"request\" value=\"([^\"]*)\"").matcher(form.body());
+        assertThat(handle.find()).isTrue();
+        HttpResponse<String> wrong = send("POST", authorize, null, "request=" + handle.group(1) + "&username=bob&password=nope",
+                "application/x-www-form-urlencoded");
+        assertThat(wrong.statusCode()).isEqualTo(200);
+        assertThat(wrong.body()).contains("Wrong username or password");
+        HttpResponse<String> signedIn = send("POST", authorize, null, "request=" + handle.group(1) + "&username=bob&password="
+                + bob.get("password").asText(), "application/x-www-form-urlencoded");
+        assertThat(signedIn.statusCode()).isEqualTo(303);
+        String location = signedIn.headers().firstValue("Location").orElseThrow();
+        assertThat(location).startsWith(redirect + "?code=").contains("&state=s1&iss=");
+        String code = java.net.URLDecoder.decode(location.replaceAll("^.*[?&]code=([^&]*).*$", "$1"),
+                java.nio.charset.StandardCharsets.UTF_8);
+
+        String redeem = "grant_type=authorization_code&code=" + java.net.URLEncoder.encode(code, java.nio.charset.StandardCharsets.UTF_8)
+                + "&redirect_uri=" + java.net.URLEncoder.encode(redirect, java.nio.charset.StandardCharsets.UTF_8)
+                + "&client_id=" + enc + "&code_verifier=";
+        HttpResponse<String> badVerifier = send("POST", discovery.get("token_endpoint").asText(), null, redeem + "nope",
+                "application/x-www-form-urlencoded");
+        assertThat(badVerifier.statusCode()).isEqualTo(400);
+        assertThat(badVerifier.body()).contains("invalid_grant");
+        // A code is good once, even after a failed redemption.
+        assertThat(send("POST", discovery.get("token_endpoint").asText(), null, redeem + verifier,
+                "application/x-www-form-urlencoded").statusCode()).isEqualTo(400);
+        assertThat(log(session).toString()).doesNotContain(bob.get("password").asText()).doesNotContain(code);
+    }
+
+    @Test
+    void anIdTokenNamesTheClientAndTheAuthorizationServer() throws Exception {
+        JsonNode session = startSession(base);
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        String clientId = "https://app.example/id";
+        assertThat(register(api, key, "{\"redirect_uris\": [\"https://app.example/cb\"], \"client_id\": \"" + clientId + "\"}")
+                .statusCode()).isEqualTo(201);
+        JsonNode bob = JSON.readTree(get(api + "/credentials/bob", key).body());
+        String issuer = session.at("/openidProvider/issuer").asText();
+        String verifier = "another-verifier-of-at-least-forty-three-characters-xyz";
+        String challenge = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+                java.security.MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+        HttpResponse<String> form = send("GET", issuer + "/authorize?response_type=code&scope=openid&client_id="
+                + java.net.URLEncoder.encode(clientId, java.nio.charset.StandardCharsets.UTF_8)
+                + "&redirect_uri=https%3A%2F%2Fapp.example%2Fcb&code_challenge=" + challenge + "&code_challenge_method=S256",
+                null, null, null);
+        java.util.regex.Matcher handle = java.util.regex.Pattern.compile("name=\"request\" value=\"([^\"]*)\"").matcher(form.body());
+        assertThat(handle.find()).isTrue();
+        String location = send("POST", issuer + "/authorize", null, "request=" + handle.group(1) + "&username=bob&password="
+                + bob.get("password").asText(), "application/x-www-form-urlencoded").headers().firstValue("Location").orElseThrow();
+        String code = java.net.URLDecoder.decode(location.replaceAll("^.*[?&]code=([^&]*).*$", "$1"),
+                java.nio.charset.StandardCharsets.UTF_8);
+        HttpResponse<String> tokens = send("POST", issuer + "/token", null, "grant_type=authorization_code&code="
+                + java.net.URLEncoder.encode(code, java.nio.charset.StandardCharsets.UTF_8)
+                + "&redirect_uri=https%3A%2F%2Fapp.example%2Fcb&client_id="
+                + java.net.URLEncoder.encode(clientId, java.nio.charset.StandardCharsets.UTF_8) + "&code_verifier=" + verifier,
+                "application/x-www-form-urlencoded");
+        assertThat(tokens.statusCode()).as(tokens.body()).isEqualTo(200);
+        String idToken = JSON.readTree(tokens.body()).get("id_token").asText();
+        JsonNode claims = JSON.readTree(java.util.Base64.getUrlDecoder().decode(idToken.split("\\.")[1]));
+        assertThat(claims.get("iss").asText()).isEqualTo(issuer);
+        assertThat(claims.get("sub").asText()).isEqualTo(bob.get("webid").asText());
+        assertThat(claims.get("azp").asText()).isEqualTo(clientId);
+        assertThat(claims.get("aud").toString()).contains(clientId).contains(session.at("/authorizationServer/issuer").asText());
+
+        // The session's authorization server takes it, for the session's storage.
+        HttpResponse<String> exchanged = send("POST", session.at("/authorizationServer/issuer").asText() + "/token", null,
+                "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource="
+                        + java.net.URLEncoder.encode(session.get("storage").asText(), java.nio.charset.StandardCharsets.UTF_8)
+                        + "&subject_token=" + idToken + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aid_token",
+                "application/x-www-form-urlencoded");
+        assertThat(exchanged.statusCode()).as(exchanged.body()).isEqualTo(200);
+        JsonNode exchange = list(log(session).get("exchanges")).getLast();
+        assertThat(exchange.at("/annotations/credentialSource").asText()).isEqualTo("openidProvider");
+        assertThat(exchange.at("/annotations/credential/claims/azp").asText()).isEqualTo(clientId);
+        assertThat(exchange.toString()).doesNotContain(idToken);
+    }
+
+    @Test
+    void theAuthorizationServerFetchesNothingOutsideTheSession() throws Exception {
+        JsonNode session = startSession(base);
+        // A credential about a subject elsewhere: the session must not dereference it.
+        com.nimbusds.jose.jwk.ECKey stranger = new com.nimbusds.jose.jwk.gen.ECKeyGenerator(com.nimbusds.jose.jwk.Curve.P_256)
+                .keyID("k").generate();
+        String subject = "http://127.0.0.1:" + freePort() + "/agent";
+        long now = Instant.now().getEpochSecond();
+        com.nimbusds.jose.JWSObject jws = new com.nimbusds.jose.JWSObject(
+                new com.nimbusds.jose.JWSHeader.Builder(com.nimbusds.jose.JWSAlgorithm.ES256).keyID(subject + "#k").build(),
+                new com.nimbusds.jose.Payload("{\"sub\":\"" + subject + "\",\"iss\":\"" + subject + "\",\"client_id\":\""
+                        + subject + "\",\"aud\":\"" + session.at("/authorizationServer/issuer").asText() + "\",\"iat\":" + now
+                        + ",\"exp\":" + (now + 300) + "}"));
+        jws.sign(new com.nimbusds.jose.crypto.ECDSASigner(stranger));
+        HttpResponse<String> refused = send("POST", session.at("/authorizationServer/issuer").asText() + "/token", null,
+                "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource="
+                        + java.net.URLEncoder.encode(session.get("storage").asText(), java.nio.charset.StandardCharsets.UTF_8)
+                        + "&subject_token=" + jws.serialize() + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Ajwt",
+                "application/x-www-form-urlencoded");
+        assertThat(refused.statusCode()).isEqualTo(400);
+        assertThat(refused.body()).contains("is not a document this authorization server trusts");
+        JsonNode exchange = list(log(session).get("exchanges")).getLast();
+        assertThat(exchange.at("/annotations/credentialSource").asText()).isEqualTo("other");
+        assertThat(exchange.at("/annotations/audienceIncludesAs").asBoolean()).isTrue();
+    }
+
+    @Test
+    void anExpiredTokenStaysRefused() throws Exception {
+        JsonNode session = startSession(base);
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        String storage = session.get("storage").asText();
+        String alice = session.at("/tokens/alice").asText();
+        HttpRequest arm = HttpRequest.newBuilder(URI.create(api + "/faults/tokenExpired"))
+                .header("Authorization", "Bearer " + key).POST(HttpRequest.BodyPublishers.noBody()).build();
+        assertThat(HTTP.send(arm, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(204);
+        // The decoy does not use it up.
+        assertThat(send("GET", storage + "_t/decoy", alice, null, null).statusCode()).isEqualTo(401);
+        HttpResponse<String> expired = send("GET", storage, alice, null, "application/lws+json");
+        assertThat(expired.statusCode()).isEqualTo(401);
+        assertThat(expired.headers().firstValue("WWW-Authenticate").orElseThrow()).contains("error=\"invalid_token\"")
+                .contains("realm=\"" + storage + "\"");
+        assertThat(send("GET", storage, alice, null, "application/lws+json").statusCode()).isEqualTo(401);
+        String fresh = JSON.readTree(HTTP.send(HttpRequest.newBuilder(URI.create(api + "/tokens/alice"))
+                .header("Authorization", "Bearer " + key).POST(HttpRequest.BodyPublishers.noBody()).build(),
+                HttpResponse.BodyHandlers.ofString()).body()).get("access_token").asText();
+        assertThat(send("GET", storage, fresh, null, "application/lws+json").statusCode()).isEqualTo(200);
+        List<JsonNode> all = list(log(session).get("exchanges"));
+        JsonNode fired = all.stream().filter(e -> "tokenExpired".equals(e.at("/annotations/fault").asText())).findFirst().orElseThrow();
+        assertThat(fired.at("/annotations/role").asText()).isEqualTo("container");
+        assertThat(fired.at("/annotations/identity").isNull()).isTrue();
+    }
+
     // ---- helpers ----
+
+    private static HttpResponse<String> register(String api, String key, String body) throws IOException, InterruptedException {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(api + "/clients")).header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (key != null) {
+            b.header("Authorization", "Bearer " + key);
+        }
+        return HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static JsonNode log(JsonNode session) throws Exception {
+        return exchanges(session, 0);
+    }
 
     private static JsonNode startSession(String serviceBase) throws Exception {
         HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(serviceBase + "/sessions"))

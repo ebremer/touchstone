@@ -77,9 +77,15 @@ final class SubjectTokens {
             .followRedirects(HttpClient.Redirect.NEVER)
             .build();
     private final Map<String, PublicKey> samlIdps;
+    /** Where documents come from instead of the network, when set; see {@link RefAuthorizationServer#dereferenceOnly}. */
+    private volatile RefAuthorizationServer.Documents documents;
 
     SubjectTokens(Map<String, PublicKey> samlIdps) {
         this.samlIdps = samlIdps;
+    }
+
+    void dereferenceOnly(RefAuthorizationServer.Documents documents) {
+        this.documents = documents;
     }
 
     Subject verify(String token, String type, String audience) throws Invalid {
@@ -512,6 +518,14 @@ final class SubjectTokens {
     }
 
     private String fetchText(String url, String accept) throws Invalid {
+        RefAuthorizationServer.Documents local = documents;
+        if (local != null) {
+            String body = local.get(url);
+            if (body == null) {
+                throw new Invalid(url + " is not a document this authorization server trusts");
+            }
+            return body;
+        }
         URI uri;
         try {
             uri = URI.create(url);

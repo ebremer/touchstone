@@ -55,6 +55,21 @@ record Observed(long seq, String method, String url, Map<String, List<String>> r
         }
     }
 
+    /**
+     * An application/x-www-form-urlencoded body as a JSON object, each parameter name with its
+     * first value (OBSERVATION.md section 5, {@code form}); null for any other body.
+     */
+    JsonNode form() {
+        String type = firstHeader("Content-Type");
+        if (type == null || !"application/x-www-form-urlencoded".equals(
+                type.split(";", 2)[0].trim().toLowerCase(java.util.Locale.ROOT))) {
+            return null;
+        }
+        com.fasterxml.jackson.databind.node.ObjectNode out = JSON.createObjectNode();
+        TokenRequests.form(bodyText()).forEach(out::put);
+        return out;
+    }
+
     URI uri() {
         try {
             return new URI(url);

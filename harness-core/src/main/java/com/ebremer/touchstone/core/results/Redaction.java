@@ -113,8 +113,9 @@ public final class Redaction {
         if (value == null || value.isEmpty()) {
             return value;
         }
+        // "absent", "nothing" and "a value at /subject_token" say whether there is a value, not what it is.
         if (description != null && CREDENTIAL_CHECK.matcher(description).find()
-                && !value.equals("absent") && !value.equals("nothing")) {
+                && !value.equals("absent") && !value.equals("nothing") && !value.startsWith("a value at ")) {
             return REDACTED;
         }
         return redactJwts(value);

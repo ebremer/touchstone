@@ -47,12 +47,14 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code /}: the start page; {@code /static/...}: its scripts and styles;</li>
  *   <li>{@code POST /sessions}: starts a session (section 4.4);</li>
  *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results}, {@code .../reset},
- *       {@code .../tasks/{rule}}, {@code .../faults/{fault}}, {@code .../tokens/{name}}: the session API,
- *       which takes the session key as a Bearer token; {@code .../page}: the session page, which
- *       reads the key from its URL's fragment;</li>
- *   <li>{@code /s/{sid}/storage/...} and {@code /s/{sid}/as/...}: the session's storage and
- *       authorization server, every exchange with them recorded; the authorization server's
- *       metadata is at {@code /.well-known/lws-configuration} followed by its issuer's path.</li>
+ *       {@code .../tasks/{rule}}, {@code .../faults/{fault}}, {@code .../tokens/{name}},
+ *       {@code .../credentials/{name}}, {@code .../clients}: the session API, which takes the session
+ *       key as a Bearer token; {@code .../page}: the session page, which reads the key from its
+ *       URL's fragment;</li>
+ *   <li>{@code /s/{sid}/storage/...}, {@code /s/{sid}/as/...}, {@code /s/{sid}/op/...} and
+ *       {@code /s/{sid}/id/{name}}: the session's storage, authorization server, OpenID Provider and
+ *       identity documents, every exchange with them recorded; the authorization server's metadata
+ *       is at {@code /.well-known/lws-configuration} followed by its issuer's path.</li>
  * </ul>
  */
 public final class ClientLab implements AutoCloseable {
@@ -70,6 +72,10 @@ public final class ClientLab implements AutoCloseable {
             + " connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
     private static final String STORAGE = "storage";
     private static final String AS = "authorizationServer";
+    private static final String OP = "openidProvider";
+    private static final String IDENTITY_HOST = "identityHost";
+    /** The largest body the session API reads, for a client registration. */
+    private static final int MAX_API_BODY = 16 << 10;
     private static final String EXPOSED = "Location, Link, ETag, Allow, Accept-Patch, Accept-Query, Accept-Ranges,"
             + " Content-Location, Content-Range, Last-Modified, WWW-Authenticate, Vary, Retry-After";
 
@@ -202,6 +208,19 @@ public final class ClientLab implements AutoCloseable {
                         default -> "unknown";
                     };
                     protocol(s, s.as.handler(), AS, role, request, response, callback);
+                } else if (sub.startsWith("/op/")) {
+                    String role = switch (sub) {
+                        case "/op/.well-known/openid-configuration" -> "opDiscovery";
+                        case "/op/jwks" -> "opJwks";
+                        case "/op/authorize" -> "opAuthorize";
+                        case "/op/token" -> "opToken";
+                        default -> "unknown";
+                    };
+                    protocol(s, s.op.handler(), OP, role, request, response, callback);
+                } else if (sub.startsWith("/id/")) {
+                    Session.Identity identity = s.identities.get(sub.substring("/id/".length()));
+                    protocol(s, identityDocument(identity), IDENTITY_HOST, identity == null ? "unknown" : "identityDocument",
+                            request, response, callback);
                 } else {
                     protocol(s, NOTHING, null, "unknown", request, response, callback);
                 }
@@ -460,6 +479,34 @@ public final class ClientLab implements AutoCloseable {
                 callback.succeeded();
                 return;
             }
+            if (parts.length == 3 && parts[1].equals("credentials") && method.equals("GET")
+                    && s.identities.containsKey(parts[2])) {
+                Session.Identity identity = s.identities.get(parts[2]);
+                ObjectNode body = JSON.createObjectNode();
+                body.put("name", identity.name());
+                body.put("webid", identity.webid());
+                body.put("username", identity.name());
+                body.put("password", identity.password());
+                body.put("verificationMethod", s.keyId(identity.name()));
+                body.set("privateKeyJwk", JSON.valueToTree(identity.key().toJSONObject()));
+                json(response, callback, 200, body);
+                return;
+            }
+            if (parts.length == 2 && parts[1].equals("clients")) {
+                switch (method) {
+                    case "GET" -> {
+                        ObjectNode body = JSON.createObjectNode();
+                        body.set("clients", clients(s));
+                        json(response, callback, 200, body);
+                    }
+                    case "POST" -> register(s, request, response, callback);
+                    default -> {
+                        response.getHeaders().put(HttpHeader.ALLOW, "GET, POST");
+                        error(response, callback, 405, "method_not_allowed", "GET or POST");
+                    }
+                }
+                return;
+            }
             if (parts.length == 3 && parts[1].equals("tokens") && method.equals("POST")
                     && Session.IDENTITIES.contains(parts[2])) {
                 ObjectNode body = JSON.createObjectNode();
@@ -473,7 +520,65 @@ public final class ClientLab implements AutoCloseable {
             error(response, callback, 404, "not_found", "no such session resource");
         }
 
-        /** What the session page and the API say about a session; never its key or a token. */
+        /**
+         * Registers an OpenID client with the session's provider (CLIENT-TESTING.md section 12.3):
+         * {@code {"redirect_uris": [...], "client_id": "..."}}, the identifier optional. A client
+         * already registered gets the new redirect URIs.
+         */
+        private void register(Session s, Request request, Response response, Callback callback) throws IOException {
+            byte[] raw;
+            try (InputStream in = Content.Source.asInputStream(request)) {
+                raw = in.readNBytes(MAX_API_BODY + 1);
+            }
+            if (raw.length > MAX_API_BODY) {
+                error(response, callback, 413, "too_large", "a registration is at most " + MAX_API_BODY + " bytes");
+                return;
+            }
+            com.fasterxml.jackson.databind.JsonNode doc;
+            try {
+                doc = JSON.readTree(raw);
+            } catch (IOException e) {
+                doc = null;
+            }
+            if (doc == null || !doc.isObject() || !doc.path("redirect_uris").isArray()
+                    || (doc.has("client_id") && !doc.get("client_id").isTextual())) {
+                error(response, callback, 400, "invalid_client_metadata",
+                        "send {\"redirect_uris\": [\"...\"]}, and optionally \"client_id\", as JSON");
+                return;
+            }
+            List<String> uris = new java.util.ArrayList<>();
+            for (com.fasterxml.jackson.databind.JsonNode u : doc.get("redirect_uris")) {
+                uris.add(u.asText());
+            }
+            String clientId = doc.has("client_id") ? doc.get("client_id").asText()
+                    : s.base + "/clients/" + java.util.UUID.randomUUID();
+            com.ebremer.touchstone.fixtures.op.RefOpenIdProvider.Client client;
+            try {
+                client = s.op.register(clientId, uris);
+            } catch (IllegalArgumentException e) {
+                error(response, callback, 400, "invalid_client_metadata", e.getMessage());
+                return;
+            }
+            LOG.info("session {}: OpenID client registered", s.id);
+            ObjectNode body = JSON.createObjectNode();
+            body.put("client_id", client.clientId());
+            ArrayNode list = body.putArray("redirect_uris");
+            client.redirectUris().forEach(list::add);
+            json(response, callback, 201, body);
+        }
+
+        private ArrayNode clients(Session s) {
+            ArrayNode list = JSON.createArrayNode();
+            for (var c : s.op.clients()) {
+                ObjectNode item = list.addObject();
+                item.put("client_id", c.clientId());
+                ArrayNode uris = item.putArray("redirect_uris");
+                c.redirectUris().forEach(uris::add);
+            }
+            return list;
+        }
+
+        /** What the session page and the API say about a session; never its key, a token or a password. */
         private ObjectNode describe(Session s) {
             ObjectNode body = JSON.createObjectNode();
             body.put("id", s.id);
@@ -485,10 +590,17 @@ public final class ClientLab implements AutoCloseable {
             ObjectNode as = body.putObject("authorizationServer");
             as.put("issuer", s.as.issuer());
             as.put("metadata", s.as.metadataUri().toString());
+            ObjectNode op = body.putObject("openidProvider");
+            op.put("issuer", s.op.issuer());
+            op.put("discovery", s.op.discoveryUri());
+            op.put("registration", config.publicBase() + "/sessions/" + s.id + "/clients");
+            op.set("clients", clients(s));
             ObjectNode ids = body.putObject("identities");
             for (String name : Session.IDENTITIES) {
                 ObjectNode id = ids.putObject(name);
                 id.put("webid", s.webid(name));
+                id.put("verificationMethod", s.keyId(name));
+                id.put("credentials", config.publicBase() + "/sessions/" + s.id + "/credentials/" + name);
                 id.put("role", name.equals("alice") ? "owns the storage" : "has no access until alice grants it");
             }
             body.put("client", s.clientId);
@@ -603,11 +715,19 @@ public final class ClientLab implements AutoCloseable {
             String requestText = text(requestBody, requestType, requestBody.length);
             String responseText = responseBody == null ? null : text(responseBody, responseType, responseBody.length);
             byte[] judgedBody = requestBody;
+            // Taken from the raw body, and from the ledger as it was before this answer.
+            TokenRequests.Facts facts = role.equals("asToken") && request.getMethod().equals("POST")
+                    ? TokenRequests.of(session, requestType, requestBody) : TokenRequests.Facts.NONE;
             if (role.equals("asToken")) {
                 rememberIssuedToken(responseText);
-                String form = new String(requestBody, StandardCharsets.UTF_8);
-                judgedBody = Redaction.form(form).getBytes(StandardCharsets.UTF_8);
+            }
+            // Credentials in a form body (a token request, a sign-in) and in a token response are
+            // kept as fingerprints only (OBSERVATION.md section 9).
+            if (essence(requestType) != null && essence(requestType).equals("application/x-www-form-urlencoded")) {
+                judgedBody = Redaction.form(new String(requestBody, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8);
                 requestText = requestText == null ? null : Redaction.form(requestText);
+            }
+            if (role.equals("asToken") || role.equals("opToken")) {
                 responseText = responseText == null ? null : Redaction.json(responseText);
             }
             // The ledger learns from the whole answer; the log keeps the first part of it.
@@ -629,7 +749,8 @@ public final class ClientLab implements AutoCloseable {
                     essence != null && listed(advertised.get("Accept-Patch"), essence, true),
                     essence != null && listed(advertised.get("Accept-Query"), essence, true),
                     repeat, role.equals("container") && Integer.valueOf(0).equals(members),
-                    fault == null ? null : fault.toString(), limit);
+                    facts.credentialSource(), facts.credential(), facts.audienceIncludesAs(), facts.identifiersAgree(),
+                    facts.realmContainsRequest(), fault == null ? null : fault.toString(), limit);
             int cap = config.maxRecordedResponseBytes();
             Exchange.Body req = body(requestText, requestBody.length, requestBody.length, cap);
             Exchange.Body res = body(responseText, responseLength, responseBody == null ? 0 : responseBody.length, cap);
@@ -801,7 +922,7 @@ public final class ClientLab implements AutoCloseable {
         String t = contentType.toLowerCase(Locale.ROOT);
         return t.startsWith("text/") || t.contains("json") || t.contains("xml") || t.contains("turtle")
                 || t.contains("x-www-form-urlencoded") || t.contains("n-triples") || t.contains("n-quads")
-                || t.contains("trig") || t.contains("lws+cid") || t.contains("sparql");
+                || t.contains("trig") || t.contains("cid") || t.contains("sparql");
     }
 
     /**
@@ -838,6 +959,38 @@ public final class ClientLab implements AutoCloseable {
         body.put("error", error);
         body.put("message", message);
         json(response, callback, status, body);
+    }
+
+    /** Serves an identity's controlled identifier document, read-only; null serves a 404. */
+    private static Handler identityDocument(Session.Identity identity) {
+        return new Handler.Abstract() {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) {
+                if (identity == null) {
+                    response.setStatus(404);
+                    callback.succeeded();
+                    return true;
+                }
+                String method = request.getMethod();
+                if (!method.equals("GET") && !method.equals("HEAD")) {
+                    response.getHeaders().put(HttpHeader.ALLOW, "GET, HEAD");
+                    response.setStatus(405);
+                    callback.succeeded();
+                    return true;
+                }
+                byte[] bytes = identity.document().getBytes(StandardCharsets.UTF_8);
+                response.setStatus(200);
+                // CID 1.0 section 6.1 registers application/cid for controlled identifier documents.
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/cid");
+                response.getHeaders().put(HttpHeader.CONTENT_LENGTH, bytes.length);
+                if (method.equals("HEAD")) {
+                    callback.succeeded();
+                } else {
+                    response.write(true, ByteBuffer.wrap(bytes), callback);
+                }
+                return true;
+            }
+        };
     }
 
     /** A handler for session paths that serve nothing: every request is a 404, and still recorded. */

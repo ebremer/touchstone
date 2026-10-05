@@ -20,19 +20,49 @@
       <dd><code id="storage"></code> <button type="button" class="copy" data-copy="storage">Copy</button></dd>
       <dt>Authorization server</dt>
       <dd><code id="issuer"></code><br><span class="note">Your client should find it from the storage's 401 challenge, not from here.</span></dd>
+      <dt>OpenID Provider</dt>
+      <dd><code id="op-issuer"></code><br><span class="note">Each identity's document names it; your client should find it there.</span></dd>
       <dt>Session ends</dt>
       <dd id="expires"></dd>
     </dl>
     <h3>Identities</h3>
-    <table class="identities">
-      <thead><tr><th scope="col">Name</th><th scope="col">WebID</th><th scope="col">Access</th><th scope="col">Token</th></tr></thead>
-      <tbody id="identities"></tbody>
-    </table>
+    <p class="note">Your client can authenticate as alice or bob in three ways. It can sign in at the
+      session's OpenID Provider with a username and password, after you register it below. It can
+      sign a credential itself with the identity's key, as the CID suite describes: sub, iss and
+      client_id are the WebID, and kid names the verification method. Or it can use a token from
+      this page, for a client without authentication yet.</p>
+    <div class="scroll">
+      <table class="identities">
+        <thead><tr><th scope="col">Name</th><th scope="col">WebID</th><th scope="col">Access</th>
+          <th scope="col">Password and key</th><th scope="col">Token</th></tr></thead>
+        <tbody id="identities"></tbody>
+      </table>
+    </div>
+    <div id="secrets-box" class="box" hidden>
+      <p>Username <code id="secret-user"></code>, password <code id="secret-password"></code>
+        <button type="button" class="copy" data-copy="secret-password">Copy</button></p>
+      <label for="secret-key">Private key of <code id="secret-kid"></code>, as a JWK</label>
+      <textarea id="secret-key" readonly rows="5"></textarea>
+      <button type="button" class="copy" data-copy="secret-key">Copy</button>
+      <a id="secret-download" href="#" download="key.jwk.json">Download</a>
+    </div>
     <div id="token-box" hidden>
       <label for="token">Access token for <span id="token-for"></span>, valid for an hour</label>
       <textarea id="token" readonly rows="3"></textarea>
       <button type="button" class="copy" data-copy="token">Copy</button>
     </div>
+    <h3>Register your client with the OpenID Provider</h3>
+    <p class="note">For the OpenID sign-in, register the redirect URIs your client uses. A redirect URI
+      must match exactly, except that one on http://127.0.0.1 or http://[::1] may use any port. Leave
+      the client ID empty to be given one.</p>
+    <form id="register" class="box">
+      <label for="client-id">Client ID, an absolute URI (optional)</label>
+      <input id="client-id" type="url" autocomplete="off">
+      <label for="redirect-uris">Redirect URIs, one per line</label>
+      <textarea id="redirect-uris" rows="2" required></textarea>
+      <p><button type="submit">Register</button></p>
+    </form>
+    <ul id="clients" class="note"></ul>
     <h3>Traps</h3>
     <ul id="traps" class="note"></ul>
     <p><button type="button" id="end" class="danger">End this session</button></p>

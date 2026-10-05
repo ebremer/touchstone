@@ -8,7 +8,7 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 {: .no_toc }
 
 {: .important }
-**Format version 0.9.0, frozen on 2026-10-05.** These are the tests `touchstone run`
+**Format version 0.10.0, frozen on 2026-10-05.** These are the tests `touchstone run`
 executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`). The engine that runs them implements the format's execution contract, and all 101
 run against the reference deployment in every build.
 
@@ -174,7 +174,7 @@ The definitions are data, so they are checked as data:
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.9.0, as does the JSON-LD export trial below. One command runs
+All six pass for version 0.10.0, as does the JSON-LD export trial below. One command runs
 them all, and CI runs it on every push and pull request. The engine applies the same
 checks, bar the anchor and lws-test-suite ones, before every run:
 

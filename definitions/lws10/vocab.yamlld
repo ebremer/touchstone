@@ -1012,7 +1012,8 @@
     type: rdf:Property
     label: "header"
     comment: >-
-      A condition on the decoded JWT header.
+      A condition on the decoded JWT header: of the token a jwt expectation names, or of a
+      client's credential.
     domain: lwst:JwtExpectation
     range: lwst:JsonExpectation
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
@@ -1020,7 +1021,8 @@
     type: rdf:Property
     label: "claims"
     comment: >-
-      A condition on the decoded JWT claims set.
+      A condition on the decoded JWT claims set: of the token a jwt expectation names, or
+      of a client's credential.
     domain: lwst:JwtExpectation
     range: lwst:JsonExpectation
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
@@ -1195,8 +1197,8 @@
     type: rdf:Property
     label: "server"
     comment: >-
-      Which server of the session the request addressed: storage or authorizationServer.
-      Several values mean any of them.
+      Which server of the session the request addressed: storage, authorizationServer,
+      openidProvider or identityHost. Several values mean any of them.
     domain: lwst:ExchangeCondition
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
@@ -1313,10 +1315,64 @@
     type: rdf:Property
     label: "arm"
     comment: >-
-      A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse
-      or pageGone (OBSERVATION.md section 6.2).
+      A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse,
+      pageGone or tokenExpired (OBSERVATION.md section 6.2).
     domain: lwst:Task
     range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:form
+    type: rdf:Property
+    label: "form"
+    comment: >-
+      A condition on an application/x-www-form-urlencoded request body, seen as a JSON
+      object of each parameter's first value (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: lwst:JsonExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:credential
+    type: rdf:Property
+    label: "credential"
+    comment: >-
+      Conditions on the header and claims of the JWT a token request presents as its
+      subject token (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: lwst:JwtExpectation
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:credentialSource
+    type: rdf:Property
+    label: "credentialSource"
+    comment: >-
+      Where a token request's subject token came from: selfIssued, openidProvider,
+      authorizationServer or other (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:audienceIncludesAs
+    type: rdf:Property
+    label: "audienceIncludesAs"
+    comment: >-
+      Whether the aud claim of a token request's subject token names the session's
+      authorization server (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:identifiersAgree
+    type: rdf:Property
+    label: "identifiersAgree"
+    comment: >-
+      Whether the sub, iss and client_id claims of a token request's subject token are the
+      same string (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:realmContainsRequest
+    type: rdf:Property
+    label: "realmContainsRequest"
+    comment: >-
+      Whether a token request's resource is a realm the session presented in a 401 for a
+      URL that realm contains (format 0.10.0).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:kind
     type: rdf:Property

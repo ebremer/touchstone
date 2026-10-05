@@ -2863,3 +2863,127 @@ reference client also tolerates the lag: it asks again, up to five seconds, unti
 have a next page.
 
 Drafted by an agent; waits on branch `clients/c3-tasks`.
+
+### D-0082 — authentication for client sessions (phase C4), and format 0.10.0
+Phase C4 is built. Its acceptance criterion holds: the reference client authenticates all three
+ways a session offers, and each broken-credential twin fails. The rules of phases C2 and C3 still
+discriminate as before.
+
+**Client registration (CLIENT-TESTING.md section 12.3): redirect URIs on the page.** Erich chose
+this on 2026-10-05, over client identifiers that resolve to metadata documents. A developer
+registers redirect URIs on the session page or with `POST …/clients`, and may choose the
+client identifier, an absolute URI; otherwise the session assigns one. Resolvable client
+identifiers can come later, if lws10-authn-openid comes to require them.
+
+**What a session now runs** (`harness-fixtures`, `harness-clients`):
+- **An OpenID Provider** at `{base}/s/{sid}/op` (`RefOpenIdProvider`). It offers discovery, a
+  JWKS, an authorization endpoint with a sign-in form, and a token endpoint, for the
+  authorization code flow with PKCE.
+  - S256 only, as RFC 9700 recommends.
+  - Public clients only.
+  - A redirect URI matches exactly, but a loopback one may use any port (RFC 8252 section 7.3).
+  - It answers with a 303 carrying `iss` (RFC 9207).
+  - Its ES256 ID Tokens name the client in `azp`, and the client and the session's
+    authorization server in `aud`, as the OpenID suite asks.
+  - alice and bob sign in with passwords the session API gives the key holder. A password is
+    needed because the session id is public: without one, anyone who knew it could get a code
+    sent to a loopback redirect URI on their own machine.
+- **Identity documents** at `{base}/s/{sid}/id/{name}`, served as `application/cid`. Each names
+  a P-256 key as a `JsonWebKey` authentication method, and the provider as an `OpenIdProvider`
+  service. `GET …/credentials/{name}` gives the private key, a JWK whose `kid` is the
+  verification method's URL, and the password.
+- **An authorization server that dereferences nothing.** `SubjectTokens` fetched a subject's
+  document, the provider's discovery document and its JWKS over HTTP. A client could have made
+  the service fetch any URL, against invariant 8.3. The session's server now reads them from
+  the session in process (`RefAuthorizationServer.dereferenceOnly`), and refuses any other
+  subject, issuer or key as untrusted. The server self-test's authorization server still
+  fetches, as before.
+- **The fault `tokenExpired`.** The next storage request with a valid token, other than to the
+  decoy, is answered 401 with `error="invalid_token"`, and that token is refused from then on.
+  A storage refusing a bad token now does so once the target's role is known, so that the
+  traffic log says what was addressed. The answer is the same.
+
+**Format 0.10.0** adds, for client rules only, and changes nothing an earlier rule relies on:
+- the servers `openidProvider` and `identityHost`;
+- the roles `opDiscovery`, `opJwks`, `opAuthorize`, `opToken` and `identityDocument`;
+- what the recorder knows of a token request (`OBSERVATION.md` sections 4.9 and 4.10):
+  - `credentialSource`: `selfIssued`, `openidProvider`, `authorizationServer` or `other`;
+  - the credential's JWT header and claims, which the new condition `credential` judges
+    with `json` expectations, as the server tests' `jwt` does;
+  - `audienceIncludesAs` and `identifiersAgree`, which compare values no rule could name
+    without variables: the session's own issuer, and three claims with each other;
+  - `realmContainsRequest`: the realm the request asks a token for contains the URL of the
+    latest request a 401 named that realm for;
+- the condition `form`, `json` expectations on a form body's parameters;
+- the fault `tokenExpired`.
+
+The schema `$id` is `…/0-10-0`. As for 0.9.0, the additions are frozen with this entry, and
+like the rest of C4 they wait on the branch for review before they merge.
+
+**What "self-issued" means.** The CID rules must not judge an ID Token, whose claims are the
+provider's business, nor be dodged by a credential that breaks the very claim they check. So
+the recorder classifies credentials by what it knows, not by the token type the client
+declares:
+- an ID Token the session's provider issued, matched by value;
+- an access token the session issued;
+- otherwise, a JWT whose `kid`, `iss`, `sub` or `client_id` names one of the session's
+  identities.
+
+A credential without `sub` is still self-issued by its `iss` or `kid`, and fails only the `sub`
+rule.
+
+**Fourteen rules** (`definitions/lws10/clients/authentication.yamlld`, area `authentication`;
+CLIENT-TESTING.md section 11), thirteen of them MUST:
+- the token exchange's `resource` and `subject_token`;
+- the realm check;
+- the CID suite's token type, signature (`alg` not `none`), and claims: `sub`, `iss`,
+  `client_id`, their agreement, `aud` naming the authorization server, `exp` and `iat`;
+- the core draft's recommended audience restriction (SHOULD);
+- the OpenID suite's token type.
+
+**The realm check needs a trap and a fault.** A client must check that "the URI of the
+originating request is logically contained within the realm" before it acts on a challenge.
+- A client that checks does nothing visible: it leaves the decoy alone.
+- A client that does not check asks for a token for the decoy's realm.
+
+So the rule's trial is the next token request after any storage 401, and a client passes when
+the realm it asks for contains the URL that 401 answered. Its task arms `tokenExpired`, so that
+a client which already has a token gets a reason to ask for a new one after meeting the decoy.
+A client that never asks again after the decoy stays untested, not passed.
+
+**No rule for `token-type-saml2`.** A session has no SAML identity provider, so no client can
+present an assertion it would accept. The ID Token's own claims bind the OpenID Provider, not
+the client, so no rule judges them either.
+
+**The proof.**
+- `RefLwsClient` finds the authorization server from the storage's 401, as the core draft
+  says, and checks the realm before it authenticates. It authenticates three ways:
+  - alice starts with the session's token;
+  - when that token "expires", she signs a credential with her key;
+  - bob signs in at his provider, which his identity document names, on the provider's own
+    form.
+- It has fourteen new flaws. Ten break a credential or its declared type; the others leave out
+  `resource`, send the credential as `assertion`, or ask for a token for the decoy's realm. A
+  twin makes its mistake once, then authenticates properly, so the rest of its script runs as
+  the reference does.
+- `ClientRulesSelfTest`: the reference passes all 44 rules ("no MUST failure in 34 MUST rules
+  exercised, of 34 that apply"), and each of the 44 twins fails exactly the rules aimed at it.
+
+The evidence was read, not only the outcomes:
+- the unsigned twin fails on `alg` `"none"`;
+- the twin whose `client_id` differs fails `identifiersAgree`, false;
+- the foreign-realm twin fails `realmContainsRequest`, false, at its token request after the
+  decoy.
+
+A traffic log was checked as well: no password, code, private key or raw token appears in it.
+
+`ClientLabTest` covers the rest: registration's checks, the sign-in's refusals (an unknown
+client or redirect URI gets a page, never a redirect), single-use codes, the ID Token's claims,
+the authorization server refusing a subject outside the session, and an expired token staying
+refused.
+
+A small fix rides along. A check on a credential-bearing member recorded its expected value
+"a value at /subject_token" as `[REDACTED]`, which hid a presence check behind a redaction. The
+expected value now reads as it is, in server reports too.
+
+Drafted by an agent; waits on branch `clients/c4-authentication`.

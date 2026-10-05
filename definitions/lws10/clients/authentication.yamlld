@@ -1,0 +1,410 @@
+# Client rules for authentication and token exchange (YAML-LD, format 0.10.0).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: Authentication and token exchange, as a client does them
+comment: >-
+  What a client's requests to the session's token endpoint must satisfy: the token exchange of
+  lws10-core section 5.2.3, the self-issued credentials of the CID suite, and the token type of
+  the OpenID suite's ID Tokens. The session's identities, alice and bob, have identity documents
+  that name a key each, which the developer downloads from the session page, and the session's
+  own OpenID Provider. The session's authorization server trusts those and nothing else.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+entries:
+
+  # ---- every token request ----
+
+  - id: "#client-token-exchange-resource"
+    type: ObservationTest
+    name: client-token-exchange-resource
+    label: The client's token exchange requests name the storage they want a token for in resource
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+    traits: [Post, TokenExchange, Authz]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-resource-param
+    observe:
+      role: asToken
+      method: POST
+      form:
+        - pointer: /grant_type
+          equals: urn:ietf:params:oauth:grant-type:token-exchange
+    expect:
+      form:
+        - pointer: /resource
+          jsonType: string
+          matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Send resource with every token exchange request: the realm of the storage's 401 challenge,
+      an absolute URI. The access token's aud is made from it.
+
+  - id: "#client-token-exchange-subject-token"
+    type: ObservationTest
+    name: client-token-exchange-subject-token
+    label: The client's token exchange requests present an authentication credential in subject_token
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+    traits: [Post, TokenExchange, Authz]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-token-exchange-subject-token-param
+    observe:
+      role: asToken
+      method: POST
+      form:
+        - pointer: /grant_type
+          equals: urn:ietf:params:oauth:grant-type:token-exchange
+    expect:
+      form:
+        - pointer: /subject_token
+          jsonType: string
+          matches: "."
+    guidance: >-
+      Send the authentication credential, a self-issued JWT or an ID Token, as subject_token, with
+      its type in subject_token_type. Not as assertion, id_token or another parameter.
+
+  - id: "#client-token-for-containing-realm"
+    type: ObservationTest
+    name: client-token-for-containing-realm
+    label: After a 401, the client asks for a token only for a realm that contains the URL it was refused
+    comment: >-
+      A client must check that the URL it requested is within the realm of the challenge before
+      it acts on it. The session's root container lists a decoy whose 401 names a realm that does
+      not contain it, so a client that does not check asks the authorization server for a token
+      for that realm. Each 401 from the storage opens a trigger, and the client's next token
+      request is the trial. The task arms tokenExpired, so that a client which keeps its token
+      has a reason to ask for a new one after meeting the decoy.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+    traits: [Post, TokenExchange, Authz]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
+    task:
+      prompt: >-
+        Open the first entry of the storage's root container, then any resource you can read. The
+        session answers that request once with 401, as if your access token had expired: get a
+        new token and try again.
+      arm: tokenExpired
+    observe:
+      role: asToken
+      method: POST
+      form:
+        - pointer: /resource
+          jsonType: string
+      after:
+        server: storage
+        statusCode: 401
+    expect:
+      realmContainsRequest: true
+    guidance: >-
+      Before you ask for a token, check that the URL the 401 answered is within the challenge's
+      realm: the realm itself, or below it. If it is not, do not ask for a token for that realm
+      or send one to that URL.
+
+  # ---- self-issued credentials (the CID suite) ----
+
+  - id: "#client-cid-token-type-jwt"
+    type: ObservationTest
+    name: client-cid-token-type-jwt
+    label: The client presents a self-issued credential with the jwt token type
+    comment: >-
+      A self-issued credential is one the client signed itself, whose kid, iss, sub or client_id
+      names one of the session's identities (OBSERVATION.md section 4.9).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/token-type-jwt
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      form:
+        - pointer: /subject_token_type
+          equals: urn:ietf:params:oauth:token-type:jwt
+    guidance: >-
+      Send subject_token_type=urn:ietf:params:oauth:token-type:jwt with a JWT you signed yourself.
+
+  - id: "#client-cid-credential-signed"
+    type: ObservationTest
+    name: client-cid-credential-signed
+    label: The client's self-issued credential is signed, not alg none
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/alg-not-none
+      - https://example.org/touchstone/req/lws10-core/authn-credential-signed
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        header:
+          - pointer: /alg
+            jsonType: string
+            matches: "(?i)^(?!none$)."
+    guidance: >-
+      Sign the JWT with the identity's key, ES256 for the session's P-256 keys, and name the key's
+      verification method in kid. An unsigned JWT (alg none) is never a credential.
+
+  - id: "#client-cid-subject-claim"
+    type: ObservationTest
+    name: client-cid-subject-claim
+    label: The client's self-issued credential names its subject, a URI, in sub
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-claim
+      - https://example.org/touchstone/req/lws10-core/authn-subject-claim-uri
+      - https://example.org/touchstone/req/lws10-core/authn-credential-tamper-evident-claims
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /sub
+            jsonType: string
+            matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Put the identity's URI, the URL of its identity document, in sub.
+
+  - id: "#client-cid-issuer-claim"
+    type: ObservationTest
+    name: client-cid-issuer-claim
+    label: The client's self-issued credential names its issuer, a URI, in iss
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/iss-claim
+      - https://example.org/touchstone/req/lws10-core/authn-issuer-claim-uri
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /iss
+            jsonType: string
+            matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
+    guidance: >-
+      Put the issuer in iss. For a self-issued credential that is the subject's own URI.
+
+  - id: "#client-cid-client-id-claim"
+    type: ObservationTest
+    name: client-cid-client-id-claim
+    label: The client's self-issued credential names the client in client_id
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/client-id-claim
+      - https://example.org/touchstone/req/lws10-core/authn-client-claim
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /client_id
+            jsonType: string
+    guidance: >-
+      Put the client identifier in client_id. For a self-issued credential that is the subject's
+      own URI.
+
+  - id: "#client-cid-identifiers-agree"
+    type: ObservationTest
+    name: client-cid-identifiers-agree
+    label: The client's self-issued credential has the same URI in sub, iss and client_id
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/sub-iss-client-same-uri
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+      credential:
+        claims:
+          - pointer: /sub
+            jsonType: string
+          - pointer: /iss
+            jsonType: string
+          - pointer: /client_id
+            jsonType: string
+    expect:
+      identifiersAgree: true
+    guidance: >-
+      Use the identity's URI for all three of sub, iss and client_id: a self-issued credential is
+      an agent speaking for itself.
+
+  - id: "#client-cid-audience-includes-as"
+    type: ObservationTest
+    name: client-cid-audience-includes-as
+    label: The audience of the client's self-issued credential includes the authorization server
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/aud-includes-as
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+      credential:
+        claims:
+          - pointer: /aud
+            exists: true
+    expect:
+      audienceIncludesAs: true
+    guidance: >-
+      Put the authorization server's issuer identifier, the as_uri of the storage's challenge, in
+      aud, alone or in an array.
+
+  - id: "#client-cid-audience-restricted"
+    type: ObservationTest
+    name: client-cid-audience-restricted
+    label: The client's self-issued credential restricts its audience with aud
+    status: Proposed
+    level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authn-audience-restriction-recommended
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /aud
+            exists: true
+    guidance: >-
+      Restrict the credential to the authorization server you present it to, with an aud claim,
+      so that nobody who sees it can use it elsewhere.
+
+  - id: "#client-cid-expiry-claim"
+    type: ObservationTest
+    name: client-cid-expiry-claim
+    label: The client's self-issued credential says when it expires, in exp
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/exp-claim
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /exp
+            jsonType: number
+    guidance: >-
+      Put the expiry time in exp, in seconds since the epoch: a few minutes from now is plenty.
+
+  - id: "#client-cid-issued-at-claim"
+    type: ObservationTest
+    name: client-cid-issued-at-claim
+    label: The client's self-issued credential says when it was issued, in iat
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-ssi-cid/iat-claim
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: selfIssued
+    expect:
+      credential:
+        claims:
+          - pointer: /iat
+            jsonType: number
+    guidance: >-
+      Put the time you signed the credential in iat, in seconds since the epoch.
+
+  # ---- ID Tokens (the OpenID suite) ----
+
+  - id: "#client-oidc-token-type-id-token"
+    type: ObservationTest
+    name: client-oidc-token-type-id-token
+    label: The client presents an ID Token with the id_token token type
+    comment: >-
+      The trials are token requests presenting an ID Token the session's OpenID Provider issued.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#token-type
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-openid/id-token-token-type-uri
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: openidProvider
+    expect:
+      form:
+        - pointer: /subject_token_type
+          equals: urn:ietf:params:oauth:token-type:id_token
+    guidance: >-
+      Send subject_token_type=urn:ietf:params:oauth:token-type:id_token with an ID Token. Not jwt,
+      which is for credentials the client signs itself.

@@ -172,8 +172,8 @@ V = [
     ("jwt", P, None, "jwt", "Conditions on a compact-serialized JWT.", "lwst:ResponseExpectation", "lwst:JwtExpectation"),
     ("token", P, None, "token", "Template yielding the JWT to check, usually a variable captured in the same step.", "lwst:JwtExpectation", "xsd:string"),
     ("jwks", P, None, "jwks", "Template yielding a JWKS URL; the JWT's signature must verify with the key its kid names there.", "lwst:JwtExpectation", "xsd:string"),
-    ("header", P, None, "header", "A condition on the decoded JWT header.", "lwst:JwtExpectation", "lwst:JsonExpectation"),
-    ("claims", P, None, "claims", "A condition on the decoded JWT claims set.", "lwst:JwtExpectation", "lwst:JsonExpectation"),
+    ("header", P, None, "header", "A condition on the decoded JWT header: of the token a jwt expectation names, or of a client's credential.", "lwst:JwtExpectation", "lwst:JsonExpectation"),
+    ("claims", P, None, "claims", "A condition on the decoded JWT claims set: of the token a jwt expectation names, or of a client's credential.", "lwst:JwtExpectation", "lwst:JsonExpectation"),
     ("connegEquivalent", P, None, "connegEquivalent", "The step's URL serves one document under several media types.", "lwst:ResponseExpectation", "lwst:ConnegExpectation"),
     ("accepts", P, None, "accepts", "The media types to request, in order.", "lwst:ConnegExpectation", "xsd:string"),
 
@@ -198,7 +198,7 @@ V = [
     ("sameTarget", P, None, "sameTarget", "On a trigger: when true, the trial must request the trigger's URL (fragments ignored).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("guidance", P, None, "guidance", "How a client fixes a failure of the rule. Advice shown with failures; it never affects an outcome.", "lwst:ObservationTest", "xsd:string"),
     ("anyOf", P, None, "anyOf", "At least one of these conditions holds.", "lwst:ExchangeCondition", "lwst:ExchangeCondition"),
-    ("server", P, None, "server", "Which server of the session the request addressed: storage or authorizationServer. Several values mean any of them.", "lwst:ExchangeCondition", "xsd:string"),
+    ("server", P, None, "server", "Which server of the session the request addressed: storage, authorizationServer, openidProvider or identityHost. Several values mean any of them.", "lwst:ExchangeCondition", "xsd:string"),
     ("role", P, None, "role", "What the request addressed, as the session's server found it (OBSERVATION.md section 4.2), such as container, page, linkset, typeSearch or unknown. Several values mean any of them.", "lwst:ExchangeCondition", "xsd:string"),
     ("issued", P, None, "issued", "Whether the session had handed out the request's URL before the request (fragment ignored): when false, the client built it.", "lwst:ExchangeCondition", "xsd:boolean"),
     ("builtBy", P, None, "builtBy", "For a URL the session never handed out, how it relates to one it did: query (the same URL with another query) or path (a path extending, or sibling to, a handed-out URL's path).", "lwst:ExchangeCondition", "xsd:string"),
@@ -212,7 +212,14 @@ V = [
     ("containerEmpty", P, None, "containerEmpty", "Whether the request addressed a container that had no members when it arrived (format 0.9.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("task", P, None, "task", "What the developer is asked to do so that the rule can be tried. Without after, each start of the task selects the next exchange observe holds of as a trial (format 0.9.0).", "lwst:ObservationTest", "lwst:Task"),
     ("prompt", P, None, "prompt", "The task as the developer reads it.", "lwst:Task", "xsd:string"),
-    ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse or pageGone (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
+    ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse, pageGone or tokenExpired (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
+
+    ("form", P, None, "form", "A condition on an application/x-www-form-urlencoded request body, seen as a JSON object of each parameter's first value (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JsonExpectation"),
+    ("credential", P, None, "credential", "Conditions on the header and claims of the JWT a token request presents as its subject token (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JwtExpectation"),
+    ("credentialSource", P, None, "credentialSource", "Where a token request's subject token came from: selfIssued, openidProvider, authorizationServer or other (format 0.10.0).", "lwst:ExchangeCondition", "xsd:string"),
+    ("audienceIncludesAs", P, None, "audienceIncludesAs", "Whether the aud claim of a token request's subject token names the session's authorization server (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("identifiersAgree", P, None, "identifiersAgree", "Whether the sub, iss and client_id claims of a token request's subject token are the same string (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("realmContainsRequest", P, None, "realmContainsRequest", "Whether a token request's resource is a realm the session presented in a 401 for a URL that realm contains (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
 
     # ---- identity properties
     ("kind", P, None, "kind", "The identity's kind.", "lwst:Identity", "lwst:IdentityKind"),

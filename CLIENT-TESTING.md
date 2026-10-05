@@ -1,7 +1,7 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 to C3 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081), and the
-rule format passed Gate C (D-0079). The rest is design (D-0075).**
+**Status: phases C0 to C4 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082),
+and the rule format passed Gate C (D-0079). The rest is design (D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -127,8 +127,8 @@ Its URLs:
 |---|---|
 | `{base}/s/{sid}/storage/` | the storage: its storage description and root container; resources it names under `_r/`, trap URLs under `_t/` (§6.1) |
 | `{base}/s/{sid}/as/` | the authorization server: JWKS and token endpoint. Its RFC 8414 metadata is at `/.well-known/lws-configuration{base path}/s/{sid}/as` |
-| `{base}/s/{sid}/op/` | the OpenID Provider: discovery, JWKS, authorize, token, login form (C4) |
-| `{base}/s/{sid}/id/{name}` | alice's and bob's identity documents (CID suite; C4) |
+| `{base}/s/{sid}/op/` | the OpenID Provider: discovery, JWKS, the authorization endpoint with its sign-in form, and the token endpoint |
+| `{base}/s/{sid}/id/{name}` | alice's and bob's identity documents, each naming a key and the OpenID Provider |
 
 Paths, not hostnames, separate sessions, so one reverse-proxy rule covers the service.
 LWS URIs are opaque to clients, so the prefix costs nothing.
@@ -163,7 +163,7 @@ tested once.
 
 ### 4.4 Session API
 
-Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 to C3
+Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phases C1 to C4
 built everything here except the EARL and JUnit XML forms of the results, which come with C6;
 [harness-clients/README.md](harness-clients/README.md) documents what exists.
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
@@ -171,6 +171,11 @@ built everything here except the EARL and JUnit XML forms of the results, which 
 - `GET {base}/sessions/{sid}` describes the session; `POST {base}/sessions/{sid}/tokens/{name}`
   hands out a fresh token; `GET {base}/sessions/{sid}/page` is the session page, which reads
   the key from its URL's fragment.
+- `GET {base}/sessions/{sid}/credentials/{name}` gives an identity's password for the OpenID
+  Provider, and the private key, a JWK, of the verification method its identity document lists.
+- `POST {base}/sessions/{sid}/clients` registers a client with the OpenID Provider:
+  `{"redirect_uris": [...]}`, and optionally a `client_id`, an absolute URI. `GET` lists the
+  registered clients.
 - `GET {base}/sessions/{sid}/results` returns results as JSON, or as EARL or JUnit XML with
   `?format=`.
 - `GET {base}/sessions/{sid}/exchanges?after=N` returns the traffic log, paged and redacted.
@@ -209,7 +214,10 @@ Both conditions use one vocabulary:
 `after` in `observe` makes the trial "the next matching exchange after a trigger". Rules have
 no variables and no captures. Format 0.9.0 (phase C3, D-0081) adds a rule's `task`, which may
 `arm` a fault, and the conditions `repeat` and `containerEmpty`. The absence check within a
-window planned as `followedBy` turned out unnecessary.
+window planned as `followedBy` turned out unnecessary. Format 0.10.0 (phase C4, D-0082) adds
+what the recorder knows of a token request: where its credential came from
+(`credentialSource`), the credential's header and claims (`credential`), `audienceIncludesAs`,
+`identifiersAgree` and `realmContainsRequest`; and `form`, for form bodies.
 
 ```yaml
   - id: "#client-linkset-put-only-when-advertised"
@@ -297,20 +305,21 @@ is something a server may legally do, so a conformant client meets it in the wil
 | `methodNotAllowed` | answers the next PUT to a linkset that supports PUT with `405`, as a server that withdrew the optional PUT | `client-no-assumed-methods-405-415` |
 | `lostCreateResponse` | performs the next POST create, then answers `503` | `create-post-not-idempotent` |
 | `pageGone` | answers the next request for a page of search results with `410` | `client-restart` |
+| `tokenExpired` (C4) | answers the next storage request with a valid token, other than to the decoy, with `401` and `error="invalid_token"`, and refuses that token from then on | `authz-challenge-realm-param`: a client that keeps its token gets a reason to ask for a new one after meeting the decoy |
 | `forgedDelivery` (variants, phase C5) | sends the inbox a delivery signed with an unpublished key, with an altered body, a stale `created`, or a wrong `keyid` | `inbox-verifies-signature`, `receiver-verification-steps` |
 
 "Handles 405 and 415 gracefully" cannot be seen directly. Its rule checks the observable
 part: the client does not repeat the refused request unchanged. The guidance says so.
 
-The plan had four more faults that phase C3 dropped (D-0081):
+The plan had four more faults that phase C3 dropped or moved (D-0081):
 - **`preconditionFailedOnce`.** A 412 tests only that the next write stays conditional, which
   `client-put-conditional` already judges on every PUT. Re-reading after a 412 is good
   practice that the drafts do not require.
 - **`unsupportedMediaTypeOnce`.** A 415 for JSON Merge Patch on a linkset would break a server
   MUST, and natural 415s, for an unadvertised format, already trigger the rule.
 - **`queryFormat415`.** Refusing the baseline query format would break a server MUST.
-- **`tokenExpired`.** It moves to phase C4. Until then a client's fresh token comes from the
-  session API, which is not recorded, so the refresh could not be seen.
+- **`tokenExpired`.** It moved to phase C4, which built it (D-0082; the table above), because
+  before C4 a client's fresh token came from the session API, which is not recorded.
 
 ## 7. Limits
 
@@ -347,6 +356,9 @@ to §7:
    Everything is in memory. Nothing outlives a session except an export the developer
    downloads.
 3. **Outbound requests only to the public internet:**
+   - The session's authorization server dereferences nothing: it validates credentials with
+     the session's own identity documents and OpenID Provider, in process, and refuses any
+     subject, issuer or key elsewhere (D-0082).
    - Deliveries go only to `https` inbox URLs that resolve to public unicast addresses. That
      excludes loopback, RFC 1918, link-local (including `169.254.169.254`), unique local
      and CGNAT addresses.
@@ -428,7 +440,8 @@ clients; only the client half is judged here.
 | `lws10-index/client-415-accept-query` | MAY | no rule: indistinguishable from `client-query-baseline-after-415` while the session accepts only the baseline (D-0078) | — |
 | `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C4 |
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
-| `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-saml2`, `token-type-jwt` | MUST | passive: token requests | C4 |
+| `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-jwt` | MUST | passive: token requests | C4 |
+| `lws10-authn-saml/token-type-saml2` | MUST | no rule: a session has no SAML identity provider, so no client presents an assertion it could accept (D-0082) | — |
 | `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | fault `forgedDelivery`: forged deliveries refused, genuine ones accepted | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
@@ -481,6 +494,30 @@ client meant; the other three arm a fault.
 | `client-no-blind-retry-of-create` | SHOULD | `create-post-not-idempotent` | create a data resource; `lostCreateResponse` | the next request to a container after a POST to it got a 5xx | not the same POST again |
 | `client-restart-after-refused-page` | SHOULD | `client-restart` | follow search results to a next page; `pageGone` | the next request to the search or index after a page got 404 or 410 | a fresh QUERY, or the type index again |
 
+**The C4 rules** judge requests to the session's token endpoint, in the area `authentication`
+(D-0082). The CID rules judge credentials the client signed itself: JWTs that name one of the
+session's identities and that the session did not issue (`OBSERVATION.md` section 4.9).
+
+| Rule | Level | Cites | Trials (`observe`) | Passes when (`expect`) |
+|---|---|---|---|---|
+| `client-token-exchange-resource` | MUST | `authz-token-exchange-resource-param` | token exchange requests | `resource` is a URI |
+| `client-token-exchange-subject-token` | MUST | `authz-token-exchange-subject-token-param` | token exchange requests | `subject_token` is present |
+| `client-token-for-containing-realm` | MUST | `authz-challenge-realm-param` | the next token request naming a realm after a storage 401; task: open the decoy, then a resource; `tokenExpired` | the realm contains the URL the 401 answered |
+| `client-cid-token-type-jwt` | MUST | CID `token-type-jwt` | self-issued credentials | `subject_token_type` is the jwt URI |
+| `client-cid-credential-signed` | MUST | CID `alg-not-none`; `authn-credential-signed` | self-issued credentials | `alg` is not `none` |
+| `client-cid-subject-claim` | MUST | CID `sub-claim`; `authn-subject-claim-uri`, `authn-credential-tamper-evident-claims` | self-issued credentials | `sub` is a URI |
+| `client-cid-issuer-claim` | MUST | CID `iss-claim`; `authn-issuer-claim-uri` | self-issued credentials | `iss` is a URI |
+| `client-cid-client-id-claim` | MUST | CID `client-id-claim`; `authn-client-claim` | self-issued credentials | `client_id` is a string |
+| `client-cid-identifiers-agree` | MUST | CID `sub-iss-client-same-uri` | self-issued credentials with all three | `sub`, `iss` and `client_id` are equal |
+| `client-cid-audience-includes-as` | MUST | CID `aud-includes-as` | self-issued credentials with `aud` | `aud` names the authorization server |
+| `client-cid-audience-restricted` | SHOULD | `authn-audience-restriction-recommended` | self-issued credentials | `aud` is present |
+| `client-cid-expiry-claim` | MUST | CID `exp-claim` | self-issued credentials | `exp` is a number |
+| `client-cid-issued-at-claim` | MUST | CID `iat-claim` | self-issued credentials | `iat` is a number |
+| `client-oidc-token-type-id-token` | MUST | OpenID `id-token-token-type-uri` | ID Tokens of the session's OpenID Provider | `subject_token_type` is the id_token URI |
+
+The ID Token's own claims (`azp`, `aud` and the rest) bind the OpenID Provider, not the client,
+so no rule judges them. The session's provider issues them as the OpenID suite asks.
+
 ## 12. Open questions (for Erich)
 
 1. **Hosting.** Options:
@@ -491,12 +528,11 @@ client meant; the other three arm a fault.
    - vulcan is a dedicated VM, but it hosts a server Touchstone grades.
    - A host of its own.
 2. **Session creation:** open and rate-limited, or behind a sign-in such as GitHub or ORCID.
-3. **OpenID client registration:** per-session redirect URIs entered on the page, or client
-   identifiers as URIs dereferenced to metadata documents. This depends on what
-   lws10-authn-openid ends up requiring of LWS client identifiers (`id-token-azp-claim`
-   says only that `azp` carries one). Today's harness OpenID Provider only publishes
-   discovery and a JWKS: the engine mints ID tokens itself. An interactive provider
-   (authorize endpoint, login form, code flow with PKCE) is new work in C4.
+3. **OpenID client registration. Decided 2026-10-05 (D-0082):** per-session redirect URIs,
+   entered on the page or through the API, with a client identifier the developer chooses or
+   the session assigns. Client identifiers dereferenced to metadata documents can come later,
+   if lws10-authn-openid comes to require them (`id-token-azp-claim` says only that `azp`
+   carries one).
 4. **The working group.** Ask whether lws-test-suite plans client tests. If so, contribute
    the rule format back as JSON-LD, as D-0047 does for server tests.
 
@@ -539,13 +575,15 @@ Gate 2 did for the server-side schema.
   `forgedDelivery`, and the task-based rules. *Done when:* every C3 rule discriminates in the
   self-test. All five pass for `RefLwsClient`, and each of its five C3 twins fails exactly the
   rules aimed at it.
-- **C4: authentication.**
+- **C4: authentication. Done 2026-10-05 (D-0082).**
   - The session OpenID Provider and client registration (§12.3).
   - Hosted CID documents and key download.
-  - The credential and token-request rules.
+  - The credential and token-request rules, and the `tokenExpired` fault.
 
   *Done when:* the reference client authenticates all three ways, and a broken-credential
-  twin fails.
+  twin fails. `RefLwsClient` uses a token from the session, then credentials it signs with
+  alice's key, and bob's OpenID sign-in. It passes all 44 rules, and each of its 14 C4 twins,
+  ten of them with broken credentials, fails exactly the rule aimed at it.
 - **C5: notifications.** Signed deliveries under §8.3's guard, the `forgedDelivery`
   variants, and the receiver rules. *Done when:* the self-test's reference inbox refuses
   every forgery and accepts every genuine delivery, and a twin that accepts everything
