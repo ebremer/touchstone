@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touchstone client session</title>
+<link rel="stylesheet" href="../../static/lab.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>Touchstone client session</h1>
+    <p id="status" role="status">Loading…</p>
+  </header>
+
+  <section id="connect" hidden>
+    <h2>Connect your client</h2>
+    <dl class="facts">
+      <dt>Storage</dt>
+      <dd><code id="storage"></code> <button type="button" class="copy" data-copy="storage">Copy</button></dd>
+      <dt>Authorization server</dt>
+      <dd><code id="issuer"></code><br><span class="note">Your client should find it from the storage's 401 challenge, not from here.</span></dd>
+      <dt>Session ends</dt>
+      <dd id="expires"></dd>
+    </dl>
+    <h3>Identities</h3>
+    <table class="identities">
+      <thead><tr><th scope="col">Name</th><th scope="col">WebID</th><th scope="col">Access</th><th scope="col">Token</th></tr></thead>
+      <tbody id="identities"></tbody>
+    </table>
+    <div id="token-box" hidden>
+      <label for="token">Access token for <span id="token-for"></span>, valid for an hour</label>
+      <textarea id="token" readonly rows="3"></textarea>
+      <button type="button" class="copy" data-copy="token">Copy</button>
+    </div>
+    <h3>Traps</h3>
+    <ul id="traps" class="note"></ul>
+    <p><button type="button" id="end" class="danger">End this session</button></p>
+  </section>
+
+  <section id="traffic" hidden>
+    <h2>Traffic</h2>
+    <p class="note">Every request your client sent this session, newest first. Select a row for the
+      whole exchange. "URL came from" says how the session gave your client the URL, or that your
+      client built it. Tokens show as fingerprints. <span id="counts"></span></p>
+    <div class="scroll">
+      <table class="log">
+        <thead><tr>
+          <th scope="col">#</th><th scope="col">Time</th><th scope="col">Request</th><th scope="col">Status</th>
+          <th scope="col">Addressed</th><th scope="col">As</th><th scope="col">Token</th><th scope="col">URL came from</th>
+        </tr></thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script src="../../static/session.js"></script>
+</body>
+</html>

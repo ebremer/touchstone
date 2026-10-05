@@ -11,6 +11,7 @@ import java.util.Map;
 import com.ebremer.touchstone.fixtures.as.AccessTokens;
 import com.ebremer.touchstone.fixtures.as.RefAuthorizationServer;
 import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
+import com.ebremer.touchstone.fixtures.lws.Traps;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
@@ -38,11 +39,16 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
  *       delivers notifications without checking that the subscriber may read the resource; the
  *       delivery-time authorization tests must fail. (Against BROKEN_STORAGE they cannot: it lets
  *       bob read everything, so their "bob cannot read it" preconditions do not hold.)</li>
+ *   <li>{@link Kind#TRAPPED}: the compliant deployment with every {@link Traps trap} a client
+ *       session sets. Each is legal, so every definition must pass against it too.</li>
  * </ul>
  */
 public final class ReferenceScenario implements AutoCloseable {
 
-    public enum Kind { OPEN, SECURED, BROKEN_AUTHORIZATION_SERVER, BROKEN_STORAGE, BROKEN_NOTIFICATIONS }
+    public enum Kind { OPEN, SECURED, BROKEN_AUTHORIZATION_SERVER, BROKEN_STORAGE, BROKEN_NOTIFICATIONS, TRAPPED }
+
+    /** The index lag of the trapped deployment: long enough to matter, short enough to wait out. */
+    public static final java.time.Duration TRAPPED_INDEX_LAG = java.time.Duration.ofSeconds(1);
 
     private final RefAuthorizationServer authorizationServer;
     private final RefLwsServer storage;
@@ -85,7 +91,9 @@ public final class ReferenceScenario implements AutoCloseable {
         RefAuthorizationServer as = kind == Kind.BROKEN_AUTHORIZATION_SERVER
                 ? RefAuthorizationServer.startBroken(0) : RefAuthorizationServer.start(0);
         RefLwsServer storage = kind == Kind.BROKEN_NOTIFICATIONS
-                ? RefLwsServer.startLeakingNotifications(0, as, alice) : RefLwsServer.startSecured(0, as, alice);
+                ? RefLwsServer.startLeakingNotifications(0, as, alice)
+                : RefLwsServer.startSecured(0, as, alice,
+                        kind == Kind.TRAPPED ? Traps.all(TRAPPED_INDEX_LAG) : Traps.NONE);
         RSAKey idp = rsa("idp");
         try {
             as.trustSamlIdentityProvider(fixtures + "idp", idp.toRSAPublicKey());

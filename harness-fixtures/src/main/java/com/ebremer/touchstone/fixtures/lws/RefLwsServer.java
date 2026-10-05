@@ -62,8 +62,17 @@ import org.eclipse.jetty.util.Callback;
  * </ul>
  *
  * <p>Container representations name their context by IRI, as the draft's example and every
- * real server do (D-0026/D-0040). Deliveries are unsigned and best-effort: one attempt, off the
- * request thread, with no retry.
+ * real server do (D-0026/D-0040). Deliveries are signed with RFC 9421 HTTP Message Signatures,
+ * the key published in the storage description; each is sent off the request thread, retried on
+ * a 5xx or an unreachable inbox, and a subscription is deactivated after repeated failures or a
+ * 410 (the webhook suite's MAYs). Every read advertises the methods the resource supports in
+ * {@code Allow}, and for a data resource the patch format in {@code Accept-Patch}.
+ *
+ * <p>It runs standalone on its own port, or {@linkplain #mounted mounted} under a path of another
+ * server, as each client-testing session's storage is (CLIENT-TESTING.md section 4.2). It can set
+ * {@link Traps}: legal behaviour a client must not assume away. Each request it handles carries
+ * {@link #ROLE_ATTRIBUTE}, {@link #SUBJECT_ATTRIBUTE} and {@link #CLIENT_ATTRIBUTE}, which a
+ * recorder wrapping it reads.
  *
  * <p>Three auth modes (D-0017): {@link AuthMode#OPEN} (no authentication), {@link
  * AuthMode#SECURED} (validates Bearer tokens against the reference authorization server; 401
@@ -89,6 +98,20 @@ public final class RefLwsServer implements AutoCloseable {
     /** The NotificationService endpoint, and its one subscription type. */
     private static final String SUBSCRIPTIONS = "/_subscriptions/";
     private static final String TYPE_INDEX = "/_types/index";
+    /** Trap URLs (CLIENT-TESTING.md section 6.1): opaque pages and linksets, flat resources, the decoy. */
+    private static final String PAGE_PREFIX = "/_t/p/";
+    private static final String LINKSET_PREFIX = "/_t/l/";
+    private static final String FLAT_PREFIX = "/_r/";
+    private static final String DECOY = "/_t/decoy";
+    /** The realm the decoy's challenge names: one that does not contain the decoy. */
+    private static final String VAULT = "/_t/vault/";
+
+    /** Request attribute: what the request addressed, such as container, page or linkset. */
+    public static final String ROLE_ATTRIBUTE = "touchstone.lws.role";
+    /** Request attribute: the subject of a validated access token. */
+    public static final String SUBJECT_ATTRIBUTE = "touchstone.lws.subject";
+    /** Request attribute: the client_id of a validated access token. */
+    public static final String CLIENT_ATTRIBUTE = "touchstone.lws.client";
     private static final String TYPE_SEARCH = "/_types/search";
     private static final String LWS_QUERY = "application/lws-query+json";
     /** Groups a type search may hold before it is refused with 422 (lws10-index section 7.2). */
@@ -114,8 +137,22 @@ public final class RefLwsServer implements AutoCloseable {
             java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9+.-]*:[^\\s<>\"{}|\\\\^`]+");
 
     private final AuthMode authMode;
+    /** Null when mounted: then the server it is mounted in owns the lifecycle. */
     private final Server server;
     private final ServerConnector connector;
+    /** A mounted storage's public URI, ending in a slash; null when standalone. */
+    private final URI publicStorage;
+    /** The request path before a mounted storage's own paths: publicStorage's path, unslashed. */
+    private final String mount;
+    private final Traps traps;
+    private final LwsHandler handler;
+    /** Which inboxes a notification may be sent to; a storage open to strangers restricts them. */
+    private volatile java.util.function.Predicate<URI> deliveryGuard = uri -> true;
+    /** Opaque page URLs: token to page, and container path and page number to token. */
+    private final ConcurrentMap<String, PageRef> pageRefs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> pageTokens = new ConcurrentHashMap<>();
+    /** Opaque linkset URLs: token to the path of the resource described. */
+    private final ConcurrentMap<String, String> linksetRefs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Node> store = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Record> grants = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Record> requests = new ConcurrentHashMap<>();
@@ -165,10 +202,24 @@ public final class RefLwsServer implements AutoCloseable {
         volatile java.util.Map<String, Set<String>> declaredLinks = java.util.Map.of();
         volatile String linksetEtag = newEtag();
         final Set<String> children = ConcurrentHashMap.newKeySet();
+        /** The container's path; null for the root. A flat URI says nothing about it. */
+        volatile String parent;
+        /** The opaque linkset URL's token, when that trap is set. */
+        volatile String linksetToken;
+        /** When the types or relations the index derives last changed (Traps#indexLag). */
+        volatile Instant indexed = Instant.now();
 
         Node(boolean container) {
             this.container = container;
         }
+    }
+
+    /** One page of a container, as an opaque page URL names it. */
+    private record PageRef(String path, int page) {
+    }
+
+    /** How much a storage holds: its resources, grants, requests and subscriptions, and their bytes. */
+    public record Usage(int resources, long bytes) {
     }
 
     /** A stored access grant or access request: its document, its policies, who made it. */
@@ -243,15 +294,33 @@ public final class RefLwsServer implements AutoCloseable {
         }
     }
 
-    private RefLwsServer(AuthMode authMode) {
+    private RefLwsServer(AuthMode authMode, URI publicStorage, Traps traps) {
         this.authMode = authMode;
-        this.server = new Server();
-        this.connector = new ServerConnector(server);
-        // A run opens many connections at once; the OS default backlog refused some of them.
-        connector.setAcceptQueueSize(256);
-        server.addConnector(connector);
-        server.setHandler(new LwsHandler());
-        store.put(STORAGE_PATH, new Node(true));
+        this.publicStorage = publicStorage;
+        this.mount = publicStorage == null ? "" : publicStorage.getRawPath().replaceAll("/$", "");
+        this.traps = traps;
+        this.handler = new LwsHandler();
+        if (publicStorage == null) {
+            this.server = new Server();
+            this.connector = new ServerConnector(server);
+            // A run opens many connections at once; the OS default backlog refused some of them.
+            connector.setAcceptQueueSize(256);
+            server.addConnector(connector);
+            server.setHandler(handler);
+        } else {
+            this.server = null;
+            this.connector = null;
+        }
+        Node root = new Node(true);
+        store.put(STORAGE_PATH, root);
+        if (traps.decoy()) {
+            Node decoy = new Node(false);
+            decoy.bytes = new byte[0];
+            decoy.contentType = "text/plain";
+            decoy.parent = STORAGE_PATH;
+            store.put(DECOY, decoy);
+            root.children.add(DECOY);
+        }
     }
 
     /** Open mode: no authentication. */
@@ -265,7 +334,12 @@ public final class RefLwsServer implements AutoCloseable {
      * {@code aud} must name, alone; the server registers itself with {@code as} as a resource.
      */
     public static RefLwsServer startSecured(int port, RefAuthorizationServer as, String owner) {
-        RefLwsServer server = startIn(AuthMode.SECURED, port);
+        return startSecured(port, as, owner, Traps.NONE);
+    }
+
+    /** Secured mode with {@code traps} set: the self-test's trapped deployment. */
+    public static RefLwsServer startSecured(int port, RefAuthorizationServer as, String owner, Traps traps) {
+        RefLwsServer server = startIn(AuthMode.SECURED, port, traps);
         String realm = server.realm();
         try {
             server.validator = new TokenValidator(as.issuer(), as.jwksUri().toURL(), realm);
@@ -273,11 +347,63 @@ public final class RefLwsServer implements AutoCloseable {
             server.close();
             throw new IllegalStateException("cannot build token validator", e);
         }
-        server.asUri = as.issuer();
-        server.storageOwner = owner;
-        server.store.get(STORAGE_PATH).owner = owner;
-        as.addResource(realm);
+        server.secure(as, owner);
         return server;
+    }
+
+    /**
+     * A secured storage served by another server's handler at {@code storage}, its public URI
+     * (ending in a slash; the path of a request it handles must start with that URI's path). Its
+     * authorization server is {@code as}, consulted in process, and nothing is delivered until
+     * {@link #deliverOnlyTo} allows it.
+     */
+    public static RefLwsServer mounted(URI storage, RefAuthorizationServer as, String owner, Traps traps) {
+        if (!storage.toString().endsWith("/")) {
+            throw new IllegalArgumentException("a storage URI ends in a slash: " + storage);
+        }
+        RefLwsServer server = new RefLwsServer(AuthMode.SECURED, storage, traps);
+        server.validator = new TokenValidator(as.issuer(), as.jwkSource(), server.realm());
+        server.deliveryGuard = uri -> false;
+        server.secure(as, owner);
+        return server;
+    }
+
+    private void secure(RefAuthorizationServer as, String owner) {
+        asUri = as.issuer();
+        storageOwner = owner;
+        store.get(STORAGE_PATH).owner = owner;
+        as.addResource(realm());
+    }
+
+    /** The handler that serves this storage, for a mounted one to be placed in another server. */
+    public Handler handler() {
+        return handler;
+    }
+
+    /** Lets notifications go only to the inboxes {@code guard} accepts. */
+    public void deliverOnlyTo(java.util.function.Predicate<URI> guard) {
+        this.deliveryGuard = guard;
+    }
+
+    /** What the storage holds now, not counting its root and the decoy. */
+    public Usage usage() {
+        int resources = grants.size() + requests.size() + subscriptions.size();
+        long bytes = 0;
+        for (var e : store.entrySet()) {
+            if (e.getKey().equals(STORAGE_PATH) || e.getKey().equals(DECOY)) {
+                continue;
+            }
+            resources++;
+            byte[] b = e.getValue().bytes;
+            bytes += b == null ? 0 : b.length;
+        }
+        for (Record r : grants.values()) {
+            bytes += r.document().toString().length();
+        }
+        for (Record r : requests.values()) {
+            bytes += r.document().toString().length();
+        }
+        return new Usage(resources, bytes);
     }
 
     /**
@@ -297,7 +423,11 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     private static RefLwsServer startIn(AuthMode mode, int port) {
-        RefLwsServer instance = new RefLwsServer(mode);
+        return startIn(mode, port, Traps.NONE);
+    }
+
+    private static RefLwsServer startIn(AuthMode mode, int port, Traps traps) {
+        RefLwsServer instance = new RefLwsServer(mode, null, traps);
         instance.connector.setPort(port);
         try {
             instance.server.start();
@@ -312,7 +442,7 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     public URI baseUri() {
-        return URI.create("http://localhost:" + connector.getLocalPort() + "/");
+        return publicStorage != null ? publicStorage : URI.create("http://localhost:" + connector.getLocalPort() + "/");
     }
 
     /** The realm access tokens must be issued for: the storage's base URI. */
@@ -327,7 +457,7 @@ public final class RefLwsServer implements AutoCloseable {
      */
     public List<String> residue() {
         List<String> out = new ArrayList<>();
-        store.keySet().stream().filter(p -> !p.equals(STORAGE_PATH)).sorted().forEach(out::add);
+        store.keySet().stream().filter(p -> !p.equals(STORAGE_PATH) && !p.equals(DECOY)).sorted().forEach(out::add);
         grants.keySet().forEach(id -> out.add(GRANTS + id));
         requests.keySet().forEach(id -> out.add(REQUESTS + id));
         subscriptions.keySet().forEach(id -> out.add(SUBSCRIPTIONS + id));
@@ -335,11 +465,16 @@ public final class RefLwsServer implements AutoCloseable {
     }
 
     public void join() throws InterruptedException {
-        server.join();
+        if (server != null) {
+            server.join();
+        }
     }
 
     @Override
     public void close() {
+        if (server == null) {
+            return;
+        }
         try {
             server.stop();
         } catch (Exception e) {
@@ -361,9 +496,18 @@ public final class RefLwsServer implements AutoCloseable {
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             String path = request.getHttpURI().getCanonicalPath();
             String method = request.getMethod();
+            if (publicStorage != null) {
+                if (path == null || !path.startsWith(mount + "/")) {
+                    role(request, "unknown");
+                    status(request, response, callback, 404);
+                    return true;
+                }
+                path = path.substring(mount.length());
+            }
 
             String subject = null;
             String client = null;
+            boolean invalidToken = false;
             if (authMode == AuthMode.SECURED) {
                 String bearer = bearerToken(request);
                 if (bearer != null) {
@@ -372,18 +516,51 @@ public final class RefLwsServer implements AutoCloseable {
                         subject = claims.getSubject();
                         Object c = claims.getClaim("client_id");
                         client = c == null ? null : c.toString();
+                        request.setAttribute(SUBJECT_ATTRIBUTE, subject);
+                        if (client != null) {
+                            request.setAttribute(CLIENT_ATTRIBUTE, client);
+                        }
                     } catch (TokenValidator.InvalidTokenException e) {
-                        challenge(request, response, callback, "invalid_token");
-                        return true;
+                        invalidToken = true;
                     }
                 }
             }
+            if (traps.decoy() && path.equals(DECOY)) {
+                role(request, "decoy");
+                decoy(request, response, callback);
+                return true;
+            }
+            if (invalidToken) {
+                challenge(request, response, callback, "invalid_token");
+                return true;
+            }
+            // An opaque page URL stands for a container and a page of it; anything else under
+            // the page prefix is unknown, and a page is only read.
+            int page = 0;
+            if (traps.opaquePageUrls() && path.startsWith(PAGE_PREFIX)) {
+                PageRef ref = pageRefs.get(path.substring(PAGE_PREFIX.length()));
+                if (ref == null || !store.containsKey(ref.path())) {
+                    role(request, "unknown");
+                    status(request, response, callback, 404);
+                    return true;
+                }
+                role(request, "page");
+                if (!method.equals("GET") && !method.equals("HEAD")) {
+                    methodNotAllowed(response, callback, "GET, HEAD");
+                    return true;
+                }
+                path = ref.path();
+                page = ref.page();
+            }
 
             if (path.startsWith(SUBSCRIPTIONS)) {
+                role(request, path.equals(SUBSCRIPTIONS) ? "subscriptions" : "subscription");
                 subscriptions(request, response, callback, path, method, subject, client);
                 return true;
             }
             if (path.equals(TYPE_INDEX) || path.equals(TYPE_SEARCH)) {
+                role(request, path.equals(TYPE_INDEX) ? "typeIndex"
+                        : request.getHttpURI().getQuery() != null ? "searchPage" : "typeSearch");
                 if (authMode == AuthMode.SECURED && subject == null) {
                     challenge(request, response, callback, null);
                 } else {
@@ -392,6 +569,8 @@ public final class RefLwsServer implements AutoCloseable {
                 return true;
             }
             if (path.startsWith(GRANTS) || path.startsWith(REQUESTS)) {
+                boolean service = path.equals(GRANTS) || path.equals(REQUESTS);
+                role(request, (path.startsWith(GRANTS) ? "accessGrant" : "accessRequest") + (service ? "s" : ""));
                 new Registry(path.startsWith(GRANTS)).handle(request, response, callback, path, method, subject);
                 return true;
             }
@@ -408,6 +587,14 @@ public final class RefLwsServer implements AutoCloseable {
             boolean description = target.equals(STORAGE_PATH) && !linkset
                     && (method.equals("GET") || method.equals("HEAD"))
                     && accept != null && accept.contains(LWS_CID);
+            if (page == 0) {
+                Node addressed = store.get(target);
+                // With opaque page URLs a page number in the query names nothing.
+                boolean builtPage = traps.opaquePageUrls() && hasPageParameter(request);
+                role(request, linkset ? "linkset" : description ? "storageDescription"
+                        : addressed == null || builtPage ? "unknown" : !addressed.container ? "dataResource"
+                        : requestedPage(request) > 1 ? "page" : "container");
+            }
             if (authMode == AuthMode.SECURED && !description) {
                 String action = switch (method) {
                     case "GET", "HEAD", "OPTIONS" -> "read";
@@ -431,8 +618,8 @@ public final class RefLwsServer implements AutoCloseable {
                 return true;
             }
             switch (method) {
-                case "GET" -> read(request, response, callback, path, true);
-                case "HEAD" -> read(request, response, callback, path, false);
+                case "GET" -> read(request, response, callback, path, true, page);
+                case "HEAD" -> read(request, response, callback, path, false, page);
                 case "POST" -> create(request, response, callback, path, subject);
                 case "PUT" -> update(request, response, callback, path);
                 case "PATCH" -> patch(request, response, callback, path);
@@ -440,6 +627,10 @@ public final class RefLwsServer implements AutoCloseable {
                 default -> methodNotAllowed(response, callback, "GET, HEAD, POST, PUT, PATCH, DELETE");
             }
             return true;
+        }
+
+        private static void role(Request request, String role) {
+            request.setAttribute(ROLE_ATTRIBUTE, role);
         }
 
         // ---- auth ----
@@ -492,15 +683,41 @@ public final class RefLwsServer implements AutoCloseable {
             status(request, response, callback, 401);
         }
 
+        /**
+         * The decoy (Traps#decoy): a 401 whatever is sent, naming a realm that does not contain the
+         * decoy. A client that checks "that the URI of the originating request is logically
+         * contained within the realm" before it presents a token never sends this one any.
+         */
+        private void decoy(Request request, Response response, Callback callback) {
+            StringBuilder c = new StringBuilder("Bearer ");
+            if (asUri != null) {
+                c.append("as_uri=\"").append(asUri).append("\", ");
+            }
+            c.append("realm=\"").append(absolute(request, VAULT)).append('"');
+            if (bearerToken(request) != null) {
+                c.append(", error=\"invalid_token\"");
+            }
+            response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, c.toString());
+            response.getHeaders().add("Link", storageLink(request));
+            status(request, response, callback, 401);
+        }
+
         private String storageLink(Request request) {
             return "<" + absolute(request, STORAGE_PATH) + ">; rel=\"" + LWS_NS + "storage\"";
         }
 
         // ---- read ----
 
-        private void read(Request request, Response response, Callback callback, String path, boolean withBody) {
+        /** @param explicitPage the page an opaque page URL named, or 0 to take it from the query */
+        private void read(Request request, Response response, Callback callback, String path, boolean withBody,
+                          int explicitPage) {
             Node node = store.get(path);
             if (node == null) {
+                status(request, response, callback, 404);
+                return;
+            }
+            // With opaque page URLs, a page number in the query is a URL the server never gave.
+            if (traps.opaquePageUrls() && explicitPage == 0 && hasPageParameter(request)) {
                 status(request, response, callback, 404);
                 return;
             }
@@ -524,11 +741,12 @@ public final class RefLwsServer implements AutoCloseable {
                 response.getHeaders().put(HttpHeader.ETAG, node.etag);
                 response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
                 addResourceLinks(request, response, path, node);
+                advertise(response, path, node);
                 status(request, response, callback, 304);
                 return;
             }
             int pages = node.container ? Math.max(1, (node.children.size() + PAGE_SIZE - 1) / PAGE_SIZE) : 1;
-            int page = node.container ? requestedPage(request) : 1;
+            int page = !node.container ? 1 : explicitPage > 0 ? explicitPage : requestedPage(request);
             if (page < 1 || page > pages) {
                 status(request, response, callback, 404);
                 return;
@@ -582,6 +800,7 @@ public final class RefLwsServer implements AutoCloseable {
                     response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
                     response.getHeaders().put("Content-Range", "bytes " + from + "-" + to + "/" + body.length);
                     addResourceLinks(request, response, path, node);
+                    advertise(response, path, node);
                     send(response, callback, slice, withBody);
                     return;
                 }
@@ -593,10 +812,53 @@ public final class RefLwsServer implements AutoCloseable {
                     : node.etag.substring(0, node.etag.length() - 1) + "-page" + page + '"');
             response.getHeaders().put(HttpHeader.LAST_MODIFIED, httpDate(lastModified));
             addResourceLinks(request, response, path, node);
+            advertise(response, path, node);
             if (pages > 1) {
                 addPageLinks(request, response, path, page, pages);
             }
             send(response, callback, body, withBody);
+        }
+
+        /**
+         * The methods a resource supports, and for a data resource the patch format: "servers MUST
+         * use standard HTTP headers to advertise their capabilities", and a client should not
+         * assume PUT or a patch format it was not told of.
+         */
+        private void advertise(Response response, String path, Node node) {
+            if (node.container) {
+                response.getHeaders().put(HttpHeader.ALLOW,
+                        path.equals(STORAGE_PATH) ? "GET, HEAD, POST" : "GET, HEAD, POST, DELETE");
+            } else {
+                response.getHeaders().put(HttpHeader.ALLOW, dataResourceMethods(node));
+                response.getHeaders().put("Accept-Patch", MERGE_PATCH);
+            }
+        }
+
+        private String dataResourceMethods(Node node) {
+            return puttable(node) ? "GET, HEAD, PUT, PATCH, DELETE" : "GET, HEAD, PATCH, DELETE";
+        }
+
+        /** Whether PUT replaces this data resource: always, unless Traps#putOnlyForText excludes it. */
+        private boolean puttable(Node node) {
+            if (!traps.putOnlyForText()) {
+                return true;
+            }
+            String type = node.contentType == null ? "" : node.contentType.toLowerCase(Locale.ROOT);
+            return type.startsWith("text/") || type.contains("json") || type.contains("xml")
+                    || type.contains("n-triples") || type.contains("n-quads") || type.contains("trig");
+        }
+
+        private static boolean hasPageParameter(Request request) {
+            String query = request.getHttpURI().getQuery();
+            if (query == null) {
+                return false;
+            }
+            for (String param : query.split("&")) {
+                if (param.startsWith("page=")) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** The page a container read asks for: 1 without a page parameter, 0 for a malformed one. */
@@ -633,7 +895,15 @@ public final class RefLwsServer implements AutoCloseable {
         }
 
         private String pageUri(Request request, String path, int page) {
-            return absolute(request, path) + "?page=" + page;
+            if (!traps.opaquePageUrls()) {
+                return absolute(request, path) + "?page=" + page;
+            }
+            String token = pageTokens.computeIfAbsent(path + "#" + page, k -> {
+                String t = UUID.randomUUID().toString();
+                pageRefs.put(t, new PageRef(path, page));
+                return t;
+            });
+            return absolute(request, PAGE_PREFIX + token);
         }
 
         /** True unless {@code since} is a date and {@code modified} is no later than it. */
@@ -712,6 +982,14 @@ public final class RefLwsServer implements AutoCloseable {
 
         /** The path of the resource whose linkset {@code path} is, or null when it is not a linkset. */
         private String linksetSubject(String path) {
+            if (traps.opaqueLinksetUrls()) {
+                if (!path.startsWith(LINKSET_PREFIX)) {
+                    return null;
+                }
+                // A token for a resource that is gone, or none at all, answers 404 as a linkset.
+                String described = linksetRefs.get(path.substring(LINKSET_PREFIX.length()));
+                return described != null ? described : path;
+            }
             if (!path.endsWith(".meta")) {
                 return null;
             }
@@ -773,6 +1051,7 @@ public final class RefLwsServer implements AutoCloseable {
                     }
                     node.linkset = (ObjectNode) merged;
                     node.linksetEtag = newEtag();
+                    node.indexed = Instant.now();
                     response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
                     status(request, response, callback, 204);
                 }
@@ -815,8 +1094,11 @@ public final class RefLwsServer implements AutoCloseable {
                 String contentType = request.getHeaders().get("Content-Type");
                 child.contentType = contentType != null ? contentType : "application/octet-stream";
             }
+            child.parent = path;
             synchronized (store) {
-                childPath = path + unique(path, slug, isContainer) + (isContainer ? "/" : "");
+                childPath = traps.flatResourceUris()
+                        ? FLAT_PREFIX + UUID.randomUUID() + (isContainer ? "/" : "")
+                        : path + unique(path, slug, isContainer) + (isContainer ? "/" : "");
                 store.put(childPath, child);
             }
             if (!isContainer) {
@@ -856,6 +1138,10 @@ public final class RefLwsServer implements AutoCloseable {
                 methodNotAllowed(response, callback, "GET, HEAD, POST, DELETE");
                 return;
             }
+            if (!puttable(node)) {
+                methodNotAllowed(response, callback, dataResourceMethods(node));
+                return;
+            }
             String ifMatch = request.getHeaders().get("If-Match");
             if (ifMatch != null && !ifMatch.equals("*") && !ifMatch.equals(node.etag)) {
                 status(request, response, callback, 412);
@@ -870,6 +1156,7 @@ public final class RefLwsServer implements AutoCloseable {
             }
             node.declaredTypes = declaredTypes(request, absolute(request, path), node);
             node.declaredLinks = declaredLinks(request, absolute(request, path));
+            node.indexed = Instant.now();
             touch(path, node);
             announce(request, "Update", path, node, null, null);
             response.setStatus(204);
@@ -984,9 +1271,10 @@ public final class RefLwsServer implements AutoCloseable {
                 }
             }
             // Announced before the resource goes, while who may read it can still be decided.
-            announce(request, "Delete", path, node, "origin", parentOf(path));
+            String parentPath = parentOf(path);
+            announce(request, "Delete", path, node, "origin", parentPath);
             removeRecursively(path);
-            Node parent = store.get(parentOf(path));
+            Node parent = store.get(parentPath);
             if (parent != null) {
                 parent.children.remove(path);
                 parent.etag = newEtag();
@@ -997,6 +1285,9 @@ public final class RefLwsServer implements AutoCloseable {
 
         private void removeRecursively(String path) {
             Node node = store.remove(path);
+            if (node != null && node.linksetToken != null) {
+                linksetRefs.remove(node.linksetToken);
+            }
             if (node != null && node.container) {
                 for (String child : List.copyOf(node.children)) {
                     removeRecursively(child);
@@ -1018,7 +1309,9 @@ public final class RefLwsServer implements AutoCloseable {
             root.put("id", absolute(request, path));
             root.put("type", "Container");
             List<String> children = new ArrayList<>(node.children);
-            children.sort(String::compareTo);
+            // The decoy comes first, so a client reading only the first page still meets it.
+            children.sort(java.util.Comparator.comparing((String c) -> !c.equals(DECOY))
+                    .thenComparing(java.util.Comparator.naturalOrder()));
             int total = 0;
             List<String> onPage = new ArrayList<>();
             for (String childPath : children) {
@@ -1112,8 +1405,24 @@ public final class RefLwsServer implements AutoCloseable {
                     + ">; rel=\"linkset\"; type=\"" + LINKSET_JSON + "\"");
         }
 
-        /** A resource's linkset lives beside it; the suffix is this fixture's convention, not the spec's. */
-        private static String linksetOf(String path) {
+        /**
+         * A resource's linkset lives beside it; the suffix is this fixture's convention, not the
+         * spec's. With Traps#opaqueLinksetUrls it is a random URL instead, made on first use.
+         */
+        private String linksetOf(String path) {
+            if (traps.opaqueLinksetUrls()) {
+                Node node = store.get(path);
+                if (node != null) {
+                    synchronized (node) {
+                        if (node.linksetToken == null) {
+                            String token = UUID.randomUUID().toString();
+                            linksetRefs.put(token, path);
+                            node.linksetToken = token;
+                        }
+                        return LINKSET_PREFIX + node.linksetToken;
+                    }
+                }
+            }
             return path.endsWith("/") ? path.substring(0, path.length() - 1) + ".meta" : path + ".meta";
         }
 
@@ -1141,12 +1450,47 @@ public final class RefLwsServer implements AutoCloseable {
         }
 
         private String absolute(Request request, String path) {
+            if (publicStorage != null) {
+                return publicStorage.resolve(path.substring(1)).toString();
+            }
             return URI.create(request.getHttpURI().asString()).resolve(path).toString();
         }
 
+        /** The storage path of an absolute URI this storage serves, or null for any other URI. */
+        private String pathOf(Request request, String uri) {
+            try {
+                if (publicStorage != null) {
+                    String base = publicStorage.toString();
+                    return uri.startsWith(base) && uri.indexOf('?') < 0 && uri.indexOf('#') < 0
+                            ? "/" + uri.substring(base.length()) : null;
+                }
+                String path = URI.create(uri).getRawPath();
+                return path != null && absolute(request, path).equals(uri) ? path : null;
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+
+        /** The container a resource was created in; for a path the store no longer has, its path's parent. */
         private String parentOf(String path) {
+            Node node = store.get(path);
+            if (node != null && node.parent != null) {
+                return node.parent;
+            }
             String trimmed = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
             return trimmed.substring(0, trimmed.lastIndexOf('/') + 1);
+        }
+
+        /** Whether {@code path} lies inside the container {@code container}, at any depth. */
+        private boolean inside(String path, String container) {
+            String p = path;
+            for (int depth = 0; depth < 1024 && p != null && !p.isEmpty() && !p.equals(STORAGE_PATH); depth++) {
+                p = parentOf(p);
+                if (p.equals(container)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private String sanitize(String slug) {
@@ -1414,7 +1758,8 @@ public final class RefLwsServer implements AutoCloseable {
                     java.util.TreeMap<String, Set<String>> matches = new java.util.TreeMap<>();
                     readable(request).forEach((uri, types) -> matches.put(uri, types));
                     for (var e : matches.entrySet()) {
-                        Node node = store.get(URI.create(e.getKey()).getRawPath());
+                        String matchPath = pathOf(request, e.getKey());
+                        Node node = matchPath == null ? null : store.get(matchPath);
                         boolean all = typeGroups.stream().allMatch(g -> g.stream().anyMatch(e.getValue()::contains))
                                 && relationGroups.entrySet().stream().allMatch(r -> {
                                     Set<String> targets = node == null ? Set.of() : relationTargets(e.getKey(), node, r.getKey());
@@ -1505,7 +1850,13 @@ public final class RefLwsServer implements AutoCloseable {
             /** Every resource the client may read now, with its types. */
             private java.util.Map<String, Set<String>> readable(Request request) {
                 java.util.Map<String, Set<String>> out = new java.util.HashMap<>();
+                Instant settled = Instant.now().minus(traps.indexLag());
                 store.forEach((path, node) -> {
+                    // The decoy is a trap for listings, not for the index; a write the index has
+                    // not caught up with yet (Traps#indexLag) is left out, never shown stale.
+                    if (path.equals(DECOY) || node.indexed.isAfter(settled)) {
+                        return;
+                    }
                     String uri = absolute(request, path);
                     if (authMode != AuthMode.SECURED || allowed("read", node, uri, subject, client)) {
                         Set<String> types = new LinkedHashSet<>();
@@ -1568,7 +1919,14 @@ public final class RefLwsServer implements AutoCloseable {
         private void announce(Request request, String type, String path, Node node, String relation, String related) {
             String uri = absolute(request, path);
             for (Subscription s : subscriptions.values()) {
-                boolean covered = s.topics().stream().anyMatch(t -> t.equals(uri) || (t.endsWith("/") && uri.startsWith(t)));
+                // Containment, not URI prefixes: a flat URI does not nest under its container's.
+                boolean covered = s.topics().stream().anyMatch(t -> {
+                    if (t.equals(uri)) {
+                        return true;
+                    }
+                    String topic = t.endsWith("/") ? pathOf(request, t) : null;
+                    return topic != null && inside(path, topic);
+                });
                 if (!covered) {
                     continue;
                 }
@@ -1611,6 +1969,9 @@ public final class RefLwsServer implements AutoCloseable {
             envelope.set("activity", activity);
             try {
                 URI target = URI.create(inbox);
+                if (!deliveryGuard.test(target)) {
+                    return;
+                }
                 byte[] body = bytes(envelope);
                 attempt(target, body, absolute(request, STORAGE_PATH) + "#notify-key", subscription, 1);
             } catch (RuntimeException e) {
@@ -1776,10 +2137,9 @@ public final class RefLwsServer implements AutoCloseable {
             // broken twin forbids nothing, so it subscribes anyone to anything.
             if (authMode == AuthMode.SECURED) {
                 for (String t : topics) {
-                    String topicPath = URI.create(t).getRawPath();
+                    String topicPath = pathOf(request, t);
                     Node node = topicPath == null ? null : store.get(topicPath);
-                    if (node == null || !absolute(request, topicPath).equals(t)
-                            || !allowed("read", node, t, subject, client)) {
+                    if (node == null || !allowed("read", node, t, subject, client)) {
                         status(request, response, callback, 403);
                         return;
                     }

@@ -65,6 +65,20 @@ class DefinitionsSelfTest {
         }
     }
 
+    /**
+     * The traps a client session sets (CLIENT-TESTING.md section 6.1) are behaviour the drafts
+     * allow, so a definition that fails against them assumes what the drafts leave open.
+     */
+    @Test
+    void everyDefinitionPassesAgainstATrappedReferenceDeployment() {
+        try (ReferenceScenario scenario = ReferenceScenario.start(Kind.TRAPPED)) {
+            RunResult run = run(scenario);
+
+            assertThat(notPassed(run)).as(details(run)).containsExactly(Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE));
+            assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
+        }
+    }
+
     @Test
     void anOpenStorageMakesEveryAuthenticationTestInapplicable() {
         try (ReferenceScenario scenario = ReferenceScenario.start(Kind.OPEN)) {

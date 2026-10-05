@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touchstone client sessions</title>
+<link rel="stylesheet" href="static/lab.css">
+</head>
+<body>
+<main class="narrow">
+  <h1>Touchstone client sessions</h1>
+  <p class="lead">Test an LWS client against a storage of your own. Start a session, point your
+    client at its storage URL, and watch every request your client sends.</p>
+  <p><button id="start" type="button">Start a session</button></p>
+  <p id="message" role="status"></p>
+
+  <h2>What you get</h2>
+  <ul>
+    <li>A storage and its authorization server, private to your session, with two identities:
+      alice, who owns the storage, and bob.</li>
+    <li>Access tokens for both, to use until your client authenticates by itself.</li>
+    <li>A page that records every request your client sends, as the server saw it.</li>
+  </ul>
+  <p>The storage behaves as the LWS drafts allow but a client cannot assume otherwise: page and
+    linkset URLs are opaque, resource URLs do not mirror their containers, binary resources refuse
+    PUT, the search index lags a little, and one resource in the root container is a decoy that
+    challenges with a realm that does not contain it.</p>
+
+  <h2>From a script or CI</h2>
+  <p>Everything the page does is plain HTTP. Start a session with
+    <code>curl -X POST <span id="sessions-url">…/sessions</span></code>: the answer holds the
+    storage URL, the tokens, and the session key, which the session API takes as a Bearer token.</p>
+
+  <h2>Limits</h2>
+  <p>A session ends after two idle hours, or a day at most. Everything lives in memory and is gone
+    when the session ends. Request bodies are capped at 1 MiB, and each session at 500 resources.
+    Credentials are never shown in the log, only a fingerprint of each.</p>
+  <p class="note">This is phase C1 of Touchstone's client testing: the session and its traffic log.
+    The rules that judge what your client sends come in later phases.</p>
+</main>
+<script src="static/lab.js"></script>
+</body>
+</html>

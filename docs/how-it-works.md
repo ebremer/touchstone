@@ -18,6 +18,7 @@ Touchstone is a Java 21 Maven project with four modules, plus the data they oper
 |---|---|
 | `harness-core` | The engine: catalog loading, the definitions loader and lint, the engine that runs them, identities and credentials, and every report writer. It has no Spring dependency, so every front end can use it. |
 | `harness-fixtures` | Servers Touchstone controls: the reference LWS server, the reference authorization server, and broken twins of both. |
+| `harness-clients` | The client-session service, for testing LWS clients: each session is a reference storage and authorization server of its own, with every request recorded ([CLIENT-TESTING.md]({% include src.html path="CLIENT-TESTING.md" %})). |
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`), built as one runnable jar. |
 | `harness-mcp` | A Model Context Protocol server over the same engine, for AI agents. |
 | `catalog/` | The requirements catalog: one Turtle file per specification document. |
@@ -183,6 +184,12 @@ provides both.
     `401` with a challenge for a missing or invalid token and `403` for a valid agent
     without access, and honours grants;
   - `BROKEN`: claims to protect resources but never challenges or refuses.
+
+  It can also set traps: behaviour the drafts allow but a client must not assume away. Page
+  and linkset URLs are opaque, resource URLs do not nest under their container's, binary
+  resources refuse PUT, a decoy in the root challenges with a foreign realm, and the index
+  lags behind writes. Client sessions set them all; the server self-test sets them once, to
+  prove they are legal.
 - **`RefAuthorizationServer`** publishes RFC 8414 metadata and a JWKS, and exchanges
   CID (HTTPS and did:key subjects), OpenID Connect and SAML subject tokens for access
   tokens (RFC 8693), validating each the way its suite says. Its broken twin exchanges anything.
@@ -191,13 +198,17 @@ provides both.
 
 `./mvnw verify` runs the loop in `DefinitionsSelfTest`:
 
-- against the secured deployment, all 101 definitions run, and every one passes except
-  the notification test, which is inapplicable because the reference advertises no
-  notification service it does not have;
+- against the secured deployment, all 203 definitions run, and every one passes except the
+  single-page pagination test, which is inapplicable because the reference splits that
+  container into pages;
+- against the same deployment with every trap set, the same holds: a definition that failed
+  there would assume something the drafts leave open;
 - against an open storage, exactly the tests that need authentication are inapplicable;
-- against the broken authorization server, the 19 credential tests of the three
+- against the broken authorization server, the 26 negative tests of the three
   authentication suites fail, and so does the unknown-storage test;
-- against the broken storage, its 14 access-control tests fail.
+- against the broken storage, its 23 access-control tests fail;
+- against a storage that leaks notifications, the two delivery-authorization tests and the
+  signature test fail.
 
 Each broken twin fails exactly the tests that exist to catch it, which is what shows those
 tests can fail.

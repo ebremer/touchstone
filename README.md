@@ -35,6 +35,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 |---|---|
 | `harness-core` | catalog, the definitions loader and lint, the engine, identities and credentials, reporting — no Spring |
 | `harness-fixtures` | reference LWS server (open/secured/broken), reference authorization server (and its broken twin), the reference deployment the self-test loop runs against |
+| `harness-clients` | client-session service for testing LWS clients ([CLIENT-TESTING.md](CLIENT-TESTING.md)): a reference storage and authorization server per session, every request recorded; `java -jar harness-clients/target/touchstone-clients.jar` |
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
 | `harness-mcp` | Spring AI MCP server over the core engine |
 | `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |

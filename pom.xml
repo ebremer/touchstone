@@ -15,6 +15,7 @@
   <modules>
     <module>harness-core</module>
     <module>harness-fixtures</module>
+    <module>harness-clients</module>
     <module>harness-cli</module>
     <module>harness-mcp</module>
   </modules>

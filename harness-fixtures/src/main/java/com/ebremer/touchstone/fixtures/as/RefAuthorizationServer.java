@@ -25,6 +25,8 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.eclipse.jetty.http.HttpHeader;
@@ -48,6 +50,10 @@ import org.eclipse.jetty.util.Callback;
  * with it the harness mints otherwise-valid access tokens with one chosen defect. Supports
  * {@link #rotateKeys()} to retire the signing key mid-session.
  *
+ * <p>It runs standalone, its issuer being its origin, or {@linkplain #mounted mounted} under a path
+ * of another server, its issuer being that path: then its metadata is where RFC 8414 section 3.1
+ * puts it, {@code /.well-known/lws-configuration} followed by the issuer's path.
+ *
  * <p>Its broken twin ({@link #startBroken}) exchanges anything: no signature, claim, issuer or
  * resource is checked. Against it the authentication suites' negative tests must fail.
  */
@@ -59,23 +65,59 @@ public final class RefAuthorizationServer implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final boolean broken;
+    /** Null when mounted: then the server it is mounted in owns the lifecycle. */
     private final Server server;
     private final ServerConnector connector;
+    /** A mounted server's issuer, with its path and no trailing slash; null when standalone. */
+    private final String publicIssuer;
+    /** A mounted server's issuer path, which its endpoints' paths start with. */
+    private final String mount;
+    private final Endpoints endpoints = new Endpoints();
     private final List<RSAKey> keys = new CopyOnWriteArrayList<>();
     private final Set<String> resources = ConcurrentHashMap.newKeySet();
     private final Map<String, PublicKey> samlIdps = new ConcurrentHashMap<>();
     private final SubjectTokens subjectTokens = new SubjectTokens(samlIdps);
     private volatile RSAKey current;
 
-    private RefAuthorizationServer(boolean broken) {
+    private RefAuthorizationServer(boolean broken, URI issuer) {
         this.broken = broken;
         this.current = generateKey("k1");
         this.keys.add(current);
-        this.server = new Server();
-        this.connector = new ServerConnector(server);
-        connector.setAcceptQueueSize(256);
-        server.addConnector(connector);
-        server.setHandler(new Endpoints());
+        if (issuer == null) {
+            this.publicIssuer = null;
+            this.mount = null;
+            this.server = new Server();
+            this.connector = new ServerConnector(server);
+            connector.setAcceptQueueSize(256);
+            server.addConnector(connector);
+            server.setHandler(endpoints);
+        } else {
+            this.publicIssuer = issuer.toString().replaceAll("/$", "");
+            this.mount = URI.create(publicIssuer).getRawPath();
+            this.server = null;
+            this.connector = null;
+        }
+    }
+
+    /**
+     * An authorization server served by another server's handler, with {@code issuer} as its
+     * issuer identifier: a URL with a path, which its endpoints sit under.
+     */
+    public static RefAuthorizationServer mounted(URI issuer) {
+        if (issuer.getRawPath() == null || issuer.getRawPath().replaceAll("/$", "").isEmpty()) {
+            throw new IllegalArgumentException("a mounted issuer has a path: " + issuer);
+        }
+        return new RefAuthorizationServer(false, issuer);
+    }
+
+    /** The handler that serves this authorization server, for a mounted one. */
+    public Handler handler() {
+        return endpoints;
+    }
+
+    /** The signing keys a storage in the same process validates access tokens with. */
+    public JWKSource<SecurityContext> jwkSource() {
+        return (selector, context) -> selector.select(publicJwks());
     }
 
     public static RefAuthorizationServer start(int port) {
@@ -88,7 +130,7 @@ public final class RefAuthorizationServer implements AutoCloseable {
     }
 
     private static RefAuthorizationServer start(int port, boolean broken) {
-        RefAuthorizationServer as = new RefAuthorizationServer(broken);
+        RefAuthorizationServer as = new RefAuthorizationServer(broken, null);
         as.connector.setPort(port);
         try {
             as.server.start();
@@ -100,11 +142,19 @@ public final class RefAuthorizationServer implements AutoCloseable {
 
     /** The issuer identifier: this server's origin, with no path, so RFC 8414 needs no path insertion. */
     public String issuer() {
-        return baseUri().toString().replaceAll("/$", "");
+        return publicIssuer != null ? publicIssuer : baseUri().toString().replaceAll("/$", "");
     }
 
     public URI baseUri() {
-        return URI.create("http://localhost:" + connector.getLocalPort() + "/");
+        return publicIssuer != null ? URI.create(publicIssuer + "/")
+                : URI.create("http://localhost:" + connector.getLocalPort() + "/");
+    }
+
+    /** Where the RFC 8414 metadata is: the well-known segment, then the issuer's path. */
+    public URI metadataUri() {
+        URI issuer = URI.create(issuer());
+        String path = issuer.getRawPath() == null ? "" : issuer.getRawPath();
+        return issuer.resolve("/.well-known/lws-configuration" + path);
     }
 
     public URI jwksUri() {
@@ -150,6 +200,9 @@ public final class RefAuthorizationServer implements AutoCloseable {
 
     @Override
     public void close() {
+        if (server == null) {
+            return;
+        }
         try {
             server.stop();
         } catch (Exception e) {
@@ -167,6 +220,15 @@ public final class RefAuthorizationServer implements AutoCloseable {
 
     /** An RFC 9068 access token for {@code subject} to {@code resource}, signed with the current key. */
     String mint(String subject, String clientId, String resource) {
+        return issue(subject, clientId, resource, java.time.Duration.ofSeconds(300));
+    }
+
+    /**
+     * An access token as the token endpoint would issue it, living {@code lifetime}: for a party
+     * that hands one out directly, as a client-testing session does to a client without
+     * authentication yet.
+     */
+    public String issue(String subject, String clientId, String resource, java.time.Duration lifetime) {
         Instant now = Instant.now();
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .issuer(issuer())
@@ -174,7 +236,7 @@ public final class RefAuthorizationServer implements AutoCloseable {
                 .subject(subject)
                 .claim("client_id", clientId)
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusSeconds(300)))
+                .expirationTime(Date.from(now.plus(lifetime)))
                 .jwtID(UUID.randomUUID().toString())
                 .build();
         try {
@@ -194,6 +256,17 @@ public final class RefAuthorizationServer implements AutoCloseable {
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             String path = request.getHttpURI().getCanonicalPath();
             String method = request.getMethod();
+            if (mount != null) {
+                // RFC 8414 section 3.1: the well-known segment goes between the host and the path.
+                if (path.equals("/.well-known/lws-configuration" + mount)
+                        || path.equals("/.well-known/oauth-authorization-server" + mount)) {
+                    path = "/.well-known/lws-configuration";
+                } else if (path.startsWith(mount + "/")) {
+                    path = path.substring(mount.length());
+                } else {
+                    path = "";
+                }
+            }
             if (path.equals("/token")) {
                 if (!method.equals("POST")) {
                     response.getHeaders().put(HttpHeader.ALLOW, "POST");

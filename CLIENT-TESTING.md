@@ -124,11 +124,10 @@ Its URLs:
 
 | Path | What it is |
 |---|---|
-| `{base}/s/{sid}/storage/` | the storage: its storage description and root container |
-| `{base}/s/{sid}/as/` | the authorization server: RFC 8414 metadata, JWKS, token endpoint |
-| `{base}/s/{sid}/op/` | the OpenID Provider: discovery, JWKS, authorize, token, login form |
-| `{base}/s/{sid}/id/{name}` | alice's and bob's identity documents (CID suite) |
-| `{base}/s/{sid}/_t/…` | trap resources (§6.1) |
+| `{base}/s/{sid}/storage/` | the storage: its storage description and root container; resources it names under `_r/`, trap URLs under `_t/` (§6.1) |
+| `{base}/s/{sid}/as/` | the authorization server: JWKS and token endpoint. Its RFC 8414 metadata is at `/.well-known/lws-configuration{base path}/s/{sid}/as` |
+| `{base}/s/{sid}/op/` | the OpenID Provider: discovery, JWKS, authorize, token, login form (C4) |
+| `{base}/s/{sid}/id/{name}` | alice's and bob's identity documents (CID suite; C4) |
 
 Paths, not hostnames, separate sessions, so one reverse-proxy rule covers the service.
 LWS URIs are opaque to clients, so the prefix costs nothing.
@@ -163,12 +162,17 @@ tested once.
 
 ### 4.4 Session API
 
-Plain HTTP and JSON, authenticated with the session key as a Bearer token:
-- `POST {base}/sessions` creates a session and returns its id, key and URLs. It is
-  rate-limited, and may need sign-in (§12).
+Plain HTTP and JSON, authenticated with the session key as a Bearer token. Phase C1 built
+everything here except results, faults and reset, which come with phases C2 and C3;
+[harness-clients/README.md](harness-clients/README.md) documents what exists.
+- `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
+  tokens for alice and bob. It is rate-limited, and may need sign-in (§12).
+- `GET {base}/sessions/{sid}` describes the session; `POST {base}/sessions/{sid}/tokens/{name}`
+  hands out a fresh token; `GET {base}/sessions/{sid}/page` is the session page, which reads
+  the key from its URL's fragment.
 - `GET {base}/sessions/{sid}/results` returns results as JSON, or as EARL or JUnit XML with
   `?format=`.
-- `GET {base}/sessions/{sid}/exchanges` returns the traffic log, paged and redacted.
+- `GET {base}/sessions/{sid}/exchanges?after=N` returns the traffic log, paged and redacted.
 - `POST {base}/sessions/{sid}/faults` arms a fault, the same as ticking a fault task.
 - `POST {base}/sessions/{sid}/reset` resets results; `DELETE {base}/sessions/{sid}` ends
   the session.
@@ -284,11 +288,12 @@ without noticing; clients relying on unspecified behaviour trip over them.
   default and can be switched off on the session page, to separate this trap from other
   problems.
 - **Opaque linkset URLs.** A linkset is reachable only through `rel="linkset"`.
-- **Only some methods advertised.** Some resources omit PUT from `Allow`, and
-  `Accept-Patch` lists a single format.
-- **A decoy resource** listed in the root container, which answers `401` with a challenge
-  whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant client
-  neither requests nor presents a token for it.
+- **Only some methods advertised.** Binary data resources (any media type but text, JSON, XML
+  or an RDF syntax) refuse PUT and omit it from `Allow`, and `Accept-Patch` lists a single
+  format.
+- **A decoy resource** listed first in the root container, which answers `401` with a
+  challenge whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant
+  client neither requests nor presents a token for it.
 - **A lagging index.** Search and type-index results trail writes by a few seconds, as
   `client-no-read-your-writes` allows.
 
@@ -469,13 +474,15 @@ Gate 2 did for the server-side schema.
   when their type exists (C2). Coverage everywhere counts the server-side requirements only.
   *Done when:* COVERAGE.md lists client requirements separately, generated from the tags.
   Section 11 points to that list.
-- **C1: session deployment.**
+- **C1: session deployment. Done 2026-10-05 (D-0077).**
   - `RefLwsServer`'s state split from its lifecycle, and the session manager.
   - The recorder and URL ledger, the traps, and quotas and expiry.
   - The session API without results, and a page showing only the traffic log.
 
   *Done when:* `curl` with a session token can create, list and delete in a session's
-  storage, and the log shows the redacted exchanges with their annotations.
+  storage, and the log shows the redacted exchanges with their annotations. The traps also
+  passed the server-side check: every definition passes against a reference deployment with
+  them set.
 - **C2: rules.**
   - Gate C.
   - The new format version: schema, loader and lint for `ObservationTest`.

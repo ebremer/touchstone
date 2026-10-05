@@ -2525,3 +2525,83 @@ or a fixture catalog, counts as server-side.
   cites `access-jsonld-context-lws-v1`.
 
 Drafted by an agent; waits on branch `catalog/conformance-classes`.
+
+### D-0077 — client sessions (phase C1): a mountable reference deployment, legal traps, a recorded traffic log
+The new module `harness-clients` is the client-session service of CLIENT-TESTING.md. It is plain
+embedded Jetty and depends on `harness-fixtures`. Each session is a reference storage and
+authorization server of its own under `{base}/s/{sid}/`, with the session API, a session page
+and a traffic log. Phase C1's acceptance holds: `curl` with a session token creates, lists and
+deletes, and the log shows each exchange redacted and annotated.
+
+**The reference servers mount.**
+- `RefLwsServer.mounted(storageUri, as, owner, traps)` and `RefAuthorizationServer.mounted(issuer)`
+  build servers without a Jetty server of their own; `handler()` serves them inside another.
+- A mounted storage builds its URLs from its public URI, not from the request, so it works
+  behind a reverse proxy.
+- A mounted authorization server's issuer has a path, so its metadata is where RFC 8414 section
+  3.1 puts it: `/.well-known/lws-configuration` followed by that path.
+- `TokenValidator` takes the authorization server's keys in process.
+- The standalone servers and the self-test are unchanged.
+
+**Containment is no longer read from paths.** A stored resource records its container, so:
+- `rel="up"`, deletion and subscription topics work for URLs that do not nest;
+- a topic covers a resource when it is one of the resource's ancestors, not a prefix of its URL;
+- topic and search lookups map a URI to a path through the storage's base.
+
+**Traps** (`Traps`, CLIENT-TESTING.md section 6.1) are off by default:
+- opaque page URLs;
+- flat resource URLs;
+- opaque linkset URLs;
+- PUT only on text, JSON, XML and RDF media types;
+- a decoy, listed first in the root so that a client reading one page meets it;
+- an index lag.
+
+A new self-test scenario, `TRAPPED`, runs every definition against a secured deployment with all
+traps set and a 1-second lag. All 203 pass, which is what shows the traps are legal.
+
+**The trapped self-test found a definition that assumed nested URIs.**
+- `type-search-content-location-protected` found alice's search result by her test
+  container's path in the result's id, and checked bob's answer for that path.
+- With flat URLs neither works, and the test went inapplicable after a minute of polling.
+- It now gives her resource a type whose fragment, `#ContentLocationProtectedSecret`, appears
+  nowhere else. A precondition requires her result to carry that type (lws10-index: "each item
+  ... MUST carry at least the matched resource's id and its type"), and the check looks for the
+  fragment in bob's answer.
+- It still fails against the broken storage.
+
+**One change to the reference's behaviour:** every read now advertises the methods the resource
+supports in `Allow`, and for a data resource the patch format in `Accept-Patch`. That is the
+core MUST that servers "use standard HTTP headers to advertise their capabilities", and it is
+what a client is told to check. No definition's outcome changed. The class comment's claim that
+deliveries are unsigned and never retried, stale since D-0066 and D-0070, is corrected.
+
+**The traffic log.**
+- The storage marks each request with what it addressed and whose valid token it carried.
+- The service records every request to a session's storage and authorization server, with:
+  - its answer, the response body kept up to 64 KiB;
+  - how the token was presented, and its fingerprint (the first twelve hex digits of its
+    SHA-256);
+  - what the URL last advertised.
+- Credential headers, `access_token` in a query, and the credential fields of token requests and
+  responses are fingerprinted, never kept.
+- The URL ledger learns what each answer hands out:
+  - the URLs in `Location`, `Content-Location` and `Link`;
+  - a challenge's `as_uri`, with the metadata URL RFC 8414 derives from it;
+  - the session URLs in the JSON the server generates.
+
+  A request outside the ledger is marked built by the client. CORS preflights are answered and
+  recorded.
+
+**Sessions.**
+- The id is 96 random bits, and public.
+- The key is 256 random bits, shown once and stored as a SHA-256 hash, compared in constant time.
+- The session page reads the key from its URL's fragment, which never reaches the server or a
+  Referer, and calls the API with it. It is served with a strict Content Security Policy and
+  writes what clients sent only as text.
+- The bounds are those of section 8.2, with defaults in `ClientLabConfig`.
+- Notifications are not delivered from a session (`deliverOnlyTo(uri -> false)`) until phase C5
+  brings the outbound guard.
+- Identity documents and the session OpenID Provider are phase C4. Until then a client
+  authenticates with the tokens the session hands out.
+
+Drafted by an agent; waits on branch `clients/c1-sessions`.

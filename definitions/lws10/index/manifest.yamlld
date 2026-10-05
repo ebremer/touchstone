@@ -2951,9 +2951,11 @@ entries:
       across clients". alice searches for a type only her private resource has. If her answer
       carries a Content-Location, bob fetching it must not see her resource: he may be refused,
       or answered with what he may read, but alice's result set must not reach him. Applies only
-      when the search response carries Content-Location. The check reads bob's body for the path
-      of this test's container, which every one of alice's results contains (a precondition makes
-      sure), so it holds whether bob's answer is a refusal, empty, or a filtered page.
+      when the search response carries Content-Location. The check reads bob's body for the
+      fragment of the type only alice's resource has, which her result carries ("each item ...
+      MUST carry at least the matched resource's id and its type"; a precondition makes sure), so
+      it holds whether bob's answer is a refusal, empty, or a filtered page. It looks for the type,
+      not for a path: a resource's URI need not lie under its container's.
     status: Proposed
     level: MUST
     source:
@@ -2967,10 +2969,10 @@ entries:
       hierarchy:
         - dataResource: secret
           contentType: text/turtle
-          body: "<> a <${test.container}#Secret> ."
+          body: "<> a <${test.container}#ContentLocationProtectedSecret> ."
           linkHeaders:
             - rel: type
-              href: "${test.container}#Secret"
+              href: "${test.container}#ContentLocationProtectedSecret"
     steps:
       - label: the storage offers a Type Search Service (otherwise this test does not apply)
         precondition: true
@@ -2985,7 +2987,7 @@ entries:
               some:
                 - pointer: /type
                   hasValue: TypeSearchService
-      - label: alice's search finds her resource, under this test's container (otherwise this test does not apply)
+      - label: alice's search finds her resource, with its type (otherwise this test does not apply)
         precondition: true
         poll: {within: 60, every: 3}
         request:
@@ -2993,7 +2995,7 @@ entries:
           url: "${service.TypeSearchService}"
           contentType: application/lws-query+json
           bodyJSON:
-            type: ["${test.container}#Secret"]
+            type: ["${test.container}#ContentLocationProtectedSecret"]
         response:
           statusCode: 200
           json:
@@ -3001,8 +3003,8 @@ entries:
               some:
                 - pointer: /id
                   equalsIri: "${secret}"
-                - pointer: /id
-                  matches: 'type-search-content-location-protected/'
+                - pointer: /type
+                  hasValue: "${test.container}#ContentLocationProtectedSecret"
       - label: the search response names a result resource (otherwise this test does not apply)
         precondition: true
         request:
@@ -3010,7 +3012,7 @@ entries:
           url: "${service.TypeSearchService}"
           contentType: application/lws-query+json
           bodyJSON:
-            type: ["${test.container}#Secret"]
+            type: ["${test.container}#ContentLocationProtectedSecret"]
         response:
           statusCode: 200
           otherHeaders:
@@ -3024,4 +3026,4 @@ entries:
           url: "${results}"
         response:
           statusCode: ["2xx", "4xx"]
-          bodyMatches: '^(?![\s\S]*type-search-content-location-protected/)'
+          bodyMatches: '^(?![\s\S]*#ContentLocationProtectedSecret)'

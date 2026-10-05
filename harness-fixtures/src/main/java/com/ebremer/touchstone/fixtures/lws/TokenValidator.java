@@ -38,12 +38,16 @@ public final class TokenValidator {
     private final String realm;
 
     public TokenValidator(String issuer, URL jwksUri, String realm) {
-        this.realm = realm;
-        JWKSource<SecurityContext> jwks = JWKSourceBuilder.<SecurityContext>create(jwksUri)
+        this(issuer, JWKSourceBuilder.<SecurityContext>create(jwksUri)
                 .cache(false)
                 .refreshAheadCache(false)
                 .rateLimited(false)
-                .build();
+                .build(), realm);
+    }
+
+    /** With the keys from {@code jwks} directly, for an authorization server in the same process. */
+    public TokenValidator(String issuer, JWKSource<SecurityContext> jwks, String realm) {
+        this.realm = realm;
         this.processor = new DefaultJWTProcessor<>();
         // RFC 9068 access tokens carry typ=at+jwt; the default verifier only allows JWT.
         processor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(
