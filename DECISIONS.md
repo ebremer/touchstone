@@ -2398,3 +2398,57 @@ defined in the document, controlled by the subject, and not revoked or expired. 
 authorization server exchanges anything, so the four refusals join the auth negative tests that must
 catch it (23 → 27). Pinned counts move from 198 to 203, `auth` from 26 to 31. Drafted by an agent;
 waits on branch `tests/cid-documents`.
+
+## 2026-10-05
+
+### D-0075 — testing LWS clients: the developer drives, Touchstone plays the server
+The drafts define an LWS Client conformance class (`conformance-client-class`). The catalog already
+holds its obligations, untagged among the server clauses. About twenty of them show in the requests
+a server receives. Touchstone will test clients. [CLIENT-TESTING.md](CLIENT-TESTING.md) is the
+brief, and DESIGN.md section 1 points to it. Proposed, not begun.
+
+**The developer runs the client; Touchstone never drives it.** Touchstone gives a session:
+- a private storage, identities, and a checklist of tasks, some of which arm a fault;
+- a web page that judges each request against the catalog and explains every finding;
+- an HTTP API, so the developer's own CI can create a session, run the client's tests against
+  it, and fail on MUST findings.
+
+Rejected: an adapter contract that would let Touchstone drive clients (per-language bindings, or an
+MCP-controlled client harness). It puts the per-language cost on Touchstone, needs browser automation
+for web clients, and tests the adapter as much as the client. Inverting control leaves HTTP as the
+only interface, which every client already speaks. The session API gives the automation the adapter
+was for, written in the developer's language.
+
+**Touchstone implements the server side itself, from `RefLwsServer` and `RefAuthorizationServer`. It
+does not depend on lws-server.**
+- *Neutrality:* Touchstone grades lws-server. If lws-server's behaviour were also the yardstick for
+  clients, its readings of the spec and its bugs would become expectations, and its releases would
+  move client verdicts.
+- *Control:* client tests need behaviour no production server should have:
+  - faults armed for one request;
+  - traps: opaque page URLs, URIs that don't mirror containment, a decoy challenge with a foreign
+    realm;
+  - per-session recording.
+- *Lockstep:* the reference servers change in the same commit as the definitions, and the self-test
+  holds them to it.
+- *Weight:* lws-server is about 22,000 lines on Spring Boot, Jena TDB2 and pac4j. The reference
+  deployment is about 3,900 lines on plain Jetty.
+
+The real work is making `RefLwsServer` a public, multi-session service (state split from lifecycle,
+quotas, expiry), not reimplementing LWS. lws-server keeps two roles. It is a cross-check: where it
+and the reference servers both pass and still differ, the spec is ambiguous or a test is missing.
+And it can sit behind a later, optional proxy mode that records clients against real servers.
+Targets there come only from `targets.yaml`, per DESIGN.md section 7.1.
+
+**Consequences.**
+- Client rules are YAML-LD definitions of a new type (provisionally `ObservationTest`) in
+  `definitions/lws10/clients/`, citing catalog requirements. A failure always cites a clause.
+- Outcomes add `untested` (`earl:untested`) for rules the session never triggered. EARL runs record
+  `earl:mode earl:semiAuto`.
+- The catalog gains a conformance-class tag per requirement (phase C0).
+- New security invariants cover a public service that accepts strangers' requests and delivers to
+  their inboxes: capability-protected sessions, quotas, in-memory state only, outbound delivery only
+  to public addresses. They sit beside DESIGN.md section 7, which is unchanged.
+- Hosting, gating session creation, and OpenID client registration are open questions for Erich.
+- **Gate C:** the `ObservationTest` schema waits for Erich's review before the first rule is
+  written.

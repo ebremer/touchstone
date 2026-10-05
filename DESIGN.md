@@ -13,6 +13,8 @@ Three consumers, one engine:
 2. **CI** — GitHub Action + Docker image so server implementers run it on every commit.
 3. **MCP server** — a remote LLM/agent triggers runs, reads failures, drills into traces, and iterates on a server implementation in a tight loop.
 
+**Clients too (2026-10-05, D-0075).** Touchstone will also test LWS clients. Roles reverse: the client's developer runs it, Touchstone plays the storage, authorization server, OpenID Provider and notification server, and judges the requests it receives. That brief is [CLIENT-TESTING.md](CLIENT-TESTING.md), proposed and not yet begun. Everything else in this document is about testing servers.
+
 ## 2. Normative inputs and prior art (fetch these before coding)
 
 Spec landscape as of mid-2026 — all early-stage and moving; design for spec-version pinning:
