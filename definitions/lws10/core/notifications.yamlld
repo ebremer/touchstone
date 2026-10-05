@@ -13,7 +13,7 @@ comment: >-
   defined: it needs a sink the target can reach, and its authorization MUSTs deserve a
   negative matrix of their own. See README.md, "Not yet defined".
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#notification-service-advertised"
@@ -27,7 +27,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#notification-discovery
     traits: [Get, Discovery, Notifications, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/notifications-advertise-notificationservice
@@ -81,9 +81,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-response
     traits: [Post, Notifications]
     requirements:
       - https://example.org/touchstone/req/lws10-core/subscription-create-post-lws-json
@@ -147,7 +147,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
     traits: [Post, Notifications]
     requirements:
       - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
@@ -191,7 +191,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
     traits: [Post, Notifications]
     requirements:
       - https://example.org/touchstone/req/lws10-core/subscription-request-type
@@ -234,7 +234,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
     traits: [Post, Notifications]
     requirements:
       - https://example.org/touchstone/req/lws10-core/subscription-request-required-fields
@@ -282,8 +282,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#security-notifications
     traits: [Post, Notifications, Authz, Private]
     requires: [Authentication]
     requirements:
@@ -377,8 +377,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-requests-and-grants
     traits: [Post, Delete, Notifications, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -494,9 +494,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#notification-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#notification-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscriptions
     traits: [Post, Get, Notifications]
     requires: [ReachableFixtures]
     requirements:
@@ -622,8 +622,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscriptions
     traits: [Put, Get, Notifications]
     requires: [ReachableFixtures]
     requirements:
@@ -711,8 +711,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscriptions
     traits: [Delete, Get, Notifications]
     requires: [ReachableFixtures]
     requirements:
@@ -805,9 +805,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#security-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#privacy-notifications
     traits: [Post, Put, Get, Notifications, Authz, Private]
     requires: [Authentication, ReachableFixtures]
     requirements:
@@ -934,8 +934,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#security-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#security-notifications
     traits: [Post, Put, Delete, Get, Notifications, AccessGrants, Authz]
     requires: [Authentication, ReachableFixtures]
     requirements:
@@ -1118,8 +1118,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#privacy-notifications
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#privacy-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-properties
     traits: [Post, Get, Notifications]
     requires: [ReachableFixtures]
     requirements:
@@ -1211,8 +1211,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-scope
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-scope
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-types
     traits: [Post, Get, Notifications, Container]
     requires: [ReachableFixtures]
     requirements:
@@ -1302,8 +1302,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-scope
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-scope
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#activity-types
     traits: [Put, Get, Notifications, DataResource]
     requires: [ReachableFixtures]
     requirements:

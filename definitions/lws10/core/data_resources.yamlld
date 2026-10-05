@@ -11,7 +11,7 @@ comment: >-
   server requiring conditional requests send If-Match (ifMatch current), because the
   draft lets a server demand one.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#createDataResource"
@@ -28,8 +28,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
     traits: [Post, Get, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -71,7 +71,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -100,8 +100,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#resource-identification-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#resource-identification-0
     traits: [Post, Get, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-not-idempotent
@@ -156,7 +156,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
@@ -190,7 +190,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
@@ -215,8 +215,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Post, Get, DataResource, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-server-managed-metadata-protected
@@ -262,9 +262,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
     traits: [Get, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
@@ -307,7 +307,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
     traits: [Get, Head, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/head-parity-with-get
@@ -358,7 +358,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
     traits: [Get, DataResource, Range]
     requirements:
@@ -404,7 +404,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
     traits: [Get, DataResource, Range]
     supersedes: [core/data-resource-range-request]
@@ -461,7 +461,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Put, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/update-content-vs-metadata-prefer-set-linkset
@@ -490,22 +490,23 @@ entries:
           statusCode: 200
           bodyURL: ../fixtures/shoppinglist_v2.txt
 
-  - id: "#patch-merge-patch-baseline"
+  - id: "#patch-json-patch-baseline"
     type: ValidationTest
-    name: patch-merge-patch-baseline
-    label: PATCH applies JSON Merge Patch to a JSON data resource
+    name: patch-json-patch-baseline
+    label: PATCH applies JSON Patch to a JSON data resource
     comment: >-
-      JSON Merge Patch is the one patch format every server must understand. The patch
-      replaces one member, adds one and removes one by setting it to null, which is the
-      part of RFC 7386 a server can get wrong while looking correct.
+      JSON Patch (RFC 6902) is the one patch format every server must understand, since the
+      5 October 2026 draft (it was JSON Merge Patch before). The patch tests a member,
+      replaces it, adds one, removes one and appends to an array with the "-" index, so it
+      takes all five pointer forms a server has to resolve, and the operations apply in order.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.rfc-editor.org/rfc/rfc6902#section-4
     traits: [Patch, DataResource]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/patch-json-merge-patch-baseline
-    supersedes: [core/patch-merge-patch-baseline]
+      - https://example.org/touchstone/req/lws10-core/patch-json-patch-baseline
     prereqs:
       hierarchy:
         - dataResource: created
@@ -514,20 +515,23 @@ entries:
             title: first
             keep: true
             drop: gone
+            tags: [a, b]
     steps:
-      - label: merge-patch it
+      - label: patch it
         request:
           method: PATCH
           url: "${created}"
           ifMatch: current
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            title: second
-            added: 42
-            drop: null
+            - {op: test, path: /title, value: first}
+            - {op: replace, path: /title, value: second}
+            - {op: add, path: /added, value: 42}
+            - {op: remove, path: /drop}
+            - {op: add, path: /tags/-, value: c}
         response:
           statusCode: [200, 204]
-      - label: the merge applied as RFC 7386 defines it
+      - label: the patch applied as RFC 6902 defines it
         request:
           method: GET
           url: "${created}"
@@ -543,6 +547,61 @@ entries:
               equals: true
             - pointer: /drop
               exists: false
+            - pointer: /tags/0
+              equals: a
+            - pointer: /tags/2
+              equals: c
+
+  - id: "#patch-json-patch-atomic"
+    type: NegativeTest
+    name: patch-json-patch-atomic
+    label: A JSON Patch whose test operation fails changes nothing
+    comment: >-
+      A JSON Patch is applied whole or not at all: RFC 6902 section 5 says a failed
+      operation means the patch "SHALL NOT be deemed successful", and RFC 5789 says the
+      server "MUST NOT apply any of the changes". The patch replaces a member, then tests a
+      value that does not match. A server that applies operations one by one and stops at
+      the failure looks correct and leaves the first change behind. Any 4xx is accepted (RFC
+      5789 suggests 409 or 422); the resource must be unchanged.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.rfc-editor.org/rfc/rfc6902#section-5
+      - https://www.rfc-editor.org/rfc/rfc5789#section-2
+    traits: [Patch, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/patch-json-patch-baseline
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: application/json
+          bodyJSON:
+            title: first
+            keep: true
+    steps:
+      - label: a patch whose second operation fails is refused
+        request:
+          method: PATCH
+          url: "${created}"
+          contentType: application/json-patch+json
+          bodyJSON:
+            - {op: replace, path: /title, value: second}
+            - {op: test, path: /keep, value: false}
+        response:
+          statusCode: "4xx"
+      - label: the first operation did not apply either
+        request:
+          method: GET
+          url: "${created}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /title
+              equals: first
+            - pointer: /keep
+              equals: true
 
   - id: "#deleteDataResource"
     type: ValidationTest
@@ -555,9 +614,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#summary-of-http-status-mappings
     traits: [Delete, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
@@ -608,7 +667,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6
     traits: [Post, DataResource]
     supersedes: [core/post-to-non-container-405]
@@ -657,7 +716,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#summary-of-http-status-mappings
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#summary-of-http-status-mappings
       - https://www.rfc-editor.org/rfc/rfc9457#section-3
     traits: [Get, DataResource]
     requirements:

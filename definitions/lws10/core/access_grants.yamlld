@@ -15,7 +15,7 @@ comment: >-
   inapplicable; a grant step marked precondition covers servers that advertise the
   service but refuse the grant shape (public access via foaf:Agent is a MAY).
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#access-grant-endpoint-is-container"
@@ -28,8 +28,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-discovery
     traits: [Get, AccessGrants, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/access-endpoints-are-lws-containers
@@ -59,9 +59,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
     traits: [Post, Get, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -118,8 +118,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-grant-endpoint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-grant-endpoint
     traits: [Post, Delete, Get, AccessGrants, Public]
     requires: [Authentication]
     requirements:
@@ -182,9 +182,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-requests-and-grants
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
     traits: [Get, Container, Public, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -218,9 +218,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-target
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
     traits: [Get, DataResource, Public, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -253,9 +253,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-requests-and-grants
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-action
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-requests-and-grants
     traits: [Get, Put, DataResource, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -308,9 +308,9 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-inbox-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
     traits: [Post, Get, DataResource, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -366,8 +366,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notifications
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-notification-events
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-notifications
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-notification-events
     traits: [Post, Get, AccessGrants, Notifications]
     requires: [Authentication, ReachableFixtures]
     requirements:
@@ -437,8 +437,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-protocol
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-protocol
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-data-model
     traits: [Post, Get, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -491,10 +491,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#json-ld-serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#json-ld-serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-target
     traits: [Post, Get, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -587,14 +587,14 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-type-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-storage-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-inbox-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-action
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-target
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -826,8 +826,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-combining
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#constraint-combining
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -941,8 +941,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-purpose
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#constraint-purpose
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -1107,8 +1107,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-format
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#constraint-format
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -1188,8 +1188,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#constraint-type
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -1268,8 +1268,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#constraint-client
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#constraint-client
     traits: [Post, Get, AccessGrants, Authz]
     requires: [Authentication]
     requirements:
@@ -1371,8 +1371,8 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#container-representation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-representation
     traits: [Get, Container, AccessGrants, Authz]
     requires: [Authentication]
     requirements:

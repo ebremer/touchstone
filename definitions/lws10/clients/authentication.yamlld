@@ -12,7 +12,7 @@ comment: >-
   that name a key each, which the developer downloads from the session page, and the session's
   own OpenID Provider. The session's authorization server trusts those and nothing else.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
 entries:
@@ -26,7 +26,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -53,7 +53,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -87,7 +87,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -150,7 +150,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -178,7 +178,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -206,7 +206,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -233,7 +233,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -315,7 +315,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:

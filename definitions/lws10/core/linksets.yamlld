@@ -11,7 +11,7 @@ comment: >-
   follows the relation the server advertises. Section 9.1 then fixes how the linkset
   is served, advertised, edited and retired.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#getLinkset"
@@ -25,7 +25,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Get, Linkset, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
@@ -87,18 +87,18 @@ entries:
   - id: "#linkset-advertises-patch"
     type: ValidationTest
     name: linkset-advertises-patch
-    label: A linkset advertises GET and PATCH in Allow and JSON Merge Patch in Accept-Patch
+    label: A linkset advertises GET and PATCH in Allow and JSON Patch in Accept-Patch
     comment: >-
       A client that cannot learn whether a linkset takes PATCH, or in which format, has
       to guess and handle the 405 or 415 it gets wrong. Both headers are MUSTs.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Get, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
-      - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-advertised
+      - https://example.org/touchstone/req/lws10-core/linkset-accept-patch-json-patch
       - https://example.org/touchstone/req/lws10-core/metadata-capability-advertising
     supersedes: [core/linkset-discovery-and-patch-advertisement]
     prereqs:
@@ -127,7 +127,7 @@ entries:
             - headerName: Allow
               matches: '(?i)^(?=.*\bGET\b)(?=.*\bPATCH\b)'
             - headerName: Accept-Patch
-              matches: '(?i)application/merge-patch\+json'
+              matches: '(?i)application/json-patch\+json'
 
   - id: "#linkset-conditional-412"
     type: NegativeTest
@@ -139,7 +139,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Patch, Linkset, Conditional]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-precondition-failed-412
@@ -162,13 +162,13 @@ entries:
         request:
           method: PATCH
           url: "${linkset}"
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           ifMatch: '"touchstone-stale-etag"'
           bodyJSON:
-            linkset:
-              - anchor: "${created}"
-                license:
-                  - href: https://creativecommons.org/licenses/by/4.0/
+            - op: add
+              path: /linkset/0/license
+              value:
+                - href: https://creativecommons.org/licenses/by/4.0/
         response:
           statusCode: 412
 
@@ -183,7 +183,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Put, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
@@ -241,8 +241,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Delete, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
@@ -298,8 +298,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-server-managed-atomic
@@ -337,14 +337,16 @@ entries:
     comment: >-
       Servers MAY restrict modifications to links such as up "to maintain system
       integrity", and whatever they allow, containment fixes rel="up": it MUST point to
-      the parent container. The test PATCHes the linkset to claim a different parent and
-      accepts either outcome, refusal or acceptance. It then requires the resource's
-      rel="up" to still name its real container, and nothing else.
+      the parent container. The test PATCHes the linkset to claim a different parent, setting
+      the up member of its first link context object (the resource's own, since its link to
+      its parent is part of its metadata), and accepts either outcome, refusal or acceptance.
+      It then requires the resource's rel="up" to still name its real container, and nothing
+      else.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-restricted-links
@@ -368,12 +370,12 @@ entries:
         request:
           method: PATCH
           url: "${linkset}"
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset:
-              - anchor: "${created}"
-                up:
-                  - href: https://linkset.invalid/forged-parent/
+            - op: add
+              path: /linkset/0/up
+              value:
+                - href: https://linkset.invalid/forged-parent/
         response:
           statusCode: ["2xx", "4xx"]
       - label: rel="up" still names the real container, and only it
@@ -392,16 +394,16 @@ entries:
   - id: "#linkset-patch-stays-linkset"
     type: ValidationTest
     name: linkset-patch-stays-linkset
-    label: A merge patch that would break the linkset document leaves a valid linkset behind
+    label: A patch that would break the linkset document leaves a valid linkset behind
     comment: >-
       A linkset resource is an RFC 9264 linkset document, whose linkset member is an array.
-      A merge patch replacing that array with a string would leave something that is not
+      A JSON Patch replacing that array with a string would leave something that is not
       one. The server may refuse the patch or repair the result, but the linkset afterwards
       must still be a linkset document.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
       - https://www.rfc-editor.org/rfc/rfc9264#section-4.2
     traits: [Patch, Get, Linkset]
     requirements:
@@ -425,9 +427,11 @@ entries:
         request:
           method: PATCH
           url: "${linkset}"
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset: not a linkset
+            - op: replace
+              path: /linkset
+              value: not a linkset
         response:
           statusCode: ["2xx", "4xx"]
       - label: the linkset is still a linkset document
@@ -442,23 +446,24 @@ entries:
             - pointer: /linkset
               jsonType: array
 
-  - id: "#linkset-patch-merge"
+  - id: "#linkset-patch-json-patch"
     type: ValidationTest
-    name: linkset-patch-merge
-    label: A JSON Merge Patch adds a user-managed link to a linkset
+    name: linkset-patch-json-patch
+    label: A JSON Patch adds a user-managed link to a linkset
     comment: >-
-      Servers "MUST support PATCH using application/merge-patch+json" on linksets, but a
-      merge patch replaces the linkset array wholesale and servers "MAY restrict
-      modifications to specific links", so whether a given patch is accepted depends on
-      restrictions the draft leaves open. The happy path is therefore a SHOULD: patch in
-      a license link and read it back.
+      Servers "MUST support PATCH using application/json-patch+json" on linksets, and
+      "MAY restrict modifications to specific links", so whether a given patch is accepted
+      depends on restrictions the draft leaves open. The happy path is therefore a SHOULD:
+      add a license link to the first link context object, which is the resource's own,
+      and read it back. Unlike a merge patch, which replaced the whole linkset array, the
+      patch leaves every other link alone.
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Patch, Linkset]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/linkset-patch-merge-patch
+      - https://example.org/touchstone/req/lws10-core/linkset-patch-json-patch
     prereqs:
       hierarchy:
         - dataResource: created
@@ -474,17 +479,17 @@ entries:
           linkHeaders:
             - rel: linkset
               capture: linkset
-      - label: merge-patch a license link into it
+      - label: patch a license link into it
         request:
           method: PATCH
           url: "${linkset}"
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           ifMatch: current
           bodyJSON:
-            linkset:
-              - anchor: "${created}"
-                license:
-                  - href: https://creativecommons.org/licenses/by/4.0/
+            - op: add
+              path: /linkset/0/license
+              value:
+                - href: https://creativecommons.org/licenses/by/4.0/
         response:
           statusCode: [200, 204]
       - label: the linkset now carries the license

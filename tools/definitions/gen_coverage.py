@@ -60,6 +60,7 @@ LTS_NOTES = {
     "authn-saml-invalid-signature": "As above.",
 }
 TS_NOTES = {
+    "core/patch-merge-patch-baseline": "None. The 5 October 2026 draft made JSON Patch the baseline patch format in place of JSON Merge Patch; `core/data_resources#patch-json-patch-baseline` tests the new one.",
     "core/put-unconditional-428": "None. The 21 September 2026 draft removed the 428 MUST (\"Clients SHOULD use conditional requests\"), so this test failed conforming servers.",
 }
 
@@ -154,10 +155,11 @@ L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_si
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
 L.append(f"- **lws-test-suite:** all {covered} of {len(lts_order)} tests are accounted for "
          "(table 1). The definitions change what those tests assert wherever it contradicts the "
-         "21 September draft.")
+         "5 October draft.")
 sup = sum(1 for m in ts_manifests if m in superseded_by)
 L.append(f"- **manifests/ (retired, D-0055):** {sup} of its {len(ts_manifests)} tests have a successor; the "
-         "other one was dropped because its clause left the specification (table 2).")
+         f"other {len(ts_manifests) - sup} were dropped because the specification no longer says what "
+         "they tested (table 2).")
 L.append("")
 L.append("| Module | Tests | MUST | SHOULD | MAY |")
 L.append("|---|---:|---:|---:|---:|")

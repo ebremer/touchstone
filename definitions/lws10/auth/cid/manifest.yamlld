@@ -1023,7 +1023,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
@@ -1076,7 +1076,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
@@ -1129,7 +1129,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]

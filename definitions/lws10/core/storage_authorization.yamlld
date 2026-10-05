@@ -14,7 +14,7 @@ comment: >-
   parsed per RFC 9110 section 11.6.1, so parameter order and quoting do not matter.
   All tests need a target that enforces authentication.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#getContainer-private-unauthorized"
@@ -30,7 +30,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
       - https://www.rfc-editor.org/rfc/rfc6750#section-3
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
@@ -66,8 +66,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authn, Authz]
     requires: [Authentication]
     as: alice
@@ -96,8 +96,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, Container, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -138,8 +138,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Put, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -180,8 +180,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Delete, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -224,8 +224,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: bob
@@ -248,9 +248,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Put, Post, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
@@ -312,7 +312,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Delete, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
@@ -349,7 +349,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
       - https://www.rfc-editor.org/rfc/rfc6750#section-3.1
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
@@ -383,7 +383,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-bad-signature
@@ -415,7 +415,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-alg-none
@@ -451,7 +451,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-unknown-key
@@ -483,8 +483,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-audience
@@ -518,7 +518,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-issuer
@@ -549,7 +549,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-not-yet-valid
@@ -578,7 +578,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-issued-in-future
@@ -608,7 +608,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-multiple-audiences

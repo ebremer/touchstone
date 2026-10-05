@@ -63,7 +63,7 @@ public final class RefLwsClient {
         TOKEN_ALSO_IN_OWN_HEADER,
         /** Also replaces a container's linkset, whose Allow does not list PUT. */
         LINKSET_PUT_UNADVERTISED,
-        /** Patches the linkset in JSON Patch, which Accept-Patch does not list. */
+        /** Patches the linkset in JSON Merge Patch, which Accept-Patch does not list. */
         LINKSET_PATCH_FORMAT_UNADVERTISED,
         /** Replaces the note without If-Match. */
         PUT_UNCONDITIONAL,
@@ -195,7 +195,7 @@ public final class RefLwsClient {
 
     private static final String LWS = "https://www.w3.org/ns/lws#";
     private static final String LWS_JSON = "application/lws+json";
-    private static final String MERGE_PATCH = "application/merge-patch+json";
+    private static final String JSON_PATCH = "application/json-patch+json";
     private static final String LINKSET_JSON = "application/linkset+json";
     private static final String BASELINE_QUERY = "application/lws-query+json";
     private static final String RICHER_QUERY = "application/sparql-query";
@@ -303,8 +303,8 @@ public final class RefLwsClient {
         // PUT for it; both conditional.
         URI linkset = read.link("linkset");
         Reply ls = send("GET", linkset, alice, null, null, LINKSET_JSON, Map.of());
-        boolean jsonPatch = flaw == Flaw.LINKSET_PATCH_FORMAT_UNADVERTISED;
-        send("PATCH", linkset, alice, jsonPatch ? "application/json-patch+json" : MERGE_PATCH, jsonPatch ? "[]" : "{}",
+        boolean mergePatch = flaw == Flaw.LINKSET_PATCH_FORMAT_UNADVERTISED;
+        send("PATCH", linkset, alice, mergePatch ? "application/merge-patch+json" : JSON_PATCH, mergePatch ? "{}" : "[]",
                 null, flaw == Flaw.LINKSET_WRITE_UNCONDITIONAL ? Map.of() : Map.of("If-Match", ls.etag()));
         Reply again = send("GET", linkset, alice, null, null, LINKSET_JSON, Map.of());
         if (again.allows("PUT")) {

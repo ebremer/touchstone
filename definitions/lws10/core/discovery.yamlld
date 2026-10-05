@@ -11,7 +11,7 @@ comment: >-
   rel="storageDescription" link with rel="https://www.w3.org/ns/lws#storage" pointing at
   the canonical storage URI, which itself serves the description as application/lws+cid.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#discovery-get-links-storageDescription"
@@ -26,8 +26,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Get, Head, Discovery, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-link-header
@@ -65,8 +65,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Get, Head, Discovery, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-link-header
@@ -108,10 +108,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-representation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-services
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-representation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-services
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
@@ -172,8 +172,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#lws-media-type-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#lws-media-type-0
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
@@ -198,8 +198,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
     traits: [Get, Discovery, Private, Authn]
     requires: [Authentication]
     as: anonymous
@@ -234,7 +234,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-services
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-services
     traits: [Get, Discovery, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-storageroot-service
@@ -276,7 +276,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#storage-description-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-data-model
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-service-id-optional

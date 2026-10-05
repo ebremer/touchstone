@@ -2388,12 +2388,12 @@ entries:
           method: PATCH
           url: "${linkset}"
           ifMatch: current
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset:
-              - anchor: "${one}"
-                describedby:
-                  - href: "${test.container}#ShapeOne"
+            - op: add
+              path: /linkset/0/describedby
+              value:
+                - href: "${test.container}#ShapeOne"
         response:
           statusCode: "2xx"
       - label: "[Alpha] with describedby [shape] finds it"
@@ -2495,12 +2495,12 @@ entries:
           method: PATCH
           url: "${linksetOne}"
           ifMatch: current
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset:
-              - anchor: "${one}"
-                describedby:
-                  - href: "${test.container}#ShapeOne"
+            - op: add
+              path: /linkset/0/describedby
+              value:
+                - href: "${test.container}#ShapeOne"
         response:
           statusCode: "2xx"
       - label: find the linkset of ${two}
@@ -2518,12 +2518,12 @@ entries:
           method: PATCH
           url: "${linksetTwo}"
           ifMatch: current
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset:
-              - anchor: "${two}"
-                describedby:
-                  - href: "${test.container}#ShapeTwo"
+            - op: add
+              path: /linkset/0/describedby
+              value:
+                - href: "${test.container}#ShapeTwo"
         response:
           statusCode: "2xx"
       - label: describedby [shape one] finds the first (otherwise describedby is not indexed, and this test does not apply)
@@ -2673,12 +2673,12 @@ entries:
           method: PATCH
           url: "${linkset}"
           ifMatch: current
-          contentType: application/merge-patch+json
+          contentType: application/json-patch+json
           bodyJSON:
-            linkset:
-              - anchor: "${patched}"
-                describedby:
-                  - href: "${test.container}#ShapeOne"
+            - op: add
+              path: /linkset/0/describedby
+              value:
+                - href: "${test.container}#ShapeOne"
         response:
           statusCode: "2xx"
       - label: describedby [shape] finds the linkset resource (otherwise describedby is not indexed, and this test does not apply)

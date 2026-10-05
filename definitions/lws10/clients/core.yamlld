@@ -11,7 +11,7 @@ comment: >-
   session's traps (CLIENT-TESTING.md section 6.1) make the URL and method rules bite: page,
   resource and linkset URLs are opaque, and linksets refuse PUT.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
   - id: "#client-token-in-authorization-header"
     type: ObservationTest
@@ -24,7 +24,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-presentation
       - https://www.rfc-editor.org/rfc/rfc6750#section-2
     traits: [Authz]
     area: core
@@ -51,7 +51,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Put, Linkset]
     area: core
     requirements:
@@ -72,7 +72,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Patch, Linkset]
     area: core
     requirements:
@@ -84,8 +84,8 @@ entries:
       patchFormatAdvertised: true
     guidance: >-
       Read the linkset first and send the PATCH body in a media type its Accept-Patch header
-      lists. Every LWS server accepts application/merge-patch+json; the session accepts nothing
-      else.
+      lists. Every LWS server accepts JSON Patch, application/json-patch+json; the session
+      accepts nothing else.
 
   - id: "#client-put-conditional"
     type: ObservationTest
@@ -94,7 +94,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Put, DataResource, Conditional]
     area: core
     requirements:
@@ -124,7 +124,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Put, Patch, Linkset, Conditional]
     area: core
     requirements:
@@ -155,7 +155,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-link-relations
     traits: [Get, Container]
     area: core
     requirements:
@@ -182,7 +182,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#resource-identification-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#resource-identification-0
     traits: [Get, Container, DataResource]
     area: core
     requirements:
@@ -206,7 +206,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#json-ld-serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#json-ld-serialization
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -231,7 +231,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-type-property
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -254,7 +254,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-type-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-type-property
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -277,7 +277,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-storage-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-storage-property
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -301,7 +301,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-property
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -336,7 +336,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-type
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-type
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -367,7 +367,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-action
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-action
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -404,7 +404,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-assignee
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-assignee
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -436,7 +436,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-target
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-target
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -497,7 +497,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#odrl-constraint
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#odrl-constraint
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -541,7 +541,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#access-inbox-property
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#access-inbox-property
     traits: [Post, AccessGrants]
     area: core
     requirements:
@@ -569,7 +569,7 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Delete, Conditional]
     area: core
     requirements:
@@ -598,7 +598,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post, Container]
     area: core
     requirements:
@@ -627,7 +627,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
     traits: [Delete, Container]
     area: core
     requirements:
@@ -659,7 +659,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
     traits: [Put, Patch, Linkset]
     area: core
     requirements:
@@ -694,7 +694,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
     traits: [Post]
     area: core
     requirements:

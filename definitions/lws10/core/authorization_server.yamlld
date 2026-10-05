@@ -15,7 +15,7 @@ comment: >-
   reach; those tests apply only when the metadata lists did:key among its subject
   identifier types.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#authz-server-metadata-well-known"
@@ -30,8 +30,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc8414#section-3
     traits: [Get, Discovery, Authz, TokenExchange]
     requires: [Authentication]
@@ -66,7 +66,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -96,8 +96,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authentication-type-identifier
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-type-identifier
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -127,7 +127,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -156,8 +156,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.1
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.1
       - https://www.rfc-editor.org/rfc/rfc9068#section-2
@@ -250,8 +250,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -298,7 +298,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -343,7 +343,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -378,8 +378,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
     traits: [Post, Get, TokenExchange, Authz]
     requires: [Authentication]
     as: anonymous

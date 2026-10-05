@@ -6,11 +6,11 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **203 tests**: 161 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 74 negative tests.
+- **204 tests**: 162 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 75 negative tests.
 - **50 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 38 MUST, 10 SHOULD, 2 MAY. They cite 58 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
-- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 21 September draft.
-- **manifests/ (retired, D-0055):** 32 of its 33 tests have a successor; the other one was dropped because its clause left the specification (table 2).
+- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 5 October draft.
+- **manifests/ (retired, D-0055):** 31 of its 33 tests have a successor; the other 2 were dropped because the specification no longer says what they tested (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
@@ -21,7 +21,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 18 | 11 | 5 | 2 |
-| `core/data_resources` | 16 | 9 | 6 | 1 |
+| `core/data_resources` | 17 | 10 | 6 | 1 |
 | `core/discovery` | 7 | 6 | 1 | 0 |
 | `core/linksets` | 9 | 8 | 1 | 0 |
 | `core/notifications` | 15 | 14 | 1 | 0 |
@@ -98,7 +98,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `core/head-parity` | `core/data_resources#data-resource-head-parity` |
 | `core/link-up-on-resources` | `core/data_resources#createDataResource`, `core/data_resources#readDataResource`, `core/data_resources#data-resource-head-parity` |
 | `core/linkset-discovery-and-patch-advertisement` | `core/linksets#getLinkset`, `core/linksets#linkset-advertises-patch` |
-| `core/patch-merge-patch-baseline` | `core/data_resources#patch-merge-patch-baseline` |
+| `core/patch-merge-patch-baseline` | None. The 5 October 2026 draft made JSON Patch the baseline patch format in place of JSON Merge Patch; `core/data_resources#patch-json-patch-baseline` tests the new one. |
 | `core/post-to-non-container-405` | `core/data_resources#post-to-non-container-405` |
 | `core/put-replace-with-if-match` | `core/conditional_requests#update-changes-strong-etag`, `core/data_resources#updateDataResource` |
 | `core/put-unconditional-428` | None. The 21 September 2026 draft removed the 428 MUST ("Clients SHOULD use conditional requests"), so this test failed conforming servers. |
@@ -241,7 +241,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `data-resource-range-unsatisfiable` | Negative | SHOULD |  |  |
 | `data-resource-accept-ranges` | Validation | MAY |  |  |
 | `updateDataResource` | Validation | MUST |  | updateDataResource |
-| `patch-merge-patch-baseline` | Validation | MUST |  |  |
+| `patch-json-patch-baseline` | Validation | MUST |  |  |
+| `patch-json-patch-atomic` | Negative | MUST |  |  |
 | `deleteDataResource` | Validation | MUST |  | deleteDataResource |
 | `post-to-non-container-405` | Negative | SHOULD |  |  |
 | `error-problem-details` | Validation | SHOULD |  |  |
@@ -270,7 +271,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `linkset-ready-at-create` | Validation | MUST |  |  |
 | `linkset-up-not-redirected` | Validation | MUST |  |  |
 | `linkset-patch-stays-linkset` | Validation | MUST |  |  |
-| `linkset-patch-merge` | Validation | SHOULD |  |  |
+| `linkset-patch-json-patch` | Validation | SHOULD |  |  |
 
 ### `core/notifications`
 

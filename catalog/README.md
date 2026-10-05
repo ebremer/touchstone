@@ -10,7 +10,7 @@ coverage = requirements × tests, counted over the requirements a server run ans
 | File | Content |
 |---|---|
 | `vocab/touchstone-vocab.ttl` | the catalog vocabulary (subclass of EARL's TestRequirement) |
-| `lws10-core.ttl` | requirements for LWS Protocol 1.0 core (WD 2026-09-21) — 190 |
+| `lws10-core.ttl` | requirements for LWS Protocol 1.0 core (WD 2026-10-05) — 190 |
 | `lws10-authn-openid.ttl` | OpenID Connect authentication suite (WD 2026-08-03) — 8 |
 | `lws10-authn-ssi-cid.ttl` | Self-signed Identity using Controlled Identifiers (WD 2026-09-21) — 14 |
 | `lws10-authn-saml.ttl` | SAML 2.0 authentication suite (WD 2026-08-03) — 7 |
@@ -47,3 +47,9 @@ not have.
 versions W3C had published as of 28 September 2026 (DECISIONS.md D-0057). Thirteen core
 blocks changed and the module went from 191 requirements to 190; the CID suite's normative
 text did not change.
+
+**Re-baselined 2026-10-05** onto the 5 October 2026 core WD, the latest version W3C had
+published that day (DECISIONS.md D-0086). Three core blocks changed, all to make JSON Patch
+(RFC 6902) the baseline patch format where they named JSON Merge Patch
+(w3c/lws-protocol#255); the module still holds 190 requirements. The CID, OpenID Connect
+and SAML drafts, and the editor's drafts of the webhook and index suites, did not change.

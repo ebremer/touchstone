@@ -13,7 +13,7 @@ comment: >-
   the validator matches, no write when If-Match fails, and a strong validator that
   changes whenever the representation does.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#conditional-get-304"
@@ -25,7 +25,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.2
     traits: [Get, DataResource, Conditional]
     requirements:
@@ -68,7 +68,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
     traits: [Get, Container, Conditional]
     supersedes: [core/etag-on-head-and-container-listing]
     note: >-
@@ -109,7 +109,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.2
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2
     traits: [Get, Put, DataResource, Conditional]
@@ -172,7 +172,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.1
     traits: [Put, DataResource, Conditional]
     supersedes: [core/conditional-if-match-mismatch-412]
@@ -235,7 +235,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.1
     traits: [Delete, Put, DataResource, Conditional]
     requirements:
@@ -293,7 +293,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-8.8.1
     traits: [Get, Put, DataResource, Conditional]
     supersedes: [core/put-replace-with-if-match]
@@ -347,7 +347,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-8.8.1
     traits: [Get, Delete, Container, Conditional]
     requirements:
@@ -412,7 +412,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.3
     traits: [Get, DataResource, Conditional]
     requirements:
@@ -469,7 +469,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-13.1.4
     traits: [Get, DataResource, Conditional]
     requirements:

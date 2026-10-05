@@ -14,7 +14,7 @@ comment: >-
   inapplicable here, not failed (D-0062). Page URIs are opaque: every page is reached
   through a link the server gave.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
 entries:
 
   - id: "#pagination-first-page"
@@ -28,9 +28,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-model
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-link-first
@@ -103,9 +103,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-model
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-link-first
@@ -190,7 +190,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-link-relations
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-link-next
@@ -257,7 +257,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-link-relations
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-link-relations
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-link-last
@@ -332,8 +332,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#requesting-pages
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#pagination-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#requesting-pages
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#pagination-model
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-200-totalitems-all-pages

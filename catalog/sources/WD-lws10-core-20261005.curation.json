@@ -1,17 +1,15 @@
 {
- "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported).",
- "created": "2026-09-30",
+ "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported). Re-baselined onto WD-lws10-core-20261005 (D-0086): the 188 blocks whose text did not change keep their entries; the three that changed are the patch-format MUSTs, which name JSON Patch (RFC 6902) where they named JSON Merge Patch (w3c/lws-protocol#255). Two were Approved seeds (blocks 76 and 101) and now have Draft successors; the linkset PATCH entry is renamed for the new format.",
+ "created": "2026-10-05",
  "seeded": [
   62,
   64,
   72,
-  76,
   85,
   86,
   87,
   93,
   96,
-  101,
   104,
   105,
   178
@@ -671,6 +669,15 @@
    "created": "2026-09-02"
   },
   {
+   "i": 76,
+   "slug": "linkset-accept-patch-json-patch",
+   "summary": "Servers advertise JSON Patch support on the linkset resource via the Accept-Patch header: Accept-Patch: application/json-patch+json.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-05"
+  },
+  {
    "i": 77,
    "slug": "linkset-optional-methods-advertised",
    "summary": "Optional PUT or alternative patch formats, when supported, appear in Allow and Accept-Patch.",
@@ -699,12 +706,12 @@
   },
   {
    "i": 80,
-   "slug": "linkset-patch-merge-patch",
-   "summary": "PATCH with application/merge-patch+json is the primary metadata-management mechanism on the linkset.",
+   "slug": "linkset-patch-json-patch",
+   "summary": "PATCH with application/json-patch+json is the primary metadata-management mechanism on the linkset.",
    "appliesTo": [
     "Server"
    ],
-   "created": "2026-09-02"
+   "created": "2026-10-05"
   },
   {
    "i": 81,
@@ -844,6 +851,16 @@
     "Client"
    ],
    "created": "2026-09-30"
+  },
+  {
+   "i": 101,
+   "slug": "patch-json-patch-baseline",
+   "summary": "PATCH minimally supports JSON Patch (application/json-patch+json, RFC 6902).",
+   "text": "LWS server MUST minimally support JSON Patch (application/json-patch+json) as defined in [RFC6902].",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-05"
   },
   {
    "i": 102,

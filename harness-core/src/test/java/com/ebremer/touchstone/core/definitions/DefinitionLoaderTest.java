@@ -24,7 +24,7 @@ class DefinitionLoaderTest {
     @Test
     void loadsEveryDefinitionInTraversalOrder() {
         Definitions defs = DefinitionLoader.load(DEFINITIONS, CATALOG);
-        assertThat(defs.tests()).hasSize(203);
+        assertThat(defs.tests()).hasSize(204);
         assertThat(defs.tests().getFirst().id()).isEqualTo("core/discovery#discovery-get-links-storageDescription");
         assertThat(defs.tests().stream().map(TestDefinition::level).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder("MUST", "SHOULD", "MAY");
@@ -44,7 +44,7 @@ class DefinitionLoaderTest {
     @Test
     void selectorsNameModulesManifestsAndTests() {
         Definitions defs = DefinitionLoader.load(DEFINITIONS, CATALOG);
-        assertThat(defs.select("all")).hasSize(203);
+        assertThat(defs.select("all")).hasSize(204);
         assertThat(defs.select("auth")).hasSize(31);
         assertThat(defs.select("auth/oidc")).hasSize(6);
         assertThat(defs.select("core/containers")).hasSize(18);
@@ -121,7 +121,7 @@ class DefinitionLoaderTest {
                     status: Proposed
                     level: SHOULD
                     source:
-                      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+                      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
                     traits: [Put]
                     area: core
                     requirements:

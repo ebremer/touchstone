@@ -13,7 +13,7 @@ comment: >-
   key its storage description publishes, unless a task makes it forge one. A delivery is the
   session's request and the inbox's answer (OBSERVATION.md section 3).
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
   - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
 entries:
   - id: "#client-subscription-media-type"
@@ -27,7 +27,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscriptions
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscriptions
     traits: [Post, Notifications]
     area: notifications
     requirements:
@@ -53,7 +53,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
       - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
       - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#subscription-type
     traits: [Post, Notifications]
@@ -81,7 +81,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#subscription-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#subscription-request
     traits: [Post, Notifications]
     area: notifications
     requirements:

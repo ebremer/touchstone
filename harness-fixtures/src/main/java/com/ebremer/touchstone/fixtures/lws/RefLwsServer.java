@@ -36,7 +36,7 @@ import org.eclipse.jetty.util.Callback;
 
 /**
  * In-memory reference LWS server: the target of the conformance self-test loop (DECISIONS.md
- * D-0015). It implements the WD-20260921 behaviour the definitions test:
+ * D-0015). It implements the WD-20261005 behaviour the definitions test:
  * <ul>
  *   <li>containers with {@code items}/{@code totalItems} listings, each member's {@code format},
  *       {@code size} and {@code modified}, and lws+json/ld+json/json conneg with
@@ -47,9 +47,9 @@ import org.eclipse.jetty.util.Callback;
  *   <li>{@code Last-Modified}, and the date validators {@code If-Modified-Since} (304) and
  *       {@code If-Unmodified-Since} (412), evaluated in RFC 9110 section 13.2.2's order;</li>
  *   <li>strong ETags with 304 and 412, containment-consistent create and delete, 409 on
- *       deleting a non-empty container unless {@code Depth: infinity}, JSON Merge Patch on data
+ *       deleting a non-empty container unless {@code Depth: infinity}, JSON Patch on JSON data
  *       resources, single byte ranges;</li>
- *   <li>a linkset per resource, stored, with its own ETag, patchable with merge patch and
+ *   <li>a linkset per resource, stored, with its own ETag, patchable with JSON Patch and
  *       refusing PUT with 405, removed with its resource;</li>
  *   <li>access grants and access requests (section 11) as LWS containers, and authorization
  *       by ownership or grant: {@code foaf:Agent} is the public;</li>
@@ -91,7 +91,7 @@ public final class RefLwsServer implements AutoCloseable {
     private static final String LWS_CID = "application/lws+cid";
     private static final String LWS_JSON = "application/lws+json";
     private static final String LINKSET_JSON = "application/linkset+json";
-    private static final String MERGE_PATCH = "application/merge-patch+json";
+    private static final String JSON_PATCH = "application/json-patch+json";
     /** The storage URI, which here is also the storage root container. */
     private static final String STORAGE_PATH = "/";
     /** The access grant and access request services: containers outside the storage root's listing. */
@@ -1074,7 +1074,7 @@ public final class RefLwsServer implements AutoCloseable {
                         path.equals(STORAGE_PATH) ? "GET, HEAD, POST" : "GET, HEAD, POST, DELETE");
             } else {
                 response.getHeaders().put(HttpHeader.ALLOW, dataResourceMethods(node));
-                response.getHeaders().put("Accept-Patch", MERGE_PATCH);
+                response.getHeaders().put("Accept-Patch", JSON_PATCH);
             }
         }
 
@@ -1249,7 +1249,7 @@ public final class RefLwsServer implements AutoCloseable {
         }
 
         /**
-         * A resource's linkset (RFC 9264): GET and HEAD, and PATCH with JSON Merge Patch, which
+         * A resource's linkset (RFC 9264): GET and HEAD, and PATCH with JSON Patch, which
          * the Allow and Accept-Patch headers advertise. PUT is not supported, so it is 405 with
          * the methods that are, unless {@link #linksetPutOnDataResources} lets a data resource's
          * linkset be replaced.
@@ -1264,7 +1264,7 @@ public final class RefLwsServer implements AutoCloseable {
             boolean puttable = linksetPut && !node.container;
             String allow = puttable ? "GET, HEAD, PUT, PATCH" : "GET, HEAD, PATCH";
             response.getHeaders().put(HttpHeader.ALLOW, allow);
-            response.getHeaders().put("Accept-Patch", MERGE_PATCH);
+            response.getHeaders().put("Accept-Patch", JSON_PATCH);
             switch (method) {
                 case "GET", "HEAD" -> {
                     byte[] body = mapper.writeValueAsBytes(linksetDocument(request, path, node));
@@ -1275,7 +1275,7 @@ public final class RefLwsServer implements AutoCloseable {
                 }
                 case "PATCH" -> {
                     String contentType = request.getHeaders().get("Content-Type");
-                    if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MERGE_PATCH)) {
+                    if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(JSON_PATCH)) {
                         status(request, response, callback, 415);
                         return;
                     }
@@ -1284,19 +1284,21 @@ public final class RefLwsServer implements AutoCloseable {
                         status(request, response, callback, 412);
                         return;
                     }
-                    JsonNode patch;
+                    JsonNode patched;
                     try (InputStream in = Content.Source.asInputStream(request)) {
-                        patch = mapper.readTree(in.readAllBytes());
+                        patched = JsonPatch.apply(linksetDocument(request, path, node), mapper.readTree(in.readAllBytes()));
+                    } catch (JsonPatch.Failure e) {
+                        status(request, response, callback, e.status());
+                        return;
                     } catch (Exception e) {
                         status(request, response, callback, 400);
                         return;
                     }
-                    JsonNode merged = mergePatch(linksetDocument(request, path, node), patch);
-                    if (!merged.isObject() || !merged.path("linkset").isArray()) {
+                    if (!patched.isObject() || !patched.path("linkset").isArray()) {
                         status(request, response, callback, 422);
                         return;
                     }
-                    node.linkset = (ObjectNode) merged;
+                    node.linkset = (ObjectNode) patched;
                     node.linksetEtag = newEtag();
                     node.indexed = Instant.now();
                     response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
@@ -1466,9 +1468,11 @@ public final class RefLwsServer implements AutoCloseable {
         // ---- patch ----
 
         /**
-         * JSON Merge Patch (RFC 7386), the baseline every server has to understand. Containers
-         * are not patchable: their representation is derived from containment, not stored.
-         * {@code If-Match} is honoured when sent and not demanded.
+         * JSON Patch (RFC 6902), the baseline every server has to understand, on a data resource
+         * whose representation is JSON; any other is 415, as a format the resource does not
+         * support (RFC 5789 section 2.2). Containers are not patchable: their representation is
+         * derived from containment, not stored. {@code If-Match} is honoured when sent and not
+         * demanded. A patch applies whole or not at all.
          */
         private void patch(Request request, Response response, Callback callback, String path) throws Exception {
             Node node = store.get(path);
@@ -1481,8 +1485,8 @@ public final class RefLwsServer implements AutoCloseable {
                 return;
             }
             String contentType = request.getHeaders().get("Content-Type");
-            if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MERGE_PATCH)) {
-                response.getHeaders().put("Accept-Patch", MERGE_PATCH);
+            if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(JSON_PATCH)) {
+                response.getHeaders().put("Accept-Patch", JSON_PATCH);
                 status(request, response, callback, 415);
                 return;
             }
@@ -1496,43 +1500,33 @@ public final class RefLwsServer implements AutoCloseable {
                 body = in.readAllBytes();
             }
             JsonNode target;
-            JsonNode patch;
             try {
                 target = node.bytes == null || node.bytes.length == 0
                         ? mapper.createObjectNode() : mapper.readTree(node.bytes);
-                patch = mapper.readTree(body);
             } catch (Exception e) {
-                // The stored representation is not JSON, or the patch itself is malformed.
+                // The stored representation is not JSON, so JSON Patch does not apply to it.
+                response.getHeaders().put("Accept-Patch", JSON_PATCH);
                 status(request, response, callback, 415);
                 return;
             }
-            node.bytes = mapper.writeValueAsBytes(mergePatch(target, patch));
+            JsonNode patched;
+            try {
+                patched = JsonPatch.apply(target, mapper.readTree(body));
+            } catch (JsonPatch.Failure e) {
+                status(request, response, callback, e.status());
+                return;
+            } catch (Exception e) {
+                // The patch document is not JSON.
+                status(request, response, callback, 400);
+                return;
+            }
+            node.bytes = mapper.writeValueAsBytes(patched);
             node.contentType = "application/json";
             touch(path, node);
             announce(request, "Update", path, node, null, null);
             response.setStatus(204);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
             callback.succeeded();
-        }
-
-        /**
-         * RFC 7386 section 2: a non-object patch replaces the target outright; otherwise each
-         * member is merged recursively, and a null member REMOVES the name.
-         */
-        private JsonNode mergePatch(JsonNode target, JsonNode patch) {
-            if (!patch.isObject()) {
-                return patch;
-            }
-            ObjectNode merged = target != null && target.isObject()
-                    ? (ObjectNode) target.deepCopy() : mapper.createObjectNode();
-            patch.properties().forEach(entry -> {
-                if (entry.getValue().isNull()) {
-                    merged.remove(entry.getKey());
-                } else {
-                    merged.set(entry.getKey(), mergePatch(merged.get(entry.getKey()), entry.getValue()));
-                }
-            });
-            return merged;
         }
 
         // ---- delete ----

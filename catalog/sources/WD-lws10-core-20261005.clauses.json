@@ -1318,7 +1318,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "Patch Format Discovery: Servers MUST advertise support for JSON Merge Patch [RFC7386] via the Accept-Patch header: Accept-Patch: application/merge-patch+json."
+  "text": "Patch Format Discovery: Servers MUST advertise support for JSON Patch [RFC6902] via the Accept-Patch header: Accept-Patch: application/json-patch+json."
  },
  {
   "i": 77,
@@ -1384,7 +1384,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "Partial Updates (PATCH): This is the primary mechanism for metadata management. Servers MUST support PATCH using application/merge-patch+json."
+  "text": "Partial Updates (PATCH): This is the primary mechanism for metadata management. Servers MUST support PATCH using application/json-patch+json."
  },
  {
   "i": 81,
@@ -1728,7 +1728,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "PATCH (partial update) – The HTTP PATCH method [RFC5789] allows a client to specify partial modifications to a resource, rather than sending the whole new content. This is useful for large resources where sending the entire content would be inefficient if only a small part changed, or for concurrent editing where you want to apply specific changes. LWS server MUST minimally support JSON Merge Patch (application/merge-patch+json) as defined in [RFC7386]."
+  "text": "PATCH (partial update) – The HTTP PATCH method [RFC5789] allows a client to specify partial modifications to a resource, rather than sending the whole new content. This is useful for large resources where sending the entire content would be inefficient if only a small part changed, or for concurrent editing where you want to apply specific changes. LWS server MUST minimally support JSON Patch (application/json-patch+json) as defined in [RFC6902]."
  },
  {
   "i": 102,
