@@ -1,6 +1,7 @@
 # Touchstone for LWS clients — design
 
-**Status: proposed, 2026-10-05 ([D-0075](DECISIONS.md)). Nothing here is implemented yet.**
+**Status: phases C0 and C1 are built ([D-0076](DECISIONS.md), D-0077). C2's rule format is
+proposed and waits at Gate C (D-0078). The rest is design (D-0075).**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -185,66 +186,50 @@ automation in the developer's own language with nothing per language on our side
 
 ### 5.1 The definition type
 
-Client rules live in their own tree, `definitions/lws10/clients/`, as a new test type,
-provisionally `ObservationTest`, in a new format version. A rule carries the same metadata
-as a server test (`id`, `name`, `label`, `comment`, `status`, `level`, `source`, `traits`,
+Client rules live in their own tree, `definitions/lws10/clients/`, as a new kind of entry,
+`ObservationTest`, in format 0.8.0. [`definitions/OBSERVATION.md`](definitions/OBSERVATION.md)
+is its contract; it is proposed at Gate C (§13, D-0078). A rule carries the same metadata as
+a server test (`id`, `name`, `label`, `comment`, `status`, `level`, `source`, `traits`,
 `requirements`), plus:
 
-- **`observe`** selects the exchanges the rule judges. It can match on:
-  - method;
-  - the target's role and the other annotations (§4.3);
-  - request properties;
-  - context, such as `after` an armed fault fired.
-- **`expect`** states what must hold of each selected exchange:
-  - Request assertions reuse the response vocabulary: `headers`, `linkHeaders`,
-    `contentType`, `json` pointers.
-  - Annotation assertions, such as `issued: true`.
-  - Sequence assertions, `precededBy` and `followedBy`, each with a window in exchanges
-    or seconds.
-- **`task`** (optional) gives the checklist prompt, and `arm` names the fault it arms.
-- **`guidance`** says how to fix a failure, in a sentence or two.
+- **`area`:** `core`, `authentication`, `notifications` or `index`. A developer can declare an
+  area out of scope.
+- **`observe`:** a condition that selects the exchanges the rule judges, its trials.
+- **`expect`:** a condition each trial must satisfy.
+- **`guidance`:** how to fix a failure, in a sentence or two.
 
-Two sketches. The field names are settled at Gate C (§13), not here.
+Both conditions use one vocabulary:
+- the request's own terms, reused from the response vocabulary (`contentType`, `linkHeaders`,
+  `otherHeaders`, `bodyMatches`, `json`);
+- `statusCode`, for the session's answer;
+- the recorder's annotations (§4.3), such as `role`, `issued` or `methodAdvertised`;
+- `anyOf`, for alternatives.
+
+`after` in `observe` makes the trial "the next matching exchange after a trigger". Rules have
+no variables and no captures. Phase C3 adds tasks, faults and an absence check within a window
+(`followedBy`) as a later format version.
 
 ```yaml
-  - id: "#client-page-urls-issued"
+  - id: "#client-linkset-put-only-when-advertised"
     type: ObservationTest
-    name: client-page-urls-issued
-    label: The client requests only the page URLs the server gave it
+    name: client-linkset-put-only-when-advertised
+    label: The client replaces a linkset with PUT only after the linkset advertised PUT
     status: Proposed
     level: SHOULD
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#metadata
+    traits: [Put, Linkset]
+    area: core
     requirements:
-      - https://example.org/touchstone/req/lws10-core/pagination-uris-opaque
+      - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
     observe:
-      role: page
+      role: linkset
+      method: PUT
     expect:
-      issued: true
+      methodAdvertised: true
     guidance: >-
-      Follow the first, next, prev and last links of the container representation;
-      do not build page URLs from the container URL.
-
-  - id: "#client-write-conditional-after-412"
-    type: ObservationTest
-    name: client-write-conditional-after-412
-    label: After a 412, the client's next write to the resource is still conditional
-    status: Proposed
-    level: SHOULD
-    requirements:
-      - https://example.org/touchstone/req/lws10-core/put-clients-use-conditional-requests
-    task:
-      prompt: Edit note.txt again. The server will refuse this edit once with 412.
-      arm: {fault: preconditionFailedOnce, method: [PUT, PATCH]}
-    observe:
-      after: preconditionFailedOnce
-      method: [PUT, PATCH]
-      sameTarget: true
-    expect:
-      headers:
-        - name: If-Match
-          present: true
-    guidance: >-
-      A 412 means someone else changed the resource. Read it again and retry with the new
-      ETag; do not drop If-Match to force the write.
+      Read the linkset first (GET or HEAD) and use PUT only if its Allow header lists PUT.
+      Otherwise update it with PATCH, in a format its Accept-Patch header lists.
 ```
 
 ### 5.2 Outcomes
@@ -288,8 +273,9 @@ without noticing; clients relying on unspecified behaviour trip over them.
   default and can be switched off on the session page, to separate this trap from other
   problems.
 - **Opaque linkset URLs.** A linkset is reachable only through `rel="linkset"`.
-- **Only some methods advertised.** Binary data resources (any media type but text, JSON, XML
-  or an RDF syntax) refuse PUT and omit it from `Allow`, and `Accept-Patch` lists a single
+- **Only some methods advertised.** Linksets support PATCH in JSON Merge Patch only, and
+  refuse PUT, as the draft allows. Binary data resources (any media type but text, JSON, XML
+  or an RDF syntax) refuse PUT and omit it from `Allow`. `Accept-Patch` lists a single
   format.
 - **A decoy resource** listed first in the root container, which answers `401` with a
   challenge whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant
@@ -415,7 +401,7 @@ clients; only the client half is judged here.
 | Requirement | Level | Observed by | Phase |
 |---|---|---|---|
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST | passive: a session token anywhere but `Authorization` (query string, form body) | C2 |
-| `lws10-core/client-no-assumed-methods-405-415` | MUST | passive: PUT, PATCH and a patch format only after the resource advertised them; faults 405 and 415: no unchanged repeat | C2, C3 |
+| `lws10-core/client-no-assumed-methods-405-415` | MUST | passive, on linksets, where the clause sits: PUT only when `Allow` lists it, PATCH only in a format `Accept-Patch` lists (SHOULD); faults 405 and 415: no unchanged repeat (MUST) | C2, C3 |
 | `lws10-core/subscription-create-post-lws-json`, `subscription-request-*`; `lws10-notifications-webhook/subscription-type-and-fields`, `subscription-inbox-required`, `subscription-type-identifier` (some half) | MUST | passive: subscription bodies | C2 |
 | `lws10-core/access-jsonld-context-lws-v1`, `access-type-values`, and the other access and policy data-model clauses (half) | MUST | passive: the access requests and grants the client POSTs | C2 |
 | `lws10-index/client-baseline-only`, `query-content-type-required` (half) | MUST | passive: a QUERY without `Content-Type`, or in a format the server did not advertise and kept after a 415 | C2, C3 |
@@ -436,6 +422,40 @@ clients; only the client half is judged here.
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
 | `lws10-index/client-no-read-your-writes` | MUST | not observable; the lagging-index trap surfaces it to the developer; stays `untested` | — |
 | `lws10-core/conformance-client-class` | MUST | the aggregate: the client's verdict (§5.2) | C6 |
+
+**The C2 rules.** Gate C reviews the format against these 25 rules, drafted to test it and
+written into `definitions/lws10/clients/` once the format is frozen (D-0078). The two MAY rows
+of the C2 plan above get no rule. The syntax of `prefer-link-relations-filtering` is left open by
+the draft, so nothing can be checked. `client-415-accept-query` cannot be told apart from
+`client-query-baseline-after-415` while the session accepts only the baseline format.
+
+| Rule | Level | Cites | Trials (`observe`) | Passes when (`expect`) |
+|---|---|---|---|---|
+| `client-token-in-authorization-header` | MUST | `authz-bearer-presentation-rfc6750` | storage requests carrying a credential | it is in `Authorization: Bearer` only |
+| `client-linkset-put-only-when-advertised` | SHOULD | `client-no-assumed-methods-405-415` | PUT to a linkset | the linkset's `Allow` listed PUT |
+| `client-linkset-patch-format-advertised` | SHOULD | `client-no-assumed-methods-405-415` | PATCH to a linkset | its `Accept-Patch` listed the format |
+| `client-put-conditional` | SHOULD | `put-clients-use-conditional-requests` | PUT to a data resource | `If-Match` or `If-Unmodified-Since` |
+| `client-linkset-write-conditional` | SHOULD | `linkset-precondition-failed-412` | PUT or PATCH to a linkset | `If-Match` or `If-Unmodified-Since` |
+| `client-page-urls-issued` | SHOULD | `pagination-uris-opaque` | page requests, and URLs built from a container's or page's URL by query | the URL was issued |
+| `client-member-urls-issued` | SHOULD | `uri-independent-of-hierarchy` | storage requests for containers, data resources and linksets, and URLs built by path | the URL was issued |
+| `client-access-document-context` | MUST | `access-jsonld-context-lws-v1` | POSTs of access requests and grants | `@context` is an array with the LWS context |
+| `client-access-request-type` | MUST | `access-type-required`, `access-type-values` | POSTs of access requests | `type` includes `AccessRequest` |
+| `client-access-grant-type` | MUST | `access-type-required`, `access-type-values` | POSTs of access grants | `type` includes `AccessGrant` |
+| `client-access-document-storage` | MUST | `access-storage-required`, `access-storage-uri` | POSTs of access requests and grants | `storage` is a URI |
+| `client-access-document-access` | MUST | `access-access-required`, `access-access-collection` | POSTs of access requests and grants | `access` is an array of one or more objects |
+| `client-access-policy-type` | MUST | `policy-type-required`, `policy-type-access-policy` | those whose `access` is an array | every policy's `type` includes `AccessPolicy` |
+| `client-access-policy-action` | MUST | `policy-action-required`, `policy-action-values` | the same | every `action` is an array of one or more of read, modify, create, delete |
+| `client-access-policy-assignee` | MUST | `policy-assignee-required`, `policy-assignee-uri-foaf-agent` | the same | every `assignee` is a URI |
+| `client-access-policy-target` | MUST | `policy-target-object` | those with a policy target | each target is an object with a `type` and a `value` array of strings |
+| `client-access-policy-constraint` | MUST | `policy-constraint-objects` | those with constraints | each is an array of objects with `leftOperand`, `operator`, `rightOperand` |
+| `client-access-document-inbox` | MUST | `access-inbox-uri` | those with an `inbox` | it is a URI |
+| `client-delete-conditional` | MAY | `delete-if-match-optional` | DELETE of a data resource or container | `If-Match` |
+| `client-subscription-media-type` | MUST | `subscription-create-post-lws-json` | POSTs to the NotificationService | `application/lws+json`, a JSON object |
+| `client-subscription-type` | MUST | `subscription-request-required-fields`, `-type`; webhook `subscription-type-and-fields`, `subscription-type-identifier` | the same | `type` is `WebhookSubscription`, the one type advertised |
+| `client-subscription-topic` | MUST | `subscription-request-required-fields`, `-topic` | the same | `topic` is an array of URIs |
+| `client-subscription-inbox` | MUST | webhook `subscription-inbox-required` | webhook subscription POSTs | `inbox` is a URI |
+| `client-query-content-type` | MUST | `query-content-type-required` | QUERY to the Type Search Service | `Content-Type` is present |
+| `client-query-baseline-after-415` | MUST | `client-baseline-only` | the next QUERY to it after a 415 | the baseline format, `application/lws-query+json` |
 
 ## 12. Open questions (for Erich)
 
@@ -484,7 +504,7 @@ Gate 2 did for the server-side schema.
   passed the server-side check: every definition passes against a reference deployment with
   them set.
 - **C2: rules.**
-  - Gate C.
+  - Gate C, opened 2026-10-05: format 0.8.0 is proposed (D-0078).
   - The new format version: schema, loader and lint for `ObservationTest`.
   - The passive rules of §11.
   - `RefLwsClient` and its first twins in `ClientRulesSelfTest`.

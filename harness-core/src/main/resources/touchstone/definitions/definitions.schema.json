@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/definitions/0-7-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), format 0.7.0",
-  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "$id": "https://example.org/touchstone/schema/definitions/0-8-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.8.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md) and is PROPOSED at Gate C (D-0078); 0.7.0 is the frozen version. The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/identityRegistry"}
@@ -52,8 +52,15 @@
         "comment": {"type": "string"},
         "specification": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/datedSpec"}},
         "include": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z_/]+\\.yamlld$"}},
-        "entries": {"type": "array", "items": {"$ref": "#/$defs/test"}}
+        "entries": {"type": "array", "items": {"$ref": "#/$defs/entry"}}
       }
+    },
+
+    "entry": {
+      "description": "A manifest entry: a server test, or (since 0.8.0) a client rule.",
+      "if": {"type": "object", "required": ["type"], "properties": {"type": {"const": "ObservationTest"}}},
+      "then": {"$ref": "#/$defs/observationTest"},
+      "else": {"$ref": "#/$defs/test"}
     },
 
     "test": {
@@ -356,6 +363,106 @@
       },
       "minProperties": 2
     },
+
+    "observationTest": {
+      "description": "A client rule (definitions/OBSERVATION.md, since 0.8.0). Every exchange of a client session that observe selects is a trial; a trial passes when expect holds of it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "label", "status", "level", "source", "traits", "area", "requirements", "observe", "expect", "guidance"],
+      "properties": {
+        "id": {"$ref": "#/$defs/test/properties/id"},
+        "type": {"const": "ObservationTest"},
+        "name": {"$ref": "#/$defs/test/properties/name"},
+        "label": {"type": "string", "minLength": 1},
+        "comment": {"type": "string"},
+        "status": {"$ref": "#/$defs/test/properties/status"},
+        "level": {"$ref": "#/$defs/test/properties/level"},
+        "source": {"$ref": "#/$defs/test/properties/source"},
+        "traits": {"$ref": "#/$defs/test/properties/traits"},
+        "area": {"description": "the area a developer can declare out of scope, which makes the rule inapplicable", "enum": ["core", "authentication", "notifications", "index"]},
+        "requirements": {"$ref": "#/$defs/test/properties/requirements"},
+        "note": {"$ref": "#/$defs/test/properties/note"},
+        "observe": {"$ref": "#/$defs/observation"},
+        "expect": {"$ref": "#/$defs/condition"},
+        "guidance": {"description": "how to fix a failure, in a sentence or two; advice, never part of the judgement", "type": "string", "minLength": 1}
+      }
+    },
+
+    "conditionTerms": {
+      "description": "The terms of a condition on one exchange (OBSERVATION.md section 5). Every term present must hold. Request terms apply to the request the client sent; statusCode to the session's answer; the rest to the recorder's annotations (section 4).",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "server": {"$ref": "#/$defs/servers"},
+        "role": {"$ref": "#/$defs/roles"},
+        "method": {
+          "oneOf": [
+            {"$ref": "#/$defs/methodName"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/methodName"}}
+          ]
+        },
+        "statusCode": {"$ref": "#/$defs/response/properties/statusCode"},
+        "issued": {"type": "boolean"},
+        "builtBy": {
+          "oneOf": [
+            {"$ref": "#/$defs/derivation"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/derivation"}}
+          ]
+        },
+        "builtFromRole": {"$ref": "#/$defs/roles"},
+        "presentation": {
+          "oneOf": [
+            {"$ref": "#/$defs/presentationName"},
+            {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/presentationName"}}
+          ]
+        },
+        "methodAdvertised": {"type": "boolean"},
+        "patchFormatAdvertised": {"type": "boolean"},
+        "queryFormatAdvertised": {"type": "boolean"},
+        "contentType": {"$ref": "#/$defs/response/properties/contentType"},
+        "linkHeaders": {"$ref": "#/$defs/response/properties/linkHeaders"},
+        "otherHeaders": {"$ref": "#/$defs/response/properties/otherHeaders"},
+        "bodyMatches": {"$ref": "#/$defs/response/properties/bodyMatches"},
+        "json": {"$ref": "#/$defs/response/properties/json"},
+        "anyOf": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/condition"}}
+      }
+    },
+    "condition": {"type": "object", "$ref": "#/$defs/conditionTerms", "unevaluatedProperties": false},
+    "observation": {
+      "description": "Selects trials. With after, an exchange is a trial only as the first one, after a trigger, that satisfies the other terms (OBSERVATION.md section 6).",
+      "type": "object",
+      "$ref": "#/$defs/conditionTerms",
+      "properties": {"after": {"$ref": "#/$defs/trigger"}},
+      "unevaluatedProperties": false
+    },
+    "trigger": {
+      "description": "A condition on an earlier exchange of the session; with sameTarget, its URL is the trial's.",
+      "type": "object",
+      "$ref": "#/$defs/conditionTerms",
+      "properties": {"sameTarget": {"const": true}},
+      "unevaluatedProperties": false
+    },
+    "servers": {
+      "oneOf": [
+        {"$ref": "#/$defs/serverName"},
+        {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/serverName"}}
+      ]
+    },
+    "serverName": {"enum": ["storage", "authorizationServer"]},
+    "roles": {
+      "oneOf": [
+        {"$ref": "#/$defs/roleName"},
+        {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/roleName"}}
+      ]
+    },
+    "roleName": {
+      "enum": ["storageDescription", "container", "page", "dataResource", "linkset",
+               "accessGrants", "accessGrant", "accessRequests", "accessRequest", "subscriptions", "subscription",
+               "typeIndex", "typeSearch", "searchPage", "decoy", "asMetadata", "asJwks", "asToken", "unknown"]
+    },
+    "methodName": {"type": "string", "pattern": "^[A-Z][A-Z-]*$"},
+    "derivation": {"enum": ["query", "path"]},
+    "presentationName": {"enum": ["bearer", "otherScheme", "query", "form", "otherHeader", "none"]},
 
     "identityRegistry": {
       "type": "object",

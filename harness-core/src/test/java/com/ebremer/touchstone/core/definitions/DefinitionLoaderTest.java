@@ -108,6 +108,45 @@ class DefinitionLoaderTest {
     }
 
     @Test
+    void aClientRuleInAServerManifestIsRefused(@TempDir Path tmp) throws IOException {
+        Path copy = copy(tmp);
+        Path file = copy.resolve("lws10/core/discovery.yamlld");
+        Files.writeString(file, Files.readString(file).replace("\nentries:\n", """
+
+                entries:
+                  - id: "#client-put-conditional"
+                    type: ObservationTest
+                    name: client-put-conditional
+                    label: The client makes a PUT that replaces a data resource conditional
+                    status: Proposed
+                    level: SHOULD
+                    source:
+                      - https://www.w3.org/TR/2026/WD-lws10-core-20260921/#update-resource
+                    traits: [Put]
+                    area: core
+                    requirements:
+                      - https://example.org/touchstone/req/lws10-core/put-clients-use-conditional-requests
+                    observe:
+                      role: dataResource
+                      method: PUT
+                    expect:
+                      otherHeaders:
+                        - headerName: If-Match
+                          present: true
+                    guidance: Send If-Match.
+                """));
+        // The schema admits client rules (format 0.8.0); only lws10/clients/ may hold them.
+        assertThatThrownBy(() -> DefinitionLoader.load(copy, CATALOG))
+                .isInstanceOf(InvalidDefinitionsException.class)
+                .hasMessageContaining("client-put-conditional is a client rule");
+        // A condition is as strict as the rest of the schema: a term it lacks is an error.
+        Files.writeString(file, Files.readString(file).replace("      method: PUT\n", "      method: PUT\n      identity: alice\n"));
+        assertThatThrownBy(() -> DefinitionLoader.load(copy, CATALOG))
+                .isInstanceOf(InvalidDefinitionsException.class)
+                .hasMessageContaining("identity");
+    }
+
+    @Test
     void theBundledSchemaIsTheDefinitionsSchema() throws IOException {
         try (var in = DefinitionLoader.class.getResourceAsStream(DefinitionLoader.SCHEMA_RESOURCE)) {
             assertThat(new String(in.readAllBytes()))

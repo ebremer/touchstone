@@ -7,6 +7,7 @@ disagree, the spec wins.
 Gate status:
 - **Gate 1: CLOSED — Erich approved the 15 seed requirements on 2026-07-16; mass extraction authorized (D-0013).**
 - **Gate 2: CLOSED — manifest JSON Schema v1 frozen on 2026-07-16 (D-0013).**
+- **Gate C: OPEN — the client rule format 0.8.0 was proposed on 2026-10-05 (D-0078); no client rule is written until it closes.**
 
 ## 2026-07-16
 
@@ -2605,3 +2606,85 @@ deliveries are unsigned and never retried, stale since D-0066 and D-0070, is cor
   authenticates with the tokens the session hands out.
 
 Drafted by an agent; waits on branch `clients/c1-sessions`.
+
+### D-0078 — client rules: format 0.8.0 adds `ObservationTest` (proposed, Gate C)
+Phase C2 starts at Gate C (D-0075): the format for client rules waits for Erich's review
+before the first rule is written. Format 0.8.0 is that format. It is proposed, not frozen.
+
+**What is proposed:**
+- `ObservationTest`, a third kind of manifest entry, in the schema (`$id …/0-8-0`), the
+  context and the vocabulary;
+- `definitions/OBSERVATION.md`, the contract for judging rules: the exchange, the recorder's
+  annotations, conditions, how trials are selected, outcomes and EARL.
+
+Nothing a 0.7.0 definition relies on changes. The server engine accepts `0-8-0` and never
+meets a client rule, because the server root manifest does not include `clients/`.
+
+**A rule is two conditions on one exchange.** `observe` selects the trials and `expect`
+judges each one, and both use one vocabulary:
+- the request's own terms, `contentType`, `linkHeaders`, `otherHeaders`, `bodyMatches` and
+  `json`, reused from the response vocabulary and applied to the request;
+- `statusCode`, for the session's answer;
+- the recorder's annotations;
+- `anyOf`, for alternatives.
+
+`after` expresses "the next X after Y". There are no variables and no captures, so a rule is
+a plain predicate on exchanges and reads the same in the traffic log as in its definition.
+
+**The cleverness lives in the recorder** (CLIENT-TESTING.md section 4.3). Annotations are
+the facts only the server knows, computed and tested in one place:
+- `server` and `role`: what the request addressed;
+- `issued`, `builtBy` and `builtFromRole`: whether the session handed the URL out, and if not,
+  which handed-out URL the client built it from, by query or by path;
+- `presentation`: where the request carried a credential;
+- `methodAdvertised`, `patchFormatAdvertised` and `queryFormatAdvertised`: what the URL
+  advertised before the request.
+
+Their values are plain strings, not vocabulary terms. Roles such as `container` would
+otherwise collide with the traits of the same name.
+
+**The format was tried on the C2 rules before review.** Twenty-five draft rules, 18 MUST, 6
+SHOULD and 1 MAY, cover every C2 row of CLIENT-TESTING.md section 11. They exist to test the
+format and are not committed, because of the gate; section 11 lists them. They pass the
+YAML-LD, schema and JSON-LD export checks. Seventeen broken copies were all rejected,
+including a rule with `steps`, `after` inside `expect`, an unknown role and an `anyOf` of one.
+
+**Seven defaults were chosen. Each is open at Gate C.**
+1. **`client-no-assumed-methods-405-415` is read as being about linksets,** where the clause
+   sits: the metadata section's modifiability considerations. The session's linksets refuse
+   PUT, so the rules bite there. Read generally, the clause would also cover data resources,
+   where the trap that refuses PUT on binary resources (D-0077) would back it.
+2. **A rule takes the level of the obligation it observes,** not that of the clause it
+   cites. The client halves of two MUST-level clauses are SHOULDs: not assuming methods, and
+   conditional linkset writes. The lint allows a rule weaker than its requirement, never a
+   stronger one.
+3. **The "authenticated POST" of `subscription-create-post-lws-json` is not judged per
+   request.** Discovery works by trying without a token and being challenged.
+4. **Access documents get one rule per property,** eleven in all, so each failure cites its
+   own clause. The optional members (target, constraint, inbox) are judged only in documents
+   that have them. A client that never sends one sees *untested*, not a vacuous pass.
+5. **MAY rules are information.** One is proposed: a conditional DELETE. Two MAY rows of
+   section 11 get no rule:
+   - `prefer-link-relations-filtering`: the draft leaves its syntax open, so nothing can be
+     checked;
+   - `client-415-accept-query`: while the session accepts only the baseline format, it
+     cannot be told apart from `client-query-baseline-after-415`.
+6. **`presentation` is a set.** A token in both the header and the query string fails, as
+   RFC 6750 section 2 allows one method per request.
+7. **Deferred to phase C3, as a later format version:**
+   - tasks and faults: `task`, `arm` and a `fault` annotation;
+   - `followedBy`, for an absence within a window, which "no blind retry" needs.
+
+   Each will get its own entry, as additions to a frozen format do.
+
+**After the freeze,** in order:
+1. the loader and lint for `ObservationTest` in harness-core;
+2. the recorder's new annotations;
+3. the rule evaluator in harness-clients;
+4. the rules;
+5. `RefLwsClient` and its first twins, in `ClientRulesSelfTest`.
+
+The documentation pages that say "format 0.7.0, frozen" change when 0.8.0 is frozen.
+
+Drafted by an agent; waits on branch `clients/c2-rules`, which is stacked on
+`clients/c1-sessions`.

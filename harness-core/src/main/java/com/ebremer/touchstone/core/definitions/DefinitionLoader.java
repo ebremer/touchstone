@@ -111,6 +111,12 @@ public final class DefinitionLoader {
         String manifestPath = rel.substring(0, rel.length() - ".yamlld".length());
         Path directory = lws10.resolve(rel).getParent();
         for (JsonNode entry : doc.path("entries")) {
+            if ("ObservationTest".equals(entry.path("type").asText())) {
+                // Client rules are judged by the client service, never run as server tests
+                // (OBSERVATION.md section 2).
+                throw new InvalidDefinitionsException(rel + ": " + entry.path("name").asText()
+                        + " is a client rule; client rules live under lws10/clients/");
+            }
             tests.add(test(entry, manifestPath, directory));
         }
     }

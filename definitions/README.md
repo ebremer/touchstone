@@ -3,7 +3,8 @@
 **Status: format version 0.7.0, frozen on 2026-10-02 (DECISIONS.md D-0070).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
-every test is `status: Proposed`.
+every test is `status: Proposed`. Format 0.8.0, which adds client rules (`OBSERVATION.md`), is
+proposed and waits at Gate C (D-0078).
 
 0.2.0 (D-0053) merged this format with the best of lws-test-suite's own; 0.3.0 changed
 only how a did:key subject's credential is made, since W3C discontinued the did:key suite;
@@ -320,6 +321,12 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.8.0 (proposed 2026-10-05, D-0078, Gate C) adds a third kind of entry and
+changes nothing a 0.7.0 definition relies on. An `ObservationTest` is a client rule: it judges
+the exchanges an LWS client sends to a client session (`CLIENT-TESTING.md`), by two conditions
+on one exchange, `observe` and `expect`. `OBSERVATION.md` is its contract. Client rules live
+under `lws10/clients/`, which the server root manifest does not include.
 
 Format version 0.7.0 (2026-10-02, D-0070) adds one thing and changes nothing a 0.6.0
 definition relies on: a PUT of `{"respond": [...]}` to `${test.inbox}` scripts the statuses

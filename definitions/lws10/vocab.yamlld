@@ -42,6 +42,23 @@
       A test whose point is a refusal: at least one step expects a 4xx response, and the
       test also checks that the refused request had no effect.
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ObservationTest
+    type: rdfs:Class
+    subClassOf: mf:ManifestEntry
+    label: "Observation test"
+    comment: >-
+      A client rule (format 0.8.0, OBSERVATION.md): it judges the exchanges an LWS client
+      sends to a client session. Every exchange its observe condition selects is a trial,
+      and a trial passes when its expect condition holds.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:ExchangeCondition
+    type: rdfs:Class
+    label: "Exchange condition"
+    comment: >-
+      A condition on one recorded exchange of a client session: on the request the client
+      sent, the status the session answered, and the recorder's annotations. Every term
+      present must hold.
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:Polling
     type: rdfs:Class
     label: "Polling"
@@ -685,8 +702,8 @@
     type: rdf:Property
     label: "method"
     comment: >-
-      The HTTP method, in upper case.
-    domain: lwst:Request
+      The HTTP method, in upper case: the one a request sends, or, in an exchange
+      condition, one the request used (several values mean any of them).
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:url
@@ -825,8 +842,7 @@
     label: "statusCode"
     comment: >-
       An acceptable status: an integer, or a class string such as "4xx". Several values
-      mean any of them.
-    domain: lwst:ResponseExpectation
+      mean any of them. In an exchange condition, the status the session answered.
     range: rdfs:Literal
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:location
@@ -906,16 +922,15 @@
     label: "bodyMatches"
     comment: >-
       A regular expression (portable dialect) that must find a match in the body decoded
-      as UTF-8.
-    domain: lwst:ResponseExpectation
+      as UTF-8: the response's, or in an exchange condition the request's.
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:json
     type: rdf:Property
     label: "json"
     comment: >-
-      A condition on the body parsed as JSON.
-    domain: lwst:ResponseExpectation
+      A condition on the body parsed as JSON: the response's, or in an exchange condition
+      the request's.
     range: lwst:JsonExpectation
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:pointer
@@ -1105,6 +1120,150 @@
       When true, the captured Location is deleted, as the same identity, when the test
       ends.
     domain: lwst:LocationExpectation
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:area
+    type: rdf:Property
+    label: "area"
+    comment: >-
+      The area of a client session the rule belongs to: core, authentication,
+      notifications or index. A developer can declare an area out of scope, which makes
+      its rules inapplicable.
+    domain: lwst:ObservationTest
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:observe
+    type: rdf:Property
+    label: "observe"
+    comment: >-
+      Selects the rule's trials: every exchange of the session satisfying this condition,
+      or with after the first one following each trigger.
+    domain: lwst:ObservationTest
+    range: lwst:ExchangeCondition
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:expect
+    type: rdf:Property
+    label: "expect"
+    comment: >-
+      What must hold of each trial for it to pass.
+    domain: lwst:ObservationTest
+    range: lwst:ExchangeCondition
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:after
+    type: rdf:Property
+    label: "after"
+    comment: >-
+      A trigger: an earlier exchange satisfying this condition. Each trigger selects at
+      most one trial, the first later exchange satisfying the rest of observe.
+    domain: lwst:ExchangeCondition
+    range: lwst:ExchangeCondition
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:sameTarget
+    type: rdf:Property
+    label: "sameTarget"
+    comment: >-
+      On a trigger: when true, the trial must request the trigger's URL (fragments
+      ignored).
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:guidance
+    type: rdf:Property
+    label: "guidance"
+    comment: >-
+      How a client fixes a failure of the rule. Advice shown with failures; it never
+      affects an outcome.
+    domain: lwst:ObservationTest
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:anyOf
+    type: rdf:Property
+    label: "anyOf"
+    comment: >-
+      At least one of these conditions holds.
+    domain: lwst:ExchangeCondition
+    range: lwst:ExchangeCondition
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:server
+    type: rdf:Property
+    label: "server"
+    comment: >-
+      Which server of the session the request addressed: storage or authorizationServer.
+      Several values mean any of them.
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:role
+    type: rdf:Property
+    label: "role"
+    comment: >-
+      What the request addressed, as the session's server found it (OBSERVATION.md section
+      4.2), such as container, page, linkset, typeSearch or unknown. Several values mean
+      any of them.
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:issued
+    type: rdf:Property
+    label: "issued"
+    comment: >-
+      Whether the session had handed out the request's URL before the request (fragment
+      ignored): when false, the client built it.
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:builtBy
+    type: rdf:Property
+    label: "builtBy"
+    comment: >-
+      For a URL the session never handed out, how it relates to one it did: query (the
+      same URL with another query) or path (a path extending, or sibling to, a handed-out
+      URL's path).
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:builtFromRole
+    type: rdf:Property
+    label: "builtFromRole"
+    comment: >-
+      For a built URL, the role of the handed-out URL it was built from.
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:presentation
+    type: rdf:Property
+    label: "presentation"
+    comment: >-
+      Where the request carried a credential: bearer (Authorization: Bearer), otherScheme,
+      query, form, otherHeader, or none.
+    domain: lwst:ExchangeCondition
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:methodAdvertised
+    type: rdf:Property
+    label: "methodAdvertised"
+    comment: >-
+      Whether the request's method was listed in the Allow header of the session's last
+      answer for this URL before the request.
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:patchFormatAdvertised
+    type: rdf:Property
+    label: "patchFormatAdvertised"
+    comment: >-
+      Whether the request's Content-Type was listed in the Accept-Patch header of the
+      session's last answer for this URL before the request.
+    domain: lwst:ExchangeCondition
+    range: xsd:boolean
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:queryFormatAdvertised
+    type: rdf:Property
+    label: "queryFormatAdvertised"
+    comment: >-
+      Whether the request's Content-Type was listed in the Accept-Query header of the
+      session's last answer for this URL before the request.
+    domain: lwst:ExchangeCondition
     range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:kind

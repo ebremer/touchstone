@@ -24,6 +24,8 @@ V = [
     # ---- classes
     ("ValidationTest", C, None, "Validation test", "A test whose steps exercise behaviour the specification requires and assert the responses a conforming server gives.", None, None),
     ("NegativeTest", C, None, "Negative test", "A test whose point is a refusal: at least one step expects a 4xx response, and the test also checks that the refused request had no effect.", None, None),
+    ("ObservationTest", C, None, "Observation test", "A client rule (format 0.8.0, OBSERVATION.md): it judges the exchanges an LWS client sends to a client session. Every exchange its observe condition selects is a trial, and a trial passes when its expect condition holds.", None, None),
+    ("ExchangeCondition", C, None, "Exchange condition", "A condition on one recorded exchange of a client session: on the request the client sent, the status the session answered, and the recorder's annotations. Every term present must hold.", None, None),
     ("Polling", C, None, "Polling", "How long and how often a step is re-sent while its expectations do not yet hold (EXECUTION.md section 4.4). Only the attempt that is judged leaves captures and cleanup behind.", None, None),
     ("Step", C, None, "Step", "One HTTP exchange of a test: a request, the expectations on its response, and the variables it captures. Steps run in order; a test fails at its first failing step.", None, None),
     ("Request", C, None, "Request", "What the harness sends in a step.", None, None),
@@ -130,7 +132,7 @@ V = [
     ("delete", P, None, "delete", "An identity granted the delete action (DELETE). anonymous means the public.", "lwst:ResourceAuthorization", "xsd:string"),
 
     # ---- request properties
-    ("method", P, None, "method", "The HTTP method, in upper case.", "lwst:Request", "xsd:string"),
+    ("method", P, None, "method", "The HTTP method, in upper case: the one a request sends, or, in an exchange condition, one the request used (several values mean any of them).", None, "xsd:string"),
     ("url", P, None, "url", "Template for the target URL; a relative reference is resolved against ${target.baseUrl}.", "lwst:Request", "xsd:string"),
     ("contentType", P, None, "contentType", "On a request, the Content-Type to send. On a response, the media type expected: type/subtype compared case-insensitively, parameters ignored.", None, "xsd:string"),
     ("accept", P, None, "accept", "The Accept header value to send.", "lwst:Request", "xsd:string"),
@@ -149,7 +151,7 @@ V = [
     ("bodyForm", P, None, "bodyForm", "A JSON object of string templates sent as application/x-www-form-urlencoded; members appear in document order.", "lwst:Request", "rdf:JSON"),
 
     # ---- response properties
-    ("statusCode", P, None, "statusCode", "An acceptable status: an integer, or a class string such as \"4xx\". Several values mean any of them.", "lwst:ResponseExpectation", "rdfs:Literal"),
+    ("statusCode", P, None, "statusCode", "An acceptable status: an integer, or a class string such as \"4xx\". Several values mean any of them. In an exchange condition, the status the session answered.", None, "rdfs:Literal"),
     ("location", P, None, "location", "The response must carry Location.", "lwst:ResponseExpectation", "lwst:LocationExpectation"),
     ("authenticationChallenge", P, None, "authenticationChallenge", "Some challenge in WWW-Authenticate must satisfy this expectation.", "lwst:ResponseExpectation", "lwst:ChallengeExpectation"),
     ("wwwAuthenticate", P, None, "wwwAuthenticate", "The challenge's auth-scheme, compared case-insensitively (lws-test-suite's term).", "lwst:ChallengeExpectation", "xsd:string"),
@@ -159,8 +161,8 @@ V = [
     ("paramName", P, None, "paramName", "The auth-param name.", "lwst:ParameterExpectation", "xsd:string"),
     ("paramValue", P, None, "paramValue", "Template for the exact expected auth-param value, after unquoting.", "lwst:ParameterExpectation", "xsd:string"),
     ("bodyEmpty", P, None, "bodyEmpty", "When true, the response has no content.", "lwst:ResponseExpectation", "xsd:boolean"),
-    ("bodyMatches", P, None, "bodyMatches", "A regular expression (portable dialect) that must find a match in the body decoded as UTF-8.", "lwst:ResponseExpectation", "xsd:string"),
-    ("json", P, None, "json", "A condition on the body parsed as JSON.", "lwst:ResponseExpectation", "lwst:JsonExpectation"),
+    ("bodyMatches", P, None, "bodyMatches", "A regular expression (portable dialect) that must find a match in the body decoded as UTF-8: the response's, or in an exchange condition the request's.", None, "xsd:string"),
+    ("json", P, None, "json", "A condition on the body parsed as JSON: the response's, or in an exchange condition the request's.", None, "lwst:JsonExpectation"),
     ("pointer", P, None, "pointer", "An RFC 6901 JSON Pointer; the empty pointer selects the whole value.", "lwst:JsonExpectation", "xsd:string"),
     ("optional", P, None, "optional", "When true, the expectation holds vacuously if the pointer selects nothing.", "lwst:JsonExpectation", "xsd:boolean"),
     ("some", P, None, "some", "The selected value is an array with at least one element satisfying every nested expectation (pointers relative to the element).", "lwst:JsonExpectation", "lwst:JsonExpectation"),
@@ -186,6 +188,24 @@ V = [
     ("jsonType", P, None, "jsonType", "The selected value's JSON type: string, number, boolean, null, array or object.", None, "xsd:string"),
     ("capture", P, None, "capture", "Binds a variable, for later steps, to the value this expectation located: a Link target (absolute), a header value, an auth-param value, the Location (absolute), or a JSON value. (A prerequisite resource binds its variable through container or dataResource.)", None, "xsd:string"),
     ("cleanup", P, None, "cleanup", "When true, the captured Location is deleted, as the same identity, when the test ends.", "lwst:LocationExpectation", "xsd:boolean"),
+
+    # ---- client rules (format 0.8.0, OBSERVATION.md)
+    ("area", P, None, "area", "The area of a client session the rule belongs to: core, authentication, notifications or index. A developer can declare an area out of scope, which makes its rules inapplicable.", "lwst:ObservationTest", "xsd:string"),
+    ("observe", P, None, "observe", "Selects the rule's trials: every exchange of the session satisfying this condition, or with after the first one following each trigger.", "lwst:ObservationTest", "lwst:ExchangeCondition"),
+    ("expect", P, None, "expect", "What must hold of each trial for it to pass.", "lwst:ObservationTest", "lwst:ExchangeCondition"),
+    ("after", P, None, "after", "A trigger: an earlier exchange satisfying this condition. Each trigger selects at most one trial, the first later exchange satisfying the rest of observe.", "lwst:ExchangeCondition", "lwst:ExchangeCondition"),
+    ("sameTarget", P, None, "sameTarget", "On a trigger: when true, the trial must request the trigger's URL (fragments ignored).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("guidance", P, None, "guidance", "How a client fixes a failure of the rule. Advice shown with failures; it never affects an outcome.", "lwst:ObservationTest", "xsd:string"),
+    ("anyOf", P, None, "anyOf", "At least one of these conditions holds.", "lwst:ExchangeCondition", "lwst:ExchangeCondition"),
+    ("server", P, None, "server", "Which server of the session the request addressed: storage or authorizationServer. Several values mean any of them.", "lwst:ExchangeCondition", "xsd:string"),
+    ("role", P, None, "role", "What the request addressed, as the session's server found it (OBSERVATION.md section 4.2), such as container, page, linkset, typeSearch or unknown. Several values mean any of them.", "lwst:ExchangeCondition", "xsd:string"),
+    ("issued", P, None, "issued", "Whether the session had handed out the request's URL before the request (fragment ignored): when false, the client built it.", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("builtBy", P, None, "builtBy", "For a URL the session never handed out, how it relates to one it did: query (the same URL with another query) or path (a path extending, or sibling to, a handed-out URL's path).", "lwst:ExchangeCondition", "xsd:string"),
+    ("builtFromRole", P, None, "builtFromRole", "For a built URL, the role of the handed-out URL it was built from.", "lwst:ExchangeCondition", "xsd:string"),
+    ("presentation", P, None, "presentation", "Where the request carried a credential: bearer (Authorization: Bearer), otherScheme, query, form, otherHeader, or none.", "lwst:ExchangeCondition", "xsd:string"),
+    ("methodAdvertised", P, None, "methodAdvertised", "Whether the request's method was listed in the Allow header of the session's last answer for this URL before the request.", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("patchFormatAdvertised", P, None, "patchFormatAdvertised", "Whether the request's Content-Type was listed in the Accept-Patch header of the session's last answer for this URL before the request.", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("queryFormatAdvertised", P, None, "queryFormatAdvertised", "Whether the request's Content-Type was listed in the Accept-Query header of the session's last answer for this URL before the request.", "lwst:ExchangeCondition", "xsd:boolean"),
 
     # ---- identity properties
     ("kind", P, None, "kind", "The identity's kind.", "lwst:Identity", "lwst:IdentityKind"),
@@ -217,7 +237,7 @@ def q(s):
 
 
 defined = {t[0] for t in V}
-structural = {"Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Polling", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
+structural = {"ExchangeCondition", "Prerequisites", "PrerequisiteResource", "ResourceAuthorization", "Step", "Polling", "Request", "ResponseExpectation", "LinkExpectation", "HeaderExpectation", "ChallengeExpectation",
               "ParameterExpectation", "JsonExpectation", "JwtExpectation", "LocationExpectation", "ConnegExpectation",
               "Level", "Trait", "Capability", "IdentityKind", "Fault"}
 ctx_terms = lwst_terms()
@@ -257,7 +277,7 @@ for term, kind, cls, label, comment, dom, rng in V:
         L.append(f"    type: lwst:{cls}")
     else:
         L.append(f"    type: {kind}")
-    if term in ("ValidationTest",):
+    if term in ("ValidationTest", "ObservationTest"):
         L.append("    subClassOf: mf:ManifestEntry")
     if term == "NegativeTest":
         L.append("    subClassOf: mf:ManifestEntry")
