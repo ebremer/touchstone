@@ -102,4 +102,27 @@ public final class Dtos {
     public record ReportDto(
             String runId, String format, String mediaType, String path, long bytes, String content) {
     }
+
+    /**
+     * A client session (CLIENT-TESTING.md): what it tests, the verdict so far, and its counts.
+     * {@code page} is the session page's address without the key.
+     */
+    public record ClientSessionDto(String session, String page, Map<String, Object> clientUnderTest, List<String> areas,
+            String storage, String proxyTarget, String expires, String verdict, Map<String, Object> counts, long recorded,
+            List<String> armedFaults) {
+    }
+
+    /** One client rule's result: its outcome and trials, the first failure's evidence, and how to fix it. */
+    public record ClientFindingDto(String rule, String label, String level, String area, String outcome, long trials,
+            long failed, Map<String, Object> evidence, String guidance, List<String> source, List<String> requirements,
+            String task) {
+    }
+
+    public record ClientFindingsDto(String session, String verdict, String shown, List<ClientFindingDto> rules,
+            String note) {
+    }
+
+    /** One exchange of a session's traffic log, redacted as the log keeps it. */
+    public record ClientExchangeDto(String session, long seq, Map<String, Object> exchange, String note) {
+    }
 }

@@ -20,10 +20,12 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @param client the client under test, or null to leave it as it is
  * @param areas the areas in scope, or null to leave them as they are
+ * @param proxy the proxy target a session fronts (CLIENT-TESTING.md section 10), or null: chosen when
+ *     the session starts, never later
  */
-record SessionSettings(Session.ClientUnderTest client, List<String> areas) {
+record SessionSettings(Session.ClientUnderTest client, List<String> areas, String proxy) {
 
-    static final SessionSettings NONE = new SessionSettings(null, null);
+    static final SessionSettings NONE = new SessionSettings(null, null, null);
     private static final int MAX_NAME = 100;
     private static final int MAX_VERSION = 50;
     private static final int MAX_HOMEPAGE = 500;
@@ -38,8 +40,8 @@ record SessionSettings(Session.ClientUnderTest client, List<String> areas) {
         }
         for (Iterator<String> it = doc.fieldNames(); it.hasNext(); ) {
             String member = it.next();
-            if (!member.equals("clientUnderTest") && !member.equals("areas")) {
-                throw new IllegalArgumentException("unknown member " + clip(member) + "; use clientUnderTest and areas");
+            if (!member.equals("clientUnderTest") && !member.equals("areas") && !member.equals("proxy")) {
+                throw new IllegalArgumentException("unknown member " + clip(member) + "; use clientUnderTest, areas and proxy");
             }
         }
         Session.ClientUnderTest client = null;
@@ -74,7 +76,15 @@ record SessionSettings(Session.ClientUnderTest client, List<String> areas) {
             }
             areas = Session.AREAS.stream().filter(chosen::contains).toList();
         }
-        return new SessionSettings(client, areas);
+        String proxy = null;
+        JsonNode p = doc.get("proxy");
+        if (p != null && !p.isNull()) {
+            if (!p.isTextual() || p.asText().isEmpty() || p.asText().length() > 64) {
+                throw new IllegalArgumentException("proxy is the id of a proxy target");
+            }
+            proxy = p.asText();
+        }
+        return new SessionSettings(client, areas, proxy);
     }
 
     /** Applies the settings to {@code s}: what they leave null stays as it is. */

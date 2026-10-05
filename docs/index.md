@@ -66,7 +66,8 @@ As of September 2026:
 - **Implemented:** the engine, the reporting, the reference servers, the CLI, the MCP server,
   the Docker image and the GitHub Action.
 - **Client testing:** a service that tests LWS clients against sessions of their own, judged by
-  50 client rules, with EARL, JUnit XML and JSON reports. See [Testing a client](testing-a-client.md).
+  50 client rules, with EARL, JUnit XML and JSON reports, a proxy mode in front of a real server,
+  and read-only MCP tools for a coding agent. See [Testing a client](testing-a-client.md).
 - **Requirements catalog:** 296 requirements (228 MUST, 30 SHOULD, 38 MAY) from the four
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook

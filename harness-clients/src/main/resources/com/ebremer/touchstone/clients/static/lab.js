@@ -15,8 +15,41 @@
       }
     }
     const areas = [...document.querySelectorAll('input[name=area]:checked')].map((box) => box.value);
-    return { clientUnderTest: client, areas };
+    const body = { clientUnderTest: client, areas };
+    const server = document.querySelector('input[name=server]:checked');
+    if (server && server.value) {
+      body.proxy = server.value;
+    }
+    return body;
   }
+
+  // The proxy targets this service fronts, if any, offered beside its own storage.
+  (async () => {
+    try {
+      const response = await fetch(new URL('proxies', document.baseURI).href, { cache: 'no-store' });
+      const { proxies } = await response.json();
+      if (!proxies || proxies.length === 0) {
+        return;
+      }
+      const choices = document.getElementById('proxy-choices');
+      for (const p of proxies) {
+        const label = document.createElement('label');
+        label.className = 'check';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'server';
+        radio.value = p.id;
+        radio.disabled = p.held;
+        const code = document.createElement('code');
+        code.textContent = p.id;
+        label.append(radio, ' The proxy target ', code, ', at ' + p.storage + (p.held ? ' (another session holds it)' : ''));
+        choices.append(label);
+      }
+      document.getElementById('servers').hidden = false;
+    } catch (e) {
+      // no proxy targets to offer
+    }
+  })();
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();

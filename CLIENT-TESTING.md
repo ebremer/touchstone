@@ -1,9 +1,8 @@
 # Touchstone for LWS clients — design
 
-**Status: phases C0 to C6 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
-D-0083, D-0084), except C6's pilot with real clients, and the rule format passed Gate C (D-0079).
-The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`. The rest is design
-(D-0075).**
+**Status: phases C0 to C7 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
+D-0083, D-0084, D-0085), except C6's pilot with real clients, and the rule format passed Gate C
+(D-0079). The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`.**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -171,7 +170,8 @@ built all of it; [harness-clients/README.md](harness-clients/README.md) document
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
   tokens for alice and bob. It is rate-limited and open, without sign-in (§12.2). Its optional
   body names the client under test and the areas in scope; `PATCH {base}/sessions/{sid}`
-  changes them later (C6).
+  changes them later (C6). With `"proxy": "<id>"` it starts a proxy session (§10, C7), and
+  `GET {base}/proxies` lists the targets.
 - `GET {base}/sessions/{sid}` describes the session; `POST {base}/sessions/{sid}/tokens/{name}`
   hands out a fresh token; `GET {base}/sessions/{sid}/page` is the session page, which reads
   the key from its URL's fragment.
@@ -420,15 +420,39 @@ right thing, and fail against one that does not.
   - `RefLwsClient` passes every rule it exercises;
   - each twin fails exactly the rules aimed at it, and nothing else.
 
-## 10. Proxy mode (later, optional)
+## 10. Proxy mode (phase C7, D-0085)
 
-Touchstone as a recording reverse proxy in front of a real server: a target already
-registered in `targets.yaml`, never a URL the developer supplies (DESIGN.md §7.1). With the
-proxy:
+Touchstone as a recording reverse proxy in front of a real server: a target registered out of
+band, in the target registry format, never a URL the developer supplies (DESIGN.md §7.1). A
+proxy session records and judges a client talking to that server.
+
+**A front-door proxy.** A proxy in front of an existing deployment would have to rewrite its
+URLs, and authentication does not survive that:
+- A rewritten `realm` names a resource the server's authorization server refuses tokens for.
+- An unrewritten one does not contain the URL the client was refused, so a conformant client
+  does not ask for a token at all.
+- A self-issued credential's audience is signed, so it cannot be rewritten.
+
+So the target is deployed behind the service, configured with `{base}/p/{id}/` as the start
+of its public URLs. Nothing is rewritten, and every authentication suite works as it would
+without the proxy. Because a target's URLs are its own, not a session's, one session holds a
+target at a time. The service is started with `--proxy-targets`, and the public service on
+vulcan registers none (D-0085): a stranger's session should not reach a real server.
+
+With the proxy:
+- the recorder infers each exchange's role from what the server handed out (OBSERVATION.md
+  section 11). Against the reference server, it infers the server's own role for every request;
 - passive rules work as before;
-- faults the proxy can inject alone work too: `412`, `401`, `405`, `415`, a lost response;
-- traps do not, because they need the server's cooperation, so their rules show as
-  inapplicable.
+- four faults work, injected by the proxy alone: `methodNotAllowed`, `lostCreateResponse`,
+  `pageGone` and `tokenExpired`;
+- traps do not, since they need the server's cooperation. A rule that needs what only the
+  session's own servers know is inapplicable: the details of a credential, a notification's
+  signature, a container's members, the decoy. That makes 18 of the 50 rules.
+
+A real server delivers its notifications itself, not through the proxy, and the session's own
+storage and authorization server are not served. The session's identities and OpenID Provider
+remain; they work if the server trusts them. A target may name its authorization server's
+issuer, which the session's provider then adds to the audience of its ID Tokens.
 
 Proxy mode tests clients against real-world server behaviour. It is also a second
 cross-check of the servers themselves, because a conformant client hitting a server's
@@ -641,7 +665,13 @@ Gate 2 did for the server-side schema.
   exported report on their own. A scripted Firefox walk does it: it names a client on the start
   page, takes a token from the session page, sends requests, finds the failure and opens its
   exchange, starts a task, and downloads all three exports, with no script error.
-- **C7 (optional): proxy mode** (§10). Also read-only MCP tools over a session
-  (`get_client_session`, `get_client_findings`, `get_client_exchange`), so a developer's
-  coding agent can read the feedback. They are read-only and redacted, and they never
-  drive a client.
+- **C7 (optional): proxy mode** (§10). **Done 2026-10-05 (D-0085).** Also read-only MCP tools
+  over a session (`get_client_session`, `get_client_findings`, `get_client_exchange`), so a
+  developer's coding agent can read the feedback. They are read-only and redacted, and they
+  never drive a client.
+
+  *Done:* `ProxyRulesSelfTest` runs the reference client through the proxy against the
+  reference server deployed as a front-door target. It passes all 32 rules a proxy session can
+  judge, and each of the 30 twins whose mistake shows without a trap fails exactly its aimed
+  rules. For each of the server's requests, the proxy inferred the role the server itself
+  gave it. `ClientSessionToolsTest` reads a live session through the three tools.

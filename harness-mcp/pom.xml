@@ -96,6 +96,13 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- A client-session service for the read-only client tools to read. -->
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-clients</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

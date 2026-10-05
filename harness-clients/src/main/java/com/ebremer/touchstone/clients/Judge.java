@@ -49,12 +49,20 @@ final class Judge {
 
     private final ClientRules rules;
     private Set<String> outOfScope;
+    /** Rules the session cannot judge at all, such as those a proxy session cannot (ProxySession#unavailable). */
+    private final Set<String> unavailable;
     private List<State> states;
 
     /** @param outOfScope the areas the developer declared out of scope, whose rules are inapplicable */
     Judge(ClientRules rules, Set<String> outOfScope) {
+        this(rules, outOfScope, Set.of());
+    }
+
+    /** @param unavailable the rules the session cannot judge, which are inapplicable whatever the areas */
+    Judge(ClientRules rules, Set<String> outOfScope, Set<String> unavailable) {
         this.rules = rules;
         this.outOfScope = Set.copyOf(outOfScope);
+        this.unavailable = Set.copyOf(unavailable);
         reset();
     }
 
@@ -68,6 +76,11 @@ final class Judge {
 
     synchronized Set<String> outOfScope() {
         return outOfScope;
+    }
+
+    /** Whether the session cannot judge rule {@code name} at all. */
+    boolean unavailable(String name) {
+        return unavailable.contains(name);
     }
 
     /** Starts every rule over: no trials, no evidence, no open triggers. */
@@ -110,7 +123,7 @@ final class Judge {
         }
         List<Verdict> out = new ArrayList<>();
         for (State s : states) {
-            if (outOfScope.contains(s.rule.area()) || !isTrial(s, x)) {
+            if (outOfScope.contains(s.rule.area()) || unavailable.contains(s.rule.name()) || !isTrial(s, x)) {
                 continue;
             }
             s.trials++;
@@ -167,7 +180,7 @@ final class Judge {
     }
 
     private String outcome(State s) {
-        if (outOfScope.contains(s.rule.area())) {
+        if (outOfScope.contains(s.rule.area()) || unavailable.contains(s.rule.name())) {
             return "inapplicable";
         }
         return s.failed > 0 ? "failed" : s.undecided > 0 ? "cantTell" : s.passed > 0 ? "passed" : "untested";
@@ -208,6 +221,9 @@ final class Judge {
             item.put("level", r.level());
             item.put("area", r.area());
             item.put("outcome", outcome);
+            if (outcome.equals("inapplicable")) {
+                item.put("inapplicableBecause", unavailable.contains(r.name()) ? "proxy" : "area");
+            }
             item.put("trials", s.trials);
             item.put("passed", s.passed);
             item.put("failed", s.failed);

@@ -105,6 +105,18 @@ Argument names are exactly as listed. Arguments in *italics* are optional.
 | `run_one` | `targetId`, `testId` | Runs one test synchronously in a run of its own and returns its full trace. This is for the fix-and-verify loop. |
 | `diff_runs` | `before`, `after` | Compares two runs: regressions, fixes, other changes, and added or removed tests. |
 | `get_report` | `runId`, *`format`* | Returns a finished run's report. The formats are `markdown` (the default), `json`, `html`, `earl`, `junit` and `pdf`. For `pdf`, only the file's path and size are returned. |
+| `get_client_session` | *`session`* | Reads a [client session](testing-a-client.md): the client under test, the areas in scope, the storage URL, the proxy target if it fronts one, when it expires, and the verdict and counts so far. |
+| `get_client_findings` | *`session`*, *`outcome`*, *`level`* | Lists a client session's rules with their outcomes, the failures by default: each with the first offending exchange's number, what was expected and what the client sent, how to fix it, and the specification's clause. `outcome` may be `failed`, `untested` (with each rule's task), `passed`, `inapplicable` or `all`. |
+| `get_client_exchange` | *`session`*, `seq` | Returns one exchange of a client session's traffic log, redacted as the log keeps it, with what the session knew of it and the rules it was a trial of. |
+
+The three client tools let a client developer's coding agent read the feedback on the client
+it is working on. They only read: they never drive the client, start a task, arm a fault or
+reset results. `session` is the session page's address with its key, as the page shows it
+(`…/sessions/{id}/page#key=…`). It must belong to a client-session service listed under
+`touchstone.clients.services`; the defaults are the public service and
+`http://localhost:18090/touchstone/clients`. Set `touchstone.clients.session` (environment
+variable `TOUCHSTONE_CLIENTS_SESSION`) instead, and the tools read that session with no
+`session` argument, so the key never passes through the agent.
 
 Tools that take a target accept only a registered **id**. Runs are kept in memory and
 persisted under `runs/`, so `get_run`, `get_report` and `diff_runs` also work on runs
@@ -114,6 +126,8 @@ Every tool carries MCP annotations that tell a client whether to ask before call
 - **`start_run` and `run_one`** are marked not read-only, destructive and open-world.
   They send deliberately malformed traffic to a server, and create and delete resources
   on it.
+- **The client tools** are marked read-only, idempotent and open-world: they only read, but
+  from a client-session service elsewhere.
 - **The other nine** are marked read-only, idempotent and closed-world. They only read
   the catalog, the definitions and recorded runs.
 
@@ -158,7 +172,9 @@ in traces are truncated.
   authenticates callers. The design calls for an OAuth2 resource server for hosted use,
   and that is not built yet.
 - **Targets by id only.** No tool accepts a URL. The set of reachable servers is whatever
-  `targets.yaml` lists.
+  `targets.yaml` lists. The client tools take a session's address, but read only sessions of
+  the services `touchstone.clients.services` lists, and never repeat the key in an answer or
+  an error.
 - **Redacted traces.** Credentials are removed before a trace is stored, so no tool can
   return one. See [Redaction](reports.md#redaction).
 - **Human-gated tests.** An agent can draft tests, but nothing reaches `definitions/`

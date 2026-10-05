@@ -3220,3 +3220,118 @@ Against the public service:
 - a browser preflight gets the session's own CORS answer.
 
 Drafted by an agent; waits on branch `clients/c6-reports`.
+
+### D-0085 — proxy mode and the read-only MCP tools for client sessions (phase C7)
+
+**2026-10-05.** Phase C7 of CLIENT-TESTING.md. Erich chose the front-door design for proxy mode,
+and to run it locally and in tests only.
+
+**Why a front-door proxy.** The plan's sketch put the proxy in front of an existing deployment.
+That proxy would have to rewrite the server's URLs to its own, and authentication breaks:
+- **The realm.** If the proxy rewrites the challenge's `realm`, the server's authorization
+  server refuses a token for it. If it leaves it alone, the realm does not contain the URL the
+  client was refused, so a conformant client, by `client-token-for-containing-realm`, asks for
+  no token at all.
+- **CID credentials.** A self-issued credential's `aud` is signed, so the proxy cannot rewrite
+  it.
+- **Accounts.** A developer would also need an account that server accepts.
+
+So a proxy target is deployed behind the service, configured with `{base}/p/{id}/` as the
+start of its public URLs, and nothing is rewritten. The service forwards that prefix to the
+target's `proxy.backend`, and the authorization server's metadata path unchanged to the
+backend's origin. A target's URLs are its own, not a session's, so one session holds a target at
+a time; another gets 409. With no holder, the target's URLs answer 503 and forward nothing.
+
+**Where.** Proxy targets come from a target registry passed with `--proxy-targets`, never from
+a developer (DESIGN.md §7.1). Each is checked as it loads:
+- its id is a simple name;
+- its `baseUrl`, the storage as clients see it, lies under its prefix;
+- its `proxy.backend` is an http(s) URL ending in a slash.
+
+The public service on vulcan registers none: a stranger's session should not reach a real
+server.
+
+**Roles are inferred.** The session's own storage tells the recorder each URL's role; a real
+server does not. `ProxySession` reads it from what the server handed out, by the order
+OBSERVATION.md section 11 sets:
+1. the endpoints the storage description and the authorization server's metadata name, and what
+   their services created;
+2. linksets, and pages, which are search pages when a search gave them;
+3. for a 2xx, a POST is to a container, and a type link or a CID media type says the rest;
+4. a 404 or 410 addresses nothing;
+5. the storage's root is its description or the root container, by `Accept`;
+6. otherwise, the URL's earlier role.
+
+The self-test compares this with the reference server's own roles, request by request, and
+they agree. It caught two mistakes first:
+- a POST's 201 carries the *new* resource's type link, which made the container a data resource;
+- the root URL's role was taken from an earlier description request. The browser walk found
+  this one, and a test now covers it.
+
+**What a proxy session judges.** A rule is inapplicable in a proxy session when any of these
+holds:
+- its conditions use a fact only the session's own servers can compute: `credentialSource`,
+  `credential`, `audienceIncludesAs`, `identifiersAgree`, `deliverySignature`, `inboxShared` or
+  `containerEmpty`;
+- it observes a role only they have: deliveries, the decoy, the key document, identity documents,
+  or the OpenID Provider;
+- its task arms a fault the proxy cannot inject.
+
+That is 18 of the 50 rules, decided from the definitions, not listed by hand. The results give
+such a rule `"inapplicableBecause": "proxy"`, and starting its task gets 409, not a silent 204.
+`realmContainsRequest` still applies, since it needs only the challenges the recorder saw; the
+other token-request facts are left null.
+
+**Four faults** are injected by the proxy alone: `methodNotAllowed`, `lostCreateResponse`,
+`pageGone` and `tokenExpired`. The 405 lists the linkset's advertised `Allow` without PUT; the
+401 carries the server's last realm and `as_uri`. The plan's 412 and 415 faults were dropped in
+C3 (D-0081), and stay dropped. A real server delivers its notifications itself, so the forgeries
+have no place here.
+
+**The session's own parts.** A proxy session serves no storage or authorization server of its
+own, and hands out no tokens. Its identities and OpenID Provider remain, and work if the server
+trusts them. A target's optional `proxy.issuer` is added to the audience of the provider's ID
+Tokens, since the server's authorization server requires its own issuer there.
+
+**The forwarding** uses Jetty's client:
+- redirects are not followed, cookies not kept, content not decoded, and no handler acts on a
+  401;
+- hop-by-hop headers, `Origin` and the client's own `X-Forwarded-*` are dropped, and the
+  service's are set;
+- the server's `Access-Control-*` headers are dropped, since the session answers CORS;
+- an answer is kept up to 16 MiB, and a server that does not answer gets the client a recorded
+  502.
+
+**The MCP tools.** `get_client_session`, `get_client_findings` and `get_client_exchange` read a
+session through its API, so a developer's coding agent can read the feedback:
+- they never drive the client, start a task, arm a fault or reset results;
+- they take the session page's address with its key, but read only sessions of the services
+  `touchstone.clients.services` registers, and never repeat the key in an answer or an error;
+- `touchstone.clients.session` names a default session, so the key need not pass through the
+  agent at all;
+- they are marked read-only and idempotent, and open-world, since the service is elsewhere.
+
+**A logging fix.** harness-clients shipped `logback.xml`, which configured every classpath it
+landed on. The MCP server's tests, which now have harness-clients on theirs, printed log lines
+to the stdio transport's standard output. It is now `touchstone-clients-logback.xml`, which
+`ClientLabMain` names, with a `logback-test.xml` for the module's own tests.
+
+**The proof.** `ProxyRulesSelfTest` runs every client through the proxy against a fresh
+reference server, owned by the session's alice and trusting the session's identities, with no
+traps:
+- the reference client passes all 32 rules a proxy session can judge ("no MUST failure in 23
+  MUST rules exercised, of 23 that apply"). The other 18 are inapplicable;
+- each of the 30 twins whose mistake shows without a trap fails exactly its aimed rules. Two
+  twins need a trap: one builds the `?page=2` URL a server without opaque pages really issues,
+  and one asks for a token for the decoy's realm;
+- a target serves only the session that holds it, a second session is refused, the proxy
+  target cannot be changed, a forgery cannot be armed, and a server that is down gets a recorded
+  502.
+
+`ProxyTargetsTest` covers the registry's checks and the forwarding URLs.
+`ClientSessionToolsTest` reads a live session, its findings and an exchange through the tools,
+and finds neither the key nor the client's token in what they return. A browser walk through a
+proxy session, from choosing the target on the start page to the judged traffic, had no script
+error.
+
+Drafted by an agent; waits on branch `clients/c7-proxy`.

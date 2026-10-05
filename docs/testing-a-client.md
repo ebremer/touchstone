@@ -189,6 +189,34 @@ curl -sf -X DELETE -H "Authorization: Bearer $KEY" "$API"
 The [harness-clients README](https://github.com/ebremer/touchstone/blob/master/harness-clients/README.md)
 lists the whole session API. A fault can be armed alone with `POST $API/faults/{fault}`.
 
+## Read the results from a coding agent
+
+Touchstone's [MCP server](mcp.md) has three read-only tools over a client session, so the
+coding agent working on your client can read the same feedback you see:
+- `get_client_session`: the session and its verdict;
+- `get_client_findings`: the failures, each with its evidence, how to fix it and the clause;
+- `get_client_exchange`: one exchange of the traffic log.
+
+Give the tools the session page's address with its key. Or set `TOUCHSTONE_CLIENTS_SESSION` to
+it when you start the MCP server, so the key never passes through the agent. The tools only
+read: they never drive your client, start a task or reset the results.
+
+## Proxy mode: test against a real server
+
+The session's own storage sets traps that a client meets in the wild only now and then. To
+see how your client gets on with a particular server, run the service yourself with that server
+behind it as a **proxy target** (see [Running the service yourself](#running-the-service-yourself)).
+Start a session with the target chosen on the start page, or with `{"proxy": "<id>"}`. Your
+client then talks to the real server through the session's proxy, and the session records and
+judges every request as it would its own storage's.
+
+The server is configured with the proxy's URLs as its own, so nothing is rewritten and every way
+of authenticating works. The proxy injects four faults itself: a refused linkset PUT, a lost
+create, a refused page of search results, and an expired token. The rules that need what only
+the session's own servers know are inapplicable: credential details, notification signatures,
+a container's members, the decoy. That leaves 32 of the 50. The public service has no proxy
+targets.
+
 ## Limits and privacy
 
 - A session ends after two idle hours, or a day at most. Everything lives in memory and is gone
@@ -213,7 +241,10 @@ java -jar harness-clients/target/touchstone-clients.jar --port 18090 \
 
 The start page is then at `http://localhost:18090/touchstone/clients/`. Add
 `--allow-private-inboxes` to deliver notifications to an inbox on your own machine; a public
-service never sets it. Behind a reverse proxy, give the public URL with `--public-base`, forward
+service never sets it. Add `--proxy-targets targets.yaml` to put real servers behind the service
+for proxy mode; the
+[harness-clients README](https://github.com/ebremer/touchstone/blob/master/harness-clients/README.md#proxy-mode)
+shows how to register one. Behind a reverse proxy, give the public URL with `--public-base`, forward
 both the base path and `/.well-known/lws-configuration` followed by it, and add
 `--trust-forwarded-for` when the proxy sets `X-Forwarded-For`. The proxy must leave the
 `Access-Control-*` headers alone, since the service answers CORS itself. The

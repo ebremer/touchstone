@@ -12,7 +12,7 @@ spring:
         version: 0.1.0
         protocol: STREAMABLE
         type: SYNC
-        instructions: "LWS conformance harness. Start with list_requirements or coverage."
+        instructions: "LWS conformance harness. Start with list_requirements or coverage. For a client session, start with get_client_findings."
         annotation-scanner:
           enabled: true
 
@@ -22,6 +22,14 @@ touchstone:
   definitions: definitions
   targets: targets.yaml
   runs: runs
+  # The client-session services the read-only client tools may read (CLIENT-TESTING.md phase C7),
+  # registered here as targets are; a session the agent names must belong to one of them. Set
+  # touchstone.clients.session (TOUCHSTONE_CLIENTS_SESSION) to a session page's address with its
+  # key, and the tools read that session without the key passing through the agent.
+  clients:
+    services:
+      - https://vulcan.bmi.stonybrook.edu/touchstone/clients
+      - http://localhost:18090/touchstone/clients
 
 server:
   port: 9090

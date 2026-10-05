@@ -104,7 +104,8 @@ class TouchstoneMcpEndToEndTest {
      * Clients decide from these hints whether to ask before a call (D-0049). Without them,
      * every tool advertised the protocol's worst case: not read-only, destructive, open-world.
      * The two tools that send traffic to a target keep that; the nine that only read the
-     * catalog, the definitions and recorded runs say so.
+     * catalog, the definitions and recorded runs say so. The three client-session tools only
+     * read too, but from a service elsewhere: read-only, and open-world.
      */
     @Test
     void toolsDeclareWhetherTheyChangeAnything() {
@@ -117,14 +118,16 @@ class TouchstoneMcpEndToEndTest {
             Map<String, ToolAnnotations> hints = client.listTools().tools().stream()
                     .collect(Collectors.toMap(Tool::name, Tool::annotations));
 
-            assertThat(hints).hasSize(11);
+            assertThat(hints).hasSize(14);
             Set<String> drivesTheTarget = Set.of("start_run", "run_one");
+            Set<String> readsAClientSession = Set.of("get_client_session", "get_client_findings", "get_client_exchange");
             hints.forEach((tool, a) -> {
                 boolean readOnly = !drivesTheTarget.contains(tool);
                 assertThat(a.readOnlyHint()).as("%s readOnlyHint", tool).isEqualTo(readOnly);
                 assertThat(a.destructiveHint()).as("%s destructiveHint", tool).isEqualTo(!readOnly);
                 assertThat(a.idempotentHint()).as("%s idempotentHint", tool).isEqualTo(readOnly);
-                assertThat(a.openWorldHint()).as("%s openWorldHint", tool).isEqualTo(!readOnly);
+                assertThat(a.openWorldHint()).as("%s openWorldHint", tool)
+                        .isEqualTo(!readOnly || readsAClientSession.contains(tool));
             });
         }
     }

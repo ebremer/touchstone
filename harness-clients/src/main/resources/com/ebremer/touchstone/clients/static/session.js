@@ -74,7 +74,19 @@
     base = session.storage.replace(/storage\/$/, '');
     $('storage').textContent = session.storage;
     $('guide-storage').textContent = session.storage;
-    $('issuer').textContent = session.authorizationServer.issuer;
+    const proxy = session.proxy;
+    $('proxy-box').hidden = !proxy;
+    if (proxy) {
+      $('proxy-target').textContent = proxy.target;
+      $('proxy-faults').textContent = proxy.faults.join(', ');
+      $('issuer').textContent = proxy.issuer || 'the server\'s own';
+      const auth = $('guide-auth');
+      auth.replaceChildren(el('strong', 'Authenticate'), document.createTextNode(' as the server behind the proxy '
+        + 'expects: it issues the tokens. alice and bob work if it trusts their identity documents and the '
+        + 'session\'s OpenID Provider.'));
+    } else {
+      $('issuer').textContent = session.authorizationServer.issuer;
+    }
     $('op-issuer').textContent = session.openidProvider.issuer;
     showClients(session.openidProvider.clients);
     showSettings(session);
@@ -88,11 +100,18 @@
       tr.children[0].scope = 'row';
       tr.children[1].append(el('code', identity.webid));
       tr.children[3].append(button('Show', '', () => secrets(name)));
-      tr.children[4].append(button('Get a token', '', () => token(name)));
+      if (proxy) {
+        tr.children[4].append(el('span', 'from the server', 'note'));
+      } else {
+        tr.children[4].append(button('Get a token', '', () => token(name)));
+      }
       rows.append(tr);
     }
     const traps = $('traps');
     traps.replaceChildren();
+    if (session.traps.none) {
+      traps.append(el('li', 'None: a proxy session leaves the server as it is.'));
+    }
     for (const [name, text] of Object.entries(TRAPS)) {
       if (session.traps[name]) {
         traps.append(el('li', text));
@@ -371,7 +390,12 @@
           const meta = el('div', null, 'note');
           view.taskOutcome = el('span');
           meta.append(el('span', r.level + ' · ' + r.label + ' · '), view.taskOutcome);
-          item.append(button('Start task', 'copy', () => startTask(r.rule)), text, meta);
+          if (r.inapplicableBecause === 'proxy') {
+            item.append(el('span', 'Not here', 'note'), text, meta);
+            text.append(el('div', 'A proxy session cannot judge this rule, so its task does nothing here.', 'note'));
+          } else {
+            item.append(button('Start task', 'copy', () => startTask(r.rule)), text, meta);
+          }
           list.append(item);
           view.task = item;
         }

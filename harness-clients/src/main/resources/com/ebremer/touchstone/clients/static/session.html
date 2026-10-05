@@ -21,7 +21,7 @@
           back, and share it only with people who may control the session.</li>
         <li><strong>Point your client at the storage</strong>, <code id="guide-storage"></code>. It is
           the only URL your client should need: the storage's answers lead to everything else.</li>
-        <li><strong>Authenticate</strong> as alice, who owns the storage, or bob, in one of the
+        <li id="guide-auth"><strong>Authenticate</strong> as alice, who owns the storage, or bob, in one of the
           <a href="#connect">three ways below</a>. The quickest is a token from the identities table;
           the OpenID sign-in needs your client registered first.</li>
         <li><strong>Use your client</strong> as you normally would, then work through the
@@ -38,6 +38,19 @@
 
   <section id="connect" hidden>
     <h2>Connect your client</h2>
+    <div id="proxy-box" class="box" hidden>
+      <p><strong>This session fronts <code id="proxy-target"></code>, a real server behind the proxy.</strong>
+        Your client talks to that server through the storage URL below, and the session records and judges
+        every request as it would its own storage's.</p>
+      <ul class="note">
+        <li>The server is as it is: the session sets no traps, and a task's fault is one the proxy injects
+          itself (<span id="proxy-faults"></span>).</li>
+        <li>Rules that need what only the session's own servers know, such as the details of a credential or
+          a notification's signature, are inapplicable.</li>
+        <li>The server decides whom to trust. alice and bob, below, work if it trusts their identity
+          documents and the session's OpenID Provider; otherwise use identities it knows.</li>
+      </ul>
+    </div>
     <dl class="facts">
       <dt>Storage</dt>
       <dd><code id="storage"></code> <button type="button" class="copy" data-copy="storage">Copy</button></dd>

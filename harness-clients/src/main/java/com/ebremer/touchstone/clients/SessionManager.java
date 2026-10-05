@@ -41,6 +41,8 @@ final class SessionManager {
     private final SecureRandom random = new SecureRandom();
     private final ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> starts = new HashMap<>();
+    /** Which session holds each proxy target: one at a time, since a target's URLs are its own, not a session's. */
+    private final ConcurrentMap<String, String> holders = new ConcurrentHashMap<>();
 
     SessionManager(ClientLabConfig config, ClientRules rules, Clock clock) {
         this.config = config;
@@ -49,6 +51,11 @@ final class SessionManager {
     }
 
     Created create(String address) throws Refused {
+        return create(address, null);
+    }
+
+    /** A new session, fronting {@code proxyTarget} when it is not null (CLIENT-TESTING.md section 10). */
+    Created create(String address, ProxyTargets.ProxyTarget proxyTarget) throws Refused {
         Instant now = clock.instant();
         synchronized (starts) {
             Deque<Instant> recent = starts.computeIfAbsent(address, a -> new ArrayDeque<>());
@@ -61,11 +68,18 @@ final class SessionManager {
             if (sessions.size() >= config.maxSessions()) {
                 throw new Refused(503, "the service is at its limit of live sessions; try again later");
             }
+            if (proxyTarget != null && holder(proxyTarget.id()) != null) {
+                throw new Refused(409, "another session holds the proxy target " + proxyTarget.id()
+                        + "; it is free when that session ends");
+            }
             recent.addLast(now);
             String id = randomToken(12);
             String key = randomToken(32);
-            Session session = new Session(id, key, config, rules, now);
+            Session session = new Session(id, key, config, rules, now, proxyTarget);
             sessions.put(id, session);
+            if (proxyTarget != null) {
+                holders.put(proxyTarget.id(), id);
+            }
             return new Created(session, key);
         }
     }
@@ -80,8 +94,21 @@ final class SessionManager {
         return s;
     }
 
+    /** The live session holding proxy target {@code target}, or null. */
+    Session holder(String target) {
+        String id = holders.get(target);
+        Session s = id == null ? null : get(id);
+        if (s == null && id != null) {
+            holders.remove(target, id);
+        }
+        return s;
+    }
+
     void end(String id) {
         Session s = sessions.remove(id);
+        if (s != null && s.proxy != null) {
+            holders.remove(s.proxy.target.id(), id);
+        }
         if (s != null) {
             s.storage.close();
             s.as.close();

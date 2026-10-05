@@ -4,10 +4,10 @@ The service that tests LWS clients ([CLIENT-TESTING.md](../CLIENT-TESTING.md)). 
 developer starts a session, points their client at the session's storage, and watches every
 request it sends on the session's page. Every request is judged against the client rules,
 `definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
-Phases C1 to C6 are built: sessions, the traffic log, the rules, the tasks and faults that let a
+Phases C1 to C7 are built: sessions, the traffic log, the rules, the tasks and faults that let a
 developer try every rule on purpose, three ways for a client to authenticate, signed
-notifications to the client's inbox, and the guided page and the EARL, JUnit XML and JSON
-exports. The guide for client developers is the docs site's
+notifications to the client's inbox, the guided page and the EARL, JUnit XML and JSON
+exports, and proxy mode, in which a session fronts a real server. The guide for client developers is the docs site's
 [Testing a client](../docs/testing-a-client.md).
 
 ## Running it
@@ -28,6 +28,7 @@ java -jar harness-clients/target/touchstone-clients.jar \
 | `--definitions` | `definitions` | The definitions directory; the client rules are under `lws10/clients/`. |
 | `--catalog` | `catalog` | The requirements catalog the rules cite. |
 | `--allow-private-inboxes` | off | Deliver notifications to http URLs and private addresses, such as an inbox on the same machine. For local development only: never on a public service. |
+| `--proxy-targets` | none | A target registry of real servers deployed behind the service, which proxy sessions front ([Proxy mode](#proxy-mode)). |
 
 The rules are loaded and checked at start: YAML, schema, JSON-LD and the lint of
 `OBSERVATION.md` section 2. A rule that fails stops the service with exit code 2.
@@ -166,6 +167,47 @@ Four tasks make the session forge the next notification:
 - signed with the key of a document under the storage that claims to be its description.
 
 An inbox that verifies as lws10-notifications-webhook section 5.2 says refuses each.
+
+## Proxy mode
+
+A proxy session fronts a real server instead of the session's own storage (CLIENT-TESTING.md
+section 10). The server is deployed behind the service as its front door: it is configured with
+`<base>/p/<id>/` as the start of its public URLs, so nothing it sends needs rewriting, and every
+authentication suite works as it would without the proxy. Register it in a target registry and
+pass that with `--proxy-targets`:
+
+```yaml
+targets:
+  local:
+    baseUrl: http://localhost:18090/touchstone/clients/p/local/storage/   # the storage, as clients see it
+    adapter: env
+    properties:
+      proxy.backend: http://127.0.0.1:8090/      # where <base>/p/local/ is forwarded
+      proxy.issuer: http://localhost:18090/touchstone/clients/p/local/as   # optional: its authorization server
+```
+
+The service forwards `<base>/p/<id>/X` to `proxy.backend` followed by `X`. It forwards
+`/.well-known/lws-configuration` followed by the base path and `/p/<id>`, unchanged, to the
+backend's origin, where the server's authorization server publishes its metadata.
+
+`POST <base>/sessions` with `{"proxy": "local"}` starts a proxy session. One session holds a
+target at a time, and a second gets `409` until the first ends. A request to the target's URLs
+with no session holding it is answered `503`, and forwarded nowhere. In a proxy session:
+
+- every request is recorded and judged. Each role is inferred from what the server handed out
+  ([OBSERVATION.md](../definitions/OBSERVATION.md) section 11);
+- the proxy injects four faults alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone` and
+  `tokenExpired`;
+- 18 rules are inapplicable, since they need what only the session's own servers know. Their
+  results say `"inapplicableBecause": "proxy"`, and starting their tasks gets `409`;
+- the session hands out no tokens, and serves no storage or authorization server of its own.
+  Its identities and OpenID Provider remain, and work if the server trusts them. With
+  `proxy.issuer`, the provider's ID Tokens name that authorization server in `aud`;
+- the server delivers its notifications itself, not through the proxy.
+
+The public service registers no proxy target: a stranger's session should not reach a real
+server. `GET <base>/proxies` lists the targets and whether a session holds each; the start page
+offers them.
 
 ## Traps
 

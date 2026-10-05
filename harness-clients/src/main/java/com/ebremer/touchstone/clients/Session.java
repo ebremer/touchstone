@@ -86,7 +86,16 @@ final class Session {
     private final java.util.concurrent.atomic.AtomicInteger deliveries = new java.util.concurrent.atomic.AtomicInteger();
     private final java.util.concurrent.atomic.AtomicInteger inFlight = new java.util.concurrent.atomic.AtomicInteger();
 
+    /** The proxy of a proxy session (CLIENT-TESTING.md section 10), or null for a session with its own storage. */
+    final ProxySession proxy;
+
     Session(String id, String key, ClientLabConfig config, ClientRules rules, Instant now) {
+        this(id, key, config, rules, now, null);
+    }
+
+    /** @param proxyTarget the real server a proxy session fronts, or null for a session with its own storage */
+    Session(String id, String key, ClientLabConfig config, ClientRules rules, Instant now,
+            ProxyTargets.ProxyTarget proxyTarget) {
         this.id = id;
         this.base = config.publicBase() + "/s/" + id;
         this.created = now;
@@ -97,6 +106,10 @@ final class Session {
         this.as = RefAuthorizationServer.mounted(URI.create(base + "/as"));
         this.op = RefOpenIdProvider.mounted(URI.create(base + "/op"));
         op.alsoAudience(as.issuer());
+        if (proxyTarget != null && proxyTarget.issuer() != null) {
+            // The server behind the proxy can take an ID Token from the session's provider.
+            op.alsoAudience(proxyTarget.issuer());
+        }
         for (String name : IDENTITIES) {
             Identity identity = identity(name);
             identities.put(name, identity);
@@ -111,16 +124,28 @@ final class Session {
         // Some linksets take PUT and some do not, so a client must read Allow first.
         this.storage.linksetPutOnDataResources(true);
         String metadata = as.metadataUri().toString();
-        this.recorder = new Recorder(url -> url.startsWith(base + "/") || url.equals(metadata), config.maxExchanges());
+        String wellKnown = proxyTarget == null ? null
+                : "/.well-known/lws-configuration" + config.basePath() + "/p/" + proxyTarget.id();
+        String proxied = proxyTarget == null ? null : proxyTarget.prefix();
+        String proxiedMetadata = wellKnown == null ? null : config.origin() + wellKnown;
+        this.recorder = new Recorder(url -> url.startsWith(base + "/") || url.equals(metadata)
+                || (proxied != null && (url.startsWith(proxied) || url.startsWith(proxiedMetadata))), config.maxExchanges());
+        this.proxy = proxyTarget == null ? null : new ProxySession(proxyTarget, wellKnown, recorder);
         this.bucket = new TokenBucket(config.requestBurst(), config.requestsPerSecond());
         this.clientId = base + "/client";
-        this.judge = new Judge(rules, Set.of());
-        recorder.issue(storageUrl(), "session");
+        this.judge = new Judge(rules, Set.of(), proxy == null ? Set.of() : ProxySession.unavailable(rules));
+        recorder.issue(publicStorage(), "session");
         IDENTITIES.forEach(name -> recorder.issue(webid(name), "session"));
     }
 
+    /** The URL of the session's own storage, which a proxy session does not serve. */
     String storageUrl() {
         return base + "/storage/";
+    }
+
+    /** The storage a client uses: the session's own, or the real one a proxy session fronts. */
+    String publicStorage() {
+        return proxy == null ? storageUrl() : proxy.target.storage().toString();
     }
 
     String webid(String name) {
@@ -229,6 +254,9 @@ final class Session {
 
     /** Arms the fault named {@code term}; returns false when there is none by that name. */
     boolean armFault(String term) {
+        if (proxy != null) {
+            return proxy.arm(term);
+        }
         RefLwsServer.Fault fault = RefLwsServer.Fault.of(term);
         if (fault == null) {
             return false;

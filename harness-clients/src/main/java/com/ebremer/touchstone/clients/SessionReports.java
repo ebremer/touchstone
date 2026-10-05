@@ -100,7 +100,9 @@ final class SessionReports {
                         e.path("expected").asText(), e.path("actual").asText())), null));
             }
             String reason = switch (outcome) {
-                case INAPPLICABLE -> "the " + r.path("area").asText() + " area is out of scope";
+                case INAPPLICABLE -> r.path("inapplicableBecause").asText().equals("proxy")
+                        ? "a proxy session cannot judge it: it needs what only the session's own servers know"
+                        : "the " + r.path("area").asText() + " area is out of scope";
                 case UNTESTED -> "no trial yet" + (r.hasNonNull("task")
                         ? "; its task: " + r.path("task").path("prompt").asText() : "");
                 case CANT_TELL -> "a trial could not be decided";

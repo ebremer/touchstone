@@ -72,6 +72,20 @@ final class TokenRequests {
     }
 
     /**
+     * The facts a proxy session can know of a token request to the server behind it
+     * (OBSERVATION.md section 11): only whether the realm it asks for contains the request a 401
+     * refused. Where its credential came from, and what it says, need the session's own servers.
+     */
+    static Facts realmOnly(Session session, String contentType, byte[] body) {
+        String essence = contentType == null ? null : contentType.split(";", 2)[0].trim().toLowerCase(java.util.Locale.ROOT);
+        if (!FORM.equals(essence)) {
+            return Facts.NONE;
+        }
+        String resource = form(new String(body, StandardCharsets.UTF_8)).get("resource");
+        return new Facts(null, null, null, null, resource == null ? null : session.recorder.realmContains(resource));
+    }
+
+    /**
      * A compact JWT's header and claims, {@code {"header": ..., "claims": ...}}: three
      * base64url segments, the first two JSON objects. Null for anything else, a JWE included.
      */

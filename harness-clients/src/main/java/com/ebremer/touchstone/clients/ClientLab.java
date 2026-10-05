@@ -88,10 +88,15 @@ public final class ClientLab implements AutoCloseable {
     private final ServerConnector connector;
     private final ScheduledExecutorService sweeper;
     private final Outbound outbound;
+    /** The real servers a proxy session may front (CLIENT-TESTING.md section 10), and the client that forwards to them. */
+    private final ProxyTargets proxyTargets;
+    private final org.eclipse.jetty.client.HttpClient proxyHttp;
 
-    private ClientLab(ClientLabConfig config, ClientRules rules, Clock clock) {
+    private ClientLab(ClientLabConfig config, ClientRules rules, Clock clock, ProxyTargets proxyTargets) {
         this.config = config;
         this.rules = rules;
+        this.proxyTargets = proxyTargets;
+        this.proxyHttp = proxyTargets.isEmpty() ? null : proxyClient();
         this.sessions = new SessionManager(config, rules, clock);
         this.server = new Server();
         this.connector = new ServerConnector(server);
@@ -114,7 +119,12 @@ public final class ClientLab implements AutoCloseable {
     }
 
     static ClientLab start(ClientLabConfig config, ClientRules rules, Clock clock) {
-        ClientLab lab = new ClientLab(config, rules, clock);
+        return start(config, rules, clock, ProxyTargets.NONE);
+    }
+
+    /** A service whose sessions may also front the real servers {@code proxyTargets} registers. */
+    static ClientLab start(ClientLabConfig config, ClientRules rules, Clock clock, ProxyTargets proxyTargets) {
+        ClientLab lab = new ClientLab(config, rules, clock, proxyTargets);
         try {
             lab.server.start();
         } catch (Exception e) {
@@ -152,7 +162,36 @@ public final class ClientLab implements AutoCloseable {
             throw new IllegalStateException(e);
         } finally {
             outbound.close();
+            if (proxyHttp != null) {
+                try {
+                    proxyHttp.stop();
+                } catch (Exception e) {
+                    LOG.warn("cannot stop the proxy's client", e);
+                }
+            }
         }
+    }
+
+    /**
+     * The client a proxy session forwards with: no redirect followed, no cookie kept, no content
+     * decoded, and no handler acting on a 401, so the server's answer reaches the client as it is.
+     * The targets are registered out of band, so their addresses are not checked as an inbox's are.
+     */
+    private static org.eclipse.jetty.client.HttpClient proxyClient() {
+        org.eclipse.jetty.client.HttpClient http = new org.eclipse.jetty.client.HttpClient();
+        http.setFollowRedirects(false);
+        http.setHttpCookieStore(new org.eclipse.jetty.http.HttpCookieStore.Empty());
+        http.setConnectTimeout(10_000);
+        http.setIdleTimeout(30_000);
+        http.setUserAgentField(null);
+        try {
+            http.start();
+        } catch (Exception e) {
+            throw new IllegalStateException("cannot start the proxy's client", e);
+        }
+        http.getProtocolHandlers().clear();
+        http.getContentDecoderFactories().clear();
+        return http;
     }
 
     // ---- deliveries: the session's requests to clients' inboxes ----
@@ -235,11 +274,18 @@ public final class ClientLab implements AutoCloseable {
             }
             String base = config.basePath();
             String wellKnown = "/.well-known/lws-configuration" + base + "/s/";
+            String proxiedWellKnown = "/.well-known/lws-configuration" + base + "/p/";
+            if (path.startsWith(proxiedWellKnown)) {
+                String rest = path.substring(proxiedWellKnown.length());
+                int slash = rest.indexOf('/');
+                proxied(rest.substring(0, slash < 0 ? rest.length() : slash), request, response, callback);
+                return true;
+            }
             if (path.startsWith(wellKnown)) {
                 String rest = path.substring(wellKnown.length());
                 int slash = rest.indexOf('/');
                 Session s = slash < 0 ? null : sessions.get(rest.substring(0, slash));
-                if (s == null || !rest.substring(slash).equals("/as")) {
+                if (s == null || s.proxy != null || !rest.substring(slash).equals("/as")) {
                     plain(response, callback, 404);
                     return true;
                 }
@@ -263,6 +309,16 @@ public final class ClientLab implements AutoCloseable {
                 staticFile(request, response, callback, rest.substring("/static/".length()));
             } else if (rest.equals("/sessions")) {
                 startSession(request, response, callback);
+            } else if (rest.equals("/proxies")) {
+                proxies(request, response, callback);
+            } else if (rest.startsWith("/p/")) {
+                String inProxy = rest.substring("/p/".length());
+                int slash = inProxy.indexOf('/');
+                if (slash < 0) {
+                    plain(response, callback, 404);
+                } else {
+                    proxied(inProxy.substring(0, slash), request, response, callback);
+                }
             } else if (rest.startsWith("/sessions/")) {
                 api(request, response, callback, rest.substring("/sessions/".length()));
             } else if (rest.startsWith("/s/")) {
@@ -274,7 +330,10 @@ public final class ClientLab implements AutoCloseable {
                     return true;
                 }
                 String sub = inSession.substring(slash);
-                if (sub.startsWith("/storage/")) {
+                if (s.proxy != null && (sub.startsWith("/storage/") || sub.startsWith("/as/"))) {
+                    // A proxy session's storage and authorization server are the real server's.
+                    plain(response, callback, 404);
+                } else if (sub.startsWith("/storage/")) {
                     protocol(s, s.storage.handler(), STORAGE, null, request, response, callback);
                 } else if (sub.startsWith("/as/")) {
                     String role = switch (sub) {
@@ -303,6 +362,51 @@ public final class ClientLab implements AutoCloseable {
                 plain(response, callback, 404);
             }
             return true;
+        }
+
+        /**
+         * A request to proxy target {@code id}: forwarded, recorded and judged in the session that
+         * holds the target (CLIENT-TESTING.md section 10). Without one, nothing is forwarded.
+         */
+        private void proxied(String id, Request request, Response response, Callback callback) throws Exception {
+            if (proxyTargets.find(id).isEmpty()) {
+                plain(response, callback, 404);
+                return;
+            }
+            Session s = sessions.holder(id);
+            if (s == null) {
+                error(response, callback, 503, "no_session", "no session holds the proxy target " + id
+                        + "; start one with {\"proxy\": \"" + id + "\"}");
+                return;
+            }
+            String url = config.origin() + request.getHttpURI().getPath();
+            protocol(s, s.proxy.handler(proxyHttp, address(request), config.publicBase()), s.proxy.server(url), null,
+                    request, response, callback);
+        }
+
+        /** The proxy targets, by id and storage: what the start page offers. */
+        private void proxies(Request request, Response response, Callback callback) throws IOException {
+            if (!request.getMethod().equals("GET") && !request.getMethod().equals("HEAD")) {
+                response.getHeaders().put(HttpHeader.ALLOW, "GET");
+                error(response, callback, 405, "method_not_allowed", "GET");
+                return;
+            }
+            ObjectNode body = JSON.createObjectNode();
+            ArrayNode list = body.putArray("proxies");
+            for (ProxyTargets.ProxyTarget t : proxyTargets.all()) {
+                ObjectNode item = list.addObject();
+                item.put("id", t.id());
+                item.put("storage", t.storage().toString());
+                item.put("held", sessions.holder(t.id()) != null);
+            }
+            json(response, callback, 200, body);
+        }
+
+        /** The client's address: the first X-Forwarded-For entry behind a proxy that sets it, else the connection's. */
+        private String address(Request request) {
+            return config.trustForwardedFor() && request.getHeaders().get("X-Forwarded-For") != null
+                    ? request.getHeaders().get("X-Forwarded-For").split(",")[0].trim()
+                    : Request.getRemoteAddr(request);
         }
 
         // ---- the protocol space: recorded ----
@@ -460,17 +564,24 @@ public final class ClientLab implements AutoCloseable {
                 error(response, callback, 405, "method_not_allowed", "POST starts a session");
                 return;
             }
-            String address = config.trustForwardedFor() && request.getHeaders().get("X-Forwarded-For") != null
-                    ? request.getHeaders().get("X-Forwarded-For").split(",")[0].trim()
-                    : Request.getRemoteAddr(request);
+            String address = address(request);
             // The settings are checked before the session counts against the address's allowance.
             SessionSettings settings = settings(request, response, callback);
             if (settings == null) {
                 return;
             }
+            ProxyTargets.ProxyTarget proxyTarget = null;
+            if (settings.proxy() != null) {
+                proxyTarget = proxyTargets.find(settings.proxy()).orElse(null);
+                if (proxyTarget == null) {
+                    error(response, callback, 400, "invalid_settings", proxyTargets.isEmpty()
+                            ? "this service has no proxy targets" : "no proxy target named " + settings.proxy());
+                    return;
+                }
+            }
             SessionManager.Created created;
             try {
-                created = sessions.create(address);
+                created = sessions.create(address, proxyTarget);
             } catch (SessionManager.Refused e) {
                 if (e.status == 429) {
                     response.getHeaders().put(HttpHeader.RETRY_AFTER, "3600");
@@ -485,8 +596,11 @@ public final class ClientLab implements AutoCloseable {
             ObjectNode body = describe(s);
             body.put("key", created.key());
             body.put("pageWithKey", body.get("page").asText() + "#key=" + created.key());
-            ObjectNode tokens = body.putObject("tokens");
-            Session.IDENTITIES.forEach(name -> tokens.put(name, s.token(name, config.tokenLifetime())));
+            if (s.proxy == null) {
+                // A proxy session's tokens come from the real server's authorization server.
+                ObjectNode tokens = body.putObject("tokens");
+                Session.IDENTITIES.forEach(name -> tokens.put(name, s.token(name, config.tokenLifetime())));
+            }
             response.getHeaders().put(HttpHeader.LOCATION, config.publicBase() + "/sessions/" + s.id);
             json(response, callback, 201, body);
         }
@@ -516,7 +630,10 @@ public final class ClientLab implements AutoCloseable {
                     case "GET" -> json(response, callback, 200, describe(s));
                     case "PATCH" -> {
                         SessionSettings settings = settings(request, response, callback);
-                        if (settings != null) {
+                        if (settings != null && settings.proxy() != null) {
+                            error(response, callback, 400, "invalid_settings",
+                                    "a session's proxy target is chosen when it starts");
+                        } else if (settings != null) {
                             settings.applyTo(s);
                             LOG.info("session {}: settings changed", s.id);
                             json(response, callback, 200, describe(s));
@@ -559,6 +676,11 @@ public final class ClientLab implements AutoCloseable {
                 return;
             }
             if (parts.length == 3 && parts[1].equals("tasks") && method.equals("POST")) {
+                if (s.judge.unavailable(parts[2])) {
+                    error(response, callback, 409, "inapplicable",
+                            "a proxy session cannot judge " + parts[2] + ", so its task does nothing here");
+                    return;
+                }
                 if (!s.startTask(parts[2])) {
                     error(response, callback, 404, "not_found", "no rule named " + parts[2] + " has a task");
                     return;
@@ -603,6 +725,11 @@ public final class ClientLab implements AutoCloseable {
                         error(response, callback, 405, "method_not_allowed", "GET or POST");
                     }
                 }
+                return;
+            }
+            if (parts.length == 3 && parts[1].equals("tokens") && s.proxy != null) {
+                error(response, callback, 404, "not_found",
+                        "a proxy session has no tokens of its own: the server behind the proxy issues them");
                 return;
             }
             if (parts.length == 3 && parts[1].equals("tokens") && method.equals("POST")
@@ -723,10 +850,18 @@ public final class ClientLab implements AutoCloseable {
             body.put("api", config.publicBase() + "/sessions/" + s.id);
             body.put("results", config.publicBase() + "/sessions/" + s.id + "/results");
             body.put("rules", rules.rules().size());
-            body.put("storage", s.storageUrl());
-            ObjectNode as = body.putObject("authorizationServer");
-            as.put("issuer", s.as.issuer());
-            as.put("metadata", s.as.metadataUri().toString());
+            body.put("storage", s.publicStorage());
+            if (s.proxy == null) {
+                ObjectNode as = body.putObject("authorizationServer");
+                as.put("issuer", s.as.issuer());
+                as.put("metadata", s.as.metadataUri().toString());
+            } else {
+                ObjectNode proxy = body.putObject("proxy");
+                proxy.put("target", s.proxy.target.id());
+                proxy.put("issuer", s.proxy.target.issuer());
+                ArrayNode faults = proxy.putArray("faults");
+                ProxySession.FAULTS.forEach(faults::add);
+            }
             ObjectNode op = body.putObject("openidProvider");
             op.put("issuer", s.op.issuer());
             op.put("discovery", s.op.discoveryUri());
@@ -738,7 +873,8 @@ public final class ClientLab implements AutoCloseable {
                 id.put("webid", s.webid(name));
                 id.put("verificationMethod", s.keyId(name));
                 id.put("credentials", config.publicBase() + "/sessions/" + s.id + "/credentials/" + name);
-                id.put("role", name.equals("alice") ? "owns the storage" : "has no access until alice grants it");
+                id.put("role", s.proxy != null ? "whatever the server behind the proxy grants"
+                        : name.equals("alice") ? "owns the storage" : "has no access until alice grants it");
             }
             body.put("client", s.clientId);
             body.set("clientUnderTest", SessionReports.clientUnderTest(s.clientUnderTest));
@@ -751,6 +887,10 @@ public final class ClientLab implements AutoCloseable {
             body.put("created", s.created.toString());
             body.put("expires", sessions.expiry(s).toString());
             ObjectNode traps = body.putObject("traps");
+            if (s.proxy != null) {
+                // The server behind the proxy is as it is: the session sets no trap.
+                traps.put("none", true);
+            } else {
             traps.put("opaquePageUrls", s.traps.opaquePageUrls());
             traps.put("flatResourceUris", s.traps.flatResourceUris());
             traps.put("opaqueLinksetUrls", s.traps.opaqueLinksetUrls());
@@ -758,6 +898,7 @@ public final class ClientLab implements AutoCloseable {
             traps.put("linksetPutOnlyForDataResources", true);
             traps.put("decoy", s.traps.decoy());
             traps.put("indexLagSeconds", s.traps.indexLag().toSeconds());
+            }
             ObjectNode limits = body.putObject("limits");
             limits.put("idleTimeout", config.idleTimeout().toString());
             limits.put("maxLifetime", config.maxLifetime().toString());
@@ -766,7 +907,11 @@ public final class ClientLab implements AutoCloseable {
             limits.put("maxStorageBytes", config.maxStorageBytes());
             limits.put("maxExchanges", config.maxExchanges());
             ArrayNode faults = body.putArray("armedFaults");
-            s.storage.armed().forEach(f -> faults.add(f.term()));
+            if (s.proxy == null) {
+                s.storage.armed().forEach(f -> faults.add(f.term()));
+            } else {
+                s.proxy.armed().forEach(faults::add);
+            }
             body.put("recorded", s.recorder.recorded());
             ObjectNode deliveries = body.putObject("deliveries");
             deliveries.put("sent", s.deliveries());
@@ -875,8 +1020,10 @@ public final class ClientLab implements AutoCloseable {
             String responseText = responseBody == null ? null : text(responseBody, responseType, responseBody.length);
             byte[] judgedBody = requestBody;
             // Taken from the raw body, and from the ledger as it was before this answer.
-            TokenRequests.Facts facts = role.equals("asToken") && request.getMethod().equals("POST")
-                    ? TokenRequests.of(session, requestType, requestBody) : TokenRequests.Facts.NONE;
+            TokenRequests.Facts facts = !role.equals("asToken") || !request.getMethod().equals("POST")
+                    ? TokenRequests.Facts.NONE
+                    : session.proxy == null ? TokenRequests.of(session, requestType, requestBody)
+                    : TokenRequests.realmOnly(session, requestType, requestBody);
             if (role.equals("asToken")) {
                 rememberIssuedToken(responseText);
             }

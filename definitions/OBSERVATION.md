@@ -566,3 +566,66 @@ same endpoint is the trial:
     expect:
       contentType: application/lws-query+json
 ```
+
+## 11. Proxy sessions (phase C7)
+
+A proxy session fronts a real server instead of the session's own storage (CLIENT-TESTING.md
+section 10). The client's requests go through the service to that server unchanged, and the
+answers come back unchanged. The recorder computes the annotations of section 4 as for any
+session, with three differences.
+
+**The role is inferred.** The server does not say what a URL is, so the recorder reads it from
+what the server has handed out. The first of these that holds decides:
+
+1. The authorization server's metadata URL is `asMetadata`. The `token_endpoint` and `jwks_uri`
+   its metadata names are `asToken` and `asJwks`.
+2. A `serviceEndpoint` the storage description lists is the service's role:
+   - `AccessGrantService` is `accessGrants`, and `AccessRequestService` is `accessRequests`;
+   - `NotificationService` is `subscriptions`;
+   - `TypeIndexService` is `typeIndex`, and `TypeSearchService` is `typeSearch`. With a query,
+     the type search's URL is `searchPage`.
+
+   What a 201 to a POST to one of the first three names in `Location`, or a URL below its
+   endpoint, is `accessGrant`, `accessRequest` or `subscription`.
+3. A `rel="linkset"` target is `linkset`. A `first`, `next`, `prev` or `last` target is `page`,
+   or `searchPage` when the answer that gave it was the type index's or a search's.
+4. For a 2xx answer:
+   - a POST is to a `container`;
+   - an `application/lws+cid` answer is `storageDescription`;
+   - a `Link rel="type"` to `lws:Container` or `lws:DataResource` gives `container` or
+     `dataResource`;
+   - a PUT answered with 201 created a `dataResource`.
+5. A 404 or 410 is `unknown`.
+6. The storage's own URL is `storageDescription` for a GET or HEAD whose `Accept` names
+   `application/lws+cid`, and `container` otherwise.
+7. Otherwise, the role an earlier answer gave the URL; with none, `unknown`.
+
+The identity is the `sub` of the access token, if it is a JWT and the server did not answer
+401. The proxy reads it without verifying it, since the server has.
+
+**Four faults, injected by the proxy.** The proxy injects them without the server:
+- `methodNotAllowed`: a PUT to a linkset whose `Allow` listed PUT is answered with 405, and
+  `Allow` without PUT;
+- `lostCreateResponse`: a POST to a container is forwarded, and its answer replaced with 503;
+- `pageGone`: a GET of a `searchPage` is answered with 410;
+- `tokenExpired`: a storage request carrying a token is answered with 401, `error="invalid_token"`
+  and the realm and `as_uri` of the server's last challenge, and so is every later request
+  with that token.
+
+The forgeries need the session's own notification service, so a proxy session has none. A real
+server delivers its notifications itself, not through the proxy.
+
+**Some rules are inapplicable.** A rule is inapplicable in a proxy session, whatever the areas,
+when any of these holds:
+- its `observe` or `expect` uses a term only the session's own servers can compute:
+  - `credentialSource`, `credential`, `audienceIncludesAs` or `identifiersAgree`, which need the
+    session's provider and identities;
+  - `deliverySignature` or `inboxShared`, which need its notification service;
+  - `containerEmpty`, which needs its store;
+- it observes a role only they have: `delivery`, `keyDocument`, `decoy`, `identityDocument`, or
+  the OpenID Provider's roles;
+- its task arms a fault the proxy cannot inject.
+
+`realmContainsRequest` still applies, since it needs only the challenges the recorder saw. In
+the results, such a rule's `inapplicableBecause` is `proxy`; for an area left out it is `area`.
+Starting its task is refused with 409.

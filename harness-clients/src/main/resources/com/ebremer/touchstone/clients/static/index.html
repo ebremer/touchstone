@@ -36,6 +36,15 @@
         and search</label>
     </fieldset>
     <p class="note">The rules of an area you leave out show as inapplicable.</p>
+    <fieldset id="servers" class="areas" hidden>
+      <legend>Server</legend>
+      <label class="check"><input type="radio" name="server" value="" checked> Touchstone's own storage, with its
+        traps: every rule applies</label>
+      <div id="proxy-choices"></div>
+      <p class="note">A proxy target is a real server behind this service. Your client talks to it through the
+        proxy, and the rules that need the session's own servers are inapplicable. One session holds a target at
+        a time.</p>
+    </fieldset>
     <p><button id="start" type="submit">Start a session</button></p>
     <p id="message" role="status"></p>
   </form>
