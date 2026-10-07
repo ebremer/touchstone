@@ -46,8 +46,11 @@ entries:
     comment: >-
       The clause sits in the section on metadata, so it is read as being about linksets. Its
       first half is a SHOULD NOT, which this rule observes; the MUST to handle 405 and 415
-      gracefully needs a fault, and comes in phase C3. The session's linksets do not support
-      PUT, as the draft allows.
+      gracefully is client-no-repeat-after-405-415's. The clause on replacing a linkset bounds
+      the client's permission the same way: "If advertised in the Allow header, a client MAY
+      replace the entire linkset"; its 405 is the server's half. The session's linksets of data
+      resources accept PUT and list it in Allow, and those of containers do not, as the draft
+      allows.
     status: Proposed
     level: SHOULD
     source:
@@ -56,6 +59,7 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+      - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
     observe:
       role: linkset
       method: PUT

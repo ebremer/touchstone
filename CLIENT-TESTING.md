@@ -469,7 +469,7 @@ clients; only the client half is judged here.
 | Requirement | Level | Observed by | Phase |
 |---|---|---|---|
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST | passive: a session token anywhere but `Authorization` (query string, form body) | C2 |
-| `lws10-core/client-no-assumed-methods-405-415` | MUST | passive, on linksets, where the clause sits: PUT only when `Allow` lists it, PATCH only in a format `Accept-Patch` lists (SHOULD); faults 405 and 415: no unchanged repeat (MUST) | C2, C3 |
+| `lws10-core/client-no-assumed-methods-405-415`; `linkset-put-405-if-unsupported` (half) | MUST | passive, on linksets, where the clause sits: PUT only when `Allow` lists it, PATCH only in a format `Accept-Patch` lists (SHOULD); faults 405 and 415: no unchanged repeat (MUST) | C2, C3 |
 | `lws10-core/subscription-create-post-lws-json`, `subscription-request-*`; `lws10-notifications-webhook/subscription-type-and-fields`, `subscription-inbox-required`, `subscription-type-identifier` (some half) | MUST | passive: subscription bodies | C2 |
 | `lws10-core/access-jsonld-context-lws-v1`, `access-type-values`, and the other access and policy data-model clauses (half) | MUST | passive: the access requests and grants the client POSTs | C2 |
 | `lws10-index/client-baseline-only`, `query-content-type-required` (half) | MUST | passive: a QUERY without `Content-Type`, or in a format the server did not advertise and kept after a 415 | C2, C3 |
@@ -486,7 +486,7 @@ clients; only the client half is judged here.
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
 | `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-jwt` | MUST | passive: token requests | C4 |
 | `lws10-authn-saml/token-type-saml2` | MUST | no rule: a session has no SAML identity provider, so no client presents an assertion it could accept (D-0082) | — |
-| `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps` | MUST | the forgery faults: forged deliveries refused, genuine ones acknowledged | C5 |
+| `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps`; `keyid-url-with-fragment`, `storage-description-id-matches` (half) | MUST | the forgery faults: forged deliveries refused, genuine ones acknowledged | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
 | `lws10-index/client-no-read-your-writes` | MUST | not observable; the lagging-index trap surfaces it to the developer; stays `untested` | — |
@@ -502,7 +502,7 @@ the draft, so nothing can be checked. `client-415-accept-query` cannot be told a
 | Rule | Level | Cites | Trials (`observe`) | Passes when (`expect`) |
 |---|---|---|---|---|
 | `client-token-in-authorization-header` | MUST | `authz-bearer-presentation-rfc6750` | storage requests carrying a credential | it is in `Authorization: Bearer` only |
-| `client-linkset-put-only-when-advertised` | SHOULD | `client-no-assumed-methods-405-415` | PUT to a linkset | the linkset's `Allow` listed PUT |
+| `client-linkset-put-only-when-advertised` | SHOULD | `client-no-assumed-methods-405-415`, `linkset-put-405-if-unsupported` (half) | PUT to a linkset | the linkset's `Allow` listed PUT |
 | `client-linkset-patch-format-advertised` | SHOULD | `client-no-assumed-methods-405-415` | PATCH to a linkset | its `Accept-Patch` listed the format |
 | `client-put-conditional` | SHOULD | `put-clients-use-conditional-requests` | PUT to a data resource | `If-Match` or `If-Unmodified-Since` |
 | `client-linkset-write-conditional` | SHOULD | `linkset-precondition-failed-412` | PUT or PATCH to a linkset | `If-Match` or `If-Unmodified-Since` |
@@ -571,8 +571,8 @@ Each forgery rule has a task that arms its forgery for the next notification.
 | `client-inbox-acknowledges-genuine-delivery` | SHOULD | `receiver-verification-steps` | answered genuine notifications | a 2xx |
 | `client-inbox-refuses-unpublished-key` | MUST | `inbox-verifies-signature`, `receiver-verification-steps` | notifications signed with an unpublished key | not a 2xx |
 | `client-inbox-refuses-altered-body` | MUST | `inbox-verifies-signature` | notifications altered after signing | not a 2xx |
-| `client-inbox-refuses-keyid-without-fragment` | MUST | `receiver-verification-steps` | notifications whose keyid has no fragment | not a 2xx |
-| `client-inbox-refuses-foreign-key-document` | MUST | `receiver-verification-steps` | notifications whose key document names another id | not a 2xx |
+| `client-inbox-refuses-keyid-without-fragment` | MUST | `receiver-verification-steps`, `keyid-url-with-fragment` (half) | notifications whose keyid has no fragment | not a 2xx |
+| `client-inbox-refuses-foreign-key-document` | MUST | `receiver-verification-steps`, `storage-description-id-matches` (half) | notifications whose key document names another id | not a 2xx |
 | `client-subscription-own-inbox` | MAY | `per-subscription-inbox-urls` | subscription requests naming an inbox | no subscription already delivers to it |
 
 Acknowledging a genuine notification is a SHOULD rule citing a MUST clause, because an inbox may

@@ -256,7 +256,8 @@ entries:
     label: The client's inbox refuses a notification whose keyid is not a URL with a fragment
     comment: >-
       The signature verifies with the published key, but the keyid is the storage's URL alone. The
-      first step of section 5.2 requires a fragment, which names the verification method.
+      first step of section 5.2 requires a fragment, which names the verification method: "The
+      keyid value MUST be a URL with a fragment component."
     status: Proposed
     level: MUST
     source:
@@ -265,6 +266,7 @@ entries:
     area: notifications
     requirements:
       - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+      - https://example.org/touchstone/req/lws10-notifications-webhook/keyid-url-with-fragment
     task:
       prompt: >-
         Change a resource one of your subscriptions covers. The session gives that notification a
@@ -288,7 +290,8 @@ entries:
       The keyid names a document under the storage whose id is the storage's URL, not its own, and
       which publishes a key of its own. Anyone who can write a resource under a storage could
       publish one. The third step of section 5.2 requires the document's id to match the keyid's
-      URL.
+      URL, the storage identifier: "The id property of the top-level document map MUST match the
+      storage identifier."
     status: Proposed
     level: MUST
     source:
@@ -297,6 +300,7 @@ entries:
     area: notifications
     requirements:
       - https://example.org/touchstone/req/lws10-notifications-webhook/receiver-verification-steps
+      - https://example.org/touchstone/req/lws10-notifications-webhook/storage-description-id-matches
     task:
       prompt: >-
         Change a resource one of your subscriptions covers. The session signs that notification

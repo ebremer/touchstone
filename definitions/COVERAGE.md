@@ -7,7 +7,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 ## Summary
 
 - **204 tests**: 162 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 75 negative tests.
-- **50 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 38 MUST, 10 SHOULD, 2 MAY. They cite 58 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
+- **50 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 38 MUST, 10 SHOULD, 2 MAY. They cite 61 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 5 October draft.
 - **manifests/ (retired, D-0055):** 31 of its 33 tests have a successor; the other 2 were dropped because the specification no longer says what they tested (table 2).
@@ -393,11 +393,11 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 
 | Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |
 |---|---:|---:|---:|---:|---:|---:|
-| Server | 223 | 167 | 24 | 32 | 201 | 26 |
+| Server | 223 | 167 | 24 | 32 | 201 | 29 |
 | AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
-| Client | 75 | 54 | 8 | 13 | 64 | 56 |
+| Client | 75 | 54 | 8 | 13 | 64 | 57 |
 | IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |
-| Receiver | 4 | 4 | 0 | 0 | 4 | 2 |
+| Receiver | 4 | 4 | 0 | 0 | 4 | 4 |
 | Specification | 2 | 2 | 0 | 0 | 2 | 0 |
 
 ### Client and receiver requirements
@@ -448,7 +448,7 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 | `lws10-core/delete-non-empty-container-409-depth` | MUST | Server | Non-recursive DELETE of a non-empty container is rejected with 409; recursive deletion is requested via Depth: infinity. | `delete-container-recursive`, `delete-container-recursive-deep`, `delete-non-empty-container-409` | `client-delete-container-depth` |
 | `lws10-core/iana-ld-json-profile-equivalence` | SHOULD | Server | Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |  |
 | `lws10-core/linkset-precondition-failed-412` | MUST | Server | A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there. | `linkset-conditional-412` | `client-linkset-write-conditional` |
-| `lws10-core/linkset-put-405-if-unsupported` | MUST | Server | PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed. | `linkset-put-405-when-unsupported` |  |
+| `lws10-core/linkset-put-405-if-unsupported` | MUST | Server | PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed. | `linkset-put-405-when-unsupported` | `client-linkset-put-only-when-advertised` |
 | `lws10-core/lws-profile-equivalence` | SHOULD | Server | application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` |  |
 | `lws10-core/pagination-first-page-flow` | MAY | Server | The composite resource URI yields the first page; servers may support direct access to specific pages. | `pagination-first-page` |  |
 | `lws10-core/pagination-uris-opaque` | SHOULD |  | Pagination URIs are opaque; clients use the URIs the server provides. |  | `client-page-urls-issued` |
@@ -479,10 +479,10 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 | `lws10-index/query-safe-idempotent` | MAY | Server | QUERY is safe and idempotent: a search never alters server state and may be repeated, retried or cached. | `type-search-safe` |  |
 | `lws10-index/type-filter` | MAY | Server | The optional type key is a conjunctive-normal-form filter over rdf:type: an array whose elements are ANDed, each a type IRI or an array of IRIs ORed; a filter with no constraints matches every resource visible to the client. | `type-search-and-or`, `type-search-by-type`, `type-search-empty-key-absent`, `type-search-native-classes`, `type-search-relation-cnf` |  |
 | `lws10-notifications-webhook/inbox-verifies-signature` | MUST |  | An inbox receiving a signed delivery verifies the signature with the notification server's public key from the storage description. (A receiver obligation.) | `webhook-signature-verifies` | `client-inbox-refuses-altered-body`, `client-inbox-refuses-unpublished-key` |
-| `lws10-notifications-webhook/keyid-url-with-fragment` | MUST | Server | The keyid is a URL with a fragment component; without the fragment it is the storage identifier. | `webhook-signing-key-published` |  |
+| `lws10-notifications-webhook/keyid-url-with-fragment` | MUST | Server | The keyid is a URL with a fragment component; without the fragment it is the storage identifier. | `webhook-signing-key-published` | `client-inbox-refuses-keyid-without-fragment` |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY |  | Subscribers may use unique per-subscription inbox URLs to limit correlation. (A subscriber option.) |  | `client-subscription-own-inbox` |
 | `lws10-notifications-webhook/receiver-verification-steps` | MUST |  | A receiver verifies a webhook signature by the steps the suite gives. (A receiver obligation.) | `webhook-signature-verifies` | `client-inbox-acknowledges-genuine-delivery`, `client-inbox-refuses-foreign-key-document`, `client-inbox-refuses-keyid-without-fragment`, `client-inbox-refuses-unpublished-key` |
-| `lws10-notifications-webhook/storage-description-id-matches` | MUST | Server | The storage description dereferenced from the keyid has a top-level id equal to the storage identifier. | `webhook-signing-key-published` |  |
+| `lws10-notifications-webhook/storage-description-id-matches` | MUST | Server | The storage description dereferenced from the keyid has a top-level id equal to the storage identifier. | `webhook-signing-key-published` | `client-inbox-refuses-foreign-key-document` |
 | `lws10-notifications-webhook/subscription-expires-optional` | MAY | Server | A webhook subscription request may carry an expires datetime. | `webhook-subscription-expires-supported` |  |
 | `lws10-notifications-webhook/subscription-inbox-required` | MUST | Server | A webhook subscription request carries a required inbox: the URI notifications are delivered to. | `webhook-subscription-response` | `client-subscription-inbox` |
 | `lws10-notifications-webhook/subscription-type-and-fields` | MUST | Server | A webhook subscription request has type WebhookSubscription, and the server supports the webhook fields. | `webhook-subscription-expires-supported`, `webhook-subscription-response` | `client-subscription-type` |
@@ -517,7 +517,7 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 | Rule | Level | Area | Requirements |
 |---|---|---|---|
 | `client-token-in-authorization-header` | MUST | core | `authz-bearer-presentation-rfc6750` |
-| `client-linkset-put-only-when-advertised` | SHOULD | core | `client-no-assumed-methods-405-415` |
+| `client-linkset-put-only-when-advertised` | SHOULD | core | `client-no-assumed-methods-405-415`, `linkset-put-405-if-unsupported` |
 | `client-linkset-patch-format-advertised` | SHOULD | core | `client-no-assumed-methods-405-415` |
 | `client-put-conditional` | SHOULD | core | `put-clients-use-conditional-requests` |
 | `client-linkset-write-conditional` | SHOULD | core | `linkset-precondition-failed-412` |
@@ -560,5 +560,5 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 | `client-inbox-acknowledges-genuine-delivery` | SHOULD | notifications | `receiver-verification-steps` |
 | `client-inbox-refuses-unpublished-key` | MUST | notifications | `inbox-verifies-signature`, `receiver-verification-steps` |
 | `client-inbox-refuses-altered-body` | MUST | notifications | `inbox-verifies-signature` |
-| `client-inbox-refuses-keyid-without-fragment` | MUST | notifications | `receiver-verification-steps` |
-| `client-inbox-refuses-foreign-key-document` | MUST | notifications | `receiver-verification-steps` |
+| `client-inbox-refuses-keyid-without-fragment` | MUST | notifications | `receiver-verification-steps`, `keyid-url-with-fragment` |
+| `client-inbox-refuses-foreign-key-document` | MUST | notifications | `receiver-verification-steps`, `storage-description-id-matches` |
