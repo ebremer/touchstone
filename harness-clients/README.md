@@ -241,7 +241,7 @@ the self-test leaves it off, because one server test needs a linkset that refuse
 | Bound | Default |
 |---|---|
 | live sessions | 100 |
-| sessions per address per hour | 10 |
+| sessions per address per hour | 20 |
 | idle timeout / maximum lifetime | 2 hours / 24 hours |
 | request body | 1 MiB (`413`) |
 | resources / bytes per storage | 500 / 16 MiB (`507`) |

@@ -230,7 +230,7 @@ targets.
 - A request body is at most 1 MiB, a storage holds at most 500 resources and 16 MiB, and a
   session takes a burst of 200 requests, then 20 a second.
 - The traffic log keeps the latest 5,000 exchanges, with bodies cut to 64 KiB each.
-- An address may start 10 sessions an hour.
+- An address may start 20 sessions an hour.
 - Some obligations are invisible to a server, such as not assuming that search shows a write at
   once. Touchstone has no rules for those.
 - Coverage is what you exercised. The checklist and the *untested* rows show what is left.
@@ -274,4 +274,4 @@ public `https` URL.
 **The page says the session has ended.** It expired, or someone ended it. Start a new one;
 the old results are gone unless you exported them.
 
-**`429` when starting a session.** The address has started ten sessions in the last hour.
+**`429` when starting a session.** The address has started twenty sessions in the last hour.

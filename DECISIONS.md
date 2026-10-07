@@ -3584,3 +3584,15 @@ catalog clause states it, so a rule would cite none. Nor an informational rule o
 the index's `type` key, which the plan counted a permission. TODO.md lists both.
 
 Drafted by an agent; waits on branch `clients/coverage-gaps`.
+
+### D-0088 — 20 sessions per address per hour
+Erich raised the per-address limit of client sessions from 10 to 20 an hour (D-0084 set 10). The
+lws-client driver's runner on vulcan starts one session per language, all from vulcan's address,
+and with Kotlin it needs eleven: run `20261007T212143Z` had to be split into two batches an hour
+apart. 20 fits a full run with room for a rerun of a few languages or another language or two. The
+other bounds stay: 100 live sessions, a burst of 200 requests then 20 a second per session.
+
+Only the default in `ClientLabConfig.defaults` changes; the bound stays out of the command line,
+as the others are. `ClientLabTest.theBoundsHold` builds its own tight configuration (2 an hour),
+so no test depends on the number. CLIENT-TESTING.md section 12, `docs/testing-a-client.md` and
+`harness-clients/README.md` say 20.

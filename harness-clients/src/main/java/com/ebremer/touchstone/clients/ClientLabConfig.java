@@ -49,7 +49,7 @@ public record ClientLabConfig(URI publicBase, String bindHost, int port, boolean
     /** The bounds CLIENT-TESTING.md section 8.2 gives, for a service at {@code publicBase}. */
     public static ClientLabConfig defaults(URI publicBase, String bindHost, int port) {
         return new ClientLabConfig(publicBase, bindHost, port, false,
-                100, 10, Duration.ofHours(2), Duration.ofHours(24),
+                100, 20, Duration.ofHours(2), Duration.ofHours(24),
                 1 << 20, 64 << 10, 5000, 500, 16L << 20, 200, 20,
                 Duration.ofHours(1), Duration.ofSeconds(3), 500, false);
     }

@@ -635,7 +635,7 @@ So client sessions judge 64 of the 79: 56 of the 58 MUSTs, 6 of the 8 SHOULDs, 2
    Halcyon. ebremer.com was the other candidate, but it has 3 GB of memory for everything and
    shares Apache with regalbait.
 2. **Session creation. Decided 2026-10-05 (D-0084): open and rate-limited**, as built: 10 sessions
-   per address per hour and 100 live at once. A sign-in can come later if it is abused.
+   per address per hour (20 since 2026-10-07, D-0088) and 100 live at once. A sign-in can come later if it is abused.
 3. **OpenID client registration. Decided 2026-10-05 (D-0082):** per-session redirect URIs,
    entered on the page or through the API, with a client identifier the developer chooses or
    the session assigns. Client identifiers dereferenced to metadata documents can come later,
