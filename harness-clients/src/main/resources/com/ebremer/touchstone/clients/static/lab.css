@@ -60,7 +60,7 @@ button:focus-visible, tr.exchange:focus-visible { outline: 2px solid var(--accen
 .facts dt { font-weight: 600; }
 .facts dd { margin: 0; }
 textarea { width: 100%; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 0.5rem; }
-#token-box { margin: 0.75rem 0; }
+#token-box, #assertion-box { margin: 0.75rem 0; }
 .box { margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
 .box label { display: block; margin-top: 0.5rem; font-weight: 600; }
 .box input { width: 100%; font: inherit; padding: 0.35rem; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }

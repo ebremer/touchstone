@@ -2,7 +2,7 @@
 
 **Status: phases C0 to C7 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
 D-0083, D-0084, D-0085), except C6's pilot with real clients, and the rule format passed Gate C
-(D-0079). The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`.**
+(D-0079). D-0087 closes the gaps in what the rules judge, on a branch awaiting review. The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`.**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -342,8 +342,9 @@ The plan had four more faults that phase C3 dropped or moved (D-0081):
   rows make gaps visible, and the CI path makes coverage repeatable. A session still
   proves less than a full server run does.
 - **Some obligations are invisible to a server.** `client-no-read-your-writes` is the clearest
-  case: a client that mishandles stale results does so internally. Such requirements are
-  listed with guidance and stay `untested`.
+  case: a client that mishandles stale results does so internally. Such requirements get no
+  rule. [`definitions/COVERAGE.md`](definitions/COVERAGE.md) section 4 gives the reason for each
+  client requirement no rule judges (D-0087).
 - **The inbox must be reachable.** Webhook receiver rules need the client's inbox to accept
   connections from the service. A client on a laptop needs a public endpoint or a tunnel;
   without one, those rules stay `untested`. The subscription rules still apply.
@@ -496,8 +497,9 @@ clients; only the client half is judged here.
 | `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps`; `keyid-url-with-fragment`, `storage-description-id-matches` (half) | MUST | the forgery faults: forged deliveries refused, genuine ones acknowledged | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
-| `lws10-index/client-no-read-your-writes` | MUST | not observable; the lagging-index trap surfaces it to the developer; stays `untested` | — |
-| `lws10-core/conformance-client-class` | MUST | the aggregate: the client's verdict (§5.2) | C6 |
+| `lws10-index/client-no-read-your-writes` | MUST | no rule: not observable; the lagging-index trap surfaces it to the developer | — |
+| `lws10-core/lws-profile-equivalence`, `iana-ld-json-profile-equivalence` (half) | SHOULD | no rule: not observable (D-0087). How a client treats a body shows only in what it does next, and stopping or reading again is what conformant clients may do too | — |
+| `lws10-core/conformance-client-class` | MUST | no rule: the aggregate, which the client's verdict answers for (§5.2) | C6 |
 
 **The C2 rules,** in `definitions/lws10/clients/` (D-0080). Gate C reviewed the format against
 them, and `ClientRulesSelfTest` proves each passes for the reference client and fails for a
@@ -611,6 +613,20 @@ container, and the index services take a resource's other types from the `rel="t
 create or update. That is also why Link headers on an update are not wrong in themselves, and the
 second rule needs the developer's word. The SAML suite's other clauses bind the identity provider
 or the authorization server, so `token-type-saml2` is its only client rule.
+
+That leaves 15 of the 79 client and receiver requirements without a rule, each for a reason
+COVERAGE.md section 4 states, generated from `NOT_JUDGED` in `tools/definitions/gen_coverage.py`:
+- 11 permissions a client cannot break: the optional inbox, target, constraint and `expires`,
+  extra properties and fields, QUERY being safe and idempotent, the `PreferLinkRelations` filter,
+  the type key, the first-page flow, and consulting `Accept-Query` after a 415;
+- three obligations that do not show in what a client sends: `client-no-read-your-writes`, and
+  the two statements that `application/ld+json; profile="https://www.w3.org/ns/lws/v1"` is
+  `application/lws+json`. The session could label a listing that way only when the client's
+  `Accept` allows it (a server must answer the type asked for), and a client that does not take it
+  for LWS shows that by stopping or reading the container again, as a conformant one may;
+- the conformance class itself.
+
+So client sessions judge 64 of the 79: 56 of the 58 MUSTs, 6 of the 8 SHOULDs, 2 of the 13 MAYs.
 
 ## 12. Open questions (for Erich)
 

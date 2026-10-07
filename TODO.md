@@ -26,6 +26,32 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-07 — the gaps in client coverage (D-0087)
+
+Of the 79 requirements that bind a client or a receiver, the client rules cited 58. On branch
+`clients/coverage-gaps`, they cite 64, and COVERAGE.md section 4 gives a reason for each of the
+other 15.
+
+- [x] **Credit what the rules already judged:** `keyid-url-with-fragment` and
+  `storage-description-id-matches` (receiver halves), `linkset-put-405-if-unsupported` (client
+  half). → **Done (D-0087).**
+- [x] **Rules for two core client halves:** `client-create-no-server-managed-links` and
+  `client-combined-update-prefer-set-linkset`, with twins. → **Done (D-0087).**
+- [x] **A SAML 2.0 identity provider in each session**, its assertions from the session API, and
+  `client-saml-token-type-saml2`. → **Done (D-0087).**
+- [x] **Say why the rest is not judged**, from `NOT_JUDGED` in `gen_coverage.py`. → **Done (D-0087).**
+- [ ] **Erich: review format 0.12.0**, the one new `credentialSource` value
+  `samlIdentityProvider`. It extends the frozen schema.
+- [ ] **Erich: review the SAML identity provider's design:** no endpoint, assertions handed out by
+  the session API, and harness-core's `SamlAssertions` made public through `issue()`.
+- [ ] **Erich: review the readings** behind the two core rules (which relations are server-managed;
+  why the combined update needs a task) and the reasons in `NOT_JUDGED`.
+- [ ] **Later, if wanted:** judge that a saml2 subject token is base64url, as RFC 8693 defines the
+  type, which needs a catalog entry first; an informational rule on the shape of the index's `type`
+  key, which the plan counted a permission.
+
+---
+
 ## 2026-10-05 — JSON Patch replaces JSON Merge Patch (D-0086)
 
 W3C published `https://www.w3.org/TR/2026/WD-lws10-core-20261005/` on 5 October 2026. Its one

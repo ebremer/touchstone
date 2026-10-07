@@ -3421,3 +3421,166 @@ Verified:
   where the merge-patch twin fails exactly its rule.
 
 Drafted by an agent; waits on branch `spec/wd-2026-10-05`.
+
+## 2026-10-07
+
+### D-0087 — the gaps in client coverage: three citations, three rules, a SAML identity provider, and a reason for the rest
+Erich asked for the gaps in what client sessions judge to be closed, on a branch for his review.
+The catalog tags 79 requirements as binding a `Client` (75) or a `Receiver` (4). The 50 client
+rules cited 58 of them: 50 of the 58 MUSTs, 6 of the 8 SHOULDs, 2 of the 13 MAYs. Now 53 rules
+cite 64: **56 MUST, 6 SHOULD, 2 MAY**. COVERAGE.md section 4 gives a reason for each of the other
+15, instead of a blank.
+
+**Needs Erich's review before merge:**
+1. **Format 0.12.0 extends the frozen schema.** It adds one value, `samlIdentityProvider`, to
+   `credentialSource` (`OBSERVATION.md` section 4.9); the schema `$id` is `…/0-12-0`. Nothing a
+   0.11.0 definition relies on changes. It is the only change to the schema or the rule DSL: the
+   two new core rules use terms that exist (`otherHeaders`, `linkHeaders` with `absent`, a task
+   without `arm`). The SAML rule needs it, because a rule cannot see inside a redacted
+   `subject_token`, and the token type a client declares is what the rule judges, so it cannot
+   select its trials.
+2. **The design of the session's SAML identity provider** (below): no endpoint, assertions handed
+   out by the session API, and harness-core's `SamlAssertions` made public through a new
+   `issue()`.
+3. **The readings behind the two core rules**, both MUST: that `linkset` is the one
+   server-managed relation a create can carry, and that a combined update needs a task.
+4. **The reasons in `NOT_JUDGED`**, above all that the two profile-equivalence SHOULDs are not
+   observable.
+
+**Tested but not credited: three citations.** Each was checked against its clause text.
+- `lws10-notifications-webhook/keyid-url-with-fragment` (receiver half), "The keyid value MUST
+  be a URL with a fragment component", is step 1 of section 5.2, which
+  `client-inbox-refuses-keyid-without-fragment` forges.
+- `storage-description-id-matches` (receiver half), "The id property of the top-level document
+  map MUST match the storage identifier", is step 3, which
+  `client-inbox-refuses-foreign-key-document` forges: the keyid names `{storage}_t/keys`, whose
+  document's id is the storage's.
+- `lws10-core/linkset-put-405-if-unsupported` (client half): "If advertised in the Allow header,
+  a client MAY replace the entire linkset." The permission is bounded the way
+  `client-linkset-put-only-when-advertised` judges; the 405 is the server's half. The rule stays
+  a SHOULD, from `client-no-assumed-methods-405-415`'s SHOULD NOT, since a PUT outside the
+  permission breaks no client MUST.
+
+**Two core rules** (`clients/core.yamlld`, MUST):
+- **`client-create-no-server-managed-links`** (`create-server-managed-metadata-protected`). "Clients
+  MAY provide initial user-managed metadata … by including one or more Link headers in the POST
+  request", and server-managed metadata "MUST NOT be overridden by client-provided links". Its
+  trials are the creates that carry a `Link` header, and each must name no `rel="linkset"`. The
+  metadata section lists linkset, type, format, size and modified as system managed. Of those,
+  only linkset is a relation a create can carry that is never the client's: `rel="type"` to
+  `lws#Container` is how a client asks for a container (a MUST of its own), the index draft
+  derives a resource's other types from the `rel="type"` links of its create, and the other three
+  are not link relations. `up` is core metadata, the client's. Judging `type` or the storage link
+  would fail clients the drafts allow.
+- **`client-combined-update-prefer-set-linkset`** (`update-content-vs-metadata-prefer-set-linkset`).
+  A combined update of content and metadata "MUST be invoked explicitly via the Prefer header".
+  Link headers on a PUT or PATCH are not wrong in themselves: the index draft says servers SHOULD
+  derive types "from HTTP Link headers provided by the client during resource creation or
+  modification". A passive rule would fail those clients, so this one needs the developer's word,
+  as `client-create-container-type-link` does. After its task, the first PUT or PATCH of a data
+  resource that carries a `Link` header must carry a `Prefer` that lists `set-linkset`, in any
+  case, with or without a value or parameters. The session's storage does no combined updates,
+  which are optional for servers, and ignores the preference, as such a server must.
+
+**A SAML 2.0 identity provider in every session.**
+- **It has no endpoint.** The SAML suite leaves open how a client obtains an assertion, and leaves
+  trust in an identity provider to configuration. So `POST {base}/sessions/{sid}/assertions/{name}`
+  hands one out, as `tokens/{name}` does a token. The entity identifier is `{base}/s/{sid}/saml`,
+  which serves nothing.
+- **Its assertions follow the suite's section 4:** NameID the identity's WebID, persistent;
+  Issuer the provider; Recipient the client; Audience the client and the session's authorization
+  server. They are signed RSA-SHA256 with an enveloped signature that carries the key by value,
+  valid for five minutes, and base64url-encoded without padding, as RFC 8693 section 3 defines the
+  saml2 type. The client is the session's own identifier, or a `client_id` the request names, an
+  absolute URI. The API answer also gives the issuer, subject, recipient and audiences, but not the
+  token type: that is what the rule judges.
+- **Reuse.** `harness-fixtures` has the verifying side of SAML, which the server self-test uses:
+  `RefAuthorizationServer.trustSamlIdentityProvider` and `SubjectTokens`'s XML Signature check.
+  The session's authorization server uses them unchanged. The minting is not in `harness-fixtures`:
+  it is harness-core's `SamlAssertions`, which mints the server tests' assertions, and which
+  `harness-fixtures` depends on only for its tests. It gains a public `issue()`, and the session's
+  provider, a small class in `harness-clients`, calls it. Minting and verifying stay apart, as on
+  the server side, so a shared bug cannot cancel out. `harness-core` gains no client logic, only
+  a public entry to existing code.
+- **Its key is made on first use**, a 2048-bit RSA pair, and the session's authorization server
+  then trusts it, in process. Nothing is fetched, as CLIENT-TESTING.md section 8.3 requires.
+- **The recorder** classifies a subject token as `samlIdentityProvider` when it decodes, as
+  base64url or else base64, to the bytes of an assertion the provider issued; it compares their
+  SHA-256 and never parses the XML. A client that re-encodes the assertion is still recognized, and
+  then judged on the type it declares.
+- **The rule:** `client-saml-token-type-saml2` (MUST, `token-type-saml2`), in the area
+  `authentication`. Those token requests carry
+  `subject_token_type=urn:ietf:params:oauth:token-type:saml2`. The suite's other clauses bind the
+  identity provider (the assertion's content) or the authorization server (validation), so this is
+  the suite's one client rule.
+- **Proxy sessions** hand out no assertions (`404`), and the rule is inapplicable there, as every
+  rule that uses `credentialSource` is: a real server would not trust a key made for the session.
+  19 of the 53 rules are inapplicable in a proxy session.
+- D-0082's "no rule for `token-type-saml2`" is superseded.
+
+**Not judged, and why** (`NOT_JUDGED` in `tools/definitions/gen_coverage.py`). A curated list in
+the tool, like its notes on lws-test-suite, rather than a new term in the catalog vocabulary,
+whose changes are gated. Each entry has a kind and a reason. The generator fails when a client or
+receiver requirement has neither a rule nor a reason, or both, or when the list names a
+requirement that does not bind a client or a receiver.
+- **permission (11):** the MAYs a client cannot break whatever it sends. They are the optional
+  inbox, target, constraint and `expires`; extra properties and extra subscription fields;
+  QUERY being safe and idempotent; the `PreferLinkRelations` filter, whose syntax the draft leaves
+  open; the index's `type` key; the first-page flow, whose keyword is the server's and whose client
+  flow `client-page-urls-issued` judges; and consulting `Accept-Query` after a 415, which looks the
+  same as `client-query-baseline-after-415` while the session accepts only the baseline (D-0078).
+- **unobservable (3):**
+  - `client-no-read-your-writes`: an assumption inside the client.
+  - `lws-profile-equivalence` and `iana-ld-json-profile-equivalence`: a client SHOULD take
+    `application/ld+json; profile="https://www.w3.org/ns/lws/v1"` as `application/lws+json`. The
+    trap considered was to label a listing that way and judge whether the client carries on with
+    it, rather than retrying or failing. It is not sound:
+    - a server must answer a container in the type asked for (`conneg-media-type-equivalence`), so
+      the session could send the profile only to a client whose `Accept` allows `application/ld+json`
+      or anything. A client that asks for `application/lws+json` never meets it.
+    - A client that does not take the type for LWS shows that by stopping, or by reading the
+      container again with another `Accept`. Stopping is not a request, and a conformant client
+      may read a container again for reasons of its own, so a failure would fail conformant
+      clients.
+    - Carrying on, by following a member of that listing, proves only that the client parsed
+      JSON, which every client that asked for JSON does.
+
+    So no rule is written.
+- **aggregate (1):** `conformance-client-class`, which the session's verdict answers for.
+
+COVERAGE.md section 4 now has a table by level: MUST 56 of 58 judged (one unobservable, the
+class), SHOULD 6 of 8 (two unobservable), MAY 2 of 13 (eleven permissions).
+
+**The proof.**
+- `RefLwsClient` gives its first note a type of its own on create, does the combined-update task
+  with `Prefer: set-linkset`, and has bob, after his OpenID sign-in, read the note alice granted him
+  with a SAML assertion from the session API. Its three new twins:
+  - `CREATES_WITH_LINKSET_LINK` names a linkset of its own on that create;
+  - `UPDATES_LINKS_WITHOUT_PREFER` leaves `Prefer` out of the combined update;
+  - `SAML_TYPED_AS_JWT` first presents the assertion typed jwt.
+
+  The evidence was read: the first fails on "linkHeaders: no such link", the second on "header
+  Prefer matches", the third on "subject_token_type equals … saml2, was … jwt".
+- `ClientRulesSelfTest`: the reference passes all 53 ("no MUST failure in 41 MUST rules exercised,
+  of 41 that apply"), and each of the 54 twins fails exactly the rules aimed at it.
+  `ProxyRulesSelfTest`: 19 rules are inapplicable; the reference passes the other 34 ("no MUST
+  failure in 25 MUST rules exercised, of 25 that apply"), and the two new core twins fail exactly
+  their rules through the proxy too, 32 twins in all.
+- `ClientLabTest` adds crafted traffic: a relation list with `LinkSet` in it, a `Prefer` list, a
+  preference with parameters, a near miss (`set-linksets`), and Link headers without the task;
+  and the SAML API end to end: refusals, the assertion's content, its exchange for an access token
+  for bob and the client it names, a standard-base64 re-encoding still recognized, and a forged
+  assertion refused and classified `other`.
+
+Verified:
+- `tools/definitions/check.py` passes 7 of 7, with COVERAGE.md and vocab.yamlld regenerated;
+- `./mvnw -B verify` is green in all five modules (77, 23, 114, 15 and 6 tests), including
+  `DefinitionsSelfTest`, which loads the server definitions under the 0.12.0 schema unchanged;
+- the session page, driven in headless Firefox, shows the provider and the new column, and its
+  *Get an assertion* fills the assertion box.
+
+**Not done:** a check that a saml2 subject token is base64url, as RFC 8693 defines the type. No
+catalog clause states it, so a rule would cite none. Nor an informational rule on the shape of
+the index's `type` key, which the plan counted a permission. TODO.md lists both.
+
+Drafted by an agent; waits on branch `clients/coverage-gaps`.

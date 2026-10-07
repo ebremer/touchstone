@@ -96,7 +96,9 @@ Which of the session's servers the request addressed:
 - `identityHost` (since 0.10.0), for one under `{base}/s/{sid}/id/`, where the identities'
   documents are.
 
-Any other URL of the session has no server, and its role is `unknown`.
+Any other URL of the session has no server, and its role is `unknown`. The session's SAML identity
+provider (since 0.12.0) is not a server here: it serves nothing, and the session API, which is not
+recorded, hands out its assertions.
 
 ### 4.2 `role`
 
