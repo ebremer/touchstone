@@ -3,8 +3,9 @@
 Generates definitions/COVERAGE.md from the JSON form of the definitions (build/json/,
 written by validate_ld.js). It maps every lws-test-suite test and every retired manifests/ test
 to its counterparts, lists every definition by module, counts the catalog's requirements by the
-role they bind, and lists the ones client sessions will answer for (CLIENT-TESTING.md). It
-needs a lws-test-suite checkout
+role they bind, and lists the ones client sessions will answer for (CLIENT-TESTING.md), with the
+reason, from NOT_JUDGED below, for each that no client rule judges. It fails when a requirement
+that binds a client or a receiver has neither a rule nor a reason. It needs a lws-test-suite checkout
 (README.md). COVERAGE.md is generated, so edit the definitions or the notes below, not the
 file.
 
@@ -63,6 +64,30 @@ TS_NOTES = {
     "core/patch-merge-patch-baseline": "None. The 5 October 2026 draft made JSON Patch the baseline patch format in place of JSON Merge Patch; `core/data_resources#patch-json-patch-baseline` tests the new one.",
     "core/put-unconditional-428": "None. The 21 September 2026 draft removed the 428 MUST (\"Clients SHOULD use conditional requests\"), so this test failed conforming servers.",
 }
+# Why no client rule judges a requirement that binds a client or a receiver (hand-written and
+# reviewed, D-0087). Every such requirement is either cited by a client rule or listed here, never
+# both, so section 4 says why instead of leaving a blank. The kinds:
+#   permission    a MAY a client cannot break, whatever it sends;
+#   unobservable  an obligation whose keeping or breaking does not show in what a client sends;
+#   aggregate     the conformance class itself, which the session's verdict answers for.
+NOT_JUDGED = {
+    "lws10-core/conformance-client-class": ("aggregate", "The client conformance class itself: the session's verdict, which only MUST rules decide, answers for it."),
+    "lws10-index/client-no-read-your-writes": ("unobservable", "An assumption inside the client: one that relies on reading its own writes goes wrong in its own logic, not in what it sends. The lagging-index trap lets the developer see it."),
+    "lws10-core/lws-profile-equivalence": ("unobservable", "How a client treats a body it receives, which shows only in what it does next. The session may label a listing with the profile only when the client's Accept allows it, and a client that does not take it for LWS stops or reads again, as conformant clients also may."),
+    "lws10-core/iana-ld-json-profile-equivalence": ("unobservable", "The IANA registration's restatement of `lws-profile-equivalence`, unobservable for the same reason."),
+    "lws10-core/access-extra-properties-allowed": ("permission", "A client may add properties or not; either is allowed."),
+    "lws10-core/access-inbox-optional": ("permission", "A client may leave the inbox out. One it gives is judged by `client-access-document-inbox`."),
+    "lws10-core/policy-constraint-optional": ("permission", "A client may leave constraints out. Those it gives are judged by `client-access-policy-constraint`."),
+    "lws10-core/policy-target-optional": ("permission", "A client may leave the target out. One it gives is judged by `client-access-policy-target`."),
+    "lws10-core/subscription-request-additional-fields": ("permission", "A client may send the further fields a subscription type asks for; either way is allowed."),
+    "lws10-notifications-webhook/subscription-expires-optional": ("permission", "A client may ask for an expiry or not; either is allowed."),
+    "lws10-core/pagination-first-page-flow": ("permission", "Its keyword lets servers offer direct access to pages. The flow it describes for clients, following the links given, is judged by `client-page-urls-issued`."),
+    "lws10-core/prefer-link-relations-filtering": ("permission", "A client may use the preference or not, and the draft leaves its syntax for naming relations open."),
+    "lws10-index/query-safe-idempotent": ("permission", "A client may repeat, retry or cache a search; each is allowed."),
+    "lws10-index/type-filter": ("permission", "A client may filter by type or not; either is allowed."),
+    "lws10-index/client-415-accept-query": ("permission", "A client may consult Accept-Query after a 415. While the session accepts only the baseline format, doing so looks the same as `client-query-baseline-after-415` (D-0078)."),
+}
+KINDS = {"permission": "a permission", "unobservable": "unobservable", "aggregate": "the conformance class"}
 
 
 def load():
@@ -147,9 +172,25 @@ server_side = {i for i, r in catalog.items() if {"Server", "AuthorizationServer"
 rule_levels = Counter(t["level"] for t in rules)
 client_side_ids = {i for i, r in catalog.items() if {"Client", "Receiver"} & set(r["roles"])}
 judged = {r for t in rules for r in t.get("requirements", [])}
+not_judged_ids = {"https://example.org/touchstone/req/" + k for k in NOT_JUDGED}
+problems = sorted(f"{k}: listed as not judged, but not a requirement that binds a client or a receiver"
+                  for k in NOT_JUDGED if "https://example.org/touchstone/req/" + k not in client_side_ids)
+problems += sorted(f"{k}: listed as not judged, but cited by a client rule" for k in NOT_JUDGED
+                   if "https://example.org/touchstone/req/" + k in judged)
+problems += sorted(f"{i.rsplit('/req/', 1)[1]}: binds a client or a receiver, but no client rule cites it and NOT_JUDGED gives no reason"
+                   for i in client_side_ids - judged - not_judged_ids)
+if problems:
+    print("NOT_JUDGED does not match the catalog and the client rules:")
+    for p in problems:
+        print("  " + p)
+    sys.exit(1)
+kinds = Counter(NOT_JUDGED[k][0] for k in NOT_JUDGED)
 L.append(f"- **{len(rules)} client rules** (`clients/`, judged by client sessions; OBSERVATION.md): "
          f"{rule_levels['MUST']} MUST, {rule_levels['SHOULD']} SHOULD, {rule_levels['MAY']} MAY. They cite "
-         f"{len(judged & client_side_ids)} of the {len(client_side_ids)} requirements that bind a client or a receiver (sections 4 and 5).")
+         f"{len(judged & client_side_ids)} of the {len(client_side_ids)} requirements that bind a client or a receiver; "
+         f"the other {len(not_judged_ids)} are not judged, each for a reason section 4 gives: {kinds['permission']} "
+         f"permissions a client cannot break, {kinds['unobservable']} obligations that do not show in what a client "
+         f"sends, and the conformance class itself (sections 4 and 5).")
 L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_side)} of the {len(server_side)} that bind a "
          "server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.")
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
@@ -222,7 +263,17 @@ L.append("### Client and receiver requirements")
 L.append("")
 L.append("What a client session can judge: the inventory of CLIENT-TESTING.md section 11. *Also binds*")
 L.append("names the other roles of a clause that binds more than one; *Cited by* names the server tests that")
-L.append("cite it, as a premise or for its server half; *Judged by* names the client rules that cite it.")
+L.append("cite it, as a premise or for its server half; *Judged by* names the client rules that cite it, or")
+L.append("says why none does: a permission a client cannot break, an obligation that does not show in what a")
+L.append("client sends (unobservable), or the conformance class itself (D-0087).")
+L.append("")
+L.append("| Level | Requirements | Judged by a client rule | Not judged: a permission | Not judged: unobservable | Not judged: the conformance class |")
+L.append("|---|---:|---:|---:|---:|---:|")
+for lvl in ("MUST", "SHOULD", "MAY"):
+    ids = [i for i in client_side_ids if catalog[i]["level"] == lvl]
+    why = Counter(NOT_JUDGED[i.rsplit("/req/", 1)[1]][0] for i in ids if i not in judged)
+    L.append(f"| {lvl} | {len(ids)} | {sum(1 for i in ids if i in judged)} | {why['permission']} | {why['unobservable']} "
+             f"| {why['aggregate']} |")
 L.append("")
 L.append("| Requirement | Level | Also binds | Summary | Cited by | Judged by |")
 L.append("|---|---|---|---|---|---|")
@@ -241,6 +292,9 @@ for i in client_side:
     also = ", ".join(x for x in r["roles"] if x not in ("Client", "Receiver"))
     by = ", ".join(f"`{n}`" for n in sorted(citing.get(i, [])))
     rule_names = ", ".join(f"`{n}`" for n in sorted(judging.get(i, [])))
+    if not rule_names:
+        kind, reason = NOT_JUDGED[i.rsplit("/req/", 1)[1]]
+        rule_names = f"*Not judged: {KINDS[kind]}.* {reason}"
     summary = r["summary"].replace("|", "\\|")
     L.append(f"| `{r['module']}/{i.rsplit('/', 1)[1]}` | {r['level']} | {also} | {summary} | {by} | {rule_names} |")
 L.append("")

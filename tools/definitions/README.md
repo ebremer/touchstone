@@ -24,7 +24,7 @@ python check.py --write              # the same, but regenerate the two generate
 | 3 | `validate_schema.js` | Every document validates against `definitions/schema/definitions.schema.json` in strict mode. 20 negative controls, real tests each with one deliberate defect, must all be rejected. |
 | 4 | `lint_definitions.py` | The lint of `EXECUTION.md` section 2.5. |
 | 5 | `gen_vocab.py --check` | `vocab.yamlld` is what the term table in the script generates, and it defines exactly the `lwst:` terms of `context.jsonld`. |
-| 6 | `gen_coverage.py --check` | `COVERAGE.md` is what the definitions generate. |
+| 6 | `gen_coverage.py --check` | `COVERAGE.md` is what the definitions generate, and every requirement that binds a client or a receiver is cited by a client rule or has a reason in `NOT_JUDGED`, never both. |
 | 7 | `export_dryrun.js` | The JSON-LD export loses nothing: each exported document gives the same canonical RDF as its YAML-LD source, minus the Touchstone-only terms. |
 
 The lint covers what the schema cannot:
@@ -39,7 +39,9 @@ The lint covers what the schema cannot:
 Two of the files are generated, so edit their sources rather than the files:
 - **`vocab.yamlld`:** edit the table in `gen_vocab.py`, then run `python check.py --write`
   and commit both.
-- **`COVERAGE.md`:** its per-test notes live in `gen_coverage.py`.
+- **`COVERAGE.md`:** its per-test notes live in `gen_coverage.py`, and so does `NOT_JUDGED`, the
+  reason no client rule judges a client or receiver requirement: a permission a client cannot
+  break, an obligation that does not show in what it sends, or the conformance class (D-0087).
 
 ## lws-test-suite
 
