@@ -22,7 +22,7 @@
         <li><strong>Point your client at the storage</strong>, <code id="guide-storage"></code>. It is
           the only URL your client should need: the storage's answers lead to everything else.</li>
         <li id="guide-auth"><strong>Authenticate</strong> as alice, who owns the storage, or bob, in one of the
-          <a href="#connect">three ways below</a>. The quickest is a token from the identities table;
+          <a href="#connect">four ways below</a>. The quickest is a token from the identities table;
           the OpenID sign-in needs your client registered first.</li>
         <li><strong>Use your client</strong> as you normally would, then work through the
           <a href="#checklist">checklist</a>. Each request is judged as it arrives, under
@@ -58,19 +58,23 @@
       <dd><code id="issuer"></code><br><span class="note">Your client should find it from the storage's 401 challenge, not from here.</span></dd>
       <dt>OpenID Provider</dt>
       <dd><code id="op-issuer"></code><br><span class="note">Each identity's document names it; your client should find it there.</span></dd>
+      <dt id="saml-term">SAML identity provider</dt>
+      <dd id="saml-entity"></dd>
       <dt>Session ends</dt>
       <dd id="expires"></dd>
     </dl>
     <h3>Identities</h3>
-    <p class="note">Your client can authenticate as alice or bob in three ways. It can sign in at the
+    <p class="note">Your client can authenticate as alice or bob in four ways. It can sign in at the
       session's OpenID Provider with a username and password, after you register it below. It can
       sign a credential itself with the identity's key, as the CID suite describes: sub, iss and
-      client_id are the WebID, and kid names the verification method. Or it can use a token from
-      this page, for a client without authentication yet.</p>
+      client_id are the WebID, and kid names the verification method. It can present a SAML 2.0
+      assertion from the session's identity provider, which this page or the session API hands out,
+      base64url-encoded, with the token type urn:ietf:params:oauth:token-type:saml2. Or it can use a
+      token from this page, for a client without authentication yet.</p>
     <div class="scroll">
       <table class="identities">
         <thead><tr><th scope="col">Name</th><th scope="col">WebID</th><th scope="col">Access</th>
-          <th scope="col">Password and key</th><th scope="col">Token</th></tr></thead>
+          <th scope="col">Password and key</th><th scope="col">SAML assertion</th><th scope="col">Token</th></tr></thead>
         <tbody id="identities"></tbody>
       </table>
     </div>
@@ -81,6 +85,12 @@
       <textarea id="secret-key" readonly rows="5"></textarea>
       <button type="button" class="copy" data-copy="secret-key">Copy</button>
       <a id="secret-download" href="#" download="key.jwk.json">Download</a>
+    </div>
+    <div id="assertion-box" hidden>
+      <label for="assertion">SAML assertion about <span id="assertion-for"></span>, for the session's
+        client, valid for five minutes</label>
+      <textarea id="assertion" readonly rows="3"></textarea>
+      <button type="button" class="copy" data-copy="assertion">Copy</button>
     </div>
     <div id="token-box" hidden>
       <label for="token">Access token for <span id="token-for"></span>, valid for an hour</label>

@@ -105,7 +105,8 @@ class ProxyRulesSelfTest {
                 "client-inbox-refuses-altered-body", "client-subscription-own-inbox", "client-delete-container-depth");
         assertThat(UNAVAILABLE).doesNotContain("client-token-exchange-resource", "client-token-for-containing-realm",
                 "client-no-repeat-after-405-415", "client-page-urls-issued", "client-subscription-inbox");
-        assertThat(UNAVAILABLE).hasSize(18);
+        assertThat(UNAVAILABLE).contains("client-saml-token-type-saml2");
+        assertThat(UNAVAILABLE).hasSize(19);
     }
 
     @Test
@@ -184,6 +185,9 @@ class ProxyRulesSelfTest {
                     .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"proxy\": \"ref\"}")).build(),
                     HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(400);
             assertThat(post(api + "/faults/forgedAlteredBody", key).statusCode()).isEqualTo(404);
+            // Nor a SAML assertion: the server behind the proxy trusts identity providers of its own.
+            assertThat(post(api + "/assertions/alice", key).statusCode()).isEqualTo(404);
+            assertThat(session.has("samlIdentityProvider")).isFalse();
             assertThat(post(api + "/faults/pageGone", key).statusCode()).isEqualTo(204);
             // The storage's root is its description or its root container, by what is asked for, with
             // or without an earlier answer for the other.

@@ -22,7 +22,7 @@ class ClientRulesLoaderTest {
     @Test
     void loadsEveryClientRuleInTraversalOrder() {
         ClientRules rules = DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG);
-        assertThat(rules.rules()).hasSize(52);
+        assertThat(rules.rules()).hasSize(53);
         assertThat(rules.rules().getFirst().id()).isEqualTo("clients/core#client-token-in-authorization-header");
         assertThat(rules.rules().stream().map(RuleDefinition::area).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder("core", "authentication", "notifications", "index");
@@ -37,6 +37,8 @@ class ClientRulesLoaderTest {
         assertThat(rules.find("client-create-container-type-link").orElseThrow().taskTriggered()).isTrue();
         assertThat(rules.find("client-combined-update-prefer-set-linkset").orElseThrow().taskTriggered()).isTrue();
         assertThat(rules.find("client-create-no-server-managed-links").orElseThrow().task()).isNull();
+        assertThat(rules.find("client-saml-token-type-saml2").orElseThrow().observe().path("credentialSource").asText())
+                .isEqualTo("samlIdentityProvider");
         RuleDefinition realm = rules.find("client-token-for-containing-realm").orElseThrow();
         assertThat(realm.task().arm()).isEqualTo("tokenExpired");
         assertThat(realm.iri()).isEqualTo(Definitions.BASE + "clients/authentication#client-token-for-containing-realm");

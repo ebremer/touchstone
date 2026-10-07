@@ -23,8 +23,8 @@ final class TokenRequests {
     private static final String FORM = "application/x-www-form-urlencoded";
 
     /**
-     * @param credentialSource selfIssued, openidProvider, authorizationServer or other; null when
-     *     the request presents no subject token
+     * @param credentialSource selfIssued, openidProvider, samlIdentityProvider, authorizationServer
+     *     or other; null when the request presents no subject token
      * @param credential the subject token's header and claims, {@code {"header": ..., "claims": ...}},
      *     or null when it presents none or it is not a JWT
      * @param audienceIncludesAs whether the JWT's aud names the session's authorization server;
@@ -58,6 +58,7 @@ final class TokenRequests {
         ObjectNode jwt = decode(token);
         String source = session.op.issued(token) ? "openidProvider"
                 : session.tokens.contains(token) ? "authorizationServer"
+                : jwt == null && session.saml.issued(token) ? "samlIdentityProvider"
                 : jwt != null && namesIdentity(session, jwt) ? "selfIssued" : "other";
         if (jwt == null) {
             return new Facts(source, null, null, null, realm);

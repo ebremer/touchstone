@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/definitions/0-11-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), format 0.11.0",
-  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). 0.11.0 adds deliveries, the session's requests to a client's inbox: the roles delivery and keyDocument, the conditions deliverySignature and inboxShared, and the four forgery faults (D-0083). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "$id": "https://example.org/touchstone/schema/definitions/0-12-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.12.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). 0.11.0 adds deliveries, the session's requests to a client's inbox: the roles delivery and keyDocument, the conditions deliverySignature and inboxShared, and the four forgery faults (D-0083). 0.12.0 adds the credential source samlIdentityProvider, for the assertions of a client session's SAML identity provider (D-0087). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/identityRegistry"}
@@ -428,7 +428,7 @@
           ]
         },
         "credentialSource": {
-          "description": "since 0.10.0: where a token request's subject token came from (OBSERVATION.md section 4.9)",
+          "description": "since 0.10.0: where a token request's subject token came from (OBSERVATION.md section 4.9); samlIdentityProvider since 0.12.0",
           "oneOf": [
             {"$ref": "#/$defs/credentialSourceName"},
             {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/credentialSourceName"}}
@@ -511,7 +511,7 @@
     "faultName": {"enum": ["methodNotAllowed", "lostCreateResponse", "pageGone", "tokenExpired",
                            "forgedUnpublishedKey", "forgedAlteredBody", "forgedKeyidWithoutFragment", "forgedForeignKeyDocument"]},
     "deliverySignatureName": {"enum": ["genuine", "unpublishedKey", "alteredBody", "keyidWithoutFragment", "foreignKeyDocument"]},
-    "credentialSourceName": {"enum": ["selfIssued", "openidProvider", "authorizationServer", "other"]},
+    "credentialSourceName": {"enum": ["selfIssued", "openidProvider", "samlIdentityProvider", "authorizationServer", "other"]},
 
     "identityRegistry": {
       "type": "object",

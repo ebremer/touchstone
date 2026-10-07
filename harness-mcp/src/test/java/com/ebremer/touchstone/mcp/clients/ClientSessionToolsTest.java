@@ -95,7 +95,7 @@ class ClientSessionToolsTest {
 
         // The configured session is read when a call names none.
         ClientSessionTools configured = new ClientSessionTools(new ClientSessionProperties(List.of(base), page));
-        assertThat(configured.getClientFindings(null, "all", null).rules()).hasSize(52);
+        assertThat(configured.getClientFindings(null, "all", null).rules()).hasSize(53);
     }
 
     @Test

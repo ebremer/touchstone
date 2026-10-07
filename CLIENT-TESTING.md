@@ -56,10 +56,11 @@ These follow D-0075. Do not relitigate them without a new decision.
    choose the areas to cover: core, authentication suites, notifications, index.
 2. **The session page** (a capability URL, §8) gives:
    - the storage URL, which is the only URL the client should need;
-   - two identities, **alice** (the storage owner) and **bob**, with three ways to
+   - two identities, **alice** (the storage owner) and **bob**, with four ways to
      authenticate (§6):
      - an OpenID login at the session's own provider;
      - a CID key pair to download, with alice's identity document hosted by the session;
+     - a SAML 2.0 assertion from the session's own identity provider (D-0087);
      - a pre-issued access token, as a shortcut for clients without authentication yet;
    - the session API key, for scripts and CI.
 3. **A checklist of tasks**, grouped by area. Each task says:
@@ -177,6 +178,9 @@ built all of it; [harness-clients/README.md](harness-clients/README.md) document
   the key from its URL's fragment.
 - `GET {base}/sessions/{sid}/credentials/{name}` gives an identity's password for the OpenID
   Provider, and the private key, a JWK, of the verification method its identity document lists.
+- `POST {base}/sessions/{sid}/assertions/{name}` hands out a signed SAML 2.0 assertion about an
+  identity from the session's SAML identity provider, base64url-encoded, for a client the body may
+  name (D-0087).
 - `POST {base}/sessions/{sid}/clients` registers a client with the OpenID Provider:
   `{"redirect_uris": [...]}`, and optionally a `client_id`, an absolute URI. `GET` lists the
   registered clients.
@@ -370,8 +374,8 @@ to §7:
    downloads.
 3. **Outbound requests only to the public internet:**
    - The session's authorization server dereferences nothing: it validates credentials with
-     the session's own identity documents and OpenID Provider, in process, and refuses any
-     subject, issuer or key elsewhere (D-0082).
+     the session's own identity documents, OpenID Provider and SAML identity provider's key, in
+     process, and refuses any subject, issuer or key elsewhere (D-0082, D-0087).
    - Deliveries go only to `https` inbox URLs that resolve to public unicast addresses. That
      excludes loopback, RFC 1918, link-local (including `169.254.169.254`), unique local,
      CGNAT, multicast, reserved and documentation addresses, and IPv6 prefixes that embed an
@@ -447,11 +451,12 @@ With the proxy:
   `pageGone` and `tokenExpired`;
 - traps do not, since they need the server's cooperation. A rule that needs what only the
   session's own servers know is inapplicable: the details of a credential, a notification's
-  signature, a container's members, the decoy. That makes 18 of the 52 rules.
+  signature, a container's members, the decoy. That makes 19 of the 53 rules.
 
 A real server delivers its notifications itself, not through the proxy, and the session's own
-storage and authorization server are not served. The session's identities and OpenID Provider
-remain; they work if the server trusts them. A target may name its authorization server's
+storage and authorization server are not served, and its SAML identity provider hands out no
+assertions. The session's identities and OpenID Provider remain; they work if the server trusts
+them. A target may name its authorization server's
 issuer, which the session's provider then adds to the audience of its ID Tokens.
 
 Proxy mode tests clients against real-world server behaviour. It is also a second
@@ -487,7 +492,7 @@ clients; only the client half is judged here.
 | `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C4 |
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
 | `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-jwt` | MUST | passive: token requests | C4 |
-| `lws10-authn-saml/token-type-saml2` | MUST | no rule: a session has no SAML identity provider, so no client presents an assertion it could accept (D-0082) | — |
+| `lws10-authn-saml/token-type-saml2` | MUST | passive: token requests presenting an assertion of the session's SAML identity provider, which the session API hands out (D-0087; D-0082 had none) | D-0087 |
 | `lws10-notifications-webhook/inbox-verifies-signature`, `receiver-verification-steps`; `keyid-url-with-fragment`, `storage-description-id-matches` (half) | MUST | the forgery faults: forged deliveries refused, genuine ones acknowledged | C5 |
 | `lws10-notifications-webhook/per-subscription-inbox-urls` | MAY | informational: one inbox per subscription | C5 |
 | `lws10-core/prefer-link-relations-filtering`, `delete-if-match-optional` | MAY | informational | C2 |
@@ -583,21 +588,29 @@ also leave a gap the session does not test: nothing ties the keyid to the storag
 subscribed to, so a notification signed with a key from another storage's own description passes
 all five steps. §12.4 takes that to the working group.
 
-**Closing the gaps (D-0087).** Three more clauses the rules already judged are now cited: the
-receiver halves of `keyid-url-with-fragment` and `storage-description-id-matches`, steps 1 and 3
-of the webhook suite's section 5.2, and the client half of `linkset-put-405-if-unsupported`, whose
-permission to PUT holds "if advertised in the Allow header". New rules:
+**Closing the gaps (D-0087).** A session now has a SAML 2.0 identity provider. It has no
+endpoint: the session API hands out its signed assertions about alice and bob, as it hands out
+tokens, and the session's authorization server trusts its key, as the SAML suite leaves trust to
+configuration. Its assertions are minted by the harness-core code the server self-test proves, and
+verified by the reference authorization server's own.
+
+Three more clauses the rules already judged are now cited: the receiver halves of
+`keyid-url-with-fragment` and `storage-description-id-matches`, steps 1 and 3 of the webhook
+suite's section 5.2, and the client half of `linkset-put-405-if-unsupported`, whose permission to
+PUT holds "if advertised in the Allow header". New rules:
 
 | Rule | Level | Cites | Task | Trials (`observe`) | Passes when (`expect`) |
 |---|---|---|---|---|---|
 | `client-create-no-server-managed-links` | MUST | `create-server-managed-metadata-protected` | | POSTs into a container with a `Link` header | no `rel="linkset"` |
 | `client-combined-update-prefer-set-linkset` | MUST | `update-content-vs-metadata-prefer-set-linkset` | update a resource's content and metadata in one request | the first PUT or PATCH of a data resource with a `Link` header after the task starts | `Prefer` lists `set-linkset` |
+| `client-saml-token-type-saml2` | MUST | SAML `token-type-saml2` | | token requests presenting an assertion of the session's SAML identity provider | `subject_token_type` is the saml2 URI |
 
 Of the relations the metadata section calls server-managed, only `linkset` is one a create's
 `Link` header can carry that is never the client's: `rel="type"` to `lws#Container` asks for a
 container, and the index services take a resource's other types from the `rel="type"` links of its
 create or update. That is also why Link headers on an update are not wrong in themselves, and the
-second rule needs the developer's word.
+second rule needs the developer's word. The SAML suite's other clauses bind the identity provider
+or the authorization server, so `token-type-saml2` is its only client rule.
 
 ## 12. Open questions (for Erich)
 

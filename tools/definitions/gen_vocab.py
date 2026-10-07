@@ -216,7 +216,7 @@ V = [
 
     ("form", P, None, "form", "A condition on an application/x-www-form-urlencoded request body, seen as a JSON object of each parameter's first value (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JsonExpectation"),
     ("credential", P, None, "credential", "Conditions on the header and claims of the JWT a token request presents as its subject token (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JwtExpectation"),
-    ("credentialSource", P, None, "credentialSource", "Where a token request's subject token came from: selfIssued, openidProvider, authorizationServer or other (format 0.10.0).", "lwst:ExchangeCondition", "xsd:string"),
+    ("credentialSource", P, None, "credentialSource", "Where a token request's subject token came from: selfIssued, openidProvider, samlIdentityProvider, authorizationServer or other (format 0.10.0; samlIdentityProvider since 0.12.0).", "lwst:ExchangeCondition", "xsd:string"),
     ("audienceIncludesAs", P, None, "audienceIncludesAs", "Whether the aud claim of a token request's subject token names the session's authorization server (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("identifiersAgree", P, None, "identifiersAgree", "Whether the sub, iss and client_id claims of a token request's subject token are the same string (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("realmContainsRequest", P, None, "realmContainsRequest", "Whether a token request's resource is a realm the session presented in a 401 for a URL that realm contains (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),

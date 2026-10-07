@@ -23,8 +23,8 @@ import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 
 /**
  * One client developer's session (CLIENT-TESTING.md section 4.2): a storage, its authorization
- * server and an OpenID Provider of their own, two identities with their identity documents, the
- * log of everything their client sent, and the judge of the client rules.
+ * server, an OpenID Provider and a SAML identity provider of their own, two identities with their
+ * identity documents, the log of everything their client sent, and the judge of the client rules.
  * Its id is public and appears in every URL it serves; its key is secret, unlocks the session's
  * page and API, and is kept only as a hash.
  */
@@ -63,6 +63,8 @@ final class Session {
     final Traps traps;
     final RefAuthorizationServer as;
     final RefOpenIdProvider op;
+    /** The SAML 2.0 identity provider, whose assertions the session API hands out (DECISIONS.md D-0087). */
+    final SamlIdentityProvider saml;
     final RefLwsServer storage;
     final java.util.Map<String, Identity> identities = new java.util.LinkedHashMap<>();
     final Recorder recorder;
@@ -115,9 +117,12 @@ final class Session {
             identities.put(name, identity);
             op.addUser(name, identity.webid(), identity.password());
         }
-        // The session's authorization server trusts the session's identities and provider only, so
+        // The session's authorization server trusts the session's identities and providers only, so
         // that no subject token can make the service fetch a URL of a client's choosing (section 8.3).
+        // The SAML suite leaves trust in an identity provider to configuration: its key, in process.
         as.dereferenceOnly(this::document);
+        String samlEntity = base + "/saml";
+        this.saml = new SamlIdentityProvider(samlEntity, signing -> as.trustSamlIdentityProvider(samlEntity, signing));
         this.storage = RefLwsServer.mounted(URI.create(storageUrl()), as, webid("alice"), traps);
         // Notifications go nowhere until the outbound guard of section 8.3 exists (phase C5).
         this.storage.deliverOnlyTo(uri -> false);
@@ -218,6 +223,16 @@ final class Session {
         String token = as.issue(webid(name), clientId, storage.realm(), lifetime);
         tokens.add(token);
         return token;
+    }
+
+    /**
+     * A SAML 2.0 assertion about {@code name} from the session's identity provider, for the
+     * session's authorization server, base64url-encoded.
+     *
+     * @param client the client identifier, its Recipient and one of its audiences
+     */
+    String assertion(String name, String client, Duration lifetime) {
+        return saml.issue(webid(name), client, as.issuer(), lifetime);
     }
 
     /** Starts the results over (CLIENT-TESTING.md section 3): the storage and the log stay. */

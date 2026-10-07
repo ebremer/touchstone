@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.EnumSource;
  * reference client, in a session of its own, passes every rule, because its script gives each a
  * trial and starts each task; and each broken twin, in a session of its own, fails exactly the
  * rules aimed at it and nothing else. A rule no twin fails could never fail. Phase C4's acceptance
- * is here too: the reference client authenticates all three ways, and each broken-credential twin
+ * is here too: the reference client authenticates all four ways, and each broken-credential twin
  * fails.
  */
 class ClientRulesSelfTest {
@@ -96,7 +96,8 @@ class ClientRulesSelfTest {
             entry(Flaw.INBOX_REFUSES_EVERYTHING, Set.of("client-inbox-acknowledges-genuine-delivery")),
             entry(Flaw.SHARES_INBOX, Set.of("client-subscription-own-inbox")),
             entry(Flaw.CREATES_WITH_LINKSET_LINK, Set.of("client-create-no-server-managed-links")),
-            entry(Flaw.UPDATES_LINKS_WITHOUT_PREFER, Set.of("client-combined-update-prefer-set-linkset")));
+            entry(Flaw.UPDATES_LINKS_WITHOUT_PREFER, Set.of("client-combined-update-prefer-set-linkset")),
+            entry(Flaw.SAML_TYPED_AS_JWT, Set.of("client-saml-token-type-saml2")));
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
@@ -136,7 +137,7 @@ class ClientRulesSelfTest {
         }
         assertThat(notPassed).as(results.toPrettyString()).isEmpty();
         assertThat(results.get("rules")).hasSize(TestRules.RULES.rules().size());
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 40 MUST rules exercised, of 40 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 41 MUST rules exercised, of 41 that apply");
     }
 
     @ParameterizedTest
@@ -164,9 +165,10 @@ class ClientRulesSelfTest {
 
     /**
      * Runs a client, reference or twin, in a session of its own, and returns the session's results.
-     * The client authenticates all three ways: alice starts with the token the session handed out
+     * The client authenticates all four ways: alice starts with the token the session handed out
      * and then signs credentials with her key; bob signs in at the session's OpenID Provider, where
-     * the client is registered first.
+     * the client is registered first, and then presents an assertion from the session's SAML
+     * identity provider, which the session API hands out.
      */
     private static JsonNode run(Flaw flaw) throws Exception {
         HttpResponse<String> created = HTTP.send(HttpRequest.newBuilder(URI.create(base + "/sessions"))
@@ -194,7 +196,8 @@ class ClientRulesSelfTest {
                     new RefLwsClient.Agent(session.at("/identities/alice/webid").asText(), session.at("/tokens/alice").asText(),
                             aliceSecrets.get("privateKeyJwk").toString(), null),
                     new RefLwsClient.Agent(session.at("/identities/bob/webid").asText(), null, null,
-                            new RefLwsClient.Login(clientId, REDIRECT, "bob", bobSecrets.get("password").asText())),
+                            new RefLwsClient.Login(clientId, REDIRECT, "bob", bobSecrets.get("password").asText()),
+                            () -> assertion(api, key, "bob", clientId)),
                     inbox, flaw, tasks).run();
             settle(api, key, inbox);
         }
@@ -223,6 +226,17 @@ class ClientRulesSelfTest {
             seen = now;
             Thread.sleep(300);
         }
+    }
+
+    /** A SAML assertion about an identity, for the client {@code clientId}, from the session API. */
+    private static String assertion(String api, String key, String name, String clientId) throws IOException,
+            InterruptedException {
+        HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/assertions/" + name))
+                .header("Authorization", "Bearer " + key).header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"client_id\": \"" + clientId + "\"}")).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertThat(r.statusCode()).as(r.body()).isEqualTo(200);
+        return JSON.readTree(r.body()).get("assertion").asText();
     }
 
     /** An identity's password and key, from the session API. */

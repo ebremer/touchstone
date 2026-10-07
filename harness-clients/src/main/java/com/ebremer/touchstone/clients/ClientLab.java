@@ -50,7 +50,8 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code /sessions/{sid}}, {@code .../exchanges}, {@code .../results} (JSON, or the JSON, EARL
  *       or JUnit XML export with {@code ?format=}), {@code .../reset},
  *       {@code .../tasks/{rule}}, {@code .../faults/{fault}}, {@code .../tokens/{name}},
- *       {@code .../credentials/{name}}, {@code .../clients}: the session API, which takes the session
+ *       {@code .../assertions/{name}}, {@code .../credentials/{name}}, {@code .../clients}: the session
+ *       API, which takes the session
  *       key as a Bearer token; {@code .../page}: the session page, which reads the key from its
  *       URL's fragment;</li>
  *   <li>{@code /s/{sid}/storage/...}, {@code /s/{sid}/as/...}, {@code /s/{sid}/op/...} and
@@ -742,7 +743,67 @@ public final class ClientLab implements AutoCloseable {
                 json(response, callback, 200, body);
                 return;
             }
+            if (parts.length == 3 && parts[1].equals("assertions") && s.proxy != null) {
+                error(response, callback, 404, "not_found",
+                        "a proxy session hands out no SAML assertions: the server behind the proxy trusts its own identity providers");
+                return;
+            }
+            if (parts.length == 3 && parts[1].equals("assertions") && method.equals("POST")
+                    && Session.IDENTITIES.contains(parts[2])) {
+                assertion(s, parts[2], request, response, callback);
+                return;
+            }
             error(response, callback, 404, "not_found", "no such session resource");
+        }
+
+        /**
+         * A SAML 2.0 assertion about an identity from the session's identity provider (DECISIONS.md
+         * D-0087): base64url-encoded, for the session's authorization server, valid for five minutes.
+         * The body may name the client, {@code {"client_id": "..."}}, an absolute URI, which becomes
+         * the Recipient and an audience; by default it is the session's own client identifier.
+         */
+        private void assertion(Session s, String name, Request request, Response response, Callback callback)
+                throws IOException {
+            byte[] raw = apiBody(request);
+            if (raw == null) {
+                error(response, callback, 413, "too_large", "a request for an assertion is at most " + MAX_API_BODY + " bytes");
+                return;
+            }
+            String client = s.clientId;
+            if (raw.length > 0) {
+                com.fasterxml.jackson.databind.JsonNode doc;
+                try {
+                    doc = JSON.readTree(raw);
+                } catch (IOException e) {
+                    doc = null;
+                }
+                com.fasterxml.jackson.databind.JsonNode id = doc == null ? null : doc.get("client_id");
+                if (doc == null || !doc.isObject() || (id != null && !(id.isTextual() && absolute(id.asText())))) {
+                    error(response, callback, 400, "invalid_request",
+                            "send nothing, or {\"client_id\": \"...\"} with an absolute URI, as JSON");
+                    return;
+                }
+                if (id != null) {
+                    client = id.asText();
+                }
+            }
+            java.time.Duration lifetime = java.time.Duration.ofMinutes(5);
+            ObjectNode body = JSON.createObjectNode();
+            body.put("assertion", s.assertion(name, client, lifetime));
+            body.put("issuer", s.saml.entityId());
+            body.put("subject", s.webid(name));
+            body.put("recipient", client);
+            body.putArray("audience").add(client).add(s.as.issuer());
+            body.put("expires_in", lifetime.toSeconds());
+            json(response, callback, 200, body);
+        }
+
+        private static boolean absolute(String uri) {
+            try {
+                return URI.create(uri).isAbsolute();
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
         }
 
         /**
@@ -862,6 +923,10 @@ public final class ClientLab implements AutoCloseable {
                 ArrayNode faults = proxy.putArray("faults");
                 ProxySession.FAULTS.forEach(faults::add);
             }
+            if (s.proxy == null) {
+                ObjectNode saml = body.putObject("samlIdentityProvider");
+                saml.put("entityId", s.saml.entityId());
+            }
             ObjectNode op = body.putObject("openidProvider");
             op.put("issuer", s.op.issuer());
             op.put("discovery", s.op.discoveryUri());
@@ -873,6 +938,9 @@ public final class ClientLab implements AutoCloseable {
                 id.put("webid", s.webid(name));
                 id.put("verificationMethod", s.keyId(name));
                 id.put("credentials", config.publicBase() + "/sessions/" + s.id + "/credentials/" + name);
+                if (s.proxy == null) {
+                    id.put("assertions", config.publicBase() + "/sessions/" + s.id + "/assertions/" + name);
+                }
                 id.put("role", s.proxy != null ? "whatever the server behind the proxy grants"
                         : name.equals("alice") ? "owns the storage" : "has no access until alice grants it");
             }

@@ -7,7 +7,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 ## Summary
 
 - **204 tests**: 162 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 75 negative tests.
-- **52 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 40 MUST, 10 SHOULD, 2 MAY. They cite 63 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
+- **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 64 of the 79 requirements that bind a client or a receiver (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 5 October draft.
 - **manifests/ (retired, D-0055):** 31 of its 33 tests have a successor; the other 2 were dropped because the specification no longer says what they tested (table 2).
@@ -395,7 +395,7 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 |---|---:|---:|---:|---:|---:|---:|
 | Server | 223 | 167 | 24 | 32 | 201 | 31 |
 | AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
-| Client | 75 | 54 | 8 | 13 | 64 | 59 |
+| Client | 75 | 54 | 8 | 13 | 64 | 60 |
 | IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |
 | Receiver | 4 | 4 | 0 | 0 | 4 | 4 |
 | Specification | 2 | 2 | 0 | 0 | 2 | 0 |
@@ -409,7 +409,7 @@ cite it, as a premise or for its server half; *Judged by* names the client rules
 | Requirement | Level | Also binds | Summary | Cited by | Judged by |
 |---|---|---|---|---|---|
 | `lws10-authn-openid/id-token-token-type-uri` | MUST |  | An ID Token used as an authentication credential carries the id_token token-type URI when interacting with an authorization server. | `authn-oidc-valid-id-token` | `client-oidc-token-type-id-token` |
-| `lws10-authn-saml/token-type-saml2` | MUST |  | A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server. | `authn-saml-valid-assertion` |  |
+| `lws10-authn-saml/token-type-saml2` | MUST |  | A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server. | `authn-saml-valid-assertion` | `client-saml-token-type-saml2` |
 | `lws10-authn-ssi-cid/alg-not-none` | MUST |  | The self-issued JWT must not use "none" as its signing algorithm. | `authn-cid-alg-none`, `authn-cid-didkey-alg-none` | `client-cid-credential-signed` |
 | `lws10-authn-ssi-cid/aud-includes-as` | MUST |  | Any audience restriction uses aud, which must include the target authorization server. | `authn-cid-didkey-audience-excludes-as`, `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-audience-includes-as` |
 | `lws10-authn-ssi-cid/client-id-claim` | MUST |  | The client_id claim carries the client identifier. | `authn-cid-didkey-valid-credential`, `authn-cid-valid-credential` | `client-cid-client-id-claim` |
@@ -511,6 +511,7 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 | `client-cid-expiry-claim` | MUST | authentication | `exp-claim` |
 | `client-cid-issued-at-claim` | MUST | authentication | `iat-claim` |
 | `client-oidc-token-type-id-token` | MUST | authentication | `id-token-token-type-uri` |
+| `client-saml-token-type-saml2` | MUST | authentication | `token-type-saml2` |
 
 ### `clients/core`
 

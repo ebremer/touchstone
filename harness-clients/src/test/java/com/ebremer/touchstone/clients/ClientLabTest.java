@@ -534,6 +534,82 @@ class ClientLabTest {
     }
 
     @Test
+    void theSamlIdentityProviderHandsOutAssertionsTheAuthorizationServerTakes() throws Exception {
+        JsonNode session = startSession(base);
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        String issuer = session.at("/authorizationServer/issuer").asText();
+        String entity = base + "/s/" + session.get("id").asText() + "/saml";
+        String bob = session.at("/identities/bob/webid").asText();
+        assertThat(session.at("/samlIdentityProvider/entityId").asText()).isEqualTo(entity);
+        assertThat(session.at("/identities/bob/assertions").asText()).isEqualTo(api + "/assertions/bob");
+
+        // Only for the key holder, about the session's identities, for a client named by an absolute URI.
+        assertThat(apiPost(api + "/assertions/bob", null, null).statusCode()).isEqualTo(401);
+        assertThat(apiPost(api + "/assertions/carol", key, null).statusCode()).isEqualTo(404);
+        assertThat(apiPost(api + "/assertions/bob", key, "{\"client_id\": \"no uri\"}").statusCode()).isEqualTo(400);
+        assertThat(JSON.readTree(apiPost(api + "/assertions/bob", key, null).body()).get("recipient").asText())
+                .isEqualTo(session.get("client").asText());
+        HttpResponse<String> given = apiPost(api + "/assertions/bob", key, "{\"client_id\": \"https://app.example/id\"}");
+        assertThat(given.statusCode()).as(given.body()).isEqualTo(200);
+        String assertion = JSON.readTree(given.body()).get("assertion").asText();
+        // Base64url without padding (RFC 8693 section 3), of a signed assertion as the SAML suite's section 4 has it.
+        assertThat(assertion).matches("[A-Za-z0-9_-]+");
+        String xml = new String(java.util.Base64.getUrlDecoder().decode(assertion), java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(xml).contains("<saml:Issuer>" + entity + "</saml:Issuer>").contains(">" + bob + "</saml:NameID>")
+                .contains("Recipient=\"https://app.example/id\"").contains("<saml:Audience>https://app.example/id</saml:Audience>")
+                .contains("<saml:Audience>" + issuer + "</saml:Audience>").contains("<ds:SignatureValue>");
+
+        // The session's authorization server takes it, for bob and the client it names.
+        String resource = java.net.URLEncoder.encode(session.get("storage").asText(), java.nio.charset.StandardCharsets.UTF_8);
+        HttpResponse<String> exchanged = send("POST", issuer + "/token", null,
+                "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource=" + resource
+                        + "&subject_token=" + assertion + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Asaml2",
+                "application/x-www-form-urlencoded");
+        assertThat(exchanged.statusCode()).as(exchanged.body()).isEqualTo(200);
+        JsonNode claims = JSON.readTree(java.util.Base64.getUrlDecoder().decode(
+                JSON.readTree(exchanged.body()).get("access_token").asText().split("\\.")[1]));
+        assertThat(claims.get("sub").asText()).isEqualTo(bob);
+        assertThat(claims.get("client_id").asText()).isEqualTo("https://app.example/id");
+        JsonNode exchange = list(log(session).get("exchanges")).getLast();
+        assertThat(exchange.at("/annotations/credentialSource").asText()).isEqualTo("samlIdentityProvider");
+        assertThat(exchange.at("/annotations/credential").isNull()).isTrue();
+        assertThat(verdict(exchange, "client-saml-token-type-saml2")).isEqualTo("passed");
+        assertThat(exchange.toString()).doesNotContain(assertion.substring(0, 40));
+
+        // The same assertion in standard base64 is still the provider's; one it did not issue is not.
+        String standard = java.util.Base64.getEncoder().encodeToString(java.util.Base64.getUrlDecoder().decode(assertion));
+        send("POST", issuer + "/token", null, "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource="
+                + resource + "&subject_token=" + java.net.URLEncoder.encode(standard, java.nio.charset.StandardCharsets.UTF_8)
+                + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Ajwt", "application/x-www-form-urlencoded");
+        exchange = list(log(session).get("exchanges")).getLast();
+        assertThat(exchange.at("/annotations/credentialSource").asText()).isEqualTo("samlIdentityProvider");
+        assertThat(verdict(exchange, "client-saml-token-type-saml2")).isEqualTo("failed");
+        String forged = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+                xml.replace(bob, session.at("/identities/alice/webid").asText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        HttpResponse<String> refused = send("POST", issuer + "/token", null,
+                "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource=" + resource
+                        + "&subject_token=" + forged + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Asaml2",
+                "application/x-www-form-urlencoded");
+        assertThat(refused.statusCode()).isEqualTo(400);
+        assertThat(refused.body()).contains("signature does not verify");
+        assertThat(list(log(session).get("exchanges")).getLast().at("/annotations/credentialSource").asText()).isEqualTo("other");
+    }
+
+    /** A POST to the session API, with a JSON body when it is not null. */
+    private static HttpResponse<String> apiPost(String url, String key, String body) throws IOException, InterruptedException {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url))
+                .POST(body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
+        if (key != null) {
+            b.header("Authorization", "Bearer " + key);
+        }
+        if (body != null) {
+            b.header("Content-Type", "application/json");
+        }
+        return HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
     void theMetadataRulesReadLinkAndPreferAsTheirRfcsWriteThem() throws Exception {
         JsonNode session = startSession(base);
         String storage = session.get("storage").asText();

@@ -5,7 +5,7 @@ developer starts a session, points their client at the session's storage, and wa
 request it sends on the session's page. Every request is judged against the client rules,
 `definitions/lws10/clients/`, as it is recorded ([`OBSERVATION.md`](../definitions/OBSERVATION.md)).
 Phases C1 to C7 are built: sessions, the traffic log, the rules, the tasks and faults that let a
-developer try every rule on purpose, three ways for a client to authenticate, signed
+developer try every rule on purpose, four ways for a client to authenticate, signed
 notifications to the client's inbox, the guided page and the EARL, JUnit XML and JSON
 exports, and proxy mode, in which a session fronts a real server. The guide for client developers is the docs site's
 [Testing a client](../docs/testing-a-client.md).
@@ -78,6 +78,7 @@ The session API takes the key as a Bearer token:
 | `POST <base>/sessions/{id}/faults/{fault}` | arms a fault alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone`, `tokenExpired`, or a forgery: `forgedUnpublishedKey`, `forgedAlteredBody`, `forgedKeyidWithoutFragment`, `forgedForeignKeyDocument` |
 | `POST <base>/sessions/{id}/tokens/{alice\|bob}` | a fresh access token |
 | `GET <base>/sessions/{id}/credentials/{alice\|bob}` | the identity's username and password for the OpenID Provider, and the private JWK of the key its identity document lists |
+| `POST <base>/sessions/{id}/assertions/{alice\|bob}` | a signed SAML 2.0 assertion about the identity, base64url-encoded, valid for five minutes, with its issuer, subject, recipient and audiences; the body may name the client, `{"client_id": "..."}`, an absolute URI, which becomes the recipient and an audience. Not in a proxy session |
 | `POST <base>/sessions/{id}/clients` | registers a client with the OpenID Provider: `{"redirect_uris": [...], "client_id": "..."}`, the identifier optional; `GET` lists them |
 | `DELETE <base>/sessions/{id}` | ends the session |
 | `GET <base>/sessions/{id}/page` | the session page; it reads the key from its fragment, `#key=…` |
@@ -128,7 +129,7 @@ curl -s -H "Authorization: Bearer $(jq -r .key session.json)" \
 
 ## Authentication
 
-A session offers three ways to authenticate as alice or bob:
+A session offers four ways to authenticate as alice or bob:
 
 - **OpenID sign-in.** The session's OpenID Provider, `<base>/s/{id}/op`, does the authorization
   code flow with PKCE (S256), for public clients. Register the client's redirect URIs first. A
@@ -140,12 +141,18 @@ A session offers three ways to authenticate as alice or bob:
   lists a P-256 key, whose private JWK the API gives. Sign an ES256 JWT with `sub`, `iss` and
   `client_id` set to the identity's URL, `aud` set to the authorization server, `exp` and `iat`.
   Put the verification method's URL, the JWK's `kid`, in the header's `kid`.
+- **A SAML 2.0 assertion** (the SAML suite). The session's SAML identity provider, whose entity
+  identifier `samlIdentityProvider.entityId` gives, has no endpoint of its own: the suite leaves
+  open how a client obtains an assertion, so `POST …/assertions/{name}` hands one out. It is
+  signed RSA-SHA256, names the identity's URL in `NameID`, the client in `Recipient`, and the
+  client and the authorization server in `Audience`. Present it as it comes, base64url-encoded,
+  with `subject_token_type=urn:ietf:params:oauth:token-type:saml2`.
 - **A token from the session**, for a client without authentication yet.
 
-A client exchanges an ID Token or a self-issued credential at the authorization server, whose
-`as_uri` and `realm` the storage's 401 names (RFC 8693 token exchange). The authorization
-server trusts the session's identities and provider only. It fetches nothing, so a credential
-about anyone else is refused.
+A client exchanges an ID Token, a self-issued credential or an assertion at the authorization
+server, whose `as_uri` and `realm` the storage's 401 names (RFC 8693 token exchange). The
+authorization server trusts the session's identities, OpenID Provider and SAML identity provider
+only. It fetches nothing, so a credential about anyone else is refused.
 
 ## Notifications
 
@@ -198,9 +205,10 @@ with no session holding it is answered `503`, and forwarded nowhere. In a proxy 
   ([OBSERVATION.md](../definitions/OBSERVATION.md) section 11);
 - the proxy injects four faults alone: `methodNotAllowed`, `lostCreateResponse`, `pageGone` and
   `tokenExpired`;
-- 18 rules are inapplicable, since they need what only the session's own servers know. Their
+- 19 rules are inapplicable, since they need what only the session's own servers know. Their
   results say `"inapplicableBecause": "proxy"`, and starting their tasks gets `409`;
-- the session hands out no tokens, and serves no storage or authorization server of its own.
+- the session hands out no tokens or SAML assertions, and serves no storage or authorization
+  server of its own.
   Its identities and OpenID Provider remain, and work if the server trusts them. With
   `proxy.issuer`, the provider's ID Tokens name that authorization server in `aud`;
 - the server delivers its notifications itself, not through the proxy.

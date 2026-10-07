@@ -41,13 +41,55 @@ import org.w3c.dom.Element;
  *
  * <p>The JDK's own XML Signature API (JSR 105) builds and signs them; OpenSAML would add a
  * dependency from outside Maven Central to do the same (DECISIONS.md D-0024, D-0054).
+ *
+ * <p>{@link #issue} is the same minting for an identity provider of another module's own: the
+ * SAML identity provider of a client session (harness-clients, DECISIONS.md D-0087), so that
+ * sessions hand out the assertions the server self-test already proves the reference
+ * authorization server accepts.
  */
-final class SamlAssertions {
+public final class SamlAssertions {
 
     static final String SAML = "urn:oasis:names:tc:SAML:2.0:assertion";
-    static final String RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    /** The signature algorithm every assertion is signed with: RSA with SHA-256. */
+    public static final String RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    /** The NameID format of the assertions {@link #issue} makes, as the SAML suite's example has it. */
+    public static final String PERSISTENT = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent";
 
     private SamlAssertions() {
+    }
+
+    /**
+     * A signed assertion, base64url-encoded as RFC 8693 section 3 has the saml2 token type, as
+     * the SAML suite's section 4 asks: the subject in saml:NameID, the identity provider in
+     * saml:Issuer, the client in the Recipient of saml:SubjectConfirmationData, and the audiences
+     * in saml:Audience. Its signature names the key by value, since there is no certificate.
+     *
+     * @param issuer the identity provider's entity identifier
+     * @param subject the subject's identifier, a persistent NameID
+     * @param recipient the client identifier
+     * @param audience the audiences: the client, and the authorization server it is for
+     * @param notBefore when it becomes valid
+     * @param notOnOrAfter when it stops being valid
+     * @param key the identity provider's RSA signing key
+     * @param publicKey its public half, which the signature's KeyInfo carries
+     * @throws IllegalStateException when it cannot be built or signed
+     */
+    public static String issue(String issuer, String subject, String recipient, List<String> audience, Instant notBefore,
+                               Instant notOnOrAfter, PrivateKey key, PublicKey publicKey) {
+        com.fasterxml.jackson.databind.node.ObjectNode fields = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance
+                .objectNode();
+        fields.put("issuer", issuer);
+        fields.put("nameId", subject);
+        fields.put("nameIdFormat", PERSISTENT);
+        fields.put("recipient", recipient);
+        audience.forEach(fields.putArray("audience")::add);
+        fields.put("notBefore", notBefore.getEpochSecond());
+        fields.put("notOnOrAfter", notOnOrAfter.getEpochSecond());
+        try {
+            return mint(fields, RSA_SHA256, key, publicKey, null, null);
+        } catch (Unresolvable e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     /**

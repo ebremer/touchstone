@@ -88,6 +88,13 @@
       $('issuer').textContent = session.authorizationServer.issuer;
     }
     $('op-issuer').textContent = session.openidProvider.issuer;
+    const saml = session.samlIdentityProvider;
+    $('saml-term').hidden = !saml;
+    $('saml-entity').hidden = !saml;
+    if (saml) {
+      $('saml-entity').replaceChildren(el('code', saml.entityId), el('br'), el('span',
+        'Its assertions go to the authorization server as subject_token; the server trusts its key.', 'note'));
+    }
     showClients(session.openidProvider.clients);
     showSettings(session);
     $('expires').textContent = new Date(session.expires).toLocaleString()
@@ -96,14 +103,16 @@
     rows.replaceChildren();
     for (const [name, identity] of Object.entries(session.identities)) {
       const tr = el('tr');
-      tr.append(el('th', name), el('td'), el('td', identity.role), el('td'), el('td'));
+      tr.append(el('th', name), el('td'), el('td', identity.role), el('td'), el('td'), el('td'));
       tr.children[0].scope = 'row';
       tr.children[1].append(el('code', identity.webid));
       tr.children[3].append(button('Show', '', () => secrets(name)));
       if (proxy) {
-        tr.children[4].append(el('span', 'from the server', 'note'));
+        tr.children[4].append(el('span', 'none', 'note'));
+        tr.children[5].append(el('span', 'from the server', 'note'));
       } else {
-        tr.children[4].append(button('Get a token', '', () => token(name)));
+        tr.children[4].append(button('Get an assertion', '', () => assertion(name)));
+        tr.children[5].append(button('Get a token', '', () => token(name)));
       }
       rows.append(tr);
     }
@@ -170,6 +179,17 @@
       $('token-box').hidden = false;
     } catch (e) {
       say('Could not get a token: ' + e.message);
+    }
+  }
+
+  async function assertion(name) {
+    try {
+      const body = await call('POST', '/assertions/' + name);
+      $('assertion-for').textContent = name;
+      $('assertion').value = body.assertion;
+      $('assertion-box').hidden = false;
+    } catch (e) {
+      say('Could not get an assertion: ' + e.message);
     }
   }
 

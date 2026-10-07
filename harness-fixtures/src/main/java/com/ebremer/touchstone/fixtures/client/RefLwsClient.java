@@ -45,9 +45,10 @@ import com.nimbusds.jose.jwk.ECKey;
  * with an update only with Prefer: set-linkset. Its script touches every client rule, so a session
  * judging it has a trial for each.
  *
- * <p>It authenticates the three ways a session offers (CLIENT-TESTING.md section 3): alice starts
+ * <p>It authenticates the four ways a session offers (CLIENT-TESTING.md section 3): alice starts
  * with a token the session handed out, and when the storage refuses it, she signs a credential with
- * her own key (the CID suite); bob signs in at his OpenID Provider (the OpenID suite). Either way
+ * her own key (the CID suite); bob signs in at his OpenID Provider (the OpenID suite), and later
+ * presents a SAML 2.0 assertion from the session's identity provider (the SAML suite). Each time
  * the client finds the authorization server from the storage's 401, checks that the URL it asked
  * for is within the challenge's realm, and exchanges the credential for a token for that realm.
  *
@@ -165,7 +166,9 @@ public final class RefLwsClient {
         /** Names a linkset of its own choosing in a Link header of its first note's create. */
         CREATES_WITH_LINKSET_LINK,
         /** Answers the task to update a note's content and metadata together with Link headers but no Prefer: set-linkset. */
-        UPDATES_LINKS_WITHOUT_PREFER
+        UPDATES_LINKS_WITHOUT_PREFER,
+        /** Presents its first SAML assertion with the jwt token type. */
+        SAML_TYPED_AS_JWT
     }
 
     /** The flaws that break a self-issued credential, or the type it is presented with. */
@@ -182,6 +185,12 @@ public final class RefLwsClient {
         void start(String rule) throws IOException, InterruptedException;
     }
 
+    /** Hands out a fresh SAML 2.0 assertion about an agent, base64url-encoded, as its identity provider would. */
+    @FunctionalInterface
+    public interface Assertions {
+        String next() throws IOException, InterruptedException;
+    }
+
     /**
      * An agent the client acts for, and how it authenticates.
      *
@@ -190,8 +199,14 @@ public final class RefLwsClient {
      * @param key the private JWK of the verification method its identity document lists, for
      *     self-issued credentials, or null
      * @param login how it signs in at its OpenID Provider, or null
+     * @param assertions where its SAML assertions come from, or null; with a login too, the agent
+     *     signs in with OpenID first and presents an assertion after that
      */
-    public record Agent(String webid, String token, String key, Login login) {
+    public record Agent(String webid, String token, String key, Login login, Assertions assertions) {
+
+        public Agent(String webid, String token, String key, Login login) {
+            this(webid, token, key, login, null);
+        }
     }
 
     /** A sign-in at an OpenID Provider, as a client registered there with a redirect URI. */
@@ -210,6 +225,7 @@ public final class RefLwsClient {
     private static final String TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange";
     private static final String JWT_TYPE = "urn:ietf:params:oauth:token-type:jwt";
     private static final String ID_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:id_token";
+    private static final String SAML2_TYPE = "urn:ietf:params:oauth:token-type:saml2";
     private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
     private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*\"([^\"]*)\"");
     private static final Pattern REQUEST_HANDLE = Pattern.compile("name=\"request\" value=\"([^\"]*)\"");
@@ -232,6 +248,8 @@ public final class RefLwsClient {
     private final Map<String, URI> tokenEndpoints = new HashMap<>();
     /** Whether the twin has made its one mistake. */
     private boolean flawShown;
+    /** The agents that have signed in at their OpenID Provider, by WebID. */
+    private final Set<String> signedIn = new java.util.HashSet<>();
 
     /**
      * @param storage the storage URL, the only URL the client is given
@@ -352,6 +370,13 @@ public final class RefLwsClient {
         // alice grants bob read access to the note; bob asks to modify it.
         send("POST", services.get("AccessGrantService"), alice, LWS_JSON, grant(note), null, Map.of());
         send("POST", services.get("AccessRequestService"), bob, LWS_JSON, request(note), null, Map.of());
+
+        // bob reads the note, this time with a SAML assertion: his token is gone, so the storage
+        // answers 401, and the client exchanges an assertion for a new one.
+        if (bob.assertions() != null) {
+            tokens.remove(bob.webid());
+            send("GET", note, bob, null, null, null, Map.of());
+        }
 
         // Webhook subscriptions to the container and to a note, each with an inbox of its own.
         String subscriptionType = flaw == Flaw.SUBSCRIPTION_AS_PLAIN_JSON ? "application/json" : LWS_JSON;
@@ -577,7 +602,7 @@ public final class RefLwsClient {
     private Reply send(String method, URI url, Agent as, String contentType, String body, String accept,
                        Map<String, String> headers) throws IOException, InterruptedException {
         Reply r = raw(method, url, as == null ? null : tokens.get(as.webid()), contentType, body, accept, headers);
-        if (r.status() != 401 || as == null || (as.key() == null && as.login() == null)) {
+        if (r.status() != 401 || as == null || (as.key() == null && as.login() == null && as.assertions() == null)) {
             return r;
         }
         String challenge = r.header("WWW-Authenticate");
@@ -608,7 +633,8 @@ public final class RefLwsClient {
     /**
      * Gets {@code as} a new access token for {@code realm} from the authorization server
      * {@code issuer}: with a self-issued credential if it holds a key, else with an ID Token from
-     * its OpenID Provider. Returns whether it got one.
+     * its OpenID Provider the first time and a SAML assertion after that, when it has both. Returns
+     * whether it got one.
      */
     private boolean authenticate(Agent as, String issuer, String realm) throws IOException, InterruptedException {
         URI endpoint = tokenEndpoint(issuer);
@@ -620,7 +646,15 @@ public final class RefLwsClient {
                         realm);
             }
             answer = exchange(endpoint, selfIssued(as, issuer, Flaw.NONE), JWT_TYPE, realm);
+        } else if (as.assertions() != null && (as.login() == null || signedIn.contains(as.webid()))) {
+            String assertion = as.assertions().next();
+            if (flaw == Flaw.SAML_TYPED_AS_JWT && !flawShown) {
+                flawShown = true;
+                exchange(endpoint, assertion, JWT_TYPE, realm);
+            }
+            answer = exchange(endpoint, assertion, SAML2_TYPE, realm);
         } else {
+            signedIn.add(as.webid());
             String idToken = idToken(as);
             if (flaw == Flaw.ID_TOKEN_TYPED_AS_JWT && !flawShown) {
                 flawShown = true;

@@ -56,7 +56,8 @@ record Exchange(long seq, String at, long millis, String method, String url,
      *     request to the same URL
      * @param containerEmpty whether the request addressed a container with no members
      * @param credentialSource for a token request, where its subject token came from:
-     *     selfIssued, openidProvider, authorizationServer or other; null when it presents none
+     *     selfIssued, openidProvider, samlIdentityProvider, authorizationServer or other; null when
+     *     it presents none
      * @param credential the subject token's JWT header and claims, or null
      * @param audienceIncludesAs whether the credential's aud names the session's authorization
      *     server, or null

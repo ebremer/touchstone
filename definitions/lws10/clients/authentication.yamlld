@@ -1,4 +1,4 @@
-# Client rules for authentication and token exchange (YAML-LD, format 0.10.0).
+# Client rules for authentication and token exchange (YAML-LD, format 0.12.0).
 "@context":
   - ../context.jsonld
   - ../touchstone.jsonld
@@ -7,14 +7,17 @@ type: Manifest
 label: Authentication and token exchange, as a client does them
 comment: >-
   What a client's requests to the session's token endpoint must satisfy: the token exchange of
-  lws10-core section 5.2.3, the self-issued credentials of the CID suite, and the token type of
-  the OpenID suite's ID Tokens. The session's identities, alice and bob, have identity documents
-  that name a key each, which the developer downloads from the session page, and the session's
-  own OpenID Provider. The session's authorization server trusts those and nothing else.
+  lws10-core section 5.2.3, the self-issued credentials of the CID suite, and the token types of
+  the OpenID suite's ID Tokens and the SAML suite's assertions. The session's identities, alice and
+  bob, have identity documents that name a key each, which the developer downloads from the session
+  page, and the session's own OpenID Provider; the session's SAML identity provider hands out
+  assertions about them through the session API. The session's authorization server trusts those
+  and nothing else.
 specification:
   - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
 entries:
 
   # ---- every token request ----
@@ -70,8 +73,9 @@ entries:
           jsonType: string
           matches: "."
     guidance: >-
-      Send the authentication credential, a self-issued JWT or an ID Token, as subject_token, with
-      its type in subject_token_type. Not as assertion, id_token or another parameter.
+      Send the authentication credential, a self-issued JWT, an ID Token or a SAML assertion, as
+      subject_token, with its type in subject_token_type. Not as assertion, id_token or another
+      parameter.
 
   - id: "#client-token-for-containing-realm"
     type: ObservationTest
@@ -408,3 +412,34 @@ entries:
     guidance: >-
       Send subject_token_type=urn:ietf:params:oauth:token-type:id_token with an ID Token. Not jwt,
       which is for credentials the client signs itself.
+
+  # ---- SAML 2.0 assertions (format 0.12.0) ----
+
+  - id: "#client-saml-token-type-saml2"
+    type: ObservationTest
+    name: client-saml-token-type-saml2
+    label: The client presents a SAML 2.0 assertion with the saml2 token type
+    comment: >-
+      The trials are token requests presenting an assertion the session's SAML identity provider
+      issued: base64url-encoded, as RFC 8693 section 3 defines the saml2 token type, or in another
+      base64 form of the same assertion. The assertion's own content binds the identity provider,
+      not the client, so no rule judges it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#token-type
+    traits: [Post, TokenExchange, Authn]
+    area: authentication
+    requirements:
+      - https://example.org/touchstone/req/lws10-authn-saml/token-type-saml2
+    observe:
+      role: asToken
+      method: POST
+      credentialSource: samlIdentityProvider
+    expect:
+      form:
+        - pointer: /subject_token_type
+          equals: urn:ietf:params:oauth:token-type:saml2
+    guidance: >-
+      Send subject_token_type=urn:ietf:params:oauth:token-type:saml2 with a SAML assertion, which
+      goes base64url-encoded in subject_token. Not jwt or id_token, which are for JWTs.

@@ -1343,7 +1343,8 @@
     label: "credentialSource"
     comment: >-
       Where a token request's subject token came from: selfIssued, openidProvider,
-      authorizationServer or other (format 0.10.0).
+      samlIdentityProvider, authorizationServer or other (format 0.10.0;
+      samlIdentityProvider since 0.12.0).
     domain: lwst:ExchangeCondition
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1

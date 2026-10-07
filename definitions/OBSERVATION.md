@@ -1,12 +1,14 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.11.0 (2026-10-05, DECISIONS.md D-0083; 0.10.0 the same day, D-0082;
+**Status: frozen, format 0.12.0 (2026-10-07, DECISIONS.md D-0087, awaiting review; 0.11.0 on 2026-10-05,
+D-0083; 0.10.0 the same day, D-0082;
 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and
 faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7).
 0.10.0 adds the session's OpenID Provider and identity documents (sections 4.1 and 4.2), what the
 recorder knows of a token request (sections 4.9 and 4.10), the conditions `form` and `credential`
 (section 5), and the fault `tokenExpired`. 0.11.0 adds deliveries, the notifications the session
-sends a client's inbox (sections 3, 4.11 and 4.12), and four forgery faults. None changes
+sends a client's inbox (sections 3, 4.11 and 4.12), and four forgery faults. 0.12.0 adds the
+session's SAML identity provider as a source of credentials (section 4.9). None changes
 anything an earlier rule relies on. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
@@ -218,6 +220,10 @@ such body or no `subject_token`:
 
 - **`credentialSource`:** where the credential came from.
   - `openidProvider`: an ID Token the session's OpenID Provider issued, compared by value.
+  - `samlIdentityProvider` (since 0.12.0): a SAML 2.0 assertion the session's SAML identity
+    provider issued. The token is decoded as base64url, or else as base64, and its bytes compared
+    with those of the assertions the provider handed out, so any base64 form of one counts. The
+    XML is never parsed.
   - `authorizationServer`: an access token the session issued (section 4.4).
   - `selfIssued`: any other JWT whose `kid` header, or `iss`, `sub` or `client_id` claim, names
     one of the session's identities: its URL, or that URL with a fragment. That is a credential
@@ -400,9 +406,10 @@ for later terms that need more.
   whose host resolves to public unicast addresses, checked as the connection is made, never
   redirected, bounded in time, size and number. A refused one is recorded with status 0.
 - **The session's authorization server dereferences nothing outside the session** (since
-  0.10.0). It validates a credential with the session's identity documents and the session's
-  OpenID Provider, read in the same process, and refuses any subject, issuer or key elsewhere. No
-  credential a client presents can make the service send a request.
+  0.10.0). It validates a credential with the session's identity documents, the session's
+  OpenID Provider and, since 0.12.0, the key of the session's SAML identity provider, all read in
+  the same process, and refuses any subject, issuer or key elsewhere. No credential a client
+  presents can make the service send a request.
 
 ## 10. Examples
 

@@ -51,20 +51,23 @@ The session page shows the storage URL. It is the only URL your client should ne
 storage's answers lead to everything else, as they would for a real storage.
 
 A session has two identities. **alice** owns the storage, and **bob** has no access until alice
-grants it. Your client can authenticate as either in three ways:
+grants it. Your client can authenticate as either in four ways:
 
 | Way | What to do |
 |---|---|
 | A token from the page | Select *Get a token* in the identities table, and give your client the access token. It is the quickest start, for a client without authentication yet, and lasts an hour. |
 | OpenID sign-in | Register your client's redirect URIs on the page first. A redirect URI must match exactly, except that one on `http://127.0.0.1` or `http://[::1]` may use any port. The provider does the authorization code flow with PKCE (S256) for public clients. *Show* in the identities table gives the username and password for its sign-in form. |
 | Self-issued credentials (the CID suite) | *Show* also gives the private key, a JWK, of the verification method in the identity's document. Sign an ES256 JWT whose `sub`, `iss` and `client_id` are the identity's URL and whose `aud` is the authorization server, with `exp` and `iat`, and the verification method's URL as the header's `kid`. |
+| A SAML 2.0 assertion (the SAML suite) | *Get an assertion* gives a signed assertion from the session's SAML identity provider, base64url-encoded and valid for five minutes. The suite leaves open how a client obtains one, so the page and the session API hand them out (`POST …/assertions/{name}`, which may name your client's identifier). The authorization server trusts the provider's key. |
 
-With an ID Token or a self-issued credential, your client asks the authorization server for an
-access token, as the LWS authentication suites describe. The storage's `401` names the
+With an ID Token, a self-issued credential or an assertion, your client asks the authorization
+server for an access token, as the LWS authentication suites describe. The storage's `401` names the
 authorization server in `as_uri` and the realm in `realm`. Its metadata, at
 `/.well-known/lws-configuration` followed by the issuer's path, gives the token endpoint. Send it an
 RFC 8693 token exchange: `grant_type=urn:ietf:params:oauth:grant-type:token-exchange`, the realm as
-`resource`, the credential as `subject_token`, and its type as `subject_token_type`.
+`resource`, the credential as `subject_token`, and its type as `subject_token_type`: `jwt` for a
+self-issued credential, `id_token` for an ID Token and `saml2` for an assertion, each after
+`urn:ietf:params:oauth:token-type:`.
 
 A browser client works too: the session answers CORS itself, for any origin.
 
@@ -217,7 +220,7 @@ The server is configured with the proxy's URLs as its own, so nothing is rewritt
 of authenticating works. The proxy injects four faults itself: a refused linkset PUT, a lost
 create, a refused page of search results, and an expired token. The rules that need what only
 the session's own servers know are inapplicable: credential details, notification signatures,
-a container's members, the decoy. That leaves 34 of the 52. The public service has no proxy
+a container's members, the decoy. That leaves 34 of the 53. The public service has no proxy
 targets.
 
 ## Limits and privacy
