@@ -94,7 +94,9 @@ class ClientRulesSelfTest {
                     "client-inbox-refuses-altered-body", "client-inbox-refuses-keyid-without-fragment",
                     "client-inbox-refuses-foreign-key-document")),
             entry(Flaw.INBOX_REFUSES_EVERYTHING, Set.of("client-inbox-acknowledges-genuine-delivery")),
-            entry(Flaw.SHARES_INBOX, Set.of("client-subscription-own-inbox")));
+            entry(Flaw.SHARES_INBOX, Set.of("client-subscription-own-inbox")),
+            entry(Flaw.CREATES_WITH_LINKSET_LINK, Set.of("client-create-no-server-managed-links")),
+            entry(Flaw.UPDATES_LINKS_WITHOUT_PREFER, Set.of("client-combined-update-prefer-set-linkset")));
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
@@ -134,7 +136,7 @@ class ClientRulesSelfTest {
         }
         assertThat(notPassed).as(results.toPrettyString()).isEmpty();
         assertThat(results.get("rules")).hasSize(TestRules.RULES.rules().size());
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 38 MUST rules exercised, of 38 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 40 MUST rules exercised, of 40 that apply");
     }
 
     @ParameterizedTest

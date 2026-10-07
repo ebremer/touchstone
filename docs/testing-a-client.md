@@ -83,6 +83,9 @@ over these:
 - The root container lists a decoy first. It answers with a `401` whose realm does not contain
   it, so a client should send it no token.
 - The type index and search show a write only after a few seconds.
+- A PUT or PATCH changes a resource's content only. The storage does no combined updates of
+  content and metadata, which are optional for servers: it ignores `Prefer: set-linkset`. Update
+  metadata through the linkset.
 
 ## Work through the checklist
 
@@ -214,7 +217,7 @@ The server is configured with the proxy's URLs as its own, so nothing is rewritt
 of authenticating works. The proxy injects four faults itself: a refused linkset PUT, a lost
 create, a refused page of search results, and an expired token. The rules that need what only
 the session's own servers know are inapplicable: credential details, notification signatures,
-a container's members, the decoy. That leaves 32 of the 50. The public service has no proxy
+a container's members, the decoy. That leaves 34 of the 52. The public service has no proxy
 targets.
 
 ## Limits and privacy

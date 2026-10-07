@@ -144,7 +144,7 @@ class ProxyRulesSelfTest {
         }
         assertThat(lastServerRoles).hasSizeGreaterThan(30);
         assertThat(unmatched).as("the server's roles the proxy did not infer; left over: " + inferred).isEmpty();
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 23 MUST rules exercised, of 23 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 25 MUST rules exercised, of 25 that apply");
     }
 
     @ParameterizedTest

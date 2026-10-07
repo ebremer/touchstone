@@ -447,7 +447,7 @@ With the proxy:
   `pageGone` and `tokenExpired`;
 - traps do not, since they need the server's cooperation. A rule that needs what only the
   session's own servers know is inapplicable: the details of a credential, a notification's
-  signature, a container's members, the decoy. That makes 18 of the 50 rules.
+  signature, a container's members, the decoy. That makes 18 of the 52 rules.
 
 A real server delivers its notifications itself, not through the proxy, and the session's own
 storage and authorization server are not served. The session's identities and OpenID Provider
@@ -478,6 +478,8 @@ clients; only the client half is judged here.
 | `lws10-core/pagination-uris-opaque` | SHOULD | trap: page requests use issued URLs | C2 |
 | `lws10-core/uri-independent-of-hierarchy` (half) | SHOULD | trap: no request to an unissued URL built from another URL's path | C2 |
 | `lws10-core/create-container-type-link` | MUST | task "create a container" | C3 |
+| `lws10-core/create-server-managed-metadata-protected` (half) | MUST | passive: a create's Link headers name no server-managed relation, `linkset` | D-0087 |
+| `lws10-core/update-content-vs-metadata-prefer-set-linkset` (half) | MUST | task "update content and metadata in one request": the Link headers go with `Prefer: set-linkset` | D-0087 |
 | `lws10-core/delete-non-empty-container-409-depth` (half) | MUST | task "delete a container and its contents": `Depth: infinity`, or the members first | C3 |
 | `lws10-core/create-post-not-idempotent` | SHOULD | fault `lostCreateResponse`: no identical blind retry | C3 |
 | `lws10-index/client-restart` | SHOULD | fault `pageGone` | C3 |
@@ -580,6 +582,22 @@ refuse one for reasons of its own, such as a 410 to end a subscription. The veri
 also leave a gap the session does not test: nothing ties the keyid to the storage the inbox
 subscribed to, so a notification signed with a key from another storage's own description passes
 all five steps. §12.4 takes that to the working group.
+
+**Closing the gaps (D-0087).** Three more clauses the rules already judged are now cited: the
+receiver halves of `keyid-url-with-fragment` and `storage-description-id-matches`, steps 1 and 3
+of the webhook suite's section 5.2, and the client half of `linkset-put-405-if-unsupported`, whose
+permission to PUT holds "if advertised in the Allow header". New rules:
+
+| Rule | Level | Cites | Task | Trials (`observe`) | Passes when (`expect`) |
+|---|---|---|---|---|---|
+| `client-create-no-server-managed-links` | MUST | `create-server-managed-metadata-protected` | | POSTs into a container with a `Link` header | no `rel="linkset"` |
+| `client-combined-update-prefer-set-linkset` | MUST | `update-content-vs-metadata-prefer-set-linkset` | update a resource's content and metadata in one request | the first PUT or PATCH of a data resource with a `Link` header after the task starts | `Prefer` lists `set-linkset` |
+
+Of the relations the metadata section calls server-managed, only `linkset` is one a create's
+`Link` header can carry that is never the client's: `rel="type"` to `lws#Container` asks for a
+container, and the index services take a resource's other types from the `rel="type"` links of its
+create or update. That is also why Link headers on an update are not wrong in themselves, and the
+second rule needs the developer's word.
 
 ## 12. Open questions (for Erich)
 

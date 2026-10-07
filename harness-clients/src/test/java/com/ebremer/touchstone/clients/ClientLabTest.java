@@ -533,6 +533,70 @@ class ClientLabTest {
         assertThat(loopback.at("/requestHeaders/Signature-Input/0").asText()).contains("keyid=\"" + storage + "#notify-key\"");
     }
 
+    @Test
+    void theMetadataRulesReadLinkAndPreferAsTheirRfcsWriteThem() throws Exception {
+        JsonNode session = startSession(base);
+        String storage = session.get("storage").asText();
+        String alice = session.at("/tokens/alice").asText();
+        String api = session.get("api").asText();
+        String key = session.get("key").asText();
+        String created = "client-create-no-server-managed-links";
+        String combined = "client-combined-update-prefer-set-linkset";
+
+        // A type of the client's own is user-managed metadata; linkset is the server's, in any case
+        // and inside a list of relations; a create without Link headers is no trial.
+        HttpResponse<String> note = request("POST", storage, alice, "a note", "<https://schema.org/Thing>; rel=\"type\"", null);
+        assertThat(note.statusCode()).isEqualTo(201);
+        String url = URI.create(storage).resolve(note.headers().firstValue("Location").orElseThrow()).toString();
+        request("POST", storage, alice, "another", "<https://linkset.invalid/x>; rel=\"type LinkSet\"", null);
+        request("POST", storage, alice, "a third", null, null);
+        List<JsonNode> creates = list(log(session).get("exchanges")).stream()
+                .filter(e -> e.get("method").asText().equals("POST")).toList();
+        assertThat(creates.stream().map(e -> verdict(e, created)).toList()).containsExactly("passed", "failed", null);
+
+        // Link headers on an update are a trial only after the task, and need set-linkset among the
+        // preferences, in any case, with or without a value or parameters.
+        request("PUT", url, alice, "edited", "<https://schema.org/Thing>; rel=\"type\"", null);
+        String[][] cases = {{"return=minimal, set-linkset", "passed"}, {"SET-LINKSET; strict", "passed"},
+                {"set-linksets", "failed"}, {null, "failed"}};
+        for (String[] c : cases) {
+            assertThat(HTTP.send(HttpRequest.newBuilder(URI.create(api + "/tasks/" + combined))
+                    .header("Authorization", "Bearer " + key).POST(HttpRequest.BodyPublishers.noBody()).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(204);
+            // A PUT without Link headers after the task is not its trial: the content alone changes.
+            request("PUT", url, alice, "content only", null, null);
+            request("PUT", url, alice, "edited, " + c[0], "<https://schema.org/Thing>; rel=\"type\"", c[0]);
+        }
+        List<String> updates = new ArrayList<>();
+        list(log(session).get("exchanges")).stream().filter(e -> e.get("method").asText().equals("PUT"))
+                .forEach(e -> updates.add(verdict(e, combined)));
+        assertThat(updates).containsExactly(null, null, "passed", null, "passed", null, "failed", null, "failed");
+    }
+
+    /** A request with a text body, and the Link and Prefer headers when they are not null. */
+    private static HttpResponse<String> request(String method, String url, String token, String body, String link,
+                                                String prefer) throws IOException, InterruptedException {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + token)
+                .header("Content-Type", "text/plain").method(method, HttpRequest.BodyPublishers.ofString(body));
+        if (link != null) {
+            b.header("Link", link);
+        }
+        if (prefer != null) {
+            b.header("Prefer", prefer);
+        }
+        return HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    /** How rule {@code rule} judged an exchange it was a trial of; null when it was not. */
+    private static String verdict(JsonNode exchange, String rule) {
+        for (JsonNode v : exchange.get("rules")) {
+            if (v.get("rule").asText().equals(rule)) {
+                return v.get("outcome").asText();
+            }
+        }
+        return null;
+    }
+
     // ---- helpers ----
 
     @Test

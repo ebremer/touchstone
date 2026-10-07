@@ -41,8 +41,9 @@ import com.nimbusds.jose.jwk.ECKey;
  * baseline search format when a richer one is refused. It starts each rule's task before doing
  * what the task asks, and handles the faults the tasks arm: it checks a container before
  * retrying a lost create, re-reads a linkset that refused it, and restarts a search whose page
- * was refused. Its script touches every rule of phases C2 to C4, so a session judging it has a
- * trial for each.
+ * was refused. It gives a create only user-managed metadata as Link headers, and sends Link headers
+ * with an update only with Prefer: set-linkset. Its script touches every client rule, so a session
+ * judging it has a trial for each.
  *
  * <p>It authenticates the three ways a session offers (CLIENT-TESTING.md section 3): alice starts
  * with a token the session handed out, and when the storage refuses it, she signs a credential with
@@ -160,7 +161,11 @@ public final class RefLwsClient {
         /** Its inbox refuses every notification, genuine ones too. */
         INBOX_REFUSES_EVERYTHING,
         /** Gives its second subscription the first one's inbox. */
-        SHARES_INBOX
+        SHARES_INBOX,
+        /** Names a linkset of its own choosing in a Link header of its first note's create. */
+        CREATES_WITH_LINKSET_LINK,
+        /** Answers the task to update a note's content and metadata together with Link headers but no Prefer: set-linkset. */
+        UPDATES_LINKS_WITHOUT_PREFER
     }
 
     /** The flaws that break a self-issued credential, or the type it is presented with. */
@@ -194,6 +199,8 @@ public final class RefLwsClient {
     }
 
     private static final String LWS = "https://www.w3.org/ns/lws#";
+    /** A class of the client's own for its notes: user-managed metadata, which a create or update may carry. */
+    private static final String NOTE_TYPE = "https://schema.org/NoteDigitalDocument";
     private static final String LWS_JSON = "application/lws+json";
     private static final String JSON_PATCH = "application/json-patch+json";
     private static final String LINKSET_JSON = "application/linkset+json";
@@ -272,7 +279,11 @@ public final class RefLwsClient {
         URI notes = made.location();
         List<URI> created = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
-            created.add(send("POST", notes, alice, "text/plain", "note " + i, null, Map.of()).location());
+            // The first note carries user-managed metadata of its own, a type, as a create may.
+            Map<String, String> links = i > 0 ? Map.of() : Map.of("Link", flaw == Flaw.CREATES_WITH_LINKSET_LINK
+                    ? "<" + NOTE_TYPE + ">; rel=\"type\", <https://linkset.invalid/forged>; rel=\"linkset\""
+                    : "<" + NOTE_TYPE + ">; rel=\"type\"");
+            created.add(send("POST", notes, alice, "text/plain", "note " + i, null, links).location());
         }
         // One more, whose answer the session loses: the listing that follows is the check that
         // shows whether it was created before anything is sent again.
@@ -325,6 +336,18 @@ public final class RefLwsClient {
             Reply cls = send("GET", containerLinkset, alice, null, null, LINKSET_JSON, Map.of());
             send("PUT", containerLinkset, alice, LINKSET_JSON, cls.body(), null, Map.of("If-Match", cls.etag()));
         }
+
+        // The note's content and its metadata in one request: Link headers, which only count as
+        // metadata with Prefer: set-linkset.
+        tasks.start("client-combined-update-prefer-set-linkset");
+        Reply current = send("GET", note, alice, null, null, null, Map.of());
+        Map<String, String> combined = new LinkedHashMap<>();
+        combined.put("If-Match", current.etag());
+        combined.put("Link", "<" + NOTE_TYPE + ">; rel=\"type\"");
+        if (flaw != Flaw.UPDATES_LINKS_WITHOUT_PREFER) {
+            combined.put("Prefer", "set-linkset");
+        }
+        send("PUT", note, alice, "text/plain", "note 0, edited again", null, combined);
 
         // alice grants bob read access to the note; bob asks to modify it.
         send("POST", services.get("AccessGrantService"), alice, LWS_JSON, grant(note), null, Map.of());

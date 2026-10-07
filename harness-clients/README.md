@@ -95,9 +95,9 @@ hex digits of their SHA-256. It is annotated with:
 - the rules it was a trial of, and how each judged it.
 
 A rule's outcome is *passed* once a request has tried it and none failed it, *failed* with the
-first failing request kept as evidence, or *untested*. Ten rules need a task. Two take the
-developer's word for what the client is about to do: create a container, or delete one with its
-contents. Four arm a fault, which makes the session answer the next request it applies to once
+first failing request kept as evidence, or *untested*. Eleven rules need a task. Three take the
+developer's word for what the client is about to do: create a container, delete one with its
+contents, or update a resource's content and metadata in one request. Four arm a fault, which makes the session answer the next request it applies to once
 in a way a server may legally answer: refuse a linkset PUT it advertised, lose a create's
 answer, refuse an expired page of search results, or refuse an access token as expired. Four
 more make it forge its next notification, which the client's inbox must refuse. A developer starts a task on the session
@@ -225,6 +225,8 @@ the self-test leaves it off, because one server test needs a linkset that refuse
 - The root container lists a decoy first. It answers every request with a 401 whose realm does
   not contain it.
 - The type index and search show a write only after three seconds.
+- The storage does no combined updates of content and metadata, which are optional for servers:
+  it ignores `Prefer: set-linkset` and changes only the content.
 
 ## Bounds
 

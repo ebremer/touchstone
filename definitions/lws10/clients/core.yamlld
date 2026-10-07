@@ -589,6 +589,43 @@ entries:
       Sending If-Match with the ETag of your last read stops a delete of something that
       changed since you looked at it.
 
+  - id: "#client-create-no-server-managed-links"
+    type: ObservationTest
+    name: client-create-no-server-managed-links
+    label: The Link headers of the client's creates carry no server-managed relation, such as linkset
+    comment: >-
+      "Clients MAY provide initial user-managed metadata for the new resource by including one or
+      more Link headers in the POST request", and server-managed metadata "MUST NOT be overridden
+      by client-provided links". The metadata section lists linkset, type, format, size and
+      modified as system managed. Of those, only linkset is a relation a create's Link header can
+      carry that is never the client's to give: rel="type" to lws#Container is how a client asks
+      for a container, the index services take a resource's other types from the rel="type" links
+      of its create, and the other three are not link relations. The trials are the creates that
+      carry a Link header.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+    traits: [Post, Linkset]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/create-server-managed-metadata-protected
+    observe:
+      role: container
+      method: POST
+      otherHeaders:
+        - headerName: Link
+          present: true
+    expect:
+      linkHeaders:
+        - rel: linkset
+          absent: true
+    guidance: >-
+      Leave rel="linkset" out of a create: the server makes the new resource's linkset and links
+      to it in its answer. Send only metadata of your own as Link headers, such as rel="type" to
+      your own classes, or to lws#Container to create a container.
+
   # ---- rules that need a task (format 0.9.0): the developer's word, or a fault ----
 
   - id: "#client-create-container-type-link"
@@ -650,6 +687,46 @@ entries:
     guidance: >-
       Send Depth: infinity to delete a container and everything in it, or delete its members
       first. Without either, a server refuses a non-empty container with 409.
+
+  - id: "#client-combined-update-prefer-set-linkset"
+    type: ObservationTest
+    name: client-combined-update-prefer-set-linkset
+    label: When the client updates a resource's content and metadata in one request, it asks for that with Prefer set-linkset
+    comment: >-
+      PUT and PATCH on a resource change its content only. A client may send Link headers with
+      them to update the linkset as well, but a combined update "MUST be invoked explicitly via the
+      Prefer header to prevent unintentional metadata overwrites": Prefer set-linkset. Link headers
+      on an update are not wrong in themselves, since the index services take a resource's types
+      from them, so the rule needs the developer's word: it judges the first PUT or PATCH of a data
+      resource with a Link header after its task starts. The session's storage, like any server
+      without combined updates, ignores the preference.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+    traits: [Put, Patch, DataResource, Linkset]
+    area: core
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/update-content-vs-metadata-prefer-set-linkset
+    task:
+      prompt: >-
+        Update a data resource's content and its metadata in one request: a PUT or PATCH whose Link
+        headers carry the new metadata. The session's storage does not do combined updates, which
+        are optional for servers, so it changes only the content.
+    observe:
+      role: dataResource
+      method: [PUT, PATCH]
+      otherHeaders:
+        - headerName: Link
+          present: true
+    expect:
+      otherHeaders:
+        - headerName: Prefer
+          matches: "(?i)(^|[,\\s])set-linkset\\s*($|[,;=])"
+    guidance: >-
+      Send Prefer: set-linkset with the Link headers, or the server treats the update as content
+      only. A server without combined updates ignores the preference or answers 501: then update
+      the linkset itself, with PATCH.
 
   - id: "#client-no-repeat-after-405-415"
     type: ObservationTest
