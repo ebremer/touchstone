@@ -75,6 +75,7 @@
     "poll":         {"@id": "lwst:poll"},
     "within":       {"@id": "lwst:within", "@type": "xsd:integer"},
     "every":        {"@id": "lwst:every", "@type": "xsd:integer"},
+    "pages":        {"@id": "lwst:pages", "@type": "xsd:integer"},
     "request":      {"@id": "lwst:request"},
     "response":     {"@id": "lwst:response"},
 

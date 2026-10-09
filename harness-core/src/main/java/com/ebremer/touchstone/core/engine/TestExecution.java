@@ -307,10 +307,49 @@ final class TestExecution {
                         + "; a request the server has not answered is no evidence either way (EXECUTION.md section 4.5)");
                 return false;
             }
+            Paging.Read paged = null;
+            if (step.readsPages()) {
+                try {
+                    paged = Paging.read(run, scope.authorization(identity), step.request().path("accept").asText(null),
+                            req, resp, step.pages());
+                } catch (IOException e) {
+                    record(label, sent);
+                    steps.add(new StepResult(label, Http.trace(req, resp), List.of(), "transport error reading the next page: " + e));
+                    end(Outcome.CANT_TELL, "step '" + step.label() + "': reading the next page failed: " + e);
+                    return false;
+                }
+                if (paged.failure() != null || paged.cantTell() != null) {
+                    if (step.polls() && System.nanoTime() < deadline) {
+                        // A page that is not one yet is an attempt that does not hold yet (section 4.4).
+                        scope.restore(before);
+                        if (!pause(step)) {
+                            return false;
+                        }
+                        continue;
+                    }
+                    record(label, sent);
+                    AssertionResult failure = paged.failure();
+                    // With no page after the first, the first carries what went wrong (a self-link).
+                    boolean alone = paged.pages().isEmpty();
+                    steps.add(new StepResult(label, Http.trace(req, resp),
+                            alone && failure != null ? List.of(failure) : List.of(), alone ? paged.cantTell() : null));
+                    pages(label, paged);
+                    if (failure == null) {
+                        end(Outcome.CANT_TELL, "step '" + step.label() + "': " + paged.cantTell());
+                    } else if (step.precondition()) {
+                        end(Outcome.INAPPLICABLE, "precondition '" + step.label() + "' does not hold: "
+                                + failure.description() + " expected " + failure.expected() + ", got " + failure.actual());
+                    } else {
+                        end(Outcome.FAILED, null);
+                    }
+                    return false;
+                }
+            }
             Evaluator.Evaluation evaluation;
             try {
                 evaluation = Evaluator.evaluate(step.response(), req, resp, scope, test.directory(),
-                        accept -> Requests.build(step.request(), identity, scope, test.directory(), accept));
+                        accept -> Requests.build(step.request(), identity, scope, test.directory(), accept),
+                        paged == null ? null : paged.merged());
             } catch (Unresolvable e) {
                 record(label, sent);
                 steps.add(new StepResult(label, Http.trace(req, resp), List.of(), e.getMessage()));
@@ -328,6 +367,9 @@ final class TestExecution {
             evaluation.cleanup().forEach(uri -> cleanups.push(new Cleanup(uri, identity)));
             record(label, sent);
             steps.add(new StepResult(label, Http.trace(req, resp), evaluation.results(), null));
+            if (paged != null) {
+                pages(label, paged);
+            }
             if (evaluation.passed()) {
                 return true;
             }
@@ -351,6 +393,21 @@ final class TestExecution {
             Thread.currentThread().interrupt();
             end(Outcome.CANT_TELL, "step '" + step.label() + "': interrupted while polling");
             return false;
+        }
+    }
+
+    /**
+     * Keeps the pages after the first that a paged step read (section 4.6), each as an exchange of
+     * its own; the last carries the failed check or the reason reading stopped, if any.
+     */
+    private void pages(String label, Paging.Read paged) {
+        List<Paging.Page> pages = paged.pages();
+        for (int i = 0; i < pages.size(); i++) {
+            Paging.Page p = pages.get(i);
+            boolean last = i == pages.size() - 1;
+            List<AssertionResult> checks = last && paged.failure() != null ? List.of(paged.failure()) : List.of();
+            steps.add(new StepResult(label + " (page " + (i + 2) + ")", Http.trace(p.req(), p.resp()), checks,
+                    last ? paged.cantTell() : null));
         }
     }
 

@@ -39,8 +39,10 @@ down, or gave a result that depended on the run.
   **Done (D-0091).**
 - [x] **A 429 or 503 is waited out as its `Retry-After` asks**, and cantTell, not failed, when it
   is not. → **Done (D-0092).**
-- [ ] **Erich: review format 0.13.0** and the new test `type-search-content-types-identical`
-  (status Proposed).
+- [x] **`type-search-and-or` reads every page** of its searches, through a step's new `pages`. →
+  **Done (D-0093).**
+- [ ] **Erich: review format 0.13.0** (`run.id`, waiting out 429 and 503, `pages`) and the new
+  test `type-search-content-types-identical` (status Proposed).
 - [ ] **Later, if wanted:** pin the harness OpenID Provider's key in the target configuration, for
   a verifier that does not re-fetch a JWKS on an unfamiliar `kid` (D-0091).
 

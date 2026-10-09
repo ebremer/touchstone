@@ -335,7 +335,9 @@ key made for the run, so each run's documents have URLs of their own and a verif
 of an earlier run's never stands for them (section 5.3). It also has the engine wait out a 429 or
 503 as its `Retry-After` asks, and end the test *cantTell* rather than *failed* when waiting does
 not get the request answered (section 4.5): a rate limit is legitimate behaviour, not
-non-conformance.
+non-conformance. And a step may say `pages`, the most pages of a paged result to read through
+`rel="next"`, so that its `json` expectations judge every item whatever the server's page size
+(section 4.6).
 
 Format version 0.12.0 (2026-10-07, D-0087) adds one value, for client rules only,
 and changes nothing a 0.11.0 definition relies on: the `credentialSource` `samlIdentityProvider`,

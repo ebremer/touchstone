@@ -217,7 +217,7 @@ public final class DefinitionLoader {
                 JsonNode poll = s.path("poll");
                 steps.add(new StepDefinition(s.path("label").asText(), text(s, "as"),
                         s.path("precondition").asBoolean(false), s.path("request"), s.path("response"),
-                        poll.path("within").asInt(0), poll.path("every").asInt(0)));
+                        poll.path("within").asInt(0), poll.path("every").asInt(0), s.path("pages").asInt(0)));
             }
         } else {
             // The short form is a test of exactly one step, labelled with the test's label; its

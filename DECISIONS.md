@@ -3794,3 +3794,46 @@ cantTell without `Retry-After`, cantTell (not inapplicable) in a precondition, a
 at once, a class-accepted 429 judged as it came, and a polled step that waits a refusal out or
 ends cantTell. Documented in EXECUTION.md section 4.5, `docs/troubleshooting.md`,
 `docs/targets.md`, `docs/how-it-works.md` and `docs/reports.md`.
+
+### D-0093 — a step reads a paged result whole
+`type-search-and-or` read only the first page of each search. Its precondition, "[[Alpha, Gamma]]
+finds all three", fails on the first page when the server's search pages hold fewer than three
+items, so at small page sizes the test was inapplicable; and its "only the first" checks, `none`
+on the first page, could pass while a wrong item sat on the second. `type-search-next-page`
+applies only when a page holds fewer than five. D-0067 assumed a test's own types would keep
+every search on one page, which is up to the server.
+
+The definitions could not say "read every page": a step captures `rel="next"` only if it is
+there, a capture that never happens is cantTell, and nothing loops. So the engine gains one term,
+the smallest that does it.
+
+**`pages: M` on a step** (format 0.13.0, EXECUTION.md section 4.6; 2 ≤ M ≤ 20):
+- page 1 is the step's own response; while the last page read links `rel="next"` and fewer than
+  M pages are read, the engine GETs it as the step's identity, with the step's `Accept`. A 429 or
+  503 there is waited out as D-0092 says;
+- the `json` expectations read page 1's object with `items` replaced by every page's items, in
+  order. An `id` on a later page is resolved against that page's URL first, since `equalsIri`
+  resolves against the step's request URL. Status, headers, captures and the body checks stay
+  page 1's;
+- a later page that is not a 200 JSON object with an `items` array, or a `next` link to a page
+  already read, fails the step (inapplicable in a precondition). Page M still linking another
+  page is cantTell, since a `none` cannot be judged on part of a result;
+- a polled step reads every page on every attempt, and a page that is not one yet is an attempt
+  that does not hold yet;
+- each page after the first is in the step's record as an exchange of its own.
+
+A single integer rather than an object like `poll`: there is one thing to say. `next` is the only
+relation followed, as the LWS pagination model and the index draft use it to reach "subsequent
+pages". The schema gains `pages`, the context and vocabulary the term `lwst:pages`, and two
+negative controls reject `pages: 1` and a non-number.
+
+**`type-search-and-or`** reads each of its three searches with `pages: 10`, so the precondition
+holds and the `none` checks see every item at any page size. Three resources make three pages at
+most. `type-search-next-page` is unchanged: following one page is its point, and it applies when
+a result spans pages.
+
+`PagedStepsTest` runs a paged search through the engine against a stub: the items of page 2 are
+judged, and are not without `pages`; a wrong item on page 2 fails a `none`; a 404 page fails the
+step, and makes a precondition inapplicable; a `next` back to a page already read fails; a result
+longer than `pages` is cantTell; a single page is judged as it is. The reference search answers in
+one page for three resources, so the self-test runs the new path on its first page only.

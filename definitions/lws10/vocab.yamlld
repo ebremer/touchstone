@@ -604,6 +604,16 @@
     domain: lwst:Polling
     range: xsd:integer
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:pages
+    type: rdf:Property
+    label: "pages"
+    comment: >-
+      Read the step's paged result whole: follow rel=next with GET, up to this many pages
+      in all, and let the json expectations read the first page with the items of every
+      page (format 0.13.0, EXECUTION.md section 4.6). From 2 to 20.
+    domain: lwst:Step
+    range: xsd:integer
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:request
     type: rdf:Property
     label: "request"

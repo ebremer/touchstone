@@ -172,6 +172,8 @@ cannot grant it either, the test is inapplicable.
 | `label` | What the step establishes. Reports show it. |
 | `as` | The identity for this step only. |
 | `precondition` | `true`: if an expectation fails here, the feature is absent and the test is inapplicable, not failed. |
+| `poll` | `{within: W, every: E}`: send the step again every E seconds until its expectations hold, for up to W seconds. |
+| `pages` | The most pages to read (2 to 20): follow `rel="next"` from the response, and let `json` expectations read the items of every page. Since 0.13.0. |
 | `request`, `response` | The request, and the expectations on its response. |
 
 | Request field | Meaning |
@@ -184,8 +186,9 @@ cannot grant it either, the test is inapplicable.
 | `body`, `bodyURL`, `bodyJSON`, `bodyForm` | At most one: a template, a fixture file sent byte for byte, a JSON value, or form fields. |
 
 The identity's `Authorization` header is added unless the identity is anonymous.
-Redirects are never followed, nothing is retried, and every request has a 30-second
-timeout unless the target sets another.
+Redirects are never followed, and every request has a 30-second timeout unless the target
+sets another. Nothing is retried, except a polled step, and a request the server refuses for
+now with 429 or 503 and a `Retry-After`, which is waited out (EXECUTION.md section 4.5).
 
 ## Variables
 
@@ -253,7 +256,7 @@ target that does not declare it, the test is inapplicable and no request is sent
 | `passed` | Every step passed. |
 | `failed` | An expectation failed outside a precondition. |
 | `inapplicable` | A capability, identity, service or precondition is absent. |
-| `cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite. |
+| `cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite, a 429 or 503 that waiting did not get past. |
 
 The target conforms when no MUST test failed or ended `cantTell`. SHOULD and MAY failures
 are advisory. An inapplicable MUST test is coverage the run did not have, and the report

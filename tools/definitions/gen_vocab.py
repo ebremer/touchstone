@@ -119,6 +119,7 @@ V = [
     ("poll", P, None, "poll", "Re-send the step until its expectations hold or the time runs out, then judge the last attempt (format 0.4.0).", "lwst:Step", "lwst:Polling"),
     ("within", P, None, "within", "Seconds, from the first attempt, after which a polled step is judged on its last attempt; at most 120.", "lwst:Polling", "xsd:integer"),
     ("every", P, None, "every", "Seconds to wait between attempts of a polled step; at least 1 and at most within.", "lwst:Polling", "xsd:integer"),
+    ("pages", P, None, "pages", "Read the step's paged result whole: follow rel=next with GET, up to this many pages in all, and let the json expectations read the first page with the items of every page (format 0.13.0, EXECUTION.md section 4.6). From 2 to 20.", "lwst:Step", "xsd:integer"),
     ("request", P, None, "request", "The request a step sends. Directly on a test, with response, it is shorthand for a test of exactly one step.", None, "lwst:Request"),
     ("response", P, None, "response", "The expectations on the step's response. Directly on a test, with request, it is shorthand for a test of exactly one step.", None, "lwst:ResponseExpectation"),
     ("prereqs", P, None, "prereqs", "The state the test needs before its first step; the engine establishes it (EXECUTION.md section 4.3).", "mf:ManifestEntry", "lwst:Prerequisites"),

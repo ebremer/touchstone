@@ -397,7 +397,9 @@ entries:
       The type value "is an array whose elements are combined with logical AND; each element is
        either a single type IRI or an array of type IRIs combined with logical OR". Three resources
        of types {Alpha, Beta}, {Alpha} and {Gamma}: [[Alpha, Gamma]] finds all three; [Alpha, Beta]
-       only the first; [[Beta, Gamma], Alpha] only the first.
+       only the first; [[Beta, Gamma], Alpha] only the first. Each search is read on every page,
+       by following rel=next, so the test applies, and its "only" holds, whatever the server's page
+       size.
     status: Proposed
     level: MUST
     source:
@@ -446,6 +448,7 @@ entries:
       - label: "[[Alpha, Gamma]] finds all three (otherwise the server derives no declared type, and this test does not apply)"
         precondition: true
         poll: {within: 60, every: 3}
+        pages: 10
         request:
           method: QUERY
           url: "${service.TypeSearchService}"
@@ -469,6 +472,7 @@ entries:
                 - pointer: /id
                   equalsIri: "${three}"
       - label: "[Alpha, Beta] finds only the resource with both"
+        pages: 10
         request:
           method: QUERY
           url: "${service.TypeSearchService}"
@@ -493,6 +497,7 @@ entries:
                 - pointer: /id
                   equalsIri: "${three}"
       - label: "[[Beta, Gamma], Alpha] finds only the first"
+        pages: 10
         request:
           method: QUERY
           url: "${service.TypeSearchService}"

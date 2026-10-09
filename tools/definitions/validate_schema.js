@@ -105,6 +105,9 @@ const controls = {
   'client rule with an unknown delivery signature': [ruleDelivery, t => { t.observe.deliverySignature = 'forged'; }],
   'inboxShared that is not a boolean': [ruleDelivery, t => { t.expect.inboxShared = 'no'; }],
   'task arming the dropped stale-created forgery': [ruleTask, t => { t.task.arm = 'forgedStaleCreated'; }],
+  // Paged steps (format 0.13.0).
+  'pages of one': [flow, t => { t.steps[0].pages = 1; }],
+  'pages that is not a number': [flow, t => { t.steps[0].pages = 'all'; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

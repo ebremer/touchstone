@@ -7,9 +7,9 @@ frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2
 0.10.0 let them judge token requests, 0.11.0 the notifications a client's inbox receives, and
 0.12.0 the assertions of a session's SAML identity provider; none changes anything in this document.
 0.13.0 adds the variable `run.id` (section 3), so that a document the fixture host mints for a run
-is served at a URL of the run's own (section 5.3), and has the engine wait out a 429 or 503 as its
-`Retry-After` asks rather than judge it (section 4.5). It changes nothing a 0.12.0 definition
-relies on.
+is served at a URL of the run's own (section 5.3), has the engine wait out a 429 or 503 as its
+`Retry-After` asks rather than judge it (section 4.5), and lets a step read a paged result whole
+with `pages` (section 4.6). It changes nothing a 0.12.0 definition relies on.
 0.7.0 adds one thing and changes nothing a 0.6.0 definition relies on: a test can script the
 statuses its inbox answers deliveries with, and each delivery record says which it got
 (section 5.4), so a server's retry and deactivation can be observed. 0.6.0 added two things
@@ -276,6 +276,31 @@ waiting applies to every other request the engine sends: provisioning, prerequis
 variables, token exchanges, `connegEquivalent` fetches and cleanup. One still refused there makes
 the test *cantTell*, never *inapplicable*: an anonymous probe answered 429 does not show that a
 target enforces no authentication, nor a grant service answering 503 that it cannot grant.
+
+### 4.6 Paged results (since 0.13.0)
+
+A step with `pages: M` (2 ≤ M ≤ 20) judges a paged result whole, whatever the server's page
+size. Results such as a search's are "paginated according to the standard LWS pagination
+model", with page URIs in `Link` headers that are dereferenced to retrieve the next pages.
+
+1. Build and send the request as for any step (sections 4.2 and 4.5). Its response is page 1.
+2. If page 1 is a 200 whose body is a JSON object with an `items` array, read on: while the
+   last page read has a `Link` whose rel is `next` (parsed as in section 7, item 4, against that
+   page's URL) and fewer than M pages have been read, GET its target as the step's identity, with
+   the step's `accept`, if any, as `Accept`, and nothing else. A 429 or 503 is waited out as in
+   section 4.5.
+3. Evaluate the step's expectations against page 1, as for any step, except `json`: it reads page
+   1's JSON object with its `items` replaced by the items of every page read, in order. An item's
+   `id` from a later page is first resolved against that page's URL, since `equalsIri` resolves
+   against the step's request URL. So `some`, `every` and `none` on `/items` judge every item.
+4. The step fails, or makes the test inapplicable if it is a precondition, when a later page does
+   not answer 200 with a JSON object whose `items` is an array, or when a `next` link names a page
+   already read. Page M linking yet another page, or a page still refused after waiting, ends the
+   test *cantTell*: the step cannot judge a result it has not read.
+5. In a polled step, every attempt reads the pages again; a failure in step 4 is an attempt that
+   does not hold yet (section 4.4).
+
+Every page after the first appears in the step's record as an exchange of its own.
 
 ## 5. Identities and credentials
 

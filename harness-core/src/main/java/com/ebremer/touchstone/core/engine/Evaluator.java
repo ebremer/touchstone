@@ -36,22 +36,35 @@ final class Evaluator {
     private final Scope scope;
     private final Path directory;
     private final Function<String, Req> refetch;
+    /** The JSON the {@code json} expectations read instead of the body: a paged result read whole (section 4.6). */
+    private final JsonNode jsonOverride;
     private final List<AssertionResult> results = new ArrayList<>();
     private final List<URI> cleanup = new ArrayList<>();
 
-    private Evaluator(JsonNode expect, Req req, Resp resp, Scope scope, Path directory, Function<String, Req> refetch) {
+    private Evaluator(JsonNode expect, Req req, Resp resp, Scope scope, Path directory, Function<String, Req> refetch,
+                      JsonNode jsonOverride) {
         this.expect = expect;
         this.req = req;
         this.resp = resp;
         this.scope = scope;
         this.directory = directory;
         this.refetch = refetch;
+        this.jsonOverride = jsonOverride;
     }
 
     /** @param refetch builds the step's request again with another Accept, for {@code connegEquivalent} */
     static Evaluation evaluate(JsonNode expect, Req req, Resp resp, Scope scope, Path directory,
                                Function<String, Req> refetch) {
-        Evaluator e = new Evaluator(expect, req, resp, scope, directory, refetch);
+        return evaluate(expect, req, resp, scope, directory, refetch, null);
+    }
+
+    /**
+     * @param json what the {@code json} expectations read in place of the response body, or null
+     *             for the body: the first page of a paged result with every page's items (section 4.6)
+     */
+    static Evaluation evaluate(JsonNode expect, Req req, Resp resp, Scope scope, Path directory,
+                               Function<String, Req> refetch, JsonNode json) {
+        Evaluator e = new Evaluator(expect, req, resp, scope, directory, refetch, json);
         boolean passed = e.statusCode() && e.contentType() && e.location() && e.linkHeaders() && e.otherHeaders()
                 && e.challenge() && e.body() && e.json() && e.jwt() && e.conneg();
         return new Evaluation(passed, List.copyOf(e.results), List.copyOf(e.cleanup));
@@ -212,11 +225,13 @@ final class Evaluator {
         if (!expect.has("json")) {
             return true;
         }
-        JsonNode root;
-        try {
-            root = Templates.JSON.readTree(resp.body());
-        } catch (IOException e) {
-            root = null;
+        JsonNode root = jsonOverride;
+        if (root == null) {
+            try {
+                root = Templates.JSON.readTree(resp.body());
+            } catch (IOException e) {
+                root = null;
+            }
         }
         if (!check(root != null && !root.isMissingNode(), "body", "JSON", abbreviate(resp.text()))) {
             return false;
