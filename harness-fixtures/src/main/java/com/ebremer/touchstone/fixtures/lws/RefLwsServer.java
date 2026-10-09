@@ -51,6 +51,10 @@ import org.eclipse.jetty.util.Callback;
  *       resources, single byte ranges;</li>
  *   <li>a linkset per resource, stored, with its own ETag, patchable with JSON Patch and
  *       refusing PUT with 405, removed with its resource;</li>
+ *   <li>PUT that changes only the content, unless it asks for a combined update with
+ *       {@code Prefer: set-linkset}: then its Link headers replace the types and links the
+ *       client declared, and the answer carries {@code Preference-Applied: set-linkset}
+ *       ({@link Traps#noCombinedUpdates} ignores the preference instead);</li>
  *   <li>access grants and access requests (section 11) as LWS containers, and authorization
  *       by ownership or grant: {@code foaf:Agent} is the public;</li>
  *   <li>container listings paginated above {@value #PAGE_SIZE} members (section 12.1.2), each
@@ -233,6 +237,8 @@ public final class RefLwsServer implements AutoCloseable {
      */
     static final int PAGE_SIZE = 4;
 
+    /** The preference that asks for a combined update of content and linkset (lws10-core 9.3). */
+    private static final String SET_LINKSET = "set-linkset";
     private static final java.util.regex.Pattern LINK_TYPE =
             java.util.regex.Pattern.compile("<([^>]*)>\\s*;[^,<]*\\brel=\"?type\"?(?=[\\s;,]|$)");
     private static final java.util.regex.Pattern TURTLE_SELF_TYPE =
@@ -311,9 +317,14 @@ public final class RefLwsServer implements AutoCloseable {
         volatile String owner;
         volatile Instant modified = now();
         volatile ObjectNode linkset;
-        /** Types the client declared: Link rel="type" on create or update, or {@code <> a} in Turtle. */
+        /** Types the client declared: {@link #linkTypes}, and {@code <> a} in Turtle content. */
         volatile Set<String> declaredTypes = Set.of();
-        /** Descriptive links the client sent as Link headers on create or update: rel to targets. */
+        /**
+         * Types from Link rel="type": on create, or on a PUT that asked for a combined update with
+         * {@code Prefer: set-linkset}. Any other PUT changes only the content (lws10-core 9.3).
+         */
+        volatile Set<String> linkTypes = Set.of();
+        /** Descriptive links the client sent as Link headers on create or on a combined update: rel to targets. */
         volatile java.util.Map<String, Set<String>> declaredLinks = java.util.Map.of();
         volatile String linksetEtag = newEtag();
         final Set<String> children = ConcurrentHashMap.newKeySet();
@@ -1387,7 +1398,8 @@ public final class RefLwsServer implements AutoCloseable {
                 store.put(childPath, child);
             }
             if (!isContainer) {
-                child.declaredTypes = declaredTypes(request, absolute(request, childPath), child);
+                child.linkTypes = linkTypes(request);
+                child.declaredTypes = declaredTypes(absolute(request, childPath), child);
                 child.declaredLinks = declaredLinks(request, absolute(request, childPath));
             }
             parent.children.add(childPath);
@@ -1445,13 +1457,25 @@ public final class RefLwsServer implements AutoCloseable {
             if (contentType != null) {
                 node.contentType = contentType;
             }
-            node.declaredTypes = declaredTypes(request, absolute(request, path), node);
-            node.declaredLinks = declaredLinks(request, absolute(request, path));
+            // A PUT changes the content only, "with no default impact on the associated linkset";
+            // its Link headers replace the client's links only in a combined update, which the
+            // client asks for with Prefer: set-linkset (lws10-core section 9.3). The reference
+            // supports combined updates on PUT, and says so with Preference-Applied (RFC 7240),
+            // unless Traps#noCombinedUpdates has it ignore the preference, as the draft allows.
+            boolean combined = !traps.noCombinedUpdates() && prefersSetLinkset(request);
+            if (combined) {
+                node.linkTypes = linkTypes(request);
+                node.declaredLinks = declaredLinks(request, absolute(request, path));
+            }
+            node.declaredTypes = declaredTypes(absolute(request, path), node);
             node.indexed = Instant.now();
             touch(path, node);
             announce(request, "Update", path, node, null, null);
             response.setStatus(204);
             response.getHeaders().put(HttpHeader.ETAG, node.etag);
+            if (combined) {
+                response.getHeaders().put("Preference-Applied", SET_LINKSET);
+            }
             callback.succeeded();
         }
 
@@ -1835,7 +1859,8 @@ public final class RefLwsServer implements AutoCloseable {
          * namespace (section 5, the SHOULD), and, for Turtle, the objects of {@code <> a ...}
          * statements (the MAY: a reference server reads that one form, not Turtle at large).
          */
-        private Set<String> declaredTypes(Request request, String uri, Node node) {
+        /** The types a request's Link rel="type" headers declare, LWS's own classes aside. */
+        private Set<String> linkTypes(Request request) {
             Set<String> types = new LinkedHashSet<>();
             String links = String.join(", ", request.getHeaders().getValuesList("Link"));
             java.util.regex.Matcher link = LINK_TYPE.matcher(links);
@@ -1845,6 +1870,25 @@ public final class RefLwsServer implements AutoCloseable {
                     types.add(iri);
                 }
             }
+            return Set.copyOf(types);
+        }
+
+        /** Whether a request's Prefer header lists set-linkset (RFC 7240: tokens are case-insensitive). */
+        private boolean prefersSetLinkset(Request request) {
+            for (String field : request.getHeaders().getValuesList("Prefer")) {
+                for (String preference : field.split(",")) {
+                    String token = preference.split("[;=]", 2)[0].trim();
+                    if (token.equalsIgnoreCase(SET_LINKSET)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /** A resource's declared types: those from Link headers, and those its Turtle content states. */
+        private Set<String> declaredTypes(String uri, Node node) {
+            Set<String> types = new LinkedHashSet<>(node.linkTypes);
             if (node.contentType != null && node.contentType.toLowerCase(Locale.ROOT).startsWith("text/turtle")
                     && node.bytes != null) {
                 java.util.regex.Matcher a = TURTLE_SELF_TYPE.matcher(new String(node.bytes, StandardCharsets.UTF_8));

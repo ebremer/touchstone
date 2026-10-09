@@ -81,6 +81,40 @@ class RefLwsServerTest {
                 HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(404);
     }
 
+    /**
+     * A PUT is a content-only change, and a combined update of content and linkset only when the
+     * client asks for one with Prefer: set-linkset, which the reference supports and reports with
+     * Preference-Applied (lws10-core section 9.3, RFC 7240).
+     */
+    @Test
+    void aPutUpdatesTheLinksetOnlyWhenAskedTo() throws Exception {
+        String type = "<https://touchstone.invalid/types#Alpha>; rel=\"type\"";
+        HttpResponse<String> created = http.send(HttpRequest.newBuilder(server.baseUri())
+                .POST(HttpRequest.BodyPublishers.ofString("<> a <https://touchstone.invalid/types#Alpha> ."))
+                .header("Content-Type", "text/turtle")
+                .header("Link", type)
+                .build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(created.statusCode()).isEqualTo(201);
+        URI resource = server.baseUri().resolve(created.headers().firstValue("Location").orElseThrow());
+
+        HttpResponse<Void> contentOnly = http.send(HttpRequest.newBuilder(resource)
+                .PUT(HttpRequest.BodyPublishers.ofString("<> a <https://touchstone.invalid/types#Beta> ."))
+                .header("Content-Type", "text/turtle")
+                .header("Link", type.replace("Alpha", "Beta"))
+                .build(), HttpResponse.BodyHandlers.discarding());
+        assertThat(contentOnly.statusCode()).isEqualTo(204);
+        assertThat(contentOnly.headers().firstValue("Preference-Applied")).isEmpty();
+
+        HttpResponse<Void> combined = http.send(HttpRequest.newBuilder(resource)
+                .PUT(HttpRequest.BodyPublishers.ofString("<> a <https://touchstone.invalid/types#Beta> ."))
+                .header("Content-Type", "text/turtle")
+                .header("Link", type.replace("Alpha", "Beta"))
+                .header("Prefer", "return=minimal, SET-LINKSET")
+                .build(), HttpResponse.BodyHandlers.discarding());
+        assertThat(combined.statusCode()).isEqualTo(204);
+        assertThat(combined.headers().firstValue("Preference-Applied")).contains("set-linkset");
+    }
+
     private static HttpResponse<Void> put(URI uri, String body, String ifMatch) throws Exception {
         HttpRequest.Builder b = HttpRequest.newBuilder(uri)
                 .PUT(HttpRequest.BodyPublishers.ofString(body))

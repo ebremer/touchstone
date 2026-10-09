@@ -3596,3 +3596,51 @@ Only the default in `ClientLabConfig.defaults` changes; the bound stays out of t
 as the others are. `ClientLabTest.theBoundsHold` builds its own tight configuration (2 an hour),
 so no test depends on the number. CLIENT-TESTING.md section 12, `docs/testing-a-client.md` and
 `harness-clients/README.md` say 20.
+
+## 2026-10-08
+
+Running Touchstone against five servers (Halcyon, lws-server, sparq-lws-core, the Community Solid
+Server and lws-drupal) showed five places where it marked correct behaviour down or gave results
+that depended on the run. D-0089 to D-0093 fix them, on branch `server-run-fixes`.
+
+### D-0089 — `type-search-reflects-update` asks for a combined update
+The test replaced a resource of type Alpha with a PUT whose Turtle and `Link rel="type"` named
+Beta, and expected a search on Alpha to come to omit it. It sent no `Prefer`. Core's update
+section says servers "MUST handle PUT and PATCH requests on resource URIs as modifications to
+the resource content only, with no default impact on the associated linkset". Link headers
+change the linkset only in a combined update, which is "OPTIONAL for servers but, if supported,
+MUST be invoked explicitly via the Prefer header"; a server without it "MUST ignore the
+preference or respond with 501". So a server that follows Core keeps the type the create's
+Link header gave, and could never pass the last step. lws-drupal failed it for exactly that.
+
+**The test now asks.** The PUT carries `Prefer: set-linkset`, and is a precondition: it must
+answer 200 or 204 with a `Preference-Applied` that lists `set-linkset` (RFC 7240 section 3),
+matched as the client rule `client-combined-update-prefer-set-linkset` matches the preference:
+any case, with or without a value or parameters. A server that does no combined updates makes
+the test inapplicable, not failed. The comment says why, and the test cites the core update
+section as a second source.
+
+Judgment calls:
+- **One step, a precondition.** A PUT that fails for another reason (a 500, a 412) now makes the
+  test inapplicable rather than failed. The alternative, a judged PUT followed by a second,
+  identical PUT as the precondition, would test the same thing twice to keep a finding that
+  `updateDataResource` already reports. The reason names the status, so nothing is hidden.
+- **`Preference-Applied`, not the linkset.** A server that applies the preference without saying
+  so is inapplicable too. RFC 7240 defines `Preference-Applied` as the way to say it, and the
+  linkset's rendering of a resource's types is not something the drafts let a test read
+  reliably.
+- **Not cited:** `update-content-vs-metadata-prefer-set-linkset`. It is a MUST, and this test is
+  a SHOULD, whose failure would mark the MUST's row failed.
+
+**The reference server follows Core.** Its PUT re-derived the client's Link-declared types and
+relations from every PUT, which is the default impact on the linkset that Core forbids. Now a
+PUT changes only the content (types stated in Turtle are re-read, since they are content),
+unless it asks for `set-linkset`: then its Link headers replace the types and descriptive links
+the client declared, and the answer carries `Preference-Applied: set-linkset`. A new trap,
+`noCombinedUpdates`, has it ignore the preference instead, as the draft allows.
+- Client sessions set every trap, so their storage ignores the preference, as
+  `docs/testing-a-client.md` already said it did. The trap is listed in CLIENT-TESTING.md section
+  6.1, on the session page and in the session API's `traps`.
+- In the server self-test's trapped deployment, `type-search-reflects-update` is inapplicable,
+  with a reason naming `Preference-Applied`: the proof that a server without combined updates is
+  not failed. The compliant deployment passes it. `RefLwsServerTest` checks the header both ways.

@@ -67,14 +67,20 @@ class DefinitionsSelfTest {
 
     /**
      * The traps a client session sets (CLIENT-TESTING.md section 6.1) are behaviour the drafts
-     * allow, so a definition that fails against them assumes what the drafts leave open.
+     * allow, so a definition that fails against them assumes what the drafts leave open. One trap
+     * takes away an optional feature, combined updates, so the test that needs them does not
+     * apply: it is inapplicable, never failed (D-0089).
      */
     @Test
     void everyDefinitionPassesAgainstATrappedReferenceDeployment() {
         try (ReferenceScenario scenario = ReferenceScenario.start(Kind.TRAPPED)) {
             RunResult run = run(scenario);
 
-            assertThat(notPassed(run)).as(details(run)).containsExactly(Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE));
+            assertThat(notPassed(run)).as(details(run)).containsExactly(
+                    Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE),
+                    Map.entry("index/manifest#type-search-reflects-update", Outcome.INAPPLICABLE));
+            assertThat(run.results()).filteredOn(r -> r.testId().endsWith("#type-search-reflects-update"))
+                    .singleElement().extracting(TestResult::reason).asString().contains("Preference-Applied");
             assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
         }
     }

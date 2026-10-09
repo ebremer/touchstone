@@ -1820,12 +1820,19 @@ entries:
     comment: >-
       "Following a write that changes a resource's derivable types ... (creation, update, or
        deletion), a server SHOULD reflect the change within a bounded, implementation-defined
-       interval." A resource of type Alpha is replaced (both by Link rel=type and in its Turtle) by
-       one of type Beta: a search on Beta comes to find it, and one on Alpha comes to omit it.
+       interval." A resource of type Alpha (by Link rel=type and in its Turtle) is replaced by
+       one of type Beta in a combined update: a PUT whose Turtle states Beta and whose Link
+       rel=type names Beta, with Prefer: set-linkset. Core makes a PUT a change of content only,
+       "with no default impact on the associated linkset", so Link headers replace the linkset
+       only when that preference asks for it; combined updates are "OPTIONAL for servers", which
+       otherwise ignore the preference or answer 501. The test applies when the server answers
+       Preference-Applied: set-linkset. Then neither source still gives Alpha, and a search on Beta
+       comes to find the resource and one on Alpha comes to omit it.
     status: Proposed
     level: SHOULD
     source:
       - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
     traits: [Discovery, Put]
     requires: [Authentication]
     requirements:
@@ -1870,7 +1877,8 @@ entries:
               some:
                 - pointer: /id
                   equalsIri: "${one}"
-      - label: replace it with a resource of type Beta
+      - label: replace it with a resource of type Beta, its Link headers replacing its linkset (otherwise the server does no combined updates, and this test does not apply)
+        precondition: true
         request:
           method: PUT
           url: "${one}"
@@ -1880,8 +1888,14 @@ entries:
           linkHeaders:
             - rel: type
               href: "${test.container}#Beta"
+          otherHeaders:
+            - headerName: Prefer
+              headerValue: set-linkset
         response:
           statusCode: [200, 204]
+          otherHeaders:
+            - headerName: Preference-Applied
+              matches: '(?i)(^|[,\s])set-linkset\s*($|[,;=])'
       - label: "[Beta] comes to find it"
         poll: {within: 60, every: 3}
         request:

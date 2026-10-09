@@ -300,6 +300,9 @@ without noticing; clients relying on unspecified behaviour trip over them.
   client neither requests nor presents a token for it.
 - **A lagging index.** Search and type-index results trail writes by a few seconds, as
   `client-no-read-your-writes` allows.
+- **No combined updates.** A PUT changes only the content, even when it asks for a combined
+  update of content and metadata with `Prefer: set-linkset`, which servers may support or
+  ignore (D-0089). Metadata changes go through the linkset.
 
 ### 6.2 Faults (armed on request)
 

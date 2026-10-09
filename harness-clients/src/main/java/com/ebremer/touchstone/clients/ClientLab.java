@@ -966,6 +966,7 @@ public final class ClientLab implements AutoCloseable {
             traps.put("linksetPutOnlyForDataResources", true);
             traps.put("decoy", s.traps.decoy());
             traps.put("indexLagSeconds", s.traps.indexLag().toSeconds());
+            traps.put("noCombinedUpdates", s.traps.noCombinedUpdates());
             }
             ObjectNode limits = body.putObject("limits");
             limits.put("idleTimeout", config.idleTimeout().toString());

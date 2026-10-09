@@ -16,6 +16,7 @@
     putOnlyForText: 'Binary resources do not support PUT: check Allow before replacing one.',
     linksetPutOnlyForDataResources: 'Linksets of data resources accept PUT, linksets of containers do not: check Allow first.',
     decoy: 'The root container lists a decoy whose 401 names a realm that does not contain it: send it no token.',
+    noCombinedUpdates: 'A PUT changes only the content, even with Prefer: set-linkset: update metadata through the linkset.',
   };
 
   const AREAS = {

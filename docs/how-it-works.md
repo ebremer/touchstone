@@ -201,7 +201,8 @@ provides both.
 - against the secured deployment, all 204 definitions run, and every one passes except the
   single-page pagination test, which is inapplicable because the reference splits that
   container into pages;
-- against the same deployment with every trap set, the same holds: a definition that failed
+- against the same deployment with every trap set, the same holds, except that the test that
+  needs a combined update, which one trap takes away, is inapplicable: a definition that failed
   there would assume something the drafts leave open;
 - against an open storage, exactly the tests that need authentication are inapplicable;
 - against the broken authorization server, the 26 negative tests of the three

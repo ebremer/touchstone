@@ -21,12 +21,15 @@ import java.time.Duration;
  *     {@code realm} does not contain it, so a client that checks the realm never sends it a token
  * @param indexLag how long a write takes to reach the type index and search (lws10-index: "MAY
  *     be eventually consistent"); zero for read-your-writes
+ * @param noCombinedUpdates a PUT changes only the content even when it asks for a combined update
+ *     of content and metadata with {@code Prefer: set-linkset}: combined updates are optional for
+ *     servers, which then ignore the preference (lws10-core section 9.3)
  */
 public record Traps(boolean opaquePageUrls, boolean flatResourceUris, boolean opaqueLinksetUrls,
-                    boolean putOnlyForText, boolean decoy, Duration indexLag) {
+                    boolean putOnlyForText, boolean decoy, Duration indexLag, boolean noCombinedUpdates) {
 
     /** None: the reference behaviour the self-test's compliant deployment has always had. */
-    public static final Traps NONE = new Traps(false, false, false, false, false, Duration.ZERO);
+    public static final Traps NONE = new Traps(false, false, false, false, false, Duration.ZERO, false);
 
     public Traps {
         indexLag = indexLag == null ? Duration.ZERO : indexLag;
@@ -34,6 +37,6 @@ public record Traps(boolean opaquePageUrls, boolean flatResourceUris, boolean op
 
     /** Every trap, with {@code indexLag} for the index. */
     public static Traps all(Duration indexLag) {
-        return new Traps(true, true, true, true, true, indexLag);
+        return new Traps(true, true, true, true, true, indexLag, true);
     }
 }
