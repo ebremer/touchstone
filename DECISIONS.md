@@ -3683,7 +3683,6 @@ citations made rows fail for servers that broke nothing:
     it, and his type index lists Alpha (`type-index-lists-readable-types`); both are polled,
     since they wait for something to appear.
   - Indexing is what the first step shows, search and authorization filtering the rest.
-
 - **Not asked: Alpha in the item's `type`.** A first draft also wanted bob's search item to
   carry Alpha among its types, as `type-search-by-type` checks for a type declared both ways.
   lws-drupal failed that step: its items carry the types it took from Link headers, but not the
@@ -3846,3 +3845,19 @@ judged, and are not without `pages`; a wrong item on page 2 fails a `none`; a 40
 step, and makes a precondition inapplicable; a `next` back to a page already read fails; a result
 longer than `pages` is cantTell; a single page is judged as it is. The reference search answers in
 one page for three resources, so the self-test runs the new path on its first page only.
+
+**Verified, D-0089 to D-0093** (2026-10-08):
+- `./mvnw -B verify` is green in all five modules (104, 24, 114, 15 and 6 tests), enforcer
+  included. One run before it lost one test container to a transport error in the trapped
+  self-test ("HTTP/1.1 header parser received no bytes"); the rerun did not repeat it.
+- `tools/definitions/check.py` passes 7 of 7, with COVERAGE.md and vocab.yamlld regenerated.
+- Against lws-drupal on MariaDB (target `drupal-mariadb`: content types on, storage page size 4),
+  with its flood table, log and caches reset before each run except where said:
+  - `auth/cid` twice, the second 7 s after the first with the cache kept: 22 of 22 passed both
+    times, `authn-cid-valid-credential` and `authn-cid-referenced-method` included, each run's
+    documents under `agents/<run id>/`;
+  - the whole suite: 198 passed, 0 failed, 0 cantTell, 7 inapplicable, where it had been 196,
+    1 (`type-search-reflects-update`), 0 and 7. `type-search-reflects-update`,
+    `type-search-content-types-identical`, `type-search-and-or` and
+    `type-search-type-from-content` passed. At page size 4 the and-or searches fit on one page,
+    so `PagedStepsTest` is what exercises reading on.
