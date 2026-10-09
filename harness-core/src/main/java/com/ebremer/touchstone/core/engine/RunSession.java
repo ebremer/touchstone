@@ -58,6 +58,7 @@ final class RunSession implements AutoCloseable {
     private final Definitions definitions;
     private final String runId;
     private final Http http;
+    private final RateLimits rateLimits;
     private final Credentials credentials;
     private final ProvisioningAdapter adapter;
     private final Map<String, Lazy<?>> derived = new ConcurrentHashMap<>();
@@ -75,6 +76,7 @@ final class RunSession implements AutoCloseable {
         this.runId = runId;
         long seconds = Long.parseLong(target.properties().getOrDefault("timeout", "30"));
         this.http = new Http(Duration.ofSeconds(seconds));
+        this.rateLimits = RateLimits.forTarget(target);
         this.adapter = ProvisioningAdapters.forTarget(target);
         this.credentials = new Credentials(this);
         this.runScope = new Scope(this, null);
@@ -131,7 +133,24 @@ final class RunSession implements AutoCloseable {
         return runRoot;
     }
 
+    /**
+     * Sends a request the engine needs answered, waiting out a 429 or 503 as its Retry-After asks
+     * (section 4.5). What comes back may still be one; the caller decides what that means.
+     */
     Resp send(Req req) throws IOException {
+        return rateLimits.send(req, this::sendOnce).response();
+    }
+
+    /**
+     * Sends a step's request (section 4.5): a 429 or 503 its {@code statusCode} does not name is
+     * waited out as for any request, and the result says what was sent again and whether a
+     * refusal is left.
+     */
+    RateLimits.Result sendStep(Req req, JsonNode statusCode) throws IOException {
+        return rateLimits.send(req, this::sendOnce, statusCode);
+    }
+
+    private Resp sendOnce(Req req) throws IOException {
         try {
             return http.send(req);
         } catch (InterruptedException e) {
@@ -202,6 +221,10 @@ final class RunSession implements AutoCloseable {
             String container = scope.bound("test.container");
             URI uri = container != null ? URI.create(container) : runRoot != null ? runRoot : target.baseUrl();
             Resp resp = fetch("${as.uri}", get(uri, null, Map.of()));
+            if (RateLimits.isRefusal(resp.status())) {
+                throw Unresolvable.cantTell("an anonymous GET of " + uri + " answered " + resp.status()
+                        + " even after waiting as asked, so whether the target enforces authentication is unknown");
+            }
             if (resp.status() != 401) {
                 throw Unresolvable.inapplicable("an anonymous GET of " + uri + " answered " + resp.status()
                         + ", not 401, so the target does not enforce authentication and ${as.*} does not exist");

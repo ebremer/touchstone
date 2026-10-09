@@ -322,6 +322,10 @@ final class Credentials {
         } catch (IOException e) {
             json = null;
         }
+        if (RateLimits.isRefusal(resp.status())) {
+            throw Unresolvable.cantTell("token exchange for " + name + " at " + endpoint + " answered "
+                    + resp.status() + " even after waiting as asked (EXECUTION.md section 4.5)");
+        }
         if (resp.status() != 200 || json == null || !json.path("access_token").isTextual()) {
             throw Unresolvable.inapplicable("token exchange for " + name + " at " + endpoint + " answered "
                     + resp.status() + " without an access_token");

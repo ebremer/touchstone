@@ -332,7 +332,10 @@ Format version 0.13.0 (2026-10-08, D-0091, awaiting review) adds one thing and c
 0.12.0 definition relies on: the variable `run.id`, the run's identifier (`EXECUTION.md` section
 3). The identity registry puts it in the webids of the CID identities, whose documents carry a
 key made for the run, so each run's documents have URLs of their own and a verifier's cached copy
-of an earlier run's never stands for them (section 5.3).
+of an earlier run's never stands for them (section 5.3). It also has the engine wait out a 429 or
+503 as its `Retry-After` asks, and end the test *cantTell* rather than *failed* when waiting does
+not get the request answered (section 4.5): a rate limit is legitimate behaviour, not
+non-conformance.
 
 Format version 0.12.0 (2026-10-07, D-0087) adds one value, for client rules only,
 and changes nothing a 0.11.0 definition relies on: the `credentialSource` `samlIdentityProvider`,

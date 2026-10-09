@@ -67,7 +67,7 @@ changing the verdict.
 |---|---|---|
 | `passed` | `earl:passed` | Every step passed. |
 | `failed` | `earl:failed` | An expectation failed outside a precondition. |
-| `cantTell` | `earl:cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite. |
+| `cantTell` | `earl:cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite, a 429 or 503 that waiting did not get past. |
 | `inapplicable` | `earl:inapplicable` | A capability, identity, service or precondition the test needs is absent. |
 
 Run records written before the YAML-LD engine used `ERROR` and `SKIPPED`; they still load,

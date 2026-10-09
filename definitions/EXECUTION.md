@@ -7,8 +7,9 @@ frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2
 0.10.0 let them judge token requests, 0.11.0 the notifications a client's inbox receives, and
 0.12.0 the assertions of a session's SAML identity provider; none changes anything in this document.
 0.13.0 adds the variable `run.id` (section 3), so that a document the fixture host mints for a run
-is served at a URL of the run's own (section 5.3), and changes nothing a 0.12.0 definition relies
-on.
+is served at a URL of the run's own (section 5.3), and has the engine wait out a 429 or 503 as its
+`Retry-After` asks rather than judge it (section 4.5). It changes nothing a 0.12.0 definition
+relies on.
 0.7.0 adds one thing and changes nothing a 0.6.0 definition relies on: a test can script the
 statuses its inbox answers deliveries with, and each delivery record says which it got
 (section 5.4), so a server's retry and deactivation can be observed. 0.6.0 added two things
@@ -173,7 +174,8 @@ the test's `as`, else alice. There is no other difference.
 Tests are independent and MAY run in parallel. Within a test nothing runs in parallel
 except the fetches of one `connegEquivalent`. Every request has a 30 s timeout, unless
 the target configuration sets another. Redirects are never followed: a 3xx is the
-response under test. Nothing is retried, except a step that polls (section 4.4).
+response under test. Nothing is retried, except a step that polls (section 4.4) and a request
+the server refuses for now with 429 or 503 (section 4.5).
 
 ### 4.3 Prerequisites
 
@@ -236,10 +238,44 @@ state the server reaches asynchronously, such as a notification arriving in
 4. When W has passed, the last attempt is judged as in section 4.2 item 4: *failed*, or
    *inapplicable* in a precondition step.
 
-A transport error ends the step at once, as for any step (*cantTell*). Polling waits for
+A transport error ends the step at once, as for any step (*cantTell*). A 429 or 503 that
+waiting does not overcome (section 4.5) counts as an attempt whose expectations do not hold
+yet; if it is still the answer when W has passed, the test is *cantTell*. Polling waits for
 something to appear; it cannot prove that something never will. A test that needs an
 absence polls for a later event that would have to follow it, then asserts the absence
 with `none` (section 7, item 8).
+
+### 4.5 429 and 503 (since 0.13.0)
+
+A server may refuse a request for now: `429 Too Many Requests` when a client has sent too many
+(RFC 6585 section 4), `503 Service Unavailable` when it cannot handle one at present (RFC 9110
+section 15.6.4). Either may say when to come back with `Retry-After`. Neither is a finding: the
+request was not answered, so it is no evidence either way. The engine therefore:
+
+1. Sends a request, and if the answer is a 429 or 503, reads its `Retry-After`: delta-seconds,
+   or an HTTP-date in any of the three forms RFC 9110 section 5.6.7 makes a recipient accept,
+   counted from now and rounded up to whole seconds (zero for a date already past).
+2. If that is at most the wait cap, 30 s unless the target sets `retryAfter.maxWait`, it waits
+   that long and sends the request again, unchanged, at most 3 times unless the target sets
+   `retryAfter.retries`. Each answer is treated the same way.
+3. Stops when an answer is neither 429 nor 503, or carries no `Retry-After` (or one that is
+   neither form), or asks for longer than the cap, or the retries are spent.
+
+For a step, the answer it stops at is judged as in section 4.2, with these exceptions:
+- A step whose `statusCode` names the status itself, as an integer (`429`, `[400, 503]`), is
+  judged on the first answer as it came, without waiting: the refusal is what it tests. A class
+  such as `"4xx"` does not name it, so such a step is waited for like any other.
+- When the answer stopped at is still a 429 or 503 that the `statusCode` does not accept, the
+  test is *cantTell*, naming the status and why the engine stopped, even in a precondition
+  step. A polled step instead treats it as an attempt that does not hold yet (section 4.4).
+- When the `statusCode` accepts it by its class (a `"4xx"` step and a 429), it is judged as it
+  came.
+
+Every attempt sent again appears in the step's record with the refusal that caused it. The same
+waiting applies to every other request the engine sends: provisioning, prerequisites, derived
+variables, token exchanges, `connegEquivalent` fetches and cleanup. One still refused there makes
+the test *cantTell*, never *inapplicable*: an anonymous probe answered 429 does not show that a
+target enforces no authentication, nor a grant service answering 503 that it cannot grant.
 
 ## 5. Identities and credentials
 
@@ -527,7 +563,7 @@ passes:
 | passed | every step passed | `earl:passed` |
 | failed | a non-precondition expectation failed | `earl:failed` |
 | inapplicable | a capability, identity, service or precondition is absent | `earl:inapplicable` |
-| cantTell | the engine could not decide: transport error, timeout, setup failure, or an unresolvable variable that is not an optional feature | `earl:cantTell` |
+| cantTell | the engine could not decide: transport error, timeout, setup failure, a 429 or 503 that waiting did not overcome (section 4.5), or an unresolvable variable that is not an optional feature | `earl:cantTell` |
 | untested | not run (deselected) | `earl:untested` |
 
 - **Verdict.** The target conforms when no MUST test *failed* and no MUST test ended

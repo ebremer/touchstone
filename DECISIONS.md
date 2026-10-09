@@ -3740,3 +3740,57 @@ than a rewrite inside the engine, so the definitions still say where each docume
 under `agents/<run id>/`, the first run's URL is gone in the second, the keys differ, and the
 issuer, discovery, JWKS and `agents/oidc` paths are the same in both; a run id with a `/` is
 refused.
+
+### D-0092 — a 429 or 503 is waited out, not failed
+On a server's fourth run within an hour, its per-agent limit on subscriptions answered `429` with
+a `Retry-After`, and Touchstone recorded 17 notification tests, most of them MUST, as failed:
+"expected 2xx, actual 429". A rate limit is legitimate behaviour, and so is a `503` with a
+`Retry-After`: the server has not answered the request, so the answer is no evidence either way.
+
+**The engine now waits them out** (`RateLimits`, EXECUTION.md section 4.5):
+- A `429` or `503` with a `Retry-After` (delta-seconds, or an HTTP-date in any of RFC 9110's
+  three forms) of at most 30 s is waited for, and the request sent again, at most 3 times. The
+  target properties `retryAfter.maxWait` and `retryAfter.retries` change the two bounds;
+  lws-drupal's token exchange, for one, asks for 60 s.
+- A refusal without `Retry-After`, with a longer one, or still there after the retries ends the
+  test **cantTell**, with a reason that names the status and why the engine stopped. That holds in
+  a precondition step too: a rate limit says nothing about whether a feature exists.
+- A **polled** step treats such a refusal as an attempt that does not hold yet, and polls on; it
+  ends cantTell only if the refusal is still the answer when its time is up.
+- Every attempt sent again stays in the step's record, labelled with the refusal and the wait.
+- The same waiting covers every request the engine sends. Where a refusal used to make a test
+  inapplicable, it now makes it cantTell: the anonymous probe behind `${as.*}`, a grant
+  prerequisite, a token exchange for alice or bob. A `connegEquivalent` fetch still refused is
+  cantTell rather than a failed expectation.
+
+**A deviation from DESIGN.md section 5.3**, "retries OFF by default (a flaky SUT is a finding,
+not noise)", and from EXECUTION.md's "Nothing is retried". A server that answers `429` or `503`
+with `Retry-After` is not flaky: it is telling the client, in the protocol, when to ask again.
+Retries stay off for everything else: a 5xx other than 503, a timeout or a reset connection is
+still a finding or cantTell, as before. EXECUTION.md is part of the frozen format, so the rule
+joins format 0.13.0 (D-0091); it changes nothing a definition relies on.
+
+Judgment calls:
+- **What "expects the status" means.** A step whose `statusCode` names 429 or 503 as an integer
+  is judged on the refusal as it came, with no waiting: no definition does so today, and one that
+  tests a rate limit would. A class does not name it. A negative test expecting `"4xx"` learns
+  nothing from a 429, since the server did not evaluate the request, so it is waited for like any
+  other step.
+- **A class that accepts the refusal.** When waiting does not get past a refusal and the step's
+  `statusCode` accepts it by class (a `"4xx"` step and a 429 without `Retry-After`), it is judged
+  as it came, as before. The alternative, cantTell, would turn passed tests into cantTell on a
+  tidying-up step (`["2xx", "4xx"]`, "not judged"). The cost is that such a negative test still
+  passes on a bare 429, as it always has; with a `Retry-After`, it is now judged on the real
+  answer.
+- **Every method is sent again**, POST included. Both statuses say the request was not handled
+  (RFC 6585 section 4, RFC 9110 section 15.6.4), and the definitions create only inside their own
+  test containers, which are deleted at the end.
+- The wait is bounded per request (at most 3 × 30 s by default), not per run. Lowering
+  `parallelism` is the way to stay under a limit; the troubleshooting guide says so.
+
+`RateLimitsTest` covers the `Retry-After` forms, the bounds and which statuses are named;
+`RateLimitedStepsTest` runs steps through the engine against a stub storage: retried and passed,
+cantTell without `Retry-After`, cantTell (not inapplicable) in a precondition, a named 429 judged
+at once, a class-accepted 429 judged as it came, and a polled step that waits a refusal out or
+ends cantTell. Documented in EXECUTION.md section 4.5, `docs/troubleshooting.md`,
+`docs/targets.md`, `docs/how-it-works.md` and `docs/reports.md`.

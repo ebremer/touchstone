@@ -20,7 +20,8 @@ import com.ebremer.touchstone.core.results.HttpExchangeTrace;
 /**
  * The engine's HTTP: exactly the headers a definition asks for plus the few EXECUTION.md
  * section 6.2 names, HTTP/1.1 (so no upgrade header is added behind a definition's back), a
- * timeout on every request, redirects never followed, nothing retried (section 4.2).
+ * timeout on every request, redirects never followed, nothing retried here (section 4.2): only
+ * {@link RateLimits}, above it, sends a request again, when a 429 or 503 asks for that.
  */
 final class Http {
 

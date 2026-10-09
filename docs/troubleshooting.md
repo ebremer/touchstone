@@ -58,12 +58,37 @@ did not have, and the report lists it.
   failure themselves.
 - A transport error or timeout: the connection failed, or a response took longer than 30
   seconds (the target property `timeout` changes it). Nothing is retried.
+- `the server answered 429 Too Many Requests ...` or `... 503 Service Unavailable ...`: see
+  the next section.
 - `${storage}: GET ... as alice answered N with no Link whose rel is
   https://www.w3.org/ns/lws#storage`: a variable derived from the server could not be
   derived. The discovery tests report the missing link as a failure.
 
 A MUST test that ends `cantTell` makes the run non-conformant: a server cannot be declared
 conformant on evidence the harness could not gather.
+
+## The server answered 429 or 503
+
+A `429 Too Many Requests` is a server's rate limit: per agent, per address, or per kind of
+request such as subscriptions or token exchanges. A `503 Service Unavailable` says it cannot
+answer for now. Neither is non-conformance, so Touchstone does not report it as a failure.
+
+- **With `Retry-After`** of at most 30 seconds, the harness waits as asked and sends the request
+  again, up to three times. The report keeps each refused attempt as a step of its own, labelled
+  with the refusal, so you can see what the wait cost. When the request is then answered, the
+  test is judged on that answer as usual.
+- **Without `Retry-After`**, with a longer one, or still refused after the retries, the test
+  ends `cantTell`, and the reason names the status and why the harness stopped. A polled step
+  just tries again at its next attempt, and ends `cantTell` only if the refusal is still the
+  answer when its time is up.
+- A step that expects 429 or 503 itself, by number, is judged on it as it came.
+
+The target properties `retryAfter.maxWait` (seconds) and `retryAfter.retries` change the
+limits; see [Targets](targets.md). A server with a limit that a full run outlasts, such as a
+handful of subscriptions per agent per hour, will still end tests `cantTell`: let its window pass
+between runs, raise the limit on a test deployment, or run fewer modules at a time.
+A MUST test that ends `cantTell` still makes the run non-conformant, as any evidence the harness
+could not gather does.
 
 ## A warning says something was left behind
 

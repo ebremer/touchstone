@@ -66,6 +66,8 @@ Tests never carry credentials. They name identities from
 | `saml.idpKey`, `saml.idpCertificate` | With `SamlTrust`: the harness identity provider's RSA private JWK, and its PEM certificate if the server trusts it by certificate. |
 | `timeout` | Seconds before a request is abandoned. Default `30`. |
 | `parallelism` | How many tests run at once. Default `16`. |
+| `retryAfter.maxWait` | The longest `Retry-After`, in seconds, the harness waits for when a server answers 429 or 503. Default `30`. |
+| `retryAfter.retries` | How many times the harness sends a request again after such a refusal. Default `3`. |
 
 Tokens are looked up in the target property `token.<name>`, then in the environment
 variable `TOUCHSTONE_TOKEN_<NAME>`: the name upper-cased, `-` replaced by `_`. On a target

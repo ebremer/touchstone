@@ -104,7 +104,8 @@ sequenceDiagram
    - creates the test's own container, `${test.container}`;
    - creates its prerequisites and grants the access they declare;
    - runs its steps in order: fills in the templates, adds the identity's credentials,
-     sends the request (no redirects, a 30-second timeout, no retries), and checks the
+     sends the request (no redirects, a 30-second timeout, and no retries unless the
+     server refuses it for now with 429 or 503 and a `Retry-After`), and checks the
      expectations in the order the contract fixes;
    - stops at the first failed expectation: `failed`, or `inapplicable` in a precondition
      step.
@@ -124,7 +125,10 @@ sequenceDiagram
 - **Steps are sequential.** Inside a test, steps run in order and pass values forward
   with `capture`, for example the `Location` of a resource the test just created.
 - **No retries.** A server that fails intermittently has a real defect, and Touchstone
-  reports it as one.
+  reports it as one. The exception is a server that says it is limiting requests, or briefly
+  unavailable: a 429 or 503 with a `Retry-After` of at most 30 s is waited out, at most three
+  times, and one that is not ends the test `cantTell`, since the server never answered the
+  request ([429 and 503](troubleshooting.md#the-server-answered-429-or-503)).
 
 ## Identities
 
@@ -164,7 +168,7 @@ is discovered instead, and its absence makes the tests that need it inapplicable
 | `passed` | Every step passed. | `earl:passed` |
 | `failed` | An expectation failed outside a precondition. This is a finding about the server, even when the same response also left a value uncaptured: a refused create has no `Location`, and the refusal is the finding. | `earl:failed` |
 | `inapplicable` | A capability, identity, service or precondition the test needs is absent. | `earl:inapplicable` |
-| `cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite, or a variable that could not be resolved for any other reason. | `earl:cantTell` |
+| `cantTell` | The harness could not decide: a transport error, a timeout, a failed prerequisite, a 429 or 503 that waiting did not get past, or a variable that could not be resolved for any other reason. | `earl:cantTell` |
 
 Each test has one level, and only MUST tests decide conformance. [Reports and
 verdicts](reports.md) explains how outcomes become a verdict.

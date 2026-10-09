@@ -284,6 +284,10 @@ final class Evaluator {
             } catch (IOException ex) {
                 throw Unresolvable.cantTell("conneg fetch as " + mediaType + " failed: " + ex);
             }
+            if (RateLimits.isRefusal(r.status())) {
+                throw Unresolvable.cantTell("conneg fetch as " + mediaType + " answered " + r.status()
+                        + " even after waiting as asked (EXECUTION.md section 4.5)");
+            }
             String essence = Headers.essence(r.first("Content-Type"));
             if (!check(r.status() == 200 && mediaType.equals(essence), "conneg " + mediaType,
                     "200 as " + mediaType, r.status() + " as " + essence)) {

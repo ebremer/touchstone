@@ -236,7 +236,8 @@ final class TestExecution {
                 String why = "the access grant service answered " + resp.status()
                         + (location == null ? " without a Location" : "") + ", not 201";
                 steps.add(new StepResult(label, Http.trace(req, resp), List.of(), why));
-                end(Outcome.INAPPLICABLE, label + ": " + why);
+                // A refusal that waiting did not overcome says nothing about grants (section 4.5).
+                end(RateLimits.isRefusal(resp.status()) ? Outcome.CANT_TELL : Outcome.INAPPLICABLE, label + ": " + why);
                 return false;
             }
             steps.add(new StepResult(label, Http.trace(req, resp), List.of(), null));
@@ -257,6 +258,12 @@ final class TestExecution {
      * every {@code pollEvery} seconds until its expectations hold or {@code pollWithin} seconds
      * have passed since the first attempt; only the attempt that is judged leaves captures and
      * cleanup registrations behind.
+     *
+     * <p>A 429 or 503 the step's {@code statusCode} does not name is waited out as its
+     * {@code Retry-After} asks (section 4.5), and each attempt sent again is kept in the record.
+     * One that waiting does not overcome is judged as it came if the expectation accepts it (a
+     * {@code "4xx"} step and a 429); otherwise a polled step tries again at its next attempt, and
+     * any other step ends the test cantTell, since the server has not yet answered the request.
      */
     private boolean step(StepDefinition step) {
         String identity = step.identity() != null ? step.identity() : test.identity() != null ? test.identity() : "alice";
@@ -274,12 +281,30 @@ final class TestExecution {
                 end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
                 return false;
             }
-            Resp resp;
+            JsonNode statusCode = step.response().path("statusCode");
+            RateLimits.Result sent;
             try {
-                resp = run.send(req);
+                sent = run.sendStep(req, statusCode);
             } catch (IOException e) {
                 steps.add(new StepResult(label, Http.trace(req, null), List.of(), "transport error: " + e));
                 end(Outcome.CANT_TELL, "step '" + step.label() + "': " + e);
+                return false;
+            }
+            Resp resp = sent.response();
+            if (sent.limited() && !MessageChecks.statusMatches(statusCode, resp.status())) {
+                if (step.polls() && System.nanoTime() < deadline) {
+                    // Like an attempt whose expectations do not hold yet: the next one may be answered.
+                    scope.restore(before);
+                    if (!pause(step)) {
+                        return false;
+                    }
+                    continue;
+                }
+                record(label, sent);
+                String why = "the server " + sent.unresolved();
+                steps.add(new StepResult(label, Http.trace(req, resp), List.of(), why));
+                end(Outcome.CANT_TELL, "step '" + step.label() + "': " + why
+                        + "; a request the server has not answered is no evidence either way (EXECUTION.md section 4.5)");
                 return false;
             }
             Evaluator.Evaluation evaluation;
@@ -287,6 +312,7 @@ final class TestExecution {
                 evaluation = Evaluator.evaluate(step.response(), req, resp, scope, test.directory(),
                         accept -> Requests.build(step.request(), identity, scope, test.directory(), accept));
             } catch (Unresolvable e) {
+                record(label, sent);
                 steps.add(new StepResult(label, Http.trace(req, resp), List.of(), e.getMessage()));
                 end(e.outcome(), "step '" + step.label() + "': " + e.getMessage());
                 return false;
@@ -294,16 +320,13 @@ final class TestExecution {
             if (!evaluation.passed() && step.polls() && System.nanoTime() < deadline) {
                 // Not yet: undo what this attempt bound and try again (section 4.4, item 3).
                 scope.restore(before);
-                try {
-                    Thread.sleep(step.pollEvery() * 1000L);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    end(Outcome.CANT_TELL, "step '" + step.label() + "': interrupted while polling");
+                if (!pause(step)) {
                     return false;
                 }
                 continue;
             }
             evaluation.cleanup().forEach(uri -> cleanups.push(new Cleanup(uri, identity)));
+            record(label, sent);
             steps.add(new StepResult(label, Http.trace(req, resp), evaluation.results(), null));
             if (evaluation.passed()) {
                 return true;
@@ -316,6 +339,25 @@ final class TestExecution {
                 end(Outcome.FAILED, null);
             }
             return false;
+        }
+    }
+
+    /** Waits between the attempts of a polled step; false when interrupted, which ends the test. */
+    private boolean pause(StepDefinition step) {
+        try {
+            Thread.sleep(step.pollEvery() * 1000L);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            end(Outcome.CANT_TELL, "step '" + step.label() + "': interrupted while polling");
+            return false;
+        }
+    }
+
+    /** Keeps the attempts a 429 or 503 had sent again, before the attempt that was judged (section 4.5). */
+    private void record(String label, RateLimits.Result sent) {
+        for (RateLimits.Refusal r : sent.retried()) {
+            steps.add(new StepResult(label + " (" + r.note() + ")", Http.trace(r.req(), r.resp()), List.of(), null));
         }
     }
 
