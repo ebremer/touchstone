@@ -78,10 +78,9 @@ entries:
     name: type-index-lists-readable-types
     label: The type index lists a type borne by a resource the client may read
     comment: >-
-      bob may read a resource whose Turtle declares a type unique to this test. bob's GET of the
-       TypeIndexService answers a TypeIndex in application/lws+json that lists that type (polled:
-       membership "MAY be eventually consistent"). Types a server takes from content "MUST be
-       treated identically" to those from Link headers.
+      bob may read a resource that declares a type unique to this test, by Link rel=type and in
+       its Turtle. bob's GET of the TypeIndexService answers a TypeIndex in application/lws+json
+       that lists that type (polled: membership "MAY be eventually consistent").
     status: Proposed
     level: MUST
     source:
@@ -92,8 +91,6 @@ entries:
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-index/authorization-enforced
-      - https://example.org/touchstone/req/lws10-index/content-types-identical
-      - https://example.org/touchstone/req/lws10-index/types-from-content
       - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
     prereqs:
       hierarchy:
@@ -331,8 +328,6 @@ entries:
       - https://example.org/touchstone/req/lws10-index/search-default-containerpage
       - https://example.org/touchstone/req/lws10-index/result-item-id-type
       - https://example.org/touchstone/req/lws10-index/type-filter
-      - https://example.org/touchstone/req/lws10-index/content-types-identical
-      - https://example.org/touchstone/req/lws10-index/types-from-content
       - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
     prereqs:
       hierarchy:
@@ -1721,7 +1716,6 @@ entries:
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-index/types-from-link-headers
-      - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
     prereqs:
       hierarchy:
         - dataResource: linked
@@ -1766,8 +1760,10 @@ entries:
     label: A type declared only in the resource's Turtle is searchable
     comment: >-
       "Servers MAY additionally derive types from the resource representation itself when they
-       are able to parse it", and such types "MUST be treated identically". A Turtle resource
-       stating <> a Alpha, with no Link header, is found by a search on Alpha.
+       are able to parse it." A Turtle resource stating <> a Alpha, with no Link header, is found
+       by a search on Alpha. It cites only that MAY: a server that never reads content fails
+       this test and breaks no other clause, and what the MUST on such types asks is
+       type-search-content-types-identical's.
     status: Proposed
     level: MAY
     source:
@@ -1776,8 +1772,6 @@ entries:
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-index/types-from-content
-      - https://example.org/touchstone/req/lws10-index/content-types-identical
-      - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
     prereqs:
       hierarchy:
         - dataResource: typed
@@ -1813,6 +1807,169 @@ entries:
                 - pointer: /id
                   equalsIri: "${typed}"
 
+  - id: "#type-search-content-types-identical"
+    type: ValidationTest
+    name: type-search-content-types-identical
+    label: A type taken from content is filtered by authorization and listed in the type index like one from a Link header
+    comment: >-
+      "When a server enriches the type index from resource content, the types it surfaces MUST
+       be treated identically to those derived from Link headers for the purposes of indexing,
+       search, and authorization filtering." A Turtle resource states <> a Alpha and has no Link
+       header. The test applies when alice's search on Alpha finds it, so the server takes types
+       from content (a MAY). Then, as type-search-authorization-filtered and
+       type-index-omits-unreadable-type ask of a type from a Link header: bob, who may not read
+       the resource, finds it in no search, and his type index does not list Alpha; once alice
+       grants him read, his search finds it with Alpha among its item's types, and his type index
+       lists Alpha.
+    status: Proposed
+    level: MUST
+    source:
+      - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
+      - https://w3c.github.io/lws-protocol/lws10-index/#security-authorization
+    traits: [Discovery, Authz, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-index/content-types-identical
+    prereqs:
+      hierarchy:
+        - dataResource: typed
+          contentType: text/turtle
+          body: "<> a <${test.container}#Alpha> ."
+    steps:
+      - label: the storage offers a Type Search Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeSearchService
+      - label: the storage offers a Type Index Service (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: TypeIndexService
+      - label: alice's search finds the resource by the type its content states (otherwise the server derives no type from content, and this test does not apply)
+        precondition: true
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${typed}"
+      - label: bob, who may not read it, does not find it
+        as: bob
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${typed}"
+      - label: bob's type index does not list Alpha
+        as: bob
+        request:
+          method: GET
+          url: "${service.TypeIndexService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              optional: true
+              none:
+                - pointer: /id
+                  equalsIri: "${test.container}#Alpha"
+      - label: grant bob read on the resource
+        request:
+          method: POST
+          url: "${service.AccessGrantService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.webid}"
+                target:
+                  type: StorageResource
+                  value: ["${typed}"]
+        response:
+          statusCode: 201
+          location:
+            capture: grant
+            cleanup: true
+      - label: bob can read the resource now (otherwise the grant did not take effect, and this test does not apply)
+        precondition: true
+        as: bob
+        request:
+          method: GET
+          url: "${typed}"
+        response:
+          statusCode: 200
+      - label: bob's search finds it, and its item has the type
+        as: bob
+        poll: {within: 60, every: 3}
+        request:
+          method: QUERY
+          url: "${service.TypeSearchService}"
+          contentType: application/lws-query+json
+          bodyJSON:
+            type: ["${test.container}#Alpha"]
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${typed}"
+                - pointer: /type
+                  hasValue: "${test.container}#Alpha"
+      - label: bob's type index lists Alpha
+        as: bob
+        poll: {within: 60, every: 3}
+        request:
+          method: GET
+          url: "${service.TypeIndexService}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${test.container}#Alpha"
+
   - id: "#type-search-reflects-update"
     type: ValidationTest
     name: type-search-reflects-update
@@ -1838,7 +1995,6 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-index/reflect-change-bounded
       - https://example.org/touchstone/req/lws10-index/types-from-link-headers
-      - https://example.org/touchstone/req/lws10-index/types-from-content
     prereqs:
       hierarchy:
         - dataResource: one

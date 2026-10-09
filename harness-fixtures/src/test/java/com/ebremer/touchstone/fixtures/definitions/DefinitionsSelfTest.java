@@ -147,6 +147,7 @@ class DefinitionsSelfTest {
                     "core/notifications#subscription-unreadable-topic-refused",
                     "index/manifest#type-index-omits-unreadable-type",
                     "index/manifest#type-search-authorization-filtered",
+                    "index/manifest#type-search-content-types-identical",
                     "index/manifest#type-search-content-location-protected");
             // It reveals no authorization server, so everything that needs one is inapplicable,
             // not failed: the harness cannot tell what it cannot reach.

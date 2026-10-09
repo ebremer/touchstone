@@ -3644,3 +3644,49 @@ the client declared, and the answer carries `Preference-Applied: set-linkset`. A
 - In the server self-test's trapped deployment, `type-search-reflects-update` is inapplicable,
   with a reason naming `Preference-Applied`: the proof that a server without combined updates is
   not failed. The compliant deployment passes it. `RefLwsServerTest` checks the header both ways.
+
+### D-0090 — what the content-type tests cite, and a MUST test for content types
+The requirement row of a report is FAIL when any test citing it fails (`HtmlReport`). Two
+citations made rows fail for servers that broke nothing:
+- `type-search-type-from-content` (MAY) cited `content-types-identical`, the conditional MUST
+  "When a server enriches the type index from resource content, the types it surfaces MUST be
+  treated identically to those derived from Link headers for the purposes of indexing, search,
+  and authorization filtering". A server that never reads content fails the MAY test, as it may,
+  and so showed FAIL on a MUST row. The same test cited `reflect-change-bounded`.
+- `type-search-reflects-update` (SHOULD) cited `types-from-content`, so the MAY row showed FAIL
+  whenever that test failed, even when the test aimed at the MAY passed.
+
+**The changes:**
+- `type-search-type-from-content` cites only `types-from-content`. A test of whether a server
+  derives a type at all cites only the derivation requirement; for the same reason,
+  `type-search-type-from-link-header` no longer cites `reflect-change-bounded`. A server that
+  derives no type that way has nothing to reflect, and the tests that need a derived type are
+  inapplicable for it, as D-0067 set out.
+- `type-search-reflects-update` cites what it tests: `reflect-change-bounded` and
+  `types-from-link-headers`. Since D-0089 its replacement is declared by a Link header in a
+  combined update, and a server that reads only content would find Beta in the new body anyway.
+- `type-index-lists-readable-types` and `type-search-by-type` no longer cite
+  `content-types-identical` and `types-from-content`. Their resources declare each type both
+  ways, so they pass whether or not a server reads content, and credited both rows with a PASS
+  that showed nothing about content. The first test's comment loses its sentence on the MUST.
+- **New: `type-search-content-types-identical` (MUST)**, the only test citing
+  `content-types-identical`. A Turtle resource states `<> a <#Alpha>` and has no Link header.
+  - It applies when the storage offers both services and alice's search on Alpha finds the
+    resource, polled: the server takes types from content. A server that does not makes the
+    conditional MUST, and the test, inapplicable.
+  - Then the type is checked the way the Link-header tests check theirs. bob, who may not read
+    the resource, does not find it in a search, and his type index does not list Alpha
+    (`type-search-authorization-filtered`, `type-index-omits-unreadable-type`); neither is
+    polled, since authorization may not be eventually consistent.
+  - alice grants him read through the access grant service, as `type-search-revoked-not-shown`
+    does, and a precondition checks that he can now read the resource. Then his search finds
+    it, with Alpha among the item's types (`type-search-by-type`), and his type index lists
+    Alpha (`type-index-lists-readable-types`); both are polled, since they wait for something
+    to appear.
+  - Indexing is what the first step shows, search and authorization filtering the rest.
+
+**Review.** The new test is `status: Proposed`, as every test is until Erich approves it (the
+human gate on test authoring, DESIGN.md section 7.4): an agent drafted it on this branch. It
+passes against the reference deployment and its trapped twin, and fails against
+BROKEN_STORAGE, which lets bob see everything: the self-test now expects 24 failures there.
+COVERAGE.md is regenerated: 205 tests, 163 of them MUST.

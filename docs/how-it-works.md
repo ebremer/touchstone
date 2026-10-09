@@ -198,7 +198,7 @@ provides both.
 
 `./mvnw verify` runs the loop in `DefinitionsSelfTest`:
 
-- against the secured deployment, all 204 definitions run, and every one passes except the
+- against the secured deployment, all 205 definitions run, and every one passes except the
   single-page pagination test, which is inapplicable because the reference splits that
   container into pages;
 - against the same deployment with every trap set, the same holds, except that the test that
@@ -207,7 +207,7 @@ provides both.
 - against an open storage, exactly the tests that need authentication are inapplicable;
 - against the broken authorization server, the 26 negative tests of the three
   authentication suites fail, and so does the unknown-storage test;
-- against the broken storage, its 23 access-control tests fail;
+- against the broken storage, its 24 access-control tests fail;
 - against a storage that leaks notifications, the two delivery-authorization tests and the
   signature test fail.
 

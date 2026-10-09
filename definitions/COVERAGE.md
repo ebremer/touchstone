@@ -6,7 +6,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 ## Summary
 
-- **204 tests**: 162 MUST, 31 SHOULD, 11 MAY; 129 validation tests, 75 negative tests.
+- **205 tests**: 163 MUST, 31 SHOULD, 11 MAY; 130 validation tests, 75 negative tests.
 - **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 64 of the 79 requirements that bind a client or a receiver; the other 15 are not judged, each for a reason section 4 gives: 11 permissions a client cannot break, 3 obligations that do not show in what a client sends, and the conformance class itself (sections 4 and 5).
 - **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 5 October draft.
@@ -27,7 +27,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/notifications` | 15 | 14 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
 | `core/storage_authorization` | 17 | 17 | 0 | 0 |
-| `index/manifest` | 39 | 29 | 6 | 4 |
+| `index/manifest` | 40 | 30 | 6 | 4 |
 | `notifications/webhook/manifest` | 11 | 8 | 1 | 2 |
 
 ## 1. lws-test-suite → definitions
@@ -357,6 +357,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `type-search-not-shared` | Validation | MUST | Authentication |  |
 | `type-search-type-from-link-header` | Validation | SHOULD | Authentication |  |
 | `type-search-type-from-content` | Validation | MAY | Authentication |  |
+| `type-search-content-types-identical` | Validation | MUST | Authentication |  |
 | `type-search-reflects-update` | Validation | SHOULD | Authentication |  |
 | `type-search-reflects-delete` | Validation | SHOULD | Authentication |  |
 | `type-search-vary-accept` | Validation | MUST | Authentication |  |
