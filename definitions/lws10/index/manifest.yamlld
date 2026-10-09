@@ -1824,8 +1824,9 @@ entries:
        from content (a MAY). Then, as type-search-authorization-filtered and
        type-index-omits-unreadable-type ask of a type from a Link header: bob, who may not read
        the resource, finds it in no search, and his type index does not list Alpha; once alice
-       grants him read, his search finds it with Alpha among its item's types, and his type index
-       lists Alpha.
+       grants him read, his search finds it, and his type index lists Alpha. The test does not
+       ask for Alpha in the item's type: items carry "its type, mirroring a container member",
+       which a member's LWS class satisfies.
     status: Proposed
     level: MUST
     source:
@@ -1942,7 +1943,7 @@ entries:
           url: "${typed}"
         response:
           statusCode: 200
-      - label: bob's search finds it, and its item has the type
+      - label: bob's search finds it
         as: bob
         poll: {within: 60, every: 3}
         request:
@@ -1958,8 +1959,6 @@ entries:
               some:
                 - pointer: /id
                   equalsIri: "${typed}"
-                - pointer: /type
-                  hasValue: "${test.container}#Alpha"
       - label: bob's type index lists Alpha
         as: bob
         poll: {within: 60, every: 3}

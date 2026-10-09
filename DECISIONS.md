@@ -3680,10 +3680,19 @@ citations made rows fail for servers that broke nothing:
     polled, since authorization may not be eventually consistent.
   - alice grants him read through the access grant service, as `type-search-revoked-not-shown`
     does, and a precondition checks that he can now read the resource. Then his search finds
-    it, with Alpha among the item's types (`type-search-by-type`), and his type index lists
-    Alpha (`type-index-lists-readable-types`); both are polled, since they wait for something
-    to appear.
+    it, and his type index lists Alpha (`type-index-lists-readable-types`); both are polled,
+    since they wait for something to appear.
   - Indexing is what the first step shows, search and authorization filtering the rest.
+
+- **Not asked: Alpha in the item's `type`.** A first draft also wanted bob's search item to
+  carry Alpha among its types, as `type-search-by-type` checks for a type declared both ways.
+  lws-drupal failed that step: its items carry the types it took from Link headers, but not the
+  ones it took from content. The clause on items asks for "the matched resource's id and its
+  type, mirroring a container member", and a container member's type is its LWS class, which
+  lws-drupal's items carry. So the draft does not clearly ask for every derived type in an item,
+  and the check was dropped rather than mark down a reading the draft allows. Whether
+  `type-search-by-type`'s `hasValue` on the item's type asks too much in the same way is left for
+  review; lws-drupal passes it, since its Link-derived types are in the item.
 
 **Review.** The new test is `status: Proposed`, as every test is until Erich approves it (the
 human gate on test authoring, DESIGN.md section 7.4): an agent drafted it on this branch. It
