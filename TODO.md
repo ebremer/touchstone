@@ -26,6 +26,24 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-08 — what five server runs showed (D-0089 to D-0093)
+
+On branch `server-run-fixes`. Each item fixes a place where Touchstone marked correct behaviour
+down, or gave a result that depended on the run.
+
+- [x] **`type-search-reflects-update` asks for a combined update** (`Prefer: set-linkset`), and is
+  inapplicable without one. → **Done (D-0089).**
+- [x] **Content-type requirements cited by tests that can show them**, and a MUST test,
+  `type-search-content-types-identical`. → **Done (D-0090).**
+- [x] **Per-run URLs for documents minted per run**, through `${run.id}`; format 0.13.0. →
+  **Done (D-0091).**
+- [ ] **Erich: review format 0.13.0** and the new test `type-search-content-types-identical`
+  (status Proposed).
+- [ ] **Later, if wanted:** pin the harness OpenID Provider's key in the target configuration, for
+  a verifier that does not re-fetch a JWKS on an unfamiliar `kid` (D-0091).
+
+---
+
 ## 2026-10-07 — the gaps in client coverage (D-0087)
 
 Of the 79 requirements that bind a client or a receiver, the client rules cited 58. On branch

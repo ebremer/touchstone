@@ -10,7 +10,7 @@ description: "How to write a Touchstone test definition in YAML-LD: structure, p
 A Touchstone test is a **definition**: an entry in a YAML-LD manifest under
 `definitions/lws10/`. It describes one request and its response, or a flow of steps, with
 declarative expectations. Definitions are data, so a new test needs no Java code. The format
-is version 0.12.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
+is version 0.13.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
 says exactly what every key means, and an engine that does anything else is wrong.
 
 Before a run sends a single request, every definition is parsed as YAML 1.2, validated
@@ -197,6 +197,7 @@ expression takes its JSON value, so `"${now+300}"` becomes a number.
 |---|---|
 | `test.container` | The test's own container, empty when the first step runs. |
 | `run.root`, `target.baseUrl` | The run's root container; the URL the target is registered with. |
+| `run.id` | The run's identifier, unique to the run and safe in a URL as it is. |
 | `uuid`, `now`, `now+N`, `now-N` | A fresh UUID; the time in seconds since the epoch. |
 | `storage` | The storage, from the `lws#storage` link on the test container. |
 | `as.uri`, `as.realm`, `as.metadataUrl` | From the Bearer challenge an anonymous request draws. |
@@ -304,6 +305,6 @@ committed directly.
 - [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %}): the
   contract, key by key
 - [The JSON Schema]({% include src.html path="definitions/schema/definitions.schema.json" %}),
-  format 0.12.0
+  format 0.13.0
 - [`definitions/COVERAGE.md`]({% include src.html path="definitions/COVERAGE.md" %}): every
   test, and what it replaced

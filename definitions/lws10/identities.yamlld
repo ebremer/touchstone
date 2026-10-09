@@ -360,12 +360,15 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid"
     comment: >-
       A P-256 key pair generated fresh for each run, published as a JsonWebKey
       verification method in the controlled identifier document the harness hosts at
       ${identity.cid.webid}. The JWT header kid names that method (CID suite section 5,
-      CID 1.0 section 3.3). The target must be able to reach ${fixtures.baseUrl}.
+      CID 1.0 section 3.3). The target must be able to reach ${fixtures.baseUrl}. The
+      document's URL names the run, as do those of the other CID identities, which carry the
+      same key: a verifier may cache a document, and an earlier run's copy names another key
+      (D-0091).
     credentialHeader:
       alg: ES256
       typ: JWT
@@ -394,7 +397,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid-document-id-mismatch"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid-document-id-mismatch"
     comment: >-
       The document at the subject URL gives a different id, so it is not the subject's document. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -425,7 +428,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid-key-not-for-authentication"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid-key-not-for-authentication"
     comment: >-
       The key is a verificationMethod referenced only from assertionMethod, so the subject does not authenticate with it (CID 1.0 section 3.3). The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -457,7 +460,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid-key-revoked"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid-key-revoked"
     comment: >-
       The authentication method carries a revoked time in the past (CID 1.0 section 2.2). The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -489,7 +492,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid-foreign-controller"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid-foreign-controller"
     comment: >-
       The authentication method names another document as its controller, so it is not the subject's key. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -520,7 +523,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/cid-referenced-method"
+    webid: "${fixtures.baseUrl}agents/${run.id}/cid-referenced-method"
     comment: >-
       The authentication relationship names the method by its id, and the method is defined under verificationMethod: the reference form CID 1.0 allows beside embedding. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).

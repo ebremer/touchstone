@@ -89,6 +89,8 @@ final class Scope implements Templates.Resolver {
                 return TextNode.valueOf(run.target().baseUrl().toString());
             case "run.root":
                 return TextNode.valueOf(run.runRoot().toString());
+            case "run.id":
+                return TextNode.valueOf(run.runId());
             default:
                 break;
         }

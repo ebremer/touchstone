@@ -1,11 +1,14 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.12.0 (2026-10-07, DECISIONS.md D-0087, awaiting review; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+**Status: frozen, format 0.13.0 (2026-10-08, DECISIONS.md D-0091, awaiting review; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
 frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
 2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
 0.8.0 added client rules, which `OBSERVATION.md` governs, 0.9.0 gave them tasks and faults, and
 0.10.0 let them judge token requests, 0.11.0 the notifications a client's inbox receives, and
 0.12.0 the assertions of a session's SAML identity provider; none changes anything in this document.
+0.13.0 adds the variable `run.id` (section 3), so that a document the fixture host mints for a run
+is served at a URL of the run's own (section 5.3), and changes nothing a 0.12.0 definition relies
+on.
 0.7.0 adds one thing and changes nothing a 0.6.0 definition relies on: a test can script the
 statuses its inbox answers deliveries with, and each delivery record says which it got
 (section 5.4), so a server's retry and deactivation can be observed. 0.6.0 added two things
@@ -106,6 +109,7 @@ becomes an object. Anywhere else the value is converted to a string.
 |---|---|
 | `target.baseUrl` | The storage URL the target is registered with in `targets.yaml`. |
 | `run.root` | The run root container (section 4.1). |
+| `run.id` | The run's identifier, as reports name the run (since 0.13.0). It is made of RFC 3986 unreserved characters, so it can stand in a URL as it is, and no other run has it: a URL built from it names nothing an earlier run published (section 5.3). |
 | `test.container` | The test's own container (section 4.2): empty when step 1 runs. |
 | `uuid` | A fresh random UUID, lower case, each time it is evaluated. |
 | `now`, `now+N`, `now-N` | Current time in whole seconds since the epoch, offset by N seconds. |
@@ -122,7 +126,7 @@ becomes an object. Anywhere else the value is converted to a string.
 | *captured* | Bound by a prerequisite entry (section 4.3), or by `capture` in an earlier step of the same test, or earlier in the same step for `jwt`. Names match `^[a-z][A-Za-z0-9]*$`. A capture never rebinds a name. |
 
 Derived variables are computed on first use and cached. `storage`, `as.*` and the
-storage description are cached per run; the rest per test.
+storage description are cached per run; the rest per test. `run.id` is fixed for the run.
 
 **Unresolvable variables.** When a variable cannot be resolved, the test's outcome depends on why:
 
@@ -288,6 +292,10 @@ An identity that cannot be produced makes the test *inapplicable*.
     carrying that kid and `alg ES256`.
   - The harness serves the rendered `identityDocument` at the identity's webid as
     `application/ld+json`.
+  - The document carries the run's key, so its URL is the run's too: the registry's webid
+    templates for these identities contain `${run.id}` (since 0.13.0). A verifier may cache a
+    controlled identifier document, and a cached copy from an earlier run, at the same URL,
+    would name a key the current credential is not signed with.
   - The JWS header `kid` is `self.kid`, and the document's verification method id is
     `${self.webid}#${self.kid}`.
 - **cid, DID subject** (an identity with no `webid`). A P-256 key pair per run, unless
@@ -307,6 +315,11 @@ An identity that cannot be produced makes the test *inapplicable*.
     JWKS at the `jwks_uri` that document names.
   - It serves the subject's `identityDocument` at `${identity.oidc.webid}`.
   - The ID Token is built from the templates and signed ES256 by the provider's key.
+  - Its issuer stays at that URL from run to run, because a deployment may list it as a
+    trusted issuer. Its signing key is new each run, under a new `kid`, at the same JWKS URL:
+    a verifier that caches the JWKS finds the key by fetching it again when it meets a `kid`
+    it does not know, as OpenID Connect Core section 10.1.1 describes key rotation. The
+    subject's document names the provider and carries no key, so it keeps its URL too.
 - **saml.** The harness IdP issues a `saml:Assertion` from the `samlAssertion` fields.
   Instants are xsd:dateTime in UTC. It is signed with enveloped XML-DSig using the
   identity's algorithm, and the serialized Assertion is base64url-encoded.

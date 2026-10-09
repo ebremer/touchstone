@@ -40,6 +40,11 @@ final class RunSession implements AutoCloseable {
     static final String CONTAINER_TYPE = "<" + LWS + "Container>; rel=\"type\"";
     static final String FOAF_AGENT = "http://xmlns.com/foaf/0.1/Agent";
     private static final Logger LOG = LoggerFactory.getLogger(RunSession.class);
+    /**
+     * A run id goes into URLs as it is ({@code ${run.id}}, EXECUTION.md section 3), so it is made
+     * of RFC 3986 unreserved characters.
+     */
+    private static final java.util.regex.Pattern RUN_ID = java.util.regex.Pattern.compile("[A-Za-z0-9._~-]+");
 
     /** The Bearer challenge an anonymous request draws: where the authorization server is, and the realm. */
     record Challenge(String asUri, String realm) {
@@ -62,6 +67,9 @@ final class RunSession implements AutoCloseable {
     private volatile URI runRoot;
 
     private RunSession(Target target, Definitions definitions, String runId) {
+        if (runId == null || !RUN_ID.matcher(runId).matches()) {
+            throw new IllegalArgumentException("a run id is letters, digits, '.', '_', '~' or '-', not " + runId);
+        }
         this.target = target;
         this.definitions = definitions;
         this.runId = runId;

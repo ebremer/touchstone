@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.12.0 (2026-10-07, DECISIONS.md D-0087), awaiting review; 0.11.0 was
+**Status: format version 0.13.0 (2026-10-08, DECISIONS.md D-0091), awaiting review; 0.11.0 was
 frozen on 2026-10-05 (D-0083).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
@@ -13,7 +13,7 @@ records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QU
 its inbox's answers; 0.8.0 adds client rules, which judge the requests an LWS client sends
 (`OBSERVATION.md`); 0.9.0 gives client rules tasks and faults; 0.10.0 lets them judge a
 client's token requests and credentials; 0.11.0, the notifications its inbox receives; 0.12.0, the
-SAML assertions it presents. A test that is one
+SAML assertions it presents; 0.13.0 gives the documents a run mints URLs of the run's own. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -328,7 +328,13 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Format version
 
-Format version 0.12.0 (2026-10-07, D-0087, awaiting review) adds one value, for client rules only,
+Format version 0.13.0 (2026-10-08, D-0091, awaiting review) adds one thing and changes nothing a
+0.12.0 definition relies on: the variable `run.id`, the run's identifier (`EXECUTION.md` section
+3). The identity registry puts it in the webids of the CID identities, whose documents carry a
+key made for the run, so each run's documents have URLs of their own and a verifier's cached copy
+of an earlier run's never stands for them (section 5.3).
+
+Format version 0.12.0 (2026-10-07, D-0087) adds one value, for client rules only,
 and changes nothing a 0.11.0 definition relies on: the `credentialSource` `samlIdentityProvider`,
 for a token request presenting an assertion the session's SAML identity provider issued
 (`OBSERVATION.md` section 4.9).

@@ -20,7 +20,7 @@ import com.ebremer.touchstone.core.results.RunResult;
 import com.ebremer.touchstone.core.results.TestResult;
 
 /**
- * The engine for the YAML-LD definitions (definitions/EXECUTION.md, format 0.12.0): every front
+ * The engine for the YAML-LD definitions (definitions/EXECUTION.md, format 0.13.0): every front
  * end (CLI, MCP, CI, the self-test loop) runs tests through here, so adding a front end never
  * touches execution (DESIGN.md section 3).
  *
@@ -51,6 +51,8 @@ public final class Engine {
     }
 
     /**
+     * @param runId the run's identifier, which {@code ${run.id}} puts into the URLs of the
+     *              documents the fixture host mints for the run: RFC 3986 unreserved characters only
      * @throws ProvisioningException when the run cannot start, typically because the run root
      *                               cannot be created: there is then no verdict at all
      */

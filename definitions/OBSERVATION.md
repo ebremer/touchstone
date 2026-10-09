@@ -1,6 +1,6 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.12.0 (2026-10-07, DECISIONS.md D-0087, awaiting review; 0.11.0 on 2026-10-05,
+**Status: frozen, format 0.13.0 (2026-10-08, DECISIONS.md D-0091, awaiting review; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05,
 D-0083; 0.10.0 the same day, D-0082;
 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and
 faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7).
@@ -8,8 +8,8 @@ faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 
 recorder knows of a token request (sections 4.9 and 4.10), the conditions `form` and `credential`
 (section 5), and the fault `tokenExpired`. 0.11.0 adds deliveries, the notifications the session
 sends a client's inbox (sections 3, 4.11 and 4.12), and four forgery faults. 0.12.0 adds the
-session's SAML identity provider as a source of credentials (section 4.9). None changes
-anything an earlier rule relies on. This
+session's SAML identity provider as a source of credentials (section 4.9). 0.13.0 changes only
+server tests (`EXECUTION.md`). None changes anything an earlier rule relies on. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the

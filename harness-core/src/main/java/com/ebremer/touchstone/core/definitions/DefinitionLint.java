@@ -26,7 +26,7 @@ public final class DefinitionLint {
 
     /** Built-in and derived variables (EXECUTION.md section 3); {@code now±N} is matched separately. */
     public static final Set<String> BUILT_IN = Set.of(
-            "target.baseUrl", "run.root", "test.container", "uuid", "now", "storage",
+            "target.baseUrl", "run.root", "run.id", "test.container", "uuid", "now", "storage",
             "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri",
             "fixtures.baseUrl", "test.inbox");
 

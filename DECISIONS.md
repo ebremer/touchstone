@@ -3690,3 +3690,53 @@ human gate on test authoring, DESIGN.md section 7.4): an agent drafted it on thi
 passes against the reference deployment and its trapped twin, and fails against
 BROKEN_STORAGE, which lets bob see everything: the self-test now expects 24 failures there.
 COVERAGE.md is regenerated: 205 tests, 163 of them MUST.
+
+### D-0091 — documents minted for a run are served at URLs of the run's own; format 0.13.0
+A run of `auth/cid` started 2 min 17 s after another against lws-drupal, and
+`authn-cid-valid-credential` and `authn-cid-referenced-method` failed: the token exchange
+answered `invalid_request`, "The "kid" names no verification method the subject controls and
+authenticates with." The fixture host serves each CID identity's controlled identifier document
+at a fixed URL, `${fixtures.baseUrl}agents/cid` and its kin, with a P-256 key made for the run.
+lws-drupal caches a document for 300 s, as a verifier may, so the second run's credential was
+checked against the first run's key. The server was right; the harness reused a URL for content
+that had changed.
+
+**The rule.** A document whose content the harness mints per run is served at a URL unique to
+the run. Format 0.13.0 adds the built-in variable `run.id`, the run's identifier (EXECUTION.md
+section 3), and the six CID identities' webids become `${fixtures.baseUrl}agents/${run.id}/cid`
+and so on. An earlier run's URL then answers 404 from the new run's fixture host, and a verifier's
+cache of it can never stand for the new document. The variable is explicit in the registry rather
+than a rewrite inside the engine, so the definitions still say where each document is.
+- A run id now has to be made of RFC 3986 unreserved characters, since it goes into a URL as it
+  is; the engine's own ids are eight hex digits, and `RunSession` refuses an id with any other
+  character.
+- `run.id` is a built-in for both lints. Nothing in the schema changes, but `EXECUTION.md` does,
+  so the format moves to 0.13.0 (D-0053's rule), with the `$id` `…/0-13-0`. D-0092 and D-0093
+  add to the same version on this branch.
+
+**What stays where it is**, and why:
+- **alice and bob.** Their webids come from the target (`webid.alice`, `webid.bob`), and servers
+  are configured with them, as storage owner for one. The harness hosts no document for them, so
+  no per-run key is published under them. When a target gives one a did:key credential to
+  exchange (`didkey.jwk.<name>`), the key is the pinned one, so the did:key, and the document the
+  verifier derives from it, are the same every run. So there is no limitation to record here: no
+  per-run key sits behind a stable alice or bob URL.
+- **The OpenID Provider's issuer**, `${fixtures.baseUrl}op`, its discovery document and its JWKS
+  URL. Deployments list the issuer as trusted, so it cannot move. Its signing key is still new
+  each run, under a new `kid` (`op-` and eight hex digits), at the same JWKS URL. A verifier that
+  caches the JWKS for longer than the gap between two runs will meet a `kid` it does not know.
+  OpenID Connect Core section 10.1.1 describes exactly this as key rotation: "The verifier knows
+  to go back to the jwks_uri location to re-retrieve the keys when it sees an unfamiliar kid
+  value." So that case is left as it is, and recorded as a known limitation: a verifier that does
+  not re-fetch on an unfamiliar `kid` can fail `auth/oidc` on a second run soon after a first.
+  Giving the JWKS a per-run URL would not help a verifier that caches the discovery document,
+  which names the JWKS URL, and would break one that caches discovery by issuer. Pinning the
+  provider's key in the target configuration would remove the case; nothing asks for it yet.
+- **The OpenID subject's document**, `agents/oidc`: it names the provider and carries no key, so
+  its content is the same every run. The rogue provider's documents are only ever meant to be
+  refused. The SAML identity has a webid but no document.
+
+`FixtureDocumentsTest` opens two runs against a stub storage: each run's six CID documents are
+under `agents/<run id>/`, the first run's URL is gone in the second, the keys differ, and the
+issuer, discovery, JWKS and `agents/oidc` paths are the same in both; a run id with a `/` is
+refused.

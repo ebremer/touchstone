@@ -84,7 +84,7 @@ for name, i in identities.items():
     if "basis" in i and identities[i["basis"]]["kind"] != i["kind"]:
         E(f"identities: {name} kind differs from its basis")
 
-BUILTIN = {"target.baseUrl", "run.root", "test.container", "uuid", "now", "storage",
+BUILTIN = {"target.baseUrl", "run.root", "run.id", "test.container", "uuid", "now", "storage",
            "as.uri", "as.realm", "as.metadataUrl", "as.issuer", "as.tokenEndpoint", "as.jwksUri", "test.inbox"}
 # StorageRoot is the one service every storage description MUST carry (#storage-description-services).
 SERVICES = {"StorageRoot", "AccessGrantService", "AccessRequestService", "NotificationService",
