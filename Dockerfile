@@ -14,6 +14,7 @@ COPY harness-core/pom.xml harness-core/
 COPY harness-fixtures/pom.xml harness-fixtures/
 COPY harness-cli/pom.xml harness-cli/
 COPY harness-mcp/pom.xml harness-mcp/
+COPY harness-clients/pom.xml harness-clients/
 RUN ./mvnw -q -B -ntp -pl harness-cli -am dependency:go-offline || true
 COPY harness-core/ harness-core/
 COPY harness-cli/ harness-cli/
