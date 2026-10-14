@@ -3897,4 +3897,10 @@ itself is unchanged.
 **Verified** (2026-10-14) on an Ubuntu 26.04 host with Docker 29.1.3 and Compose 2.40.3: all six images build, every
 target answers at its path through the host's TLS proxy and the router, and each authorization server's metadata is
 at its RFC 8414 URL with the issuer `<origin>/targets/<name>`. lws-drupal's change passes its own suite (711 tests on
-SQLite, phpcs and phpstan clean).
+SQLite, phpcs and phpstan clean). Touchstone master `6a3206e` against each container gave every one of the 205 tests
+the outcome it had against the same implementation's earlier deployment: Halcyon 190 passed, 0 failed, 15
+inapplicable; lws-server 193/0/12; sparq-lws-core 204/0/1; the Community Solid Server 129/24/52; lws-drupal 198/0/7.
+lws-server matched only once its `lws.audience` also named the storage our ID Tokens are issued for (their identity
+provider adds it), a deployment setting that `compose.yaml` passes through as `LWS_SERVER_PROPERTIES`. A run made while
+the router was being replaced ended with 84 cantTell, every one a 502 from the proxy in front of it: replacing the
+router interrupts every target, so a deployment that names services rebuilds only those.
