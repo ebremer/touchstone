@@ -18,6 +18,7 @@ below is reachable as soon as it starts.
 | `sparq-lws` | sparq-lws-core, LWS 1.0 mode | [sparq-org/sparq PR #6650](https://github.com/sparq-org/sparq/pull/6650) `5501efa` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `c18d4be` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
+| `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `main` `dd1871b` | `/targets/lwsd/` | `/data/as-key.json` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
 (`HarnessIssuedTokens`) reads the key from there, for example with `docker compose exec`.
@@ -40,15 +41,21 @@ A target container:
 2. **Takes its public base URL from `LWS_PUBLIC_URL`**: `<origin>/targets/<name>`, without a trailing slash. Every
    URL it publishes (storage, resources, `Link` and `Location` headers, the storage description, the authorization
    server's metadata) starts with it.
-3. **Serves from its own root.** The router strips `/targets/<name>` from the request path and sends it as
-   `X-Forwarded-Prefix`. A server that matches request paths against its base URL instead, so that it needs the
-   prefix kept, is listed in the router's `$keep_prefix` map (`router/nginx.conf`): `css` is the only one now.
-   `Host`, `X-Forwarded-Proto` and `X-Forwarded-Host` carry the public host and scheme, and `X-Forwarded-For` the
-   client's address as the outer proxy saw it, so one trusted hop is right.
-4. **Has its authorization server's issuer at `LWS_PUBLIC_URL`**, and answers that server's metadata at
-   `/.well-known/lws-configuration` of its own root. RFC 8414 puts the metadata of the issuer
-   `<origin>/targets/<name>` at `<origin>/.well-known/lws-configuration/targets/<name>`, and the router sends that URL
-   there (under the prefix for a target that keeps it).
+3. **Serves from its own root**, unless its mode says otherwise. The router's `$prefix_mode` map
+   (`router/nginx.conf`) gives each target one of three:
+   - `strip`, the default: `/targets/<name>` is taken off the request path, and the server answers as if at its
+     own root;
+   - `keep`, for a server that matches request paths against its base URL (`css`): the path arrives as requested;
+   - `whole`, for a server that mounts itself at a path prefix and answers its RFC 8414 URL itself (`lwsd`):
+     every path arrives as requested, the metadata URL of item 4 included.
+
+   The prefix is also sent as `X-Forwarded-Prefix`. `Host`, `X-Forwarded-Proto` and `X-Forwarded-Host` carry the
+   public host and scheme, and `X-Forwarded-For` the client's address as the outer proxy saw it, so one trusted hop
+   is right.
+4. **Has its authorization server's issuer at `LWS_PUBLIC_URL`.** RFC 8414 puts the metadata of the issuer
+   `<origin>/targets/<name>` at `<origin>/.well-known/lws-configuration/targets/<name>`. The router sends that URL to
+   `/.well-known/lws-configuration` of the target's own root (`strip`), to
+   `/targets/<name>/.well-known/lws-configuration` (`keep`), or unchanged (`whole`).
 5. **Gives the storage to `LWS_OWNER`**: the agent, or for lws-server the agents, with full control. Where the
    server records its owner only once, at the storage's first start, changing `LWS_OWNER` later changes nothing.
 6. **Keeps its state in `/data`**, a volume, and runs as a user other than root.
@@ -112,7 +119,8 @@ containers at the URL the run gives it, as from anywhere else.
 2. Add a service `<name>` to `compose.yaml` on the network `lws-targets`, with `LWS_PUBLIC_URL` set to
    `${LWS_ORIGIN}/targets/<name>`, `LWS_OWNER`, and a volume for `/data`. Anything else it needs, such as a
    database, goes on a network of its own that the router is not on, as `lws-drupal-db` does.
-3. If it needs its path prefix kept, add it to `$keep_prefix` in `router/nginx.conf` and rebuild the router.
+3. If it needs its path prefix kept (`keep` or `whole`), add it to `$prefix_mode` in `router/nginx.conf` and
+   rebuild the router.
 4. `docker compose up -d --build <name>`. It answers at `<origin>/targets/<name>/` at once.
 5. Register a Touchstone target for it in your own registry (`targets.yaml`, see
    [the targets documentation](../docs/targets.md)), with `baseUrl` a container in its storage that alice may

@@ -82,6 +82,17 @@ services:
       lws-drupal-db:
         condition: service_healthy
 
+  lwsd:
+    <<: *target
+    build:
+      context: lwsd
+      args: [LWSD_REPO, LWSD_REF]
+    image: lws-targets/lwsd
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lwsd
+      LWS_OWNER: ${LWSD_OWNER:-}
+    volumes: [lwsd-data:/data]
+
   # lws-drupal's database: MariaDB with READ COMMITTED, as Drupal's installer sets it. Not a target: it is on a
   # network of its own with lws-drupal, which the router is not on.
   lws-drupal-db:
@@ -114,3 +125,4 @@ volumes:
   css-data:
   lws-drupal-data:
   lws-drupal-db:
+  lwsd-data:
