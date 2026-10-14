@@ -40,6 +40,7 @@ services:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-server
       LWS_OWNER: ${LWS_SERVER_OWNER:-}
       LWS_REQUIRE_HTTPS: ${LWS_REQUIRE_HTTPS:-true}
+      LWS_PROPERTIES: ${LWS_SERVER_PROPERTIES:-}
     volumes: [lws-server-data:/data]
 
   sparq-lws:
