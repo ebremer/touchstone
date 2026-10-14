@@ -35,3 +35,6 @@ dependency-reduced-pom.xml
 
 # local agent state
 .claude/settings.local.json
+
+# a filled-in copy of targetservers/.env.example (it holds a database password)
+targetservers/.env

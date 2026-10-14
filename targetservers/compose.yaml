@@ -1,0 +1,115 @@
+# The target servers behind their router (README.md). Every target is a service on the network lws-targets, named
+# as the path segment it is published under: /targets/<service>/. Settings come from the environment or an .env
+# file beside this one (.env.example lists them); nothing here names a host.
+#
+#   docker compose up -d --build                  everything
+#   docker compose up -d --build router css       the router and one target
+name: lws-targets
+
+x-target: &target
+  restart: unless-stopped
+  networks: [lws-targets]
+
+services:
+  router:
+    <<: *target
+    build: router
+    image: lws-targets/router
+    ports:
+      - "${LWS_TARGETS_BIND:-127.0.0.1:8480}:8080"
+
+  halcyon:
+    <<: *target
+    build:
+      context: halcyon
+      args: [HALCYON_REPO, HALCYON_REF]
+    image: lws-targets/halcyon
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/halcyon
+      LWS_OWNER: ${HALCYON_OWNER:-}
+      HALCYON_ALLOWED_ISSUERS: ${HALCYON_ALLOWED_ISSUERS:-}
+    volumes: [halcyon-data:/data]
+
+  lws-server:
+    <<: *target
+    build:
+      context: lws-server
+      args: [LWS_SERVER_REPO, LWS_SERVER_REF]
+    image: lws-targets/lws-server
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-server
+      LWS_OWNER: ${LWS_SERVER_OWNER:-}
+      LWS_REQUIRE_HTTPS: ${LWS_REQUIRE_HTTPS:-true}
+    volumes: [lws-server-data:/data]
+
+  sparq-lws:
+    <<: *target
+    build:
+      context: sparq-lws
+      args: [SPARQ_REPO, SPARQ_REF]
+    image: lws-targets/sparq-lws
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/sparq-lws
+      LWS_OWNER: ${SPARQ_LWS_OWNER:-}
+      SPARQ_LWS_SAML_IDPS: ${SPARQ_LWS_SAML_IDPS:-}
+    volumes: [sparq-lws-data:/data]
+
+  css:
+    <<: *target
+    build:
+      context: css
+      args: [CSS_REPO, CSS_REF]
+    image: lws-targets/css
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/css
+      LWS_OWNER: ${CSS_OWNER:-}
+    volumes: [css-data:/data]
+
+  lws-drupal:
+    <<: *target
+    build:
+      context: lws-drupal
+      args: [LWS_DRUPAL_REPO, LWS_DRUPAL_REF, LWS_CLIENT_REF]
+    image: lws-targets/lws-drupal
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-drupal
+      LWS_OWNER: ${LWS_DRUPAL_OWNER:-}
+      LWS_DRUPAL_DB_PASSWORD: ${LWS_DRUPAL_DB_PASSWORD:-}
+    networks: [lws-targets, lws-drupal]
+    volumes: [lws-drupal-data:/data]
+    depends_on:
+      lws-drupal-db:
+        condition: service_healthy
+
+  # lws-drupal's database: MariaDB with READ COMMITTED, as Drupal's installer sets it. Not a target: it is on a
+  # network of its own with lws-drupal, which the router is not on.
+  lws-drupal-db:
+    image: mariadb:11.8.6
+    restart: unless-stopped
+    networks: [lws-drupal]
+    command: [--transaction-isolation=READ-COMMITTED, --max-allowed-packet=64M]
+    environment:
+      MARIADB_DATABASE: drupal
+      MARIADB_USER: drupal
+      MARIADB_PASSWORD: ${LWS_DRUPAL_DB_PASSWORD:-}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes: [lws-drupal-db:/var/lib/mysql]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+networks:
+  lws-targets:
+    name: lws-targets
+  lws-drupal:
+    internal: true
+
+volumes:
+  halcyon-data:
+  lws-server-data:
+  sparq-lws-data:
+  css-data:
+  lws-drupal-data:
+  lws-drupal-db:

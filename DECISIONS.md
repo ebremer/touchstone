@@ -3861,3 +3861,40 @@ one page for three resources, so the self-test runs the new path on its first pa
     `type-search-content-types-identical`, `type-search-and-or` and
     `type-search-type-from-content` passed. At page size 4 the and-or searches fit on one page,
     so `PagedStepsTest` is what exercises reading on.
+
+## 2026-10-14
+
+### D-0094 — target servers in containers: `targetservers/`
+Touchstone has been run against five server implementations (Halcyon, lws-server, sparq-lws-core, the Community
+Solid Server with LWS, lws-drupal), each installed by hand on its own host or path with its own proxy rules, so every
+new one meant another hand-made deployment. Erich asked for a container per implementation, kept here, to run on one
+host behind a generic mapping, so that adding an implementation is adding a container.
+
+**`targetservers/`** holds one directory per implementation (Dockerfile, and an entrypoint that turns the contract's
+environment into the server's own configuration), a router, and `compose.yaml`. Every target is published at
+`<origin>/targets/<name>/`, where `<name>` is the directory and the compose service; the router (nginx) finds the
+container by that name through Docker's DNS, so a new target needs no proxy change. The contract (README.md): HTTP on
+port 8080; the public base URL from `LWS_PUBLIC_URL`; served from the container's own root with the prefix stripped,
+unless the router's keep list says otherwise (CSS, which matches request paths against its base URL); the
+authorization server's issuer is the base URL, and the router sends its RFC 8414 metadata URL,
+`<origin>/.well-known/lws-configuration/targets/<name>`, to the target's own `/.well-known/lws-configuration`; the
+owner from `LWS_OWNER`; state in `/data`; built from source at a pinned commit, from a stage named `source` that a
+build context can replace with a local checkout.
+
+Path prefixes rather than a port or a host name per target: one TLS origin, one proxy rule, no DNS or firewall change
+per target. The cost is that every server must work below a path, and two did not quite:
+
+- sparq-lws-core builds IRIs as its base URL plus the request path, so it needs the prefix stripped, while CSS needs it
+  kept: hence the keep list, one line per exception, defaulting to strip.
+- lws-drupal's authorization server took the bare origin as its issuer, so below a path its metadata had to be at the
+  host's root, which belongs to whatever else the host runs. lws-drupal now keeps the base URL's path in the issuer
+  (branch `path-issuer`, `c18d4be`); origin-rooted sites are unchanged.
+
+Nothing here names a deployment: the origin, the owners and the database password come from `.env` (`.env.example`
+lists them; `targetservers/.env` is ignored), as the registry keeps deployments out of `targets.yaml`. The harness
+itself is unchanged.
+
+**Verified** (2026-10-14) on an Ubuntu 26.04 host with Docker 29.1.3 and Compose 2.40.3: all six images build, every
+target answers at its path through the host's TLS proxy and the router, and each authorization server's metadata is
+at its RFC 8414 URL with the issuer `<origin>/targets/<name>`. lws-drupal's change passes its own suite (711 tests on
+SQLite, phpcs and phpstan clean).
