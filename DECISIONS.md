@@ -3904,3 +3904,29 @@ lws-server matched only once its `lws.audience` also named the storage our ID To
 provider adds it), a deployment setting that `compose.yaml` passes through as `LWS_SERVER_PROPERTIES`. A run made while
 the router was being replaced ended with 84 cantTell, every one a 502 from the proxy in front of it: replacing the
 router interrupts every target, so a deployment that names services rebuilds only those.
+
+### D-0095 — lwsd as a target server, and a third way to take the prefix
+[lwsd](https://github.com/linkedwebstorage/lwsd), the LWS daemon (JavaScriptSolidServer with an `lws` plugin, Node.js,
+AGPL-3.0), joins the target servers as `targetservers/lwsd`, built from `main` at `dd1871b` (`npm install`: it has no
+lock file, and its one dependency, javascript-solid-server, is pinned to a narrow range).
+
+lwsd mounts its storage at a path prefix of the server and builds every URL as `<scheme>://<Host><prefix>`; its
+authorization server's issuer is the same, and it answers that issuer's RFC 8414 metadata itself, at
+`/.well-known/lws-configuration<prefix>`. Neither of D-0094's two ways fits: stripping the prefix loses it from
+every URL, and keeping it sends the metadata request to `<prefix>/.well-known/lws-configuration`, which lwsd does not
+serve. So the router's keep list becomes a mode per target, `$prefix_mode`: `strip` (the default), `keep` (CSS), and
+`whole` (lwsd), which passes every path as requested, the metadata URL included. The entrypoint mounts the plugin at
+the path of `LWS_PUBLIC_URL`; scheme and host come from each request, which JSS takes from the proxy's headers
+(`trustProxy`).
+
+It is configured as lwsd's own Touchstone runner configures an authenticated run: JSS's access control off
+(`--public`, so the plugin decides every request under the prefix), public read off, `LWS_OWNER` its one writer, and
+an authorization server key made at the first start in `/data/as-key.json`, which a deployment hands the harness for
+`HarnessIssuedTokens`. JSS's own routes outside the prefix are then open, which is harmless only because the router
+sends the container nothing else; the entrypoint says so.
+
+**Verified** (2026-10-14), against our deployment of it, with the fixture host's alice as its writer: Touchstone
+master `6a3206e`, 205 tests, 197 passed, 0 failed, 8 inapplicable (the three SAML tests, lwsd having no SAML suite,
+and five preconditions for optional behaviour), conformant. lwsd's own README reports 196 of 203 on `5c49679`. Through the
+reworked router, the Community Solid Server (`keep`), sparq-lws-core and lws-drupal (`strip`) gave every test the
+outcome they had before it; Halcyon and lws-server, also `strip`, were not run again.

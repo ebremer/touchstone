@@ -32,6 +32,8 @@ export LWS_WRITERS="$(echo "$LWS_OWNER" | tr ' ' ',')"
 export LWS_PUBLIC_READ="${LWS_PUBLIC_READ:-0}"
 export LWS_AS_KEY_JWK=/data/as-key.json
 export LWS_PAGE_SIZE="${LWS_PAGE_SIZE:-4}"
-# JSS's own access control is off (--public): the lws plugin decides every request itself.
+# JSS's own access control is off (--public), as in lwsd's own authenticated runs: the lws plugin decides every request
+# under the prefix itself. JSS's other routes (its data root at /) are open, so the container must only be reachable
+# through the router, which sends it nothing outside /targets/lwsd/ and its metadata URL.
 exec /opt/lwsd/node_modules/.bin/jss start --port 8080 --host 0.0.0.0 --root /data/jss --public --no-git --no-idp \
   --plugin "/opt/lwsd/lws/plugin.js@$prefix"
