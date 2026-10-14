@@ -1,6 +1,7 @@
 # The target servers behind their router (README.md). Every target is a service on the network lws-targets, named
 # as the path segment it is published under: /targets/<service>/. Settings come from the environment or an .env
-# file beside this one (.env.example lists them); nothing here names a host.
+# file beside this one (.env.example lists them); nothing here names a host. LWS_TARGETS_NETWORK and
+# LWS_TARGETS_IMAGE_PREFIX rename the network and the images, so that a second set (run-all.sh's) can run beside one.
 #
 #   docker compose up -d --build                  everything
 #   docker compose up -d --build router css       the router and one target
@@ -14,7 +15,7 @@ services:
   router:
     <<: *target
     build: router
-    image: lws-targets/router
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/router
     ports:
       - "${LWS_TARGETS_BIND:-127.0.0.1:8480}:8080"
 
@@ -23,7 +24,7 @@ services:
     build:
       context: halcyon
       args: [HALCYON_REPO, HALCYON_REF]
-    image: lws-targets/halcyon
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/halcyon
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/halcyon
       LWS_OWNER: ${HALCYON_OWNER:-}
@@ -35,7 +36,7 @@ services:
     build:
       context: lws-server
       args: [LWS_SERVER_REPO, LWS_SERVER_REF]
-    image: lws-targets/lws-server
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lws-server
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-server
       LWS_OWNER: ${LWS_SERVER_OWNER:-}
@@ -48,7 +49,7 @@ services:
     build:
       context: sparq-lws
       args: [SPARQ_REPO, SPARQ_REF]
-    image: lws-targets/sparq-lws
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/sparq-lws
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/sparq-lws
       LWS_OWNER: ${SPARQ_LWS_OWNER:-}
@@ -60,7 +61,7 @@ services:
     build:
       context: css
       args: [CSS_REPO, CSS_REF]
-    image: lws-targets/css
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/css
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/css
       LWS_OWNER: ${CSS_OWNER:-}
@@ -71,7 +72,7 @@ services:
     build:
       context: lws-drupal
       args: [LWS_DRUPAL_REPO, LWS_DRUPAL_REF, LWS_CLIENT_REF]
-    image: lws-targets/lws-drupal
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lws-drupal
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-drupal
       LWS_OWNER: ${LWS_DRUPAL_OWNER:-}
@@ -87,7 +88,7 @@ services:
     build:
       context: lwsd
       args: [LWSD_REPO, LWSD_REF]
-    image: lws-targets/lwsd
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lwsd
     environment:
       LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lwsd
       LWS_OWNER: ${LWSD_OWNER:-}
@@ -114,7 +115,7 @@ services:
 
 networks:
   lws-targets:
-    name: lws-targets
+    name: ${LWS_TARGETS_NETWORK:-lws-targets}
   lws-drupal:
     internal: true
 

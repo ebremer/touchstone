@@ -1,0 +1,54 @@
+# Local mode, for run-all.sh, on top of compose.yaml. Touchstone's fixture host (identity documents, OpenID Provider,
+# SAML identity provider, webhook sink) is the service "fixtures" on the same private network: https://fixtures/ with
+# a certificate from the run's own CA (LWS_LOCAL_STATE/tls/ca.pem), and http://fixtures:18080/. Each target uses one
+# of the two (its touchstone.env, TS_FIXTURES): HTTPS for the servers that resolve did:web (whose documents are only
+# ever fetched over HTTPS), and that are told to trust the run's CA; plain HTTP for the others. The servers refuse
+# private addresses (and some plain HTTP) by default, against server-side request forgery; each is told the hosts it
+# may reach: fixtures, and router, as the tests' notification inboxes are containers in the storages under test.
+# Nothing else changes: a deployment at public HTTPS addresses needs none of this.
+x-run-ca: &run-ca
+  - ${LWS_LOCAL_STATE:?run-all.sh sets LWS_LOCAL_STATE}/tls/ca.pem:/run/lws-extra-ca.pem:ro
+
+services:
+  fixtures:
+    image: nginx:1.28.3-alpine
+    restart: unless-stopped
+    networks: [lws-targets]
+    volumes:
+      - ./tools/fixtures.conf:/etc/nginx/nginx.conf:ro
+      - ${LWS_LOCAL_STATE}/tls:/etc/fixtures-tls:ro
+
+  halcyon:
+    volumes: *run-ca
+    environment:
+      LWS_EXTRA_CA: /run/lws-extra-ca.pem
+      # Only the harness's OpenID Provider may vouch for a WebID, as only listed providers may on a deployment.
+      HALCYON_ALLOWED_ISSUERS: https://fixtures/halcyon/op
+      HALCYON_ALLOWED_INTERNAL_HOSTS: fixtures router
+
+  lws-server:
+    volumes: *run-ca
+    environment:
+      LWS_EXTRA_CA: /run/lws-extra-ca.pem
+      # Identity documents and OpenID Providers, and webhook inboxes: two policies, deliberately separate.
+      LWS_PROPERTIES: |
+        lws.fetch.allowed-hosts=fixtures,router
+        lws.webhook.allowed-hosts=fixtures,router
+
+  lws-drupal:
+    volumes: *run-ca
+    environment:
+      LWS_EXTRA_CA: /run/lws-extra-ca.pem
+      LWS_DRUPAL_OUTBOUND_ALLOWLIST: https://fixtures http://router:8080
+
+  sparq-lws:
+    environment:
+      # Plain HTTP and private addresses, for every outbound request (identity documents and webhooks alike).
+      SOLID_SERVER_LWS_ALLOW_INSECURE_FETCH: "1"
+
+  lwsd:
+    environment:
+      # Private addresses for identity documents and OpenID Providers; its webhooks have no such guard.
+      LWS_CID_ALLOW_LOOPBACK: "1"
+
+  # css: its LWS code fetches any http(s) URL as it is; nothing to switch.

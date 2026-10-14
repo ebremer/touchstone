@@ -6,3 +6,5 @@ targets-secured.yaml
 *.log
 .claude
 tools/extractor/__pycache__
+# the target servers are built from their own directories; run-all.sh keeps keys and reports there
+targetservers

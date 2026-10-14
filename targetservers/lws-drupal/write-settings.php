@@ -55,7 +55,9 @@ $php = "<?php\n\n// Written by the container's entrypoint at every start, from i
   . "\$settings['reverse_proxy'] = TRUE;\n"
   . "\$settings['reverse_proxy_addresses'] = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];\n"
   . "\$settings['update_free_access'] = FALSE;\n"
-  . "\$settings['skip_permissions_hardening'] = TRUE;\n";
+  . "\$settings['skip_permissions_hardening'] = TRUE;\n"
+  // Origins it may fetch from although they are private or plain HTTP (OutboundHttp), space separated.
+  . '$settings[\'lws_outbound_allowlist\'] = ' . var_export(preg_split('/\s+/', $env('LWS_DRUPAL_OUTBOUND_ALLOWLIST', ' '), -1, PREG_SPLIT_NO_EMPTY), TRUE) . ";\n";
 
 file_put_contents('/opt/drupal/web/sites/default/settings.php', $php);
 chmod('/opt/drupal/web/sites/default/settings.php', 0444);

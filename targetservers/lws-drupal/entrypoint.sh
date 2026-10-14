@@ -8,6 +8,10 @@
 #   LWS_OWNER               the agent with full control of the storage (its controller), set when it is made.
 #   LWS_PAGE_SIZE           members per page of its container listings (default 4), set when it is made.
 #   LWS_DRUPAL_STORAGE      the storage's slug (default touchstone).
+#   LWS_DRUPAL_OUTBOUND_ALLOWLIST
+#                           origins the site may fetch from although they are private or plain HTTP, space separated
+#                           ($settings['lws_outbound_allowlist']). Empty by default.
+#   LWS_EXTRA_CA            a PEM file of certificates to trust besides the system's (a private test CA).
 #   LWS_DRUPAL_DB_PASSWORD  the database password (required); LWS_DRUPAL_DB_HOST, _PORT, _NAME and _USER default to
 #                           lws-drupal-db, 3306, drupal and drupal.
 set -eu
@@ -16,6 +20,9 @@ set -eu
 slug=${LWS_DRUPAL_STORAGE:-touchstone}
 drush() { runuser -u www-data -- /opt/drupal/vendor/bin/drush --root=/opt/drupal/web --uri="${LWS_PUBLIC_URL%/}" "$@"; }
 
+if [ -n "${LWS_EXTRA_CA:-}" ]; then
+  cp "$LWS_EXTRA_CA" /usr/local/share/ca-certificates/lws-extra-ca.crt && update-ca-certificates >/dev/null
+fi
 mkdir -p /data/private /data/public /data/config/sync
 [ -s /data/hash_salt ] || php -r 'echo bin2hex(random_bytes(32)), "\n";' > /data/hash_salt
 chown -R www-data:www-data /data

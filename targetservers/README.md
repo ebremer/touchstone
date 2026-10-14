@@ -26,11 +26,14 @@ The key paths are inside each container's `/data` volume. A deployment that lets
 ## Layout
 
 ```
-compose.yaml      the router and every target, on the network lws-targets
-.env.example      the settings compose.yaml reads
-router/           nginx: /targets/<name>/ to http://<name>:8080
-<name>/           one target: Dockerfile, and usually an entrypoint.sh that turns the contract's
-                  environment into the server's own configuration
+compose.yaml        the router and every target, on the network lws-targets
+compose.local.yaml  local mode for run-all.sh: each server may fetch from the harness on the private network
+.env.example        the settings compose.yaml reads
+run-all.sh          build, start and test them all with Touchstone (see "Testing them all")
+router/             nginx: /targets/<name>/ to http://<name>:8080
+tools/              run-all.sh's helpers: lws.mjs (keys, tokens, summaries), matrix.py (the requirements matrix)
+<name>/             one target: Dockerfile, usually an entrypoint.sh that turns the contract's environment into
+                    the server's own configuration, and touchstone.env, how run-all.sh tests it
 ```
 
 ## The contract
@@ -59,6 +62,8 @@ A target container:
 5. **Gives the storage to `LWS_OWNER`**: the agent, or for lws-server the agents, with full control. Where the
    server records its owner only once, at the storage's first start, changing `LWS_OWNER` later changes nothing.
 6. **Keeps its state in `/data`**, a volume, and runs as a user other than root.
+   Where the server can be told to trust more certificate authorities, it takes them from `LWS_EXTRA_CA`, a PEM file
+   (Halcyon, lws-server and lws-drupal do; run-all.sh uses it for its private fixture host).
 7. **Builds from source at a pinned commit**: `ARG <NAME>_REPO` and `ARG <NAME>_REF`, fetched in a stage named
    `source`. Another commit is a build argument (`HALCYON_REF=… docker compose build halcyon`); a local checkout
    replaces the stage with a named build context:
@@ -79,6 +84,41 @@ A target container:
 
 Each target's `entrypoint.sh` lists the further settings it takes, such as the page size of container listings
 (4 by default, so that Touchstone's paging tests apply to small containers).
+
+## Testing them all
+
+With Docker (and its compose plugin) and nothing else:
+
+```sh
+git clone https://github.com/ebremer/touchstone && cd touchstone
+targetservers/run-all.sh                # or: targetservers/run-all.sh css lwsd
+```
+
+`run-all.sh` builds the harness image and every target server from source, starts them on a Docker network of their
+own, runs Touchstone against each in turn, and stops them. The results go in `targetservers/runs/<UTC time>/`: each
+run's report bundle (HTML, Markdown, JSON, EARL, JUnit) under `reports/`, `summary.md` (a table of the totals and
+verdicts) and `matrix.html` (every requirement against every target, as on a published conformance page). It needs
+no account, key or public address: everything a run needs is made for it.
+
+- **Local mode.** The servers answer at `http://router:8080/targets/<name>/` on the project's network, and the harness
+  runs there too. Its fixture host (the identity documents, OpenID Provider, SAML identity provider and webhook sink
+  the tests use) is the service `fixtures` in front of it: `https://fixtures/<name>/`, with a certificate from a CA
+  made for the run, for the servers that resolve did:web (whose documents are only ever fetched over HTTPS), and
+  `http://fixtures:18080/<name>/` for the others (sparq-lws-core trusts only its built-in roots). `compose.local.yaml`
+  tells each server to fetch from that private address, which the servers refuse by default, and the three that use
+  HTTPS to trust the run's CA; it changes nothing else.
+- **Identities.** Where the harness can read a server's signing key, it mints alice's and bob's access tokens itself
+  (`HarnessIssuedTokens`), and the storage belongs to alice as the fixture host serves her. Otherwise (Halcyon,
+  lws-server) the storage belongs to a did:key made for the run, and alice and bob exchange did:key credentials for
+  their tokens, as any client would. The keys stay in `targetservers/.local/<project>/`.
+- **Each target's `touchstone.env`** says where runs go (a container alice creates, when the storage root itself is
+  readable anonymously), how alice and bob get their tokens, where the server keeps its key, and its name and language.
+- `--keep` leaves the servers running; `--project <name>` runs a second set beside another (a deployment's, say);
+  `--module <m>` runs part of the suite. Halcyon and lws-server take longest: without a way to mint an expired token,
+  the expired-token test waits for a real one to expire.
+
+To add an implementation to the run, give its directory a `touchstone.env` as well, and its switch, if it needs
+one, in `compose.local.yaml`.
 
 ## Running them
 

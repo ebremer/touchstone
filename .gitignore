@@ -38,3 +38,6 @@ dependency-reduced-pom.xml
 
 # a filled-in copy of targetservers/.env.example (it holds a database password)
 targetservers/.env
+# run-all.sh: keys and settings per project, and reports
+targetservers/.local/
+targetservers/runs/

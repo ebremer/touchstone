@@ -3930,3 +3930,40 @@ master `6a3206e`, 205 tests, 197 passed, 0 failed, 8 inapplicable (the three SAM
 and five preconditions for optional behaviour), conformant. lwsd's own README reports 196 of 203 on `5c49679`. Through the
 reworked router, the Community Solid Server (`keep`), sparq-lws-core and lws-drupal (`strip`) gave every test the
 outcome they had before it; Halcyon and lws-server, also `strip`, were not run again.
+
+### D-0096 — anyone can run the suite against every target server: `targetservers/run-all.sh`
+Erich asked whether someone could download Touchstone and run the same conformance tests against all the known
+servers easily. They could not: the Docker image did not build on master (issue #2, fixed by #3), and everything that
+made our runs work was in a private deployment (the registry, the keys, the token minting, the identities of two
+servers, and a public HTTPS address for the fixture host).
+
+`targetservers/run-all.sh` does all of it with nothing but Docker. It builds the harness image and every target from
+source, starts them on a network of their own (compose project `lws-local` by default, so a second set can run beside
+a deployment's), makes the keys a run needs, writes the registry, creates the container each run goes in as alice,
+runs Touchstone against each target in turn, and writes `summary.md` (totals and verdicts) and `matrix.html` (the
+requirements matrix) beside the report bundles in `targetservers/runs/<UTC time>/`. How a target is tested is data in
+its directory, `touchstone.env`: where runs go, how alice and bob get tokens (`harness`: minted with the server's own
+key, read from its container, with the fixture host's alice as owner; `didkey`: a did:key made for the run owns the
+storage and both agents exchange did:key credentials, for servers whose key cannot be read), where the key is, and
+the server's name and language. The helpers are `tools/lws.mjs` (Node.js, no packages) and `tools/matrix.py`.
+
+**Local mode** (`compose.local.yaml`). The servers are at `http://router:8080/targets/<name>/`; the harness runs on the
+same network, and its fixture host is fronted by a service `fixtures`: `https://fixtures/` with a certificate from a
+CA made for the run, and `http://fixtures:18080/`. Plain HTTP alone would not do: did:web documents are only ever
+fetched over HTTPS (Halcyon, lws-server and lws-drupal hard-code it), and Halcyon's self-issued CID suite takes only
+`https` subjects. HTTPS alone would not do either: sparq-lws-core trusts only the root certificates built into it. So
+each target names its fixture URL (`TS_FIXTURES`), HTTPS for the three that resolve did:web, which are told to trust
+the run's CA through a new optional variable of the contract, `LWS_EXTRA_CA`; and the harness trusts it too, as it
+reads its own webhook sink back. Every server refuses private addresses by default (against server-side request
+forgery), and each is told the two hosts it may reach, `fixtures` and `router` (the notification tests' inboxes are
+containers in the storage under test): Halcyon `allowedInternalHosts`, lws-server `lws.fetch.allowed-hosts` and
+`lws.webhook.allowed-hosts`, lws-drupal `lws_outbound_allowlist`, sparq-lws-core
+`SOLID_SERVER_LWS_ALLOW_INSECURE_FETCH`, lwsd `LWS_CID_ALLOW_LOOPBACK`; the Community Solid Server's LWS code has no
+such guard. Nothing else differs from a deployment.
+
+**Verified** (2026-10-14), on an Ubuntu 26.04 host with Docker 29.1.3: every target gave every one of the 205 tests
+of master `6dbb624`'s definitions the outcome it has on the published conformance page (Halcyon 190 passed / 0 failed /
+15 inapplicable, lws-server 193/0/12, sparq-lws-core 204/0/1, the Community Solid Server 129/24/52, lws-drupal 198/0/7,
+lwsd 197/0/8). It took three rounds: first the inboxes in the storages were refused (the servers had been told only
+of `fixtures`), then the harness could not read its own HTTPS webhook sink; one run also saw Halcyon's MAY test
+`type-search-safe` fail once (a container ETag that changed during a search), which did not recur.
