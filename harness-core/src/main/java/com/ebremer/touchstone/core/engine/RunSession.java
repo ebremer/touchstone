@@ -54,7 +54,7 @@ final class RunSession implements AutoCloseable {
     record Created(URI uri, HttpExchangeTrace trace, String failure) {
     }
 
-    private final Target target;
+    private volatile Target target;
     private final Definitions definitions;
     private final String runId;
     private final Http http;
@@ -83,15 +83,19 @@ final class RunSession implements AutoCloseable {
     }
 
     /**
-     * Starts the fixture host when the target can reach one, then creates the run root: a POST
-     * to the target's base URL as alice (section 4.1). If that fails there is no run, and no
-     * verdict: a {@link ProvisioningException}.
+     * Starts the fixture host when the target can reach one, finds the storage root when the
+     * target is registered by its storage, then creates the run root: a POST to the target's base
+     * URL as alice (section 4.1). If either fails there is no run, and no verdict: a
+     * {@link ProvisioningException}.
      */
     static RunSession open(Target target, Definitions definitions, String runId) {
         RunSession s = new RunSession(target, definitions, runId);
         try {
             s.fixtures = FixtureHost.startFor(s);
-            Created root = s.createContainer(target.baseUrl(), "touchstone-run-" + runId, s.runScope);
+            if (target.baseUrl() == null) {
+                s.target = target.withBaseUrl(s.storageRoot());
+            }
+            Created root = s.createContainer(s.target.baseUrl(), "touchstone-run-" + runId, s.runScope);
             if (root.uri() == null) {
                 throw new ProvisioningException("cannot create the run root: " + root.failure());
             }
@@ -184,6 +188,36 @@ final class RunSession implements AutoCloseable {
         return new Created(parent.resolve(location), Http.trace(req, resp), null);
     }
 
+    /**
+     * The storage root of a target registered by its storage (section 4.1): the
+     * {@code serviceEndpoint} of the StorageRoot service in the storage description, which is
+     * fetched anonymously as {@code application/lws+cid}, and again as alice if that answers 401.
+     */
+    private URI storageRoot() {
+        URI storage = target.storage();
+        try {
+            Resp resp = fetch("the storage description", get(storage, "application/lws+cid", Map.of()));
+            if (resp.status() == 401) {
+                resp = fetch("the storage description",
+                        get(storage, "application/lws+cid", runScope.authorization("alice")));
+            }
+            String root = endpoint(json("the storage description", resp, storage.toString()), "StorageRoot", storage);
+            if (root == null) {
+                throw new ProvisioningException("cannot find the storage root: the storage description at " + storage
+                        + " has no StorageRoot service with a serviceEndpoint");
+            }
+            URI uri = URI.create(root);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) && !"http".equalsIgnoreCase(uri.getScheme())) {
+                throw new ProvisioningException("cannot find the storage root: the storage description at " + storage
+                        + " names " + root + ", which is not an http or https URL");
+            }
+            LOG.info("target '{}': the storage description at {} names the storage root {}", target.id(), storage, uri);
+            return uri;
+        } catch (Unresolvable | IllegalArgumentException e) {
+            throw new ProvisioningException("cannot find the storage root: " + e.getMessage());
+        }
+    }
+
     // ------------------------------------------------------------------ derived variables
 
     @SuppressWarnings("unchecked")
@@ -219,7 +253,10 @@ final class RunSession implements AutoCloseable {
     Challenge challenge(Scope scope) {
         return derive("as.challenge", () -> {
             String container = scope.bound("test.container");
-            URI uri = container != null ? URI.create(container) : runRoot != null ? runRoot : target.baseUrl();
+            // Before the storage root is known, only a storage description that drew a 401 asks
+            // for alice's token, so the storage is then the probe that answers with the challenge.
+            URI base = target.baseUrl() != null ? target.baseUrl() : target.storage();
+            URI uri = container != null ? URI.create(container) : runRoot != null ? runRoot : base;
             Resp resp = fetch("${as.uri}", get(uri, null, Map.of()));
             if (RateLimits.isRefusal(resp.status())) {
                 throw Unresolvable.cantTell("an anonymous GET of " + uri + " answered " + resp.status()
@@ -266,17 +303,29 @@ final class RunSession implements AutoCloseable {
         JsonNode description = derive("storage.description", () -> json("the storage description",
                 fetch("the storage description", get(URI.create(storage), "application/lws+cid",
                         scope.authorization("alice"))), storage));
+        String endpoint = endpoint(description, type, URI.create(storage));
+        if (endpoint == null) {
+            throw Unresolvable.inapplicable("the storage description at " + storage + " advertises no " + type);
+        }
+        return endpoint;
+    }
+
+    /**
+     * The {@code serviceEndpoint}, resolved against the storage, of the first entry of a storage
+     * description's {@code service} array whose type is {@code type}; null when there is none.
+     */
+    private static String endpoint(JsonNode description, String type, URI storage) {
         JsonNode services = description.path("service");
         for (JsonNode s : services.isArray() ? services : List.of(services)) {
             if (hasType(s.path("type"), type)) {
                 JsonNode endpoint = s.path("serviceEndpoint");
                 String value = endpoint.isTextual() ? endpoint.asText() : endpoint.path("id").asText(null);
                 if (value != null) {
-                    return URI.create(storage).resolve(value).toString();
+                    return storage.resolve(value).toString();
                 }
             }
         }
-        throw Unresolvable.inapplicable("the storage description at " + storage + " advertises no " + type);
+        return null;
     }
 
     private static boolean hasType(JsonNode type, String wanted) {

@@ -63,7 +63,8 @@ non-conformance. A server-implementation repo consumes it with the workflow in
 
 | Input | Default | Meaning |
 |---|---|---|
-| `target-url` | (required) | Base URL of the running server under test |
+| `storage-url` | (none) | The storage URL of the running server under test; the harness reads its storage description and works in the storage root it names. Give this or `target-url` |
+| `target-url` | (none) | A container in the running server under test to work in, without reading the storage description. Give this or `storage-url` |
 | `module` | `all` | What to run: `all`, a module (`core`, `auth`, `index`, `notifications`), a manifest (`core/containers`) or one test |
 | `capabilities` | (none) | Comma-separated capabilities the target declares, such as `Authentication` |
 | `fail-on-nonconformance` | `true` | Fail the job when a MUST test fails or ends cantTell |

@@ -71,6 +71,11 @@ sequenceDiagram
     participant S as Server under test
     F->>E: run target id and selection
     E->>E: load, validate, expand and lint the definitions
+    opt target registered by its storage
+        E->>S: GET storage URL (Accept application/lws+cid)
+        S-->>E: 200 storage description
+        E->>E: base URL = serviceEndpoint of the StorageRoot service
+    end
     E->>S: POST base URL as alice (create run root)
     S-->>E: 201 Location
     par each test, up to 16 at once
@@ -94,10 +99,15 @@ sequenceDiagram
    failure stops the run with exit code `2` before a request is sent.
 2. **Resolve the target.** The target id is looked up in `targets.yaml`. The URL comes
    only from there.
-3. **Create the run root.** The engine POSTs to the target's base URL as alice, with
+3. **Find the storage root,** for a target registered by its storage URL rather than a base
+   URL. The engine starts where a client that knows only the storage starts: it GETs the
+   storage description (`Accept: application/lws+cid`, anonymously, then as alice if that
+   draws a 401) and takes the `serviceEndpoint` of its `StorageRoot` service as the base URL.
+   Without one there is no run (exit code `2`).
+4. **Create the run root.** The engine POSTs to the target's base URL as alice, with
    `Link: <https://www.w3.org/ns/lws#Container>; rel="type"`. Every test works inside this
    container. If it cannot be created, there is no run and no verdict (exit code `2`).
-4. **Run the tests,** in parallel on virtual threads, 16 at a time unless the target sets
+5. **Run the tests,** in parallel on virtual threads, 16 at a time unless the target sets
    `parallelism`. For each test the engine:
    - makes it inapplicable, without sending anything, if the target lacks a capability
      the test or one of its identities requires;
@@ -109,11 +119,11 @@ sequenceDiagram
      expectations in the order the contract fixes;
    - stops at the first failed expectation: `failed`, or `inapplicable` in a precondition
      step.
-5. **Clean up.** Each test deletes what it created, grants included, then its container.
+6. **Clean up.** Each test deletes what it created, grants included, then its container.
    The run root goes last, with `Depth: infinity` and `If-Match`; when a server refuses a
    recursive delete (a MAY), the engine deletes bottom-up. Cleanup never changes an
    outcome; a warning names anything left behind.
-6. **Report.** Results are written, in the order the tests were selected, as a
+7. **Report.** Results are written, in the order the tests were selected, as a
    [report bundle](reports.md).
 
 ## Isolation

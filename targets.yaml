@@ -23,7 +23,7 @@ targets:
   # short-lived (5 minutes on a stock Keycloak); mint a fresh one per run. See D-0030.
   #
   # my-server:
-  #   baseUrl: https://storage.example/alice/
+  #   storage: https://storage.example/alice/   # the storage; its description names the storage root
   #   adapter: env
   #   capabilities: [Authentication]
   #   properties: {}

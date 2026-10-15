@@ -190,13 +190,16 @@ final class FixtureHost implements AutoCloseable {
 
     /**
      * The storage description a delivery's keyid names, fetched anonymously, but only from the
-     * target's own host: the keyid is whatever the sender wrote, and the fixture host must not be
-     * made to fetch arbitrary URLs (section 10).
+     * target's own host (its base URL's, or the storage's it is registered by): the keyid is
+     * whatever the sender wrote, and the fixture host must not be made to fetch arbitrary URLs
+     * (section 10).
      */
     private static JsonNode storageDescription(RunSession run, URI storage) {
         URI base = run.target().baseUrl();
+        URI registered = run.target().storage();
         if (!"https".equalsIgnoreCase(storage.getScheme()) && !"http".equalsIgnoreCase(storage.getScheme())
-                || storage.getHost() == null || !storage.getHost().equalsIgnoreCase(base.getHost())) {
+                || storage.getHost() == null || !storage.getHost().equalsIgnoreCase(base.getHost())
+                && (registered == null || !storage.getHost().equalsIgnoreCase(registered.getHost()))) {
             return null;
         }
         try {

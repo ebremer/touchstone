@@ -118,6 +118,9 @@ no account, key or public address: everything a run needs is made for it.
   their tokens, as any client would. The keys stay in `targetservers/.local/<project>/`.
 - **Each target's `touchstone.env`** says where runs go (a container alice creates, when the storage root itself is
   readable anonymously), how alice and bob get their tokens, where the server keeps its key, and its name and language.
+  Where runs go in the storage root itself (sparq-lws-core, lws-drupal), `TS_REGISTER=storage` registers the target by
+  its storage URL, and Touchstone finds the root in the storage description as a client would; the others are
+  registered by the container (`baseUrl`).
 - `--keep` leaves the servers running; `--project <name>` runs a second set beside another (a deployment's, say);
   `--module <m>` runs part of the suite. Halcyon and lws-server take longest: without a way to mint an expired token,
   the expired-token test waits for a real one to expire.
@@ -207,8 +210,8 @@ containers at the URL the run gives it, as from anywhere else.
    rebuild the router.
 4. `docker compose up -d --build <name>`. It answers at `<origin>/targets/<name>/` at once.
 5. Register a Touchstone target for it in your own registry (`targets.yaml`, see
-   [the targets documentation](../docs/targets.md)), with `baseUrl` a container in its storage that alice may
-   create containers in.
+   [the targets documentation](../docs/targets.md)), with `storage` its storage URL when runs may go in the storage
+   root, or `baseUrl` a container in its storage that alice may create containers in.
 
 ## Testing them with Touchstone
 

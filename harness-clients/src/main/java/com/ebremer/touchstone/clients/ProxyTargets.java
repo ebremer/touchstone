@@ -62,7 +62,7 @@ final class ProxyTargets {
                 throw new IllegalArgumentException("proxy target id '" + id + "' is not a simple name");
             }
             String prefix = publicBase + "/p/" + id + "/";
-            if (!t.baseUrl().toString().startsWith(prefix)) {
+            if (t.baseUrl() == null || !t.baseUrl().toString().startsWith(prefix)) {
                 throw new IllegalArgumentException("proxy target '" + id + "': its baseUrl, the storage as clients see it,"
                         + " must start with " + prefix);
             }

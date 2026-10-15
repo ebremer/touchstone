@@ -199,7 +199,7 @@ expression takes its JSON value, so `"${now+300}"` becomes a number.
 | Variable | Value |
 |---|---|
 | `test.container` | The test's own container, empty when the first step runs. |
-| `run.root`, `target.baseUrl` | The run's root container; the URL the target is registered with. |
+| `run.root`, `target.baseUrl` | The run's root container; the container it was created in (the target's `baseUrl`, or the storage root its storage description names). |
 | `run.id` | The run's identifier, unique to the run and safe in a URL as it is. |
 | `uuid`, `now`, `now+N`, `now-N` | A fresh UUID; the time in seconds since the epoch. |
 | `storage` | The storage, from the `lws#storage` link on the test container. |

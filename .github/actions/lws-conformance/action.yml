@@ -7,8 +7,18 @@ author: Erich Bremer
 
 inputs:
   target-url:
-    description: Base URL of the running LWS server to test (the system under test).
-    required: true
+    description: >-
+      Base URL of the running LWS server to test (the system under test): a container the
+      harness creates its run root in. Give this or storage-url.
+    required: false
+    default: ""
+  storage-url:
+    description: >-
+      The storage URL of the running LWS server to test, the id of its storage description.
+      The harness reads the description and creates its run root in the storage root its
+      StorageRoot service names (definitions/EXECUTION.md section 4.1). Give this or target-url.
+    required: false
+    default: ""
   module:
     description: >-
       What to run: all, a module (core, auth, index, notifications), a manifest
@@ -57,16 +67,22 @@ runs:
       # and the URL is validated before it is written.
       env:
         TARGET_URL: ${{ inputs.target-url }}
+        STORAGE_URL: ${{ inputs.storage-url }}
         CAPABILITIES: ${{ inputs.capabilities }}
         REPORT_PATH: ${{ inputs.report-path }}
       run: |
         set -euo pipefail
-        case "$TARGET_URL" in
+        if [ -n "$TARGET_URL" ] && [ -n "$STORAGE_URL" ] || [ -z "$TARGET_URL$STORAGE_URL" ]; then
+          echo "give either target-url or storage-url" >&2
+          exit 2
+        fi
+        if [ -n "$STORAGE_URL" ]; then key=storage; url=$STORAGE_URL; else key=baseUrl; url=$TARGET_URL; fi
+        case "$url" in
           http://*|https://*) ;;
-          *) echo "target-url must be an absolute http(s) URL: $TARGET_URL" >&2; exit 2 ;;
+          *) echo "target-url or storage-url must be an absolute http(s) URL: $url" >&2; exit 2 ;;
         esac
-        if printf '%s' "$TARGET_URL" | grep -q '[[:space:]"]'; then
-          echo "target-url must not contain whitespace or quotes" >&2
+        if printf '%s' "$url" | grep -q '[[:space:]"]'; then
+          echo "target-url or storage-url must not contain whitespace or quotes" >&2
           exit 2
         fi
         # Only the four capability names the definitions define reach the registry.
@@ -79,8 +95,8 @@ runs:
         done
         mkdir -p "$GITHUB_WORKSPACE/$REPORT_PATH"
         {
-          printf 'targets:\n  sut:\n    baseUrl: "%s"\n    adapter: env\n    capabilities: [%s]\n' \
-            "$TARGET_URL" "$caps"
+          printf 'targets:\n  sut:\n    %s: "%s"\n    adapter: env\n    capabilities: [%s]\n' \
+            "$key" "$url" "$caps"
         } > "$GITHUB_WORKSPACE/$REPORT_PATH/targets.yaml"
 
     - name: Run conformance

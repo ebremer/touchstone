@@ -108,7 +108,7 @@ becomes an object. Anywhere else the value is converted to a string.
 
 | Variable | Value |
 |---|---|
-| `target.baseUrl` | The storage URL the target is registered with in `targets.yaml`. |
+| `target.baseUrl` | The container the run root is created in (section 4.1): the `baseUrl` the target is registered with in `targets.yaml`, or, for a target registered by its `storage`, the storage root its storage description names. |
 | `run.root` | The run root container (section 4.1). |
 | `run.id` | The run's identifier, as reports name the run (since 0.13.0). It is made of RFC 3986 unreserved characters, so it can stand in a URL as it is, and no other run has it: a URL built from it names nothing an earlier run published (section 5.3). |
 | `test.container` | The test's own container (section 4.2): empty when step 1 runs. |
@@ -141,6 +141,16 @@ storage description are cached per run; the rest per test. `run.id` is fixed for
 ## 4. Running a test
 
 ### 4.1 The run
+
+A target is registered in `targets.yaml` either by a `baseUrl`, a container in the storage, or by
+its `storage`, the storage's URL (D-0099). For a target registered by its storage, the engine
+first finds the storage root, as a client that knows only the storage does (LWS Core,
+"Storage Description Resource"): it GETs the storage URL with `Accept: application/lws+cid`,
+anonymously, and again as alice if that answers 401. The answer must be 200 with a JSON object
+whose `service` array has an entry whose `type` is `StorageRoot`; the `serviceEndpoint` of the
+first such entry, resolved against the storage URL, must be an http or https URL, and becomes
+`${target.baseUrl}`. Otherwise the run stops with exit code 2, naming what was missing; no test
+was run. Whether the description conforms in every other respect is for the tests to say.
 
 Before any test, the engine creates the run root. It POSTs to `${target.baseUrl}` as
 alice with `Link: <https://www.w3.org/ns/lws#Container>; rel="type"`, with no body and no

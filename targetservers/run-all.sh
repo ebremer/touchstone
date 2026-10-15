@@ -116,7 +116,7 @@ log "registry ($OUT/targets.yaml)"
 echo "targets:" > "$OUT/targets.yaml"
 chmod 600 "$OUT/targets.yaml"   # it holds the servers' signing keys
 for t in "${TARGETS[@]}"; do
-  TS_ISSUER= TS_STORAGE= TS_BASE= TS_WARMUP= TS_SAML=no TS_KEY_CMD=() TS_KEY_FORMAT=jwk TS_PROPERTIES=() TS_FIXTURES=
+  TS_ISSUER= TS_STORAGE= TS_BASE= TS_REGISTER=baseUrl TS_WARMUP= TS_SAML=no TS_KEY_CMD=() TS_KEY_FORMAT=jwk TS_PROPERTIES=() TS_FIXTURES=
   TARGET=$t; source "$HERE/$t/touchstone.env"
   url=$ORIGIN/targets/$t
   base=$url/$TS_BASE
@@ -138,9 +138,12 @@ for t in "${TARGETS[@]}"; do
   fi
   props+=("${TS_PROPERTIES[@]}")
   tool ensure "$token" "$base"
+  # Registered by its storage, the target's run root goes where its storage description's StorageRoot service says,
+  # which must then be $base; otherwise by $base itself (D-0099).
+  if [ "$TS_REGISTER" = storage ]; then entry="storage: '$url/$TS_STORAGE'"; else entry="baseUrl: '$base'"; fi
   {
     echo "  $t:"
-    echo "    baseUrl: '$base'"
+    echo "    $entry"
     echo "    adapter: env"
     echo "    capabilities: [$caps]"
     echo "    properties:"

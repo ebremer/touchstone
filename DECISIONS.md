@@ -4041,3 +4041,25 @@ target servers it runs (D-0094, D-0097). The service itself is unchanged: it sta
 per-address limit, for whoever runs it. The documentation no longer names a public instance and tells readers to run
 their own (*Running the service yourself*); the example that pointed a CI job at the deployment now points at a local
 one.
+
+### D-0099 — a target can be registered by its storage (issue #1)
+elf Pavlik asked ([ebremer/touchstone#1](https://github.com/ebremer/touchstone/issues/1), 2026-09-24) that a run start
+where LWS.net's manifest in lws-test-suite starts: with the storage URL, the `id` of the storage description (a
+controlled identifier document), from which a client discovers the storage root through the `StorageRoot` service. The
+same steps can then be compared side by side. Touchstone started from a `baseUrl` in `targets.yaml`, a container the
+run root is created in, and never read the description to get there.
+
+A target may now name `storage` instead of `baseUrl` (one of the two, never both). The engine GETs the storage URL with
+`Accept: application/lws+cid`, anonymously, and again as alice if that answers 401; takes the `serviceEndpoint` of the
+first `StorageRoot` service, resolved against the storage URL, which must be http or https; and creates the run root
+there. `${target.baseUrl}` is that root. With no description, or no `StorageRoot` in it, there is no run (exit code
+2): finding the root is provisioning, as creating the run root is, and the discovery tests judge the description
+itself. The registry is still the boundary (DESIGN.md 7.1): the URL a run starts from comes only from `targets.yaml`,
+and the root it reaches is the server's own word, as every `Location` the engine follows already is.
+
+`baseUrl` stays, for a server with no storage description yet, and for a storage whose root is no place for runs: the
+Community Solid Server's pod root is readable by anyone, and its `touchstone.env` keeps runs in a container below it
+for that reason. EXECUTION.md section 4.1 says how
+the root is found. A definition cannot tell the difference, so the format stays 0.13.0. The GitHub Action takes
+`storage-url` as the alternative to `target-url`, and `run-all.sh` registers sparq-lws-core and lws-drupal, whose runs
+already went in the storage root, by their storage (`TS_REGISTER=storage` in their `touchstone.env`).

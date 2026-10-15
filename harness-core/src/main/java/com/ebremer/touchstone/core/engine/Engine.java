@@ -1,5 +1,6 @@
 package com.ebremer.touchstone.core.engine;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,12 +63,15 @@ public final class Engine {
         AtomicInteger completed = new AtomicInteger();
         int total = tests.size();
         List<TestResult> results = new ArrayList<>();
+        URI baseUrl;
         // Tests are independent and MAY run in parallel (EXECUTION.md section 4.2), but a hundred
         // simultaneous connections is a load test, not a conformance run: a server's accept
         // queue overflows and the run reports refused connections as cantTell.
         Semaphore slots = new Semaphore(parallelism(target));
         try (RunSession session = RunSession.open(target, definitions, runId);
              ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            // a target registered by its storage has a base URL only once the run is open
+            baseUrl = session.target().baseUrl();
             List<Future<TestResult>> futures = new ArrayList<>();
             for (TestDefinition test : tests) {
                 futures.add(pool.submit(() -> {
@@ -91,7 +95,7 @@ public final class Engine {
         } catch (ExecutionException e) {
             throw new ProvisioningException("test execution failed", e.getCause());
         }
-        return new RunResult(target.id(), target.baseUrl().toString(), runId, startedAt, List.copyOf(results));
+        return new RunResult(target.id(), baseUrl.toString(), runId, startedAt, List.copyOf(results));
     }
 
     /** How many tests run at once: the target's {@code parallelism} property, 16 by default. */

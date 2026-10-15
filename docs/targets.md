@@ -28,11 +28,15 @@ targets:
     adapter: env
     capabilities: []
     properties: {}
+  mine:
+    storage: https://storage.my-lws-server.test/
 ```
 
 | Key | Required | Meaning |
 |---|---|---|
-| `baseUrl` | yes | A container in the storage under test. Touchstone creates its run root inside it, so alice must be allowed to create containers there. The storage root is the usual choice. Tests can read it as `${target.baseUrl}`. |
+| `storage` | one of the two | The storage's URL, the `id` of its storage description. Touchstone starts where a client that knows only the storage does: it reads the storage description and creates its run root in the storage root that the `StorageRoot` service names, so alice must be allowed to create containers there. |
+| `baseUrl` | one of the two | A container in the storage under test, which Touchstone creates its run root inside without reading the storage description: for a server that has none yet, or to keep runs out of the storage root. alice must be allowed to create containers there. |
+| | | Tests read the container the run root is created in as `${target.baseUrl}`, whichever key gave it. |
 | `adapter` | no | The provisioning adapter. Default `env`, currently the only one. |
 | `capabilities` | no | What the deployment provides that the server cannot reveal about itself: `Authentication`, `HarnessIssuedTokens`, `ReachableFixtures`, `SamlTrust`. A test that needs one the target does not list is inapplicable. [Authentication](auth.md#capabilities) says what each means. |
 | `properties` | no | Settings, all strings. See below. |
@@ -83,7 +87,7 @@ keep it out of the file:
 ```yaml
 targets:
   mine:
-    baseUrl: https://storage.my-lws-server.test/alice/
+    storage: https://storage.my-lws-server.test/alice/
     adapter: env
     capabilities: []
 ```
@@ -94,7 +98,8 @@ touchstone run --target mine
 ```
 
 Without a token for alice, the run stops before any test: the run root cannot be created,
-and the exit code is `2`. With a second agent's token in `TOUCHSTONE_TOKEN_BOB`, add
+and the exit code is `2`. The storage description is read anonymously first, and with
+alice's token only if the server answers that with 401. With a second agent's token in `TOUCHSTONE_TOKEN_BOB`, add
 `Authentication` to `capabilities`, and the access-control tests apply too.
 
 {: .warning }
@@ -115,8 +120,10 @@ takes seconds, so one token covers a run; mint a fresh one for each session.
 
 alice must be able to:
 
-- **create a container** under `baseUrl`, by POSTing with the `lws#Container` type link
-  and receiving `201` with a `Location` header;
+- **read the storage description**, for a target registered by its `storage`: a GET of
+  the storage URL, anonymously or as alice, that answers 200 with a `StorageRoot` service;
+- **create a container** in the storage root (or under `baseUrl`), by POSTing with the
+  `lws#Container` type link and receiving `201` with a `Location` header;
 - **delete what she created.** Each test deletes its own container at the end, with
   `Depth: infinity` and `If-Match`. Recursive delete is optional in the draft; on a server
   without it, the harness deletes bottom-up by listing, and logs a warning naming anything
