@@ -4027,3 +4027,7 @@ notification service sends a client to exchange a token for the service's own UR
 refuses: `invalid_target`). In the first two local runs, each right after the servers started, the C# client listed
 six of the seven members of a Halcyon container; it did not recur in five later runs. The scenario takes about three
 minutes locally and 78 seconds against the deployment.
+
+**From a fresh clone** (master `71d27ab`): `interop-all.sh` gave the same 66 results, and `run-all.sh css lwsd halcyon`,
+whose targets take the router's three modes (keep, whole, strip), gave every test the outcome it has on the published
+page, so the router's new rule changed nothing for them.
