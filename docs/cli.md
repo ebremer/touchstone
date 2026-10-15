@@ -42,7 +42,7 @@ touchstone run -t <targetId> [-m <selector>] [--targets <file>] [--definitions <
 | Option | Default | Meaning |
 |---|---|---|
 | `-t`, `--target` | (required) | Target id from the registry. Never a URL. |
-| `-m`, `--module` | `all` | What to run: `all`; a module, `core` or `auth`; a manifest, such as `core/containers` or `auth/oidc`; or one test, by id (`core/containers#getContainer`) or by name. |
+| `-m`, `--module` | `all` | What to run: `all`; a module, `core`, `auth`, `index` or `notifications`; a manifest, such as `core/containers` or `auth/oidc`; or one test, by id (`core/containers#getContainer`) or by name. |
 | `--targets` | `targets.yaml` | The target registry file. |
 | `--definitions` | `definitions` | The definitions directory, holding `lws10/` and `schema/`. |
 | `-c`, `--catalog` | `catalog` | The requirements catalog directory. |
@@ -209,7 +209,7 @@ $ touchstone run --target unconfigured --targets targets-unconfigured.yaml
 cannot run against target 'unconfigured': cannot create the run root: POST http://localhost:50094/ as alice answered 401 without a Location, not 201
 
 $ touchstone run --target ref --module core/nothing
-no test matches 'core/nothing'; try all, a module (core, auth), a manifest (core/discovery, core/containers, core/data_resources, core/conditional_requests, core/linksets, core/storage_authorization, core/authorization_server, core/access_grants, core/notifications, auth/oidc, auth/cid, auth/saml) or a test id
+no test matches 'core/nothing'; try all, a module (core, auth, index, notifications), a manifest (core/discovery, core/containers, core/data_resources, core/conditional_requests, core/linksets, core/storage_authorization, core/authorization_server, core/access_grants, core/notifications, core/pagination, auth/oidc, auth/cid, auth/saml, notifications/webhook, index) or a test id
 ```
 
 An exception that nothing anticipated also exits with `2`, with a stack trace. Such an

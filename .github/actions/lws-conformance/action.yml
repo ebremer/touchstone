@@ -11,8 +11,8 @@ inputs:
     required: true
   module:
     description: >-
-      What to run: all, a module (core, auth), a manifest (core/containers, auth/oidc) or one
-      test id.
+      What to run: all, a module (core, auth, index, notifications), a manifest
+      (core/containers, auth/oidc) or one test id.
     required: false
     default: all
   capabilities:

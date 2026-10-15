@@ -49,7 +49,8 @@ final class RunCommand implements Callable<Integer> {
     @Option(
             names = {"-m", "--module"},
             defaultValue = "all",
-            description = "What to run: all, a module (core, auth), a manifest (core/containers, auth/oidc),"
+            description = "What to run: all, a module (core, auth, index, notifications), a manifest"
+                    + " (core/containers, auth/oidc),"
                     + " or one test (core/containers#getContainer, or its name). Default: ${DEFAULT-VALUE}.")
     private String selector;
 
@@ -121,7 +122,8 @@ final class RunCommand implements Callable<Integer> {
         }
         List<TestDefinition> selected = definitions.select(selector);
         if (selected.isEmpty()) {
-            err.println("no test matches '" + selector + "'; try all, a module (core, auth), a manifest ("
+            err.println("no test matches '" + selector + "'; try all, a module (core, auth, index, notifications),"
+                    + " a manifest ("
                     + String.join(", ", definitions.manifestPaths()) + ") or a test id");
             return TouchstoneCli.HARNESS_ERROR;
         }

@@ -98,7 +98,7 @@ Argument names are exactly as listed. Arguments in *italics* are optional.
 | `get_requirement` | `iri` | Returns one requirement in full, including the verbatim clause text, a link to its section, and the roles it binds. |
 | `list_tests` | *`requirement`*, *`module`*, *`level`*, *`trait`* | Lists test metadata: id, label, level, type, manifest, requirements, the capabilities it `requires`, and traits. `module` takes the same selectors as `start_run`. |
 | `coverage` | *`module`* | Returns the requirements-by-tests coverage matrix per spec module and level, over the requirements a server run answers for; `notCounted` says how many bind only other roles. |
-| `start_run` | `targetId`, *`module`* | Starts a run in the background and returns its `runId` at once. `module` selects `all` (the default), a module (`core`, `auth`), a manifest (`core/containers`) or one test. |
+| `start_run` | `targetId`, *`module`* | Starts a run in the background and returns its `runId` at once. `module` selects `all` (the default), a module (`core`, `auth`, `index`, `notifications`), a manifest (`core/containers`) or one test. |
 | `get_run` | `runId` | Returns status and progress, totals (passed, failed, cantTell, inapplicable), counts by test level, and the conformance verdict. |
 | `get_failures` | `runId`, *`page`*, *`pageSize`* | Returns paged summaries of the tests that failed or ended cantTell, MUST tests first: the test, its level and outcome, its requirements, the failing step and the reason. Pages hold 20 by default. |
 | `get_trace` | `runId`, `testId` | Returns one test's steps with the redacted HTTP exchange and each expectation's expected and actual values. `testId` is an id such as `core/containers#getContainer`, or a test's name. |

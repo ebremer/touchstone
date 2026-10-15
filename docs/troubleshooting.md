@@ -20,7 +20,7 @@ report bundle was written. The reason is printed on standard error.
 | `target registry not found: targets.yaml` | The CLI resolves paths against the working directory. Run it from the repository root, or pass `--targets <file>`. |
 | `cannot read the target registry: ...` | The registry is not valid YAML. The lines after it say where. |
 | `unknown target 'x' (registered: [...])` | The id is not in the registry. Add the server to `targets.yaml`; see [Targets and credentials](targets.md). |
-| `no test matches 'x'; try all, a module (core, auth), a manifest (...) or a test id` | `--module` takes `all`, a module, a manifest path, or a test's id or name. The message lists the manifests. |
+| `no test matches 'x'; try all, a module (core, auth, index, notifications), a manifest (...) or a test id` | `--module` takes `all`, a module, a manifest path, or a test's id or name. The message lists the manifests. |
 | `no definitions at ... (expected lws10/manifest.yamlld)` | `--definitions` must name the `definitions/` directory. Run from the repository root, or pass the path. |
 | `... violates the definitions schema:` | The next lines name the file and the property. Misspelt keys are the usual cause, because the schema allows no extra properties. |
 | `the definitions fail the lint (EXECUTION.md section 2.5):` | The next lines name each test and its defect: a requirement IRI the catalog does not hold, an unbound variable, an example host, an unknown identity. |

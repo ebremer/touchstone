@@ -35,7 +35,7 @@ definitions/lws10/
 A test's id is its manifest's path without the extension, then `#` and its name:
 `core/containers#getContainer`, or `auth/oidc/manifest#authn-oidc-alg-none`. Names are
 unique across the suite, so a name alone identifies a test too. `touchstone run --module`
-takes `all`, a module (`core`, `auth`), a manifest (`core/containers`, `auth/oidc`) or one
+takes `all`, a module (`core`, `auth`, `index`, `notifications`), a manifest (`core/containers`, `auth/oidc`) or one
 test.
 
 ## A walkthrough
