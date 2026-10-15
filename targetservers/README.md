@@ -9,7 +9,8 @@ router. Every target is published at
 
 where `<name>` is both the directory here and the compose service. The router finds the container by that name on
 the compose network, so a new implementation needs no proxy configuration: a container that keeps the contract
-below is reachable as soon as it starts.
+below is reachable as soon as it starts. A second set can be published beside the first under another path segment,
+`<origin>/<set>/<name>/` (`LWS_TARGETS_PATH`): the router takes the segment from the request.
 
 | Target | Implementation | Built from (default) | Storage | Authorization server key |
 |---|---|---|---|---|
@@ -28,10 +29,14 @@ The key paths are inside each container's `/data` volume. A deployment that lets
 ```
 compose.yaml        the router and every target, on the network lws-targets
 compose.local.yaml  local mode for run-all.sh: each server may fetch from the harness on the private network
+compose.interop.yaml  interop mode for interop-all.sh, over local mode: the clients, and the agent that owns the storages
 .env.example        the settings compose.yaml reads
 run-all.sh          build, start and test them all with Touchstone (see "Testing them all")
-router/             nginx: /targets/<name>/ to http://<name>:8080
-tools/              run-all.sh's helpers: lws.mjs (keys, tokens, summaries), matrix.py (the requirements matrix)
+interop-all.sh      every lws-client against every target (see "Every client against every server")
+router/             nginx: /<set>/<name>/ (/targets/<name>/) to http://<name>:8080
+clients/            not a target: the lws-client driver (MCP) with the adapters of its eleven clients, for interop-all.sh
+tools/              the scripts' helpers: lws.mjs (keys, tokens, documents, summaries), matrix.py (the requirements
+                    matrix), interop.mjs (drives every client through one scenario against every target)
 <name>/             one target: Dockerfile, usually an entrypoint.sh that turns the contract's environment into
                     the server's own configuration, and touchstone.env, how run-all.sh tests it
 ```
@@ -123,6 +128,41 @@ no account, key or public address: everything a run needs is made for it.
 
 To add an implementation to the run, give its directory a `touchstone.env` as well, and its switch, if it needs
 one, in `compose.local.yaml`.
+
+## Every client against every server
+
+Which LWS clients work with which of these servers, also with Docker and nothing else:
+
+```sh
+targetservers/interop-all.sh            # or: targetservers/interop-all.sh css lwsd --languages java,rust
+```
+
+`interop-all.sh` builds the target servers and an image of the [lws-client](https://github.com/ebremer/lws-client)
+driver, an MCP server, with the adapters of its eleven clients (Java, JavaScript, Python, Go, Rust, C++, C#, Swift,
+PHP, Kotlin, and the Rust one as a WebAssembly component; `clients/`, from source at a pinned commit). It starts them
+on a network of their own and drives every client through one scenario against every server with
+`tools/interop.mjs`: discover the storage, sign in and create a container, create and read a resource, conditional
+requests, JSON Patch, the linkset, the container listing, type index and search, notifications, access requests and
+grants, and a recursive delete. The results go in `targetservers/runs/<UTC time>-interop/`: `matrix.html` (the clients
+against the servers, and each step of each), `summary.md` and `results.json`.
+
+- **One agent.** Every storage belongs to one agent made for the run, whose controlled identifier document the service
+  `fixtures` serves at `https://fixtures/interop/agent` or `http://fixtures:18080/interop/agent`, as the target's
+  `TS_FIXTURES` says. Each client signs in as that agent the way any client would: a self-signed credential (the CID
+  suite), exchanged at the server's authorization server. It works in a container of its own,
+  `interop-<language>-<time>` in the target's `TS_BASE`, and deletes it at the end.
+- **What counts.** A combination works when every step the server offers passes. A step for a service the storage
+  does not advertise (notifications, type search, access requests and grants) is not applicable, and does not count.
+- **Exit status:** `0` when every combination works, `1` when one does not, `2` when the run could not be made.
+- **Time.** The scenario takes a few minutes for all 66 combinations, the servers' starting a few more. The clients
+  image took 3½ minutes to build on a large cloud VM with nothing cached (eleven toolchains).
+- `--keep`, `--no-build`, `--no-cache` and `--project` (default `lws-local-interop`) are as for `run-all.sh`.
+
+`tools/interop.mjs` also runs against a deployment: its configuration, described at the top of the file, names the
+driver, the agent's key and each target, wherever they are. A set of targets for it can run beside the set Touchstone
+tests: `LWS_TARGETS_PATH` publishes it under another path segment (a second compose project, with its own
+`LWS_TARGETS_BIND` and `LWS_TARGETS_NETWORK`), and every `*_OWNER` is the agent, whose document is then served at a
+public URL.
 
 ## Running them
 

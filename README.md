@@ -46,7 +46,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `catalog/` | requirements catalog (Turtle), 6 spec modules, versioned per spec draft |
 | `definitions/` | the tests: YAML-LD definitions (format 0.13.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
 | `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
-| `targetservers/` | the LWS server implementations Touchstone is run against, each built from source into a container behind one router, and `run-all.sh`, which tests them all ([targetservers/README.md](targetservers/README.md)) |
+| `targetservers/` | the LWS server implementations Touchstone is run against, each built from source into a container behind one router; `run-all.sh`, which tests them all, and `interop-all.sh`, which tests every lws-client against every one ([targetservers/README.md](targetservers/README.md)) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring and distribution |
 
 ## Build
@@ -87,3 +87,7 @@ lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd) fro
 starts them on a private Docker network with keys and a fixture host made for the run, tests
 each, and writes the reports, `summary.md` and a requirements matrix to
 `targetservers/runs/<UTC time>/`. See `targetservers/README.md`.
+
+`targetservers/interop-all.sh` does the same for clients: it drives each of the eleven
+[lws-client](https://github.com/ebremer/lws-client) libraries through one scenario against
+each of those servers, and writes which combinations work (D-0097).

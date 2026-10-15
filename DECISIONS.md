@@ -3981,3 +3981,49 @@ every dependency was downloaded): `git clone` and `targetservers/run-all.sh --no
 images in under four minutes and ran the six targets in thirteen more, and every target again gave every test the
 outcome it has on the published page. The exit status was 1, as documented: every target ran, and one, the Community
 Solid Server, is not conformant.
+
+### D-0097 — every lws-client against every target server: `targetservers/interop-all.sh`
+Erich asked for each LWS client, in each of its languages, to be tested against every LWS server: driven by the
+Touchstone the conformance runs use, against the servers of the published conformance page; the same check
+reproducible by anyone who downloads Touchstone; and a page of the results with the servers as columns and the
+clients as rows.
+
+The clients are the eleven of [lws-client](https://github.com/ebremer/lws-client) (Java, JavaScript, Python, Go, Rust,
+C++, C#, Swift, PHP, Kotlin, and the Rust one as a WebAssembly component), driven through the MCP tools of its
+driver, as Touchstone's client sessions already drive them. `targetservers/clients/` builds that driver with every
+adapter from source, at the commit the deployed driver runs (`99b8b10`), in one image: a stage per toolchain and a
+Debian runtime. `tools/interop.mjs` is the runner. For each target it makes the container the clients work in, then
+drives each client in turn through one scenario, adapted from lws-client's own interop scenario (written for its mock
+server) to real servers: discover the storage; sign in and create a container; create and read a resource;
+conditional requests (304, If-Match, a stale If-Match refused with 412); JSON Patch; the linkset (PATCH, or PUT where
+PATCH is refused); a listing of seven members, through every page; type index and search; notifications to the
+driver's webhook inbox, verified by the client; access requests and grants; and a recursive delete. A step for a
+service the storage does not advertise is inapplicable. A combination works when every applicable step passes.
+`interop-all.sh` runs it all on one machine with nothing but Docker, beside the targets in local mode
+(`compose.interop.yaml`).
+
+**One agent, the standard way.** A client can exercise a storage only as an agent the server lets write. The targets
+Touchstone tests each belong to a different identity (an OpenID Connect user, a did:key, and for four the fixture
+host's alice, whose document exists only while a run goes), so the interop runs use a set of targets of their own,
+every storage owned by one agent with a controlled identifier document. Every client signs in as it the same way: a
+self-signed credential (the CID suite, which all six pass with HTTPS subjects) exchanged at the server's authorization
+server. Locally the agent is made for the run and the service `fixtures` serves its document; a deployment serves it
+at a public URL. A second set beside the first is published under another path segment (`LWS_TARGETS_PATH`); the
+router now takes the segment from the request, `/<set>/<name>/`, so one router configuration serves either.
+
+**Found on the way.** The router passed every `Upgrade` header on, as WebSocket needs; Java's HttpClient asks for an
+HTTP/2 cleartext upgrade (`h2c`) on every plain-HTTP request, and the Java and Kotlin clients then failed against the
+Community Solid Server (400) and Halcyon ("the token endpoint returned no JSON object"). The router now passes only
+WebSocket upgrades, as nothing behind TLS ever sees `h2c`. Two first drafts of the scenario were wrong, not the
+servers: lws-server requires If-Match on a PATCH (428), as a server may, so the scenario sends it as a careful client
+does; and lws-drupal refuses an access request whose assignee is not the requester (403), so the request names the
+agent itself and only the grant names another.
+
+**Results** (2026-10-15 UTC, the same both ways: locally on a Docker host, and on the deployment with the clients on
+another host): 55 of the 66 combinations work. Every client works with Halcyon, lws-drupal, lws-server, lwsd and
+sparq-lws-core. No client works fully with the Community Solid Server, and the same three steps fail for every one:
+JSON Patch (415; it takes N3 Patch and SPARQL Update), the linkset (PATCH 415, PUT 405), and notifications (its
+notification service sends a client to exchange a token for the service's own URL, which its authorization server
+refuses: `invalid_target`). In the first two local runs, each right after the servers started, the C# client listed
+six of the seven members of a Halcyon container; it did not recur in five later runs. The scenario takes about three
+minutes locally and 78 seconds against the deployment.

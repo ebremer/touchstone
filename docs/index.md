@@ -85,7 +85,8 @@ As of October 2026:
 - **Target servers:** the six LWS server implementations Touchstone is run against (Halcyon,
   lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd), each built from
   source into a container. One script builds and tests them all on one machine with nothing but
-  Docker; see [Every known LWS server](getting-started.md#every-known-lws-server).
+  Docker, and another tests every [lws-client](https://github.com/ebremer/lws-client) library
+  against every one of them; see [Every known LWS server](getting-started.md#every-known-lws-server).
 - **Catalog baseline:** the catalog and the definitions follow the drafts W3C published as
   of 5 October 2026: the 5 October core Working Draft, the 21 September CID one and the
   3 August OpenID Connect and SAML ones. A weekly CI job fails when W3C publishes a newer version

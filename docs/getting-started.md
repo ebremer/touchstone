@@ -223,6 +223,19 @@ building them takes several times that again for base images and build cache.
 The [targetservers README]({% include src.html path="targetservers/README.md" %}) describes
 the containers' contract, how a run reaches the servers, and how to add an implementation.
 
+### Every client against every server
+
+`targetservers/interop-all.sh` tests the other side: which LWS clients work with which of
+these servers. It builds the [lws-client](https://github.com/ebremer/lws-client) driver with
+its eleven clients (Java, JavaScript, Python, Go, Rust, C++, C#, Swift, PHP, Kotlin, and the
+Rust one as a WebAssembly component), and drives each through one scenario against each
+server: discovery, signing in, creating, reading and updating resources, conditional requests,
+JSON Patch, linksets, listings, type search, notifications, access requests and grants, and
+deleting. Every storage belongs to one agent made for the run, and every client signs in as
+that agent with a self-signed credential (the CID suite). The results go in
+`targetservers/runs/<UTC time>-interop/`, with `matrix.html` showing the clients against the
+servers. It exits `0` when every combination works and `1` when one does not.
+
 ## Next steps
 
 - [How it works](how-it-works.md): what happens during a run.
