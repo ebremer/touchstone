@@ -27,15 +27,17 @@ exist for three reasons:
    Every one of its 27 tests has a counterpart here. Where one of its tests contradicts
    the current draft, the counterpart is corrected rather than copied (COVERAGE.md,
    table 1).
-2. **Go further than it.** There are 101 definitions against its 27, covering the
-   authorization server, access grants, conditional requests, linksets, byte ranges, the
-   access-token negative matrix, and the did:key, OpenID Connect, CID and SAML suites.
+2. **Go further than it.** There are 205 definitions against its 27, covering the
+   authorization server, access grants, conditional requests, linksets, byte ranges,
+   pagination, the access-token negative matrix, notifications (discovery and the webhook
+   suite), the search and type index services, and the OpenID Connect, CID (HTTPS and
+   did:key subjects) and SAML suites.
 3. **Flow back as JSON-LD.** YAML-LD is JSON-LD in YAML syntax, so exporting these
    definitions for contribution is a mechanical conversion (see "Export"). Nothing is
    contributed yet; that is a later, deliberate step.
 
 `touchstone run` executes them. Its engine (`harness-core`, D-0054) implements
-`EXECUTION.md`, and every build runs all 101 against the reference deployment in
+`EXECUTION.md`, and every build runs all 205 against the reference deployment in
 `harness-fixtures` and against its broken twins.
 
 ## Layout

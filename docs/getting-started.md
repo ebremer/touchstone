@@ -141,19 +141,28 @@ verdict is decided.
 
 ## Check coverage
 
-`coverage` shows which catalogued requirements at least one test cites:
+`coverage` shows which of the requirements a server run answers for (those binding a server
+or an authorization server) at least one test cites:
 
 ```text
 $ touchstone coverage
-Requirements coverage: 120 of 219 covered by 101 test(s)
+Requirements coverage: 225 of 248 covered by 205 test(s)
 
 module                   level    covered/total
-lws10-authn-openid       MUST     8/8
-lws10-authn-saml         MUST     7/7
-lws10-authn-ssi-cid      MUST     14/14
-lws10-core               MUST     82/144
-lws10-core               SHOULD   8/24
-lws10-core               MAY      1/22
+lws10-authn-openid       MUST     2/2
+lws10-authn-saml         MUST     1/1
+lws10-authn-ssi-cid      MUST     5/5
+lws10-core               MUST     127/130
+lws10-core               SHOULD   17/21
+lws10-core               MAY      9/19
+lws10-index              MUST     37/39
+lws10-index              SHOULD   4/4
+lws10-index              MAY      6/10
+lws10-notifications-webhook MUST     12/12
+lws10-notifications-webhook SHOULD   1/1
+lws10-notifications-webhook MAY      4/4
+
+48 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
 ```
 
 ## Compare two runs
@@ -183,6 +192,36 @@ which makes it usable as a CI gate.
 Touchstone creates one container for the run under the registered URL. Each test gets
 its own container inside it, and deletes it when it ends. When the run ends, Touchstone
 deletes the run's container, and logs a warning if the server refuses.
+
+## Every known LWS server
+
+The LWS server implementations Touchstone is run against are in the repository too, in
+[`targetservers/`]({% include src.html path="targetservers" kind="tree" %}): Halcyon,
+lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd, each built from
+source at a pinned commit. One script tests them all. It needs Docker, with its compose
+plugin, and nothing else, not even a JDK:
+
+```sh
+git clone https://github.com/ebremer/touchstone && cd touchstone
+targetservers/run-all.sh                # or only some: targetservers/run-all.sh css lwsd
+```
+
+It builds the harness image and every server, and starts them on a private Docker network.
+It also makes what a run needs there: keys, alice's and bob's identities, and a fixture host
+with a certificate from a CA made for the run. It tests each server in turn, then stops them.
+The results go in `targetservers/runs/<UTC time>/`:
+
+- `reports/`: each run's report bundle, as described in [Read the reports](#read-the-reports);
+- `summary.md`: the totals and the verdict of each server;
+- `matrix.html`: every requirement against every server.
+
+It exits `0` when every server is conformant, `1` when every server was tested and at least
+one is not, and `2` when a server could not be tested. From a fresh clone, with nothing
+cached, it took 17 minutes on a large cloud VM. The images take about 5 GB of disk, and
+building them takes several times that again for base images and build cache.
+`--keep` leaves the servers running afterwards, and `--module <m>` runs part of the suite.
+The [targetservers README]({% include src.html path="targetservers/README.md" %}) describes
+the containers' contract, how a run reaches the servers, and how to add an implementation.
 
 ## Next steps
 

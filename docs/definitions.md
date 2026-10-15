@@ -25,10 +25,11 @@ serve that effort in three ways:
    contradicts the current draft, the counterpart follows the draft. For example, DELETE
    expects `204`, and discovery uses `rel="https://www.w3.org/ns/lws#storage"` and
    `application/lws+cid`.
-2. **They go further.** There are 101 definitions (84 MUST, 15 SHOULD, 2 MAY). They cover
-   storage discovery, containers, data resources, conditional requests, linksets, the
-   access-token negative matrix, the authorization server, access grants, notification
-   discovery, and the OpenID Connect, CID and SAML suites. The CID tests cover HTTPS and
+2. **They go further.** There are 205 definitions (163 MUST, 31 SHOULD, 11 MAY). They cover
+   storage discovery, containers, data resources, conditional requests, linksets, pagination,
+   the access-token negative matrix, the authorization server, access grants, notification
+   discovery and the webhook notification suite, the search and type index services, and the
+   OpenID Connect, CID and SAML suites. The CID tests cover HTTPS and
    did:key subjects; W3C discontinued the separate did:key suite on 29 September 2026.
 3. **They can be contributed back.** YAML-LD is JSON-LD written in YAML, so converting a
    definition to JSON-LD is mechanical and loses nothing. Nothing has been contributed
@@ -150,9 +151,9 @@ prerequisites and expectations the contract defines. The CLI, the MCP server, th
 image and the GitHub Action all run the definitions through it. [How it
 works](how-it-works.md) follows a run step by step.
 
-Every build runs all 101 against the reference deployment, where 100 pass and the
-notification test is inapplicable, and against broken twins, where the tests that exist to
-catch each defect fail.
+Every build runs all 205 against the reference deployment, where 204 pass and the
+single-page pagination test is inapplicable (the reference splits that container into
+pages), and against broken twins, where the tests that exist to catch each defect fail.
 
 The definitions replaced the YAML test manifests Touchstone ran before, which followed the
 21 August 2026 draft. 32 of those 33 tests have a successor among the definitions. The

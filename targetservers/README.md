@@ -116,6 +116,10 @@ no account, key or public address: everything a run needs is made for it.
 - `--keep` leaves the servers running; `--project <name>` runs a second set beside another (a deployment's, say);
   `--module <m>` runs part of the suite. Halcyon and lws-server take longest: without a way to mint an expired token,
   the expired-token test waits for a real one to expire.
+- **Exit status:** `0` when every target is conformant, `1` when every target was tested and one is not (the
+  Community Solid Server, at its pinned commit), and `2` when a target could not be tested.
+- **Time and space.** From a fresh clone, with nothing cached, it took 17 minutes on a large cloud VM (D-0096). The
+  images take about 5 GB, and building them takes several times that again for base images and build cache.
 
 To add an implementation to the run, give its directory a `touchstone.env` as well, and its switch, if it needs
 one, in `compose.local.yaml`.

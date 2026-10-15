@@ -53,6 +53,7 @@ A touchstone is the dark stone assayers once used to test gold against a known s
 | Try Touchstone in five minutes against the bundled reference server | [Getting started](getting-started.md) |
 | Test your LWS client, from a browser or from its own CI | [Testing a client](testing-a-client.md) |
 | Test your own LWS server | [Targets and credentials](targets.md), then [Command line](cli.md) |
+| Run the suite against every known LWS server implementation | [Every known LWS server](getting-started.md#every-known-lws-server) |
 | Get a conformance report on every push to your server's repository | [Distribution](distribution.md) |
 | Let an AI agent run the suite and fix your server | [MCP server](mcp.md) |
 | Understand how a run works | [How it works](how-it-works.md) |
@@ -72,14 +73,19 @@ As of October 2026:
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
-- **Tests:** 101 [YAML-LD definitions](definitions.md) (84 MUST, 15 SHOULD, 2 MAY),
-  format 0.13.0, frozen. They follow the 5 October 2026 Working Draft, cover all 27 tests
-  of the LWS test group's `lws-test-suite`, and cite 120 of the 219 catalogued requirements.
-  Run `touchstone coverage` for the current figures.
+- **Tests:** 205 [YAML-LD definitions](definitions.md) (163 MUST, 31 SHOULD, 11 MAY),
+  format 0.13.0, frozen. They follow the 5 October 2026 Working Draft and the editor's drafts
+  of the webhook notification suite and the search and type index services, cover all 27 tests
+  of the LWS test group's `lws-test-suite`, and cover 225 of the 248 catalogued requirements
+  that bind a server or an authorization server. Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access
   grants, and the OpenID Connect, CID (HTTPS and did:key subjects) and SAML suites all
-  run end to end. Against the reference deployment, 100 of the 101 definitions pass; the other is inapplicable,
-  since the reference offers no notification service.
+  run end to end. Against the reference deployment, 204 of the 205 definitions pass; the other, the
+  single-page pagination test, is inapplicable, since the reference splits that container into pages.
+- **Target servers:** the six LWS server implementations Touchstone is run against (Halcyon,
+  lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd), each built from
+  source into a container. One script builds and tests them all on one machine with nothing but
+  Docker; see [Every known LWS server](getting-started.md#every-known-lws-server).
 - **Catalog baseline:** the catalog and the definitions follow the drafts W3C published as
   of 5 October 2026: the 5 October core Working Draft, the 21 September CID one and the
   3 August OpenID Connect and SAML ones. A weekly CI job fails when W3C publishes a newer version

@@ -103,7 +103,7 @@ touchstone run --target secured-ref --targets targets-secured.yaml --module auth
 conformant: no MUST test failed or ended cantTell
 ```
 
-Leave out `--module` to run all 101 definitions against it.
+Leave out `--module` to run all 205 definitions against it.
 
 Key rotation during a session is tested at fixture level: after the authorization server
 retires its signing key, a token that was valid stops validating.

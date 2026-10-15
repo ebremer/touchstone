@@ -7,19 +7,23 @@ fixtures (a throwaway OpenID Provider, a SAML identity provider, self-signed key
 hosted agent identity documents) so credential failure paths can be tested
 deterministically.
 
-**Status: Phases 0–6 complete, running the YAML-LD definitions.** The tests are 101
-YAML-LD definitions (`definitions/`, format 0.7.0, frozen; DECISIONS.md D-0070) that mirror
+**Status: Phases 0–6 complete, running the YAML-LD definitions.** The tests are 205
+YAML-LD definitions (`definitions/`, format 0.13.0, frozen; DECISIONS.md D-0091) that mirror
 and extend the LWS test group's JSON-LD suite, follow the **5 October 2026** Working
-Draft, and cover the core protocol and all three current authentication suites (OpenID
-Connect, CID with HTTPS and did:key subjects, SAML) end to end. The engine that runs them implements
+Draft, and cover the core protocol, all three current authentication suites (OpenID
+Connect, CID with HTTPS and did:key subjects, SAML), the webhook notification suite and the
+search and type index services end to end. The engine that runs them implements
 `definitions/EXECUTION.md` (D-0054); the YAML manifests it replaced are retired (D-0055).
-Every build runs all 101 against a reference deployment, a storage server and an
+Every build runs all 205 against a reference deployment, a storage server and an
 authorization server, and against broken twins of both. Touchstone ships as a **Docker
 image + GitHub Action**, so a third-party LWS server gets a conformance report by adding
-one workflow file (`docs/distribution.md`). The **requirements catalog** spans all four
-current spec modules, the webhook notification suite and the search and type index services (296 requirements, drift-hashed), baselined on the 5 October 2026
-core Working Draft and the 21 September 2026 CID one, the latest W3C versions as of 5 October 2026
-(D-0057, D-0086).
+one workflow file (`docs/distribution.md`). The LWS server implementations it is run
+against are in **`targetservers/`**, each built from source into a container, and one
+script tests them all on one machine with nothing but Docker (D-0094 to D-0096). The
+**requirements catalog** spans all four current spec modules, the webhook notification
+suite and the search and type index services (296 requirements, drift-hashed), baselined on
+the 5 October 2026 core Working Draft and the 21 September 2026 CID one, the latest W3C
+versions as of 5 October 2026 (D-0057, D-0086).
 
 Three consumers, CLI, CI and MCP, over one engine: templates and derived variables,
 prerequisites and access grants, RFC 8288 links and RFC 9110 challenges, JSON pointer,
@@ -39,9 +43,10 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-clients` | client-session service for testing LWS clients ([CLIENT-TESTING.md](CLIENT-TESTING.md)): a reference storage and authorization server per session, every request recorded; `java -jar harness-clients/target/touchstone-clients.jar` |
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
 | `harness-mcp` | Spring AI MCP server over the core engine |
-| `catalog/` | requirements catalog (Turtle), 5 spec modules, versioned per spec draft |
+| `catalog/` | requirements catalog (Turtle), 6 spec modules, versioned per spec draft |
 | `definitions/` | the tests: YAML-LD definitions (format 0.13.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
 | `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
+| `targetservers/` | the LWS server implementations Touchstone is run against, each built from source into a container behind one router, and `run-all.sh`, which tests them all ([targetservers/README.md](targetservers/README.md)) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring and distribution |
 
 ## Build
@@ -68,3 +73,17 @@ definition, start the secured reference deployment instead (`SecuredRefScenarioM
 
 Targets are pre-registered in `targets.yaml` (DESIGN.md §7.1) — commands accept
 only target ids, never URLs.
+
+## Run it against every known LWS server
+
+With Docker (and its compose plugin) and nothing else, no JDK needed:
+
+```
+targetservers/run-all.sh                # or: targetservers/run-all.sh css lwsd
+```
+
+It builds the harness and every server implementation in `targetservers/` (Halcyon,
+lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd) from source,
+starts them on a private Docker network with keys and a fixture host made for the run, tests
+each, and writes the reports, `summary.md` and a requirements matrix to
+`targetservers/runs/<UTC time>/`. See `targetservers/README.md`.
