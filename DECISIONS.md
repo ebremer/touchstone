@@ -3975,3 +3975,9 @@ every request from that address, for minutes at least, and the build failed. Ret
 refusal. So `halcyon/Dockerfile` has Maven ask that repository only for the group it serves, `com.ebremer` (Maven
 Resolver's groupId repository filter); checked against a stand-in repository, Maven then asks it for nothing else, not
 even plugins.
+
+**From a fresh clone** (the same evening, master `5060be5`, the same host with BuildKit's cache mounts emptied, so
+every dependency was downloaded): `git clone` and `targetservers/run-all.sh --no-cache` built the harness and the seven
+images in under four minutes and ran the six targets in thirteen more, and every target again gave every test the
+outcome it has on the published page. The exit status was 1, as documented: every target ran, and one, the Community
+Solid Server, is not conformant.
