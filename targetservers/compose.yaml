@@ -1,7 +1,8 @@
 # The target servers behind their router (README.md). Every target is a service on the network lws-targets, named
 # as the path segment it is published under: /targets/<service>/. Settings come from the environment or an .env
 # file beside this one (.env.example lists them); nothing here names a host. LWS_TARGETS_NETWORK and
-# LWS_TARGETS_IMAGE_PREFIX rename the network and the images, so that a second set (run-all.sh's) can run beside one.
+# LWS_TARGETS_IMAGE_PREFIX rename the network and the images, so that a second set (run-all.sh's) can run beside one,
+# and LWS_TARGETS_PATH publishes a set under another path segment than /targets/ (the router takes either).
 #
 #   docker compose up -d --build                  everything
 #   docker compose up -d --build router css       the router and one target
@@ -26,7 +27,7 @@ services:
       args: [HALCYON_REPO, HALCYON_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/halcyon
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/halcyon
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/halcyon
       LWS_OWNER: ${HALCYON_OWNER:-}
       HALCYON_ALLOWED_ISSUERS: ${HALCYON_ALLOWED_ISSUERS:-}
     volumes: [halcyon-data:/data]
@@ -38,7 +39,7 @@ services:
       args: [LWS_SERVER_REPO, LWS_SERVER_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lws-server
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-server
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/lws-server
       LWS_OWNER: ${LWS_SERVER_OWNER:-}
       LWS_REQUIRE_HTTPS: ${LWS_REQUIRE_HTTPS:-true}
       LWS_PROPERTIES: ${LWS_SERVER_PROPERTIES:-}
@@ -51,7 +52,7 @@ services:
       args: [SPARQ_REPO, SPARQ_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/sparq-lws
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/sparq-lws
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/sparq-lws
       LWS_OWNER: ${SPARQ_LWS_OWNER:-}
       SPARQ_LWS_SAML_IDPS: ${SPARQ_LWS_SAML_IDPS:-}
     volumes: [sparq-lws-data:/data]
@@ -63,7 +64,7 @@ services:
       args: [CSS_REPO, CSS_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/css
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/css
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/css
       LWS_OWNER: ${CSS_OWNER:-}
     volumes: [css-data:/data]
 
@@ -74,7 +75,7 @@ services:
       args: [LWS_DRUPAL_REPO, LWS_DRUPAL_REF, LWS_CLIENT_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lws-drupal
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lws-drupal
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/lws-drupal
       LWS_OWNER: ${LWS_DRUPAL_OWNER:-}
       LWS_DRUPAL_DB_PASSWORD: ${LWS_DRUPAL_DB_PASSWORD:-}
     networks: [lws-targets, lws-drupal]
@@ -90,7 +91,7 @@ services:
       args: [LWSD_REPO, LWSD_REF]
     image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/lwsd
     environment:
-      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/targets/lwsd
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/lwsd
       LWS_OWNER: ${LWSD_OWNER:-}
     volumes: [lwsd-data:/data]
 

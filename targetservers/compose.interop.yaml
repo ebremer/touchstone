@@ -1,0 +1,33 @@
+# Interop mode, for interop-all.sh, on top of compose.yaml and compose.local.yaml: the lws-client driver with the
+# adapters of its eleven clients (service "clients", clients/), which interop-all.sh drives against every target, and
+# the agent that owns every storage, whose controlled identifier documents "fixtures" serves at /interop/agent
+# (tools/fixtures.conf) from LWS_LOCAL_STATE/interop. The targets also deliver notifications to the clients' webhook
+# inboxes, at http://clients:18095/inbox/..., so the servers that guard their outbound requests are told that host too.
+services:
+  fixtures:
+    volumes:
+      - ${LWS_LOCAL_STATE:?interop-all.sh sets LWS_LOCAL_STATE}/interop:/etc/fixtures-interop:ro
+
+  clients:
+    build: clients
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/clients
+    restart: unless-stopped
+    networks: [lws-targets]
+    environment:
+      LWS_DRIVER_TOKEN: ${LWS_DRIVER_TOKEN:?interop-all.sh sets LWS_DRIVER_TOKEN}
+      LWS_DRIVER_ALLOWED_TARGETS: http://router:8080/
+      LWS_DRIVER_PUBLIC_BASE_URL: http://clients:18095
+
+  halcyon:
+    environment:
+      HALCYON_ALLOWED_INTERNAL_HOSTS: fixtures router clients
+
+  lws-server:
+    environment:
+      LWS_PROPERTIES: |
+        lws.fetch.allowed-hosts=fixtures,router
+        lws.webhook.allowed-hosts=fixtures,router,clients
+
+  lws-drupal:
+    environment:
+      LWS_DRUPAL_OUTBOUND_ALLOWLIST: https://fixtures http://router:8080 http://clients:18095

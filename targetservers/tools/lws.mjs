@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Helpers for run-all.sh, run in a Node.js container (no packages needed): keys, did:keys, access tokens, the
-// container a run goes in, and the summary of a set of runs.
+// Helpers for run-all.sh and interop-all.sh, run in a Node.js container (no packages needed): keys, did:keys, access
+// tokens, controlled identifier documents, the container a run goes in, and the summary of a set of runs.
 //
 //   lws.mjs keys <dir>                         alice.jwk, bob.jwk (P-256), saml-idp.jwk + .pem (RSA), db-password
 //   lws.mjs did <jwk-file>                     the did:key of a P-256 key
@@ -11,6 +11,8 @@
 //                                              an access token to <storage> for the did:key of <jwk-file>, by token
 //                                              exchange at the authorization server <issuer> (RFC 8414 metadata)
 //   lws.mjs samlidps <entity-id> <pem-file>    the JSON object {entity: PEM} of a trusted SAML identity provider
+//   lws.mjs cid <jwk-file> <url>               the controlled identifier document of the agent <url> whose
+//                                              authentication key is the public half of <jwk-file>, as <url>#key
 //   lws.mjs ensure <token> <container-url>     make the container (POST to its parent, with a Slug) if it is not there
 //   lws.mjs wait <url> [seconds]               wait until <url> answers anything but a gateway error
 //   lws.mjs summary <runs-dir>                 a Markdown table of the report bundles in <runs-dir>
@@ -170,6 +172,16 @@ switch (command) {
   case 'samlidps':
     console.log(JSON.stringify({ [args[0]]: readFileSync(args[1], 'utf8') }))
     break
+  case 'cid': {
+    const { kty, crv, x, y } = readJwk(args[0])
+    const id = args[1]
+    console.log(JSON.stringify({
+      '@context': ['https://www.w3.org/ns/cid/v1'],
+      id,
+      authentication: [{ id: id + '#key', type: 'JsonWebKey', controller: id, publicKeyJwk: { kty, crv, x, y } }],
+    }))
+    break
+  }
   case 'ensure':
     console.log(await ensure(args[0], args[1]))
     break

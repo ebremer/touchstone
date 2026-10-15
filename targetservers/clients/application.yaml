@@ -1,0 +1,35 @@
+# The lws-client driver's settings in this image, over the defaults built into lws-client-driver.jar
+# (driver/README.md, "Settings"). entrypoint.sh adds the token, the allowed targets and the public base URL.
+server:
+  # On the container's network: the token guards /mcp.
+  address: 0.0.0.0
+  port: 18095
+
+lws:
+  driver:
+    home: /opt/lws-client/driver
+    max-clients: 32
+    idle-timeout: 1h
+    languages:
+      java:
+        command: [java, -Xmx256m, -jar, adapters/java/lws-driver-adapter-java.jar]
+      js:
+        command: [node, adapters/js/adapter.mjs]
+      python:
+        command: [/opt/lws-client/runtime/python/bin/python, adapters/python/adapter.py]
+      go:
+        command: [adapters/go/lws-driver-adapter-go]
+      rust:
+        command: [adapters/rust/lws-driver-adapter-rust]
+      cpp:
+        command: [adapters/cpp/lws-driver-adapter-cpp]
+      csharp:
+        command: [adapters/csharp/lws-driver-adapter-csharp]
+      swift:
+        command: [adapters/swift/lws-driver-adapter-swift]
+      php:
+        command: [php, adapters/php/adapter.php]
+      kotlin:
+        command: [java, -Xmx256m, -jar, adapters/kotlin/lws-driver-adapter-kotlin.jar]
+      wasm:
+        command: [adapters/wasm/lws-driver-adapter-wasm, adapters/wasm/lws_client.wasm]

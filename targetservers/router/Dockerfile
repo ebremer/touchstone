@@ -1,7 +1,7 @@
-# The targetservers router (nginx.conf): /targets/<name>/ to the target container <name>, port 8080.
+# The targetservers router (nginx.conf): /targets/<name>/ (or /<set>/<name>/) to the target container <name>, port 8080.
 FROM nginx:1.28.3-alpine
 LABEL org.opencontainers.image.title="Touchstone target router" \
-      org.opencontainers.image.description="Routes /targets/<name>/ to the LWS target server container <name>" \
+      org.opencontainers.image.description="Routes /<set>/<name>/ to the LWS target server container <name>" \
       org.opencontainers.image.source="https://github.com/ebremer/touchstone"
 COPY nginx.conf /etc/nginx/nginx.conf
 # nginx.conf keeps its pid and temporary files in /tmp, so it runs as the image's unprivileged user.
