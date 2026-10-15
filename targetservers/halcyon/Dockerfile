@@ -19,13 +19,20 @@ FROM scratch AS source
 COPY --from=clone /src/ /
 
 # ---- build ----
-# JDK 25, as the reactor's enforcer requires. The build reaches the first-party repository at
-# cursus.bmi.stonybrookmedicine.edu and dcm4che.org besides Maven Central (pom.xml).
+# JDK 25, as the reactor's enforcer requires. Besides Maven Central, the build reaches dcm4che.org and the first-party
+# repository at cursus.bmi.stonybrookmedicine.edu (pom.xml). The pom lists that repository first, so Maven would ask it
+# for every one of the build's thousands of dependencies before asking Central; it refuses bursts like that (403 for
+# a while), so it is asked only for the group it serves, com.ebremer (Maven's groupId repository filter).
 FROM maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /build
 COPY --from=source / .
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -q -DskipTests package \
+    mkdir -p /tmp/repository-filters \
+ && for id in halcyon halcyon-snapshots; do echo com.ebremer > /tmp/repository-filters/groupId-$id.txt; done \
+ && mvn -B -q -DskipTests \
+      -Daether.remoteRepositoryFilter.groupId=true \
+      -Daether.remoteRepositoryFilter.groupId.basedir=/tmp/repository-filters \
+      package \
  && cp "$(ls Halcyon/target/Halcyon-*.jar | grep -v -e '-plain' -e '\.original' | head -1)" /Halcyon.jar
 
 # ---- runtime ----

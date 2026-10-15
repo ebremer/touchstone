@@ -3967,3 +3967,11 @@ of master `6dbb624`'s definitions the outcome it has on the published conformanc
 lwsd 197/0/8). It took three rounds: first the inboxes in the storages were refused (the servers had been told only
 of `fixtures`), then the harness could not read its own HTTPS webhook sink; one run also saw Halcyon's MAY test
 `type-search-safe` fail once (a container ETag that changed during a search), which did not recur.
+
+**Building Halcyon with nothing cached** (found by the check from a fresh clone, the same day). Halcyon's pom lists
+its first-party repository, cursus.bmi.stonybrookmedicine.edu, before Maven Central, so a build with an empty local
+repository asks it first for every one of some 4,700 artifacts. It answers a burst like that with 403 Forbidden to
+every request from that address, for minutes at least, and the build failed. Retrying the 403s only prolonged the
+refusal. So `halcyon/Dockerfile` has Maven ask that repository only for the group it serves, `com.ebremer` (Maven
+Resolver's groupId repository filter); checked against a stand-in repository, Maven then asks it for nothing else, not
+even plugins.
