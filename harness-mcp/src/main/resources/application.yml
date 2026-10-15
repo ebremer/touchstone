@@ -28,7 +28,6 @@ touchstone:
   # key, and the tools read that session without the key passing through the agent.
   clients:
     services:
-      - https://vulcan.bmi.stonybrook.edu/touchstone/clients
       - http://localhost:18090/touchstone/clients
 
 server:
