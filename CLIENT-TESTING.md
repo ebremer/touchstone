@@ -2,7 +2,9 @@
 
 **Status: phases C0 to C7 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
 D-0083, D-0084, D-0085), except C6's pilot with real clients, and the rule format passed Gate C
-(D-0079). D-0087 closes the gaps in what the rules judge, on a branch awaiting review. The service runs at `https://vulcan.bmi.stonybrook.edu/touchstone/clients/`.**
+(D-0079). D-0087 closes the gaps in what the rules judge, on a branch awaiting review. The service ran publicly at
+`https://vulcan.bmi.stonybrook.edu/touchstone/clients/` from 2026-10-05 to 2026-10-15; that deployment now answers only
+its owner's test hosts (D-0098), so anyone else runs the service themselves.**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.

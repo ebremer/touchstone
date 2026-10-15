@@ -18,9 +18,8 @@ Touchstone never drives your client. You use it as you normally would, by hand o
 test suite, and the session page shows the results as the requests arrive.
 
 {: .note }
-> A public pilot of the service runs at
-> [https://vulcan.bmi.stonybrook.edu/touchstone/clients/](https://vulcan.bmi.stonybrook.edu/touchstone/clients/).
-> To run your own, see [Running the service yourself](#running-the-service-yourself).
+> There is no public instance: run the service yourself, as
+> [Running the service yourself](#running-the-service-yourself) describes. It is one jar.
 
 1. TOC
 {:toc}
@@ -174,7 +173,7 @@ Everything the page does is plain HTTP, authenticated with the session key as a 
 That lets your client's own test suite, in any language, run against a session:
 
 ```bash
-BASE=https://vulcan.bmi.stonybrook.edu/touchstone/clients
+BASE=http://localhost:18090/touchstone/clients   # your instance
 curl -sf -X POST "$BASE/sessions" -H 'Content-Type: application/json' \
      -d '{"clientUnderTest": {"name": "My LWS client", "version": "'"$VERSION"'"},
           "areas": ["core", "authentication"]}' > session.json

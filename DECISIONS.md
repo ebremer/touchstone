@@ -4031,3 +4031,13 @@ minutes locally and 78 seconds against the deployment.
 **From a fresh clone** (master `71d27ab`): `interop-all.sh` gave the same 66 results, and `run-all.sh css lwsd halcyon`,
 whose targets take the router's three modes (keep, whole, strip), gave every test the outcome it has on the published
 page, so the router's new rule changed nothing for them.
+
+### D-0098 — the deployment's client sessions are no longer public
+Erich: no one but him should be able to run tests on his deployments. The client sessions at
+`https://vulcan.bmi.stonybrook.edu/touchstone/clients/` had been open to anyone since D-0084 (rate-limited, 20 sessions
+per address per hour), and the site's *Testing a client* page invited people to use them. From 2026-10-15 that
+deployment answers only the hosts his own runs come from (its front proxy refuses everyone else with 403), and so do the
+target servers it runs (D-0094, D-0097). The service itself is unchanged: it stays open by default, with its
+per-address limit, for whoever runs it. The documentation no longer names a public instance and tells readers to run
+their own (*Running the service yourself*); the example that pointed a CI job at the deployment now points at a local
+one.
