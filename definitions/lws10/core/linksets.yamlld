@@ -11,7 +11,7 @@ comment: >-
   follows the relation the server advertises. Section 9.1 then fixes how the linkset
   is served, advertised, edited and retired.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#getLinkset"
@@ -25,7 +25,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Get, Linkset, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
@@ -94,7 +94,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Get, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
@@ -139,7 +139,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
     traits: [Patch, Linkset, Conditional]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-precondition-failed-412
@@ -183,7 +183,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Put, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
@@ -241,8 +241,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Delete, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
@@ -298,8 +298,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-server-managed-atomic
@@ -331,25 +331,28 @@ entries:
               jsonType: array
 
   - id: "#linkset-up-not-redirected"
-    type: ValidationTest
+    type: NegativeTest
     name: linkset-up-not-redirected
     label: Editing a linkset cannot make a resource's rel="up" name anything but its parent
     comment: >-
-      Servers MAY restrict modifications to links such as up "to maintain system
-      integrity", and whatever they allow, containment fixes rel="up": it MUST point to
-      the parent container. The test PATCHes the linkset to claim a different parent, setting
-      the up member of its first link context object (the resource's own, since its link to
-      its parent is part of its metadata), and accepts either outcome, refusal or acceptance.
-      It then requires the resource's rel="up" to still name its real container, and nothing
-      else.
+      Changing the up link moves a resource (section 9.6), so a patch that points it at a
+      container that does not exist is refused either way: by a server that lets no client
+      change the up link, which "MUST reject the request with an appropriate 4xx status code",
+      and by one that does, since "The destination MUST be an existing container." Until the
+      19 October 2026 draft a server could also accept the patch, and this test allowed it.
+      The patch sets the up member of the first link context object (the resource's own,
+      since its link to its parent is part of its metadata). The resource's rel="up" must then
+      still name its real container, and nothing else, as containment requires.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/linkset-restricted-links
+      - https://example.org/touchstone/req/lws10-core/move-server-support
+      - https://example.org/touchstone/req/lws10-core/move-destination-existing-container
       - https://example.org/touchstone/req/lws10-core/containment-rel-up-get-head
     prereqs:
       hierarchy:
@@ -366,7 +369,7 @@ entries:
           linkHeaders:
             - rel: linkset
               capture: linkset
-      - label: claim a different parent through the linkset (refusal and acceptance are both allowed)
+      - label: claim a parent that does not exist through the linkset, which is refused
         request:
           method: PATCH
           url: "${linkset}"
@@ -377,7 +380,7 @@ entries:
               value:
                 - href: https://linkset.invalid/forged-parent/
         response:
-          statusCode: ["2xx", "4xx"]
+          statusCode: "4xx"
       - label: rel="up" still names the real container, and only it
         request:
           method: GET
@@ -403,7 +406,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
       - https://www.rfc-editor.org/rfc/rfc9264#section-4.2
     traits: [Patch, Get, Linkset]
     requirements:
@@ -460,7 +463,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Patch, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-patch-json-patch
@@ -506,3 +509,64 @@ entries:
                   some:
                     - pointer: /href
                       equals: https://creativecommons.org/licenses/by/4.0/
+
+  - id: "#linkset-patch-preserves-server-links"
+    type: ValidationTest
+    name: linkset-patch-preserves-server-links
+    label: A patch that leaves out the server's links does not remove them
+    comment: >-
+      "Servers MUST preserve the links a client is not permitted to modify when applying a
+      patch." The patch replaces the linkset array with one link context that holds only a
+      license link, leaving out whatever the server keeps there, such as up and type. The
+      server may refuse it, or apply what it allows; either way the resource still has its
+      parent, its type and its linkset afterwards.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+    traits: [Patch, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/linkset-restricted-links-preserved
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: a resource whose server links stay
+    steps:
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: replace the linkset array with a license link alone (refusal and acceptance are both allowed)
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset
+              value:
+                - anchor: "${created}"
+                  license:
+                    - href: https://creativecommons.org/licenses/by/4.0/
+        response:
+          statusCode: ["2xx", "4xx"]
+      - label: the resource keeps its parent, its type and its linkset
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+            - rel: type
+              href: https://www.w3.org/ns/lws#DataResource
+            - rel: linkset
+              href: "${linkset}"

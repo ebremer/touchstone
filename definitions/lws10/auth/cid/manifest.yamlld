@@ -17,7 +17,7 @@ comment: >-
   counterparts of lws-test-suite's did:key tests: W3C discontinued the did:key suite on
   29 September 2026 in favour of this one.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/
 entries:
 
   - id: "#authn-cid-valid-credential"
@@ -30,9 +30,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
     as: anonymous
@@ -71,7 +71,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -88,7 +88,7 @@ entries:
               - pointer: /sub
                 equals: "${identity.cid.webid}"
               - pointer: /aud
-                hasValue: "${as.realm}"
+                hasValue: "${as.resource}"
 
   - id: "#authn-cid-unknown-kid"
     type: NegativeTest
@@ -100,7 +100,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -129,7 +129,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-unknown-kid}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -148,7 +148,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -178,7 +178,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-bad-signature}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -198,7 +198,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -227,7 +227,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-expired}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -247,8 +247,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -279,7 +279,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-alg-none}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -298,8 +298,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -329,7 +329,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-claims-mismatch}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -350,7 +350,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -379,7 +379,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-document-id-mismatch}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -398,7 +398,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -427,7 +427,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-key-not-for-authentication}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -446,7 +446,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -475,7 +475,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-key-revoked}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -494,7 +494,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -523,7 +523,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-foreign-controller}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -544,7 +544,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
     as: anonymous
@@ -573,7 +573,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.cid-referenced-method}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -602,9 +602,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
     as: anonymous
@@ -643,7 +643,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -660,7 +660,7 @@ entries:
               - pointer: /sub
                 equals: "${identity.didkey.webid}"
               - pointer: /aud
-                hasValue: "${as.realm}"
+                hasValue: "${as.resource}"
 
   - id: "#authn-cid-didkey-invalid-signature"
     type: NegativeTest
@@ -673,7 +673,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -703,7 +703,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-bad-signature}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -722,8 +722,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -753,7 +753,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-alg-none}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -773,7 +773,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -801,7 +801,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-expired}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -820,8 +820,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -850,7 +850,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-claims-mismatch}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -870,8 +870,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -901,7 +901,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-audience-excludes-as}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -921,8 +921,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -951,7 +951,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-missing-exp}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -971,8 +971,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -1001,7 +1001,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-missing-iat}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -1023,8 +1023,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -1054,7 +1054,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-missing-sub}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -1076,8 +1076,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -1107,7 +1107,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-missing-iss}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -1129,8 +1129,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication]
@@ -1160,7 +1160,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey-missing-client-id}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:

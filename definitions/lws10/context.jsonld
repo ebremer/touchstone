@@ -132,11 +132,13 @@
     "claims":                  {"@id": "lwst:claims", "@container": "@set"},
     "connegEquivalent":        {"@id": "lwst:connegEquivalent"},
     "accepts":                 {"@id": "lwst:accepts", "@container": "@list"},
+    "rdfIsomorphicWith":       {"@id": "lwst:rdfIsomorphicWith"},
 
     "present":   {"@id": "lwst:present", "@type": "xsd:boolean"},
     "absent":    {"@id": "lwst:absent", "@type": "xsd:boolean"},
     "equals":    {"@id": "lwst:equals", "@type": "@json"},
     "equalsIri": {"@id": "lwst:equalsIri"},
+    "sameOrigin": {"@id": "lwst:sameOrigin"},
     "matches":   {"@id": "lwst:matches"},
     "hasValue":  {"@id": "lwst:hasValue", "@type": "@json"},
     "exists":    {"@id": "lwst:exists", "@type": "xsd:boolean"},
@@ -171,7 +173,7 @@
     "credentialSource":      {"@id": "lwst:credentialSource", "@container": "@set"},
     "audienceIncludesAs":    {"@id": "lwst:audienceIncludesAs", "@type": "xsd:boolean"},
     "identifiersAgree":      {"@id": "lwst:identifiersAgree", "@type": "xsd:boolean"},
-    "realmContainsRequest":  {"@id": "lwst:realmContainsRequest", "@type": "xsd:boolean"},
+    "discoveryValid":        {"@id": "lwst:discoveryValid", "@type": "xsd:boolean"},
     "deliverySignature":     {"@id": "lwst:deliverySignature", "@container": "@set"},
     "inboxShared":           {"@id": "lwst:inboxShared", "@type": "xsd:boolean"},
 

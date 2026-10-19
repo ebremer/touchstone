@@ -80,8 +80,8 @@
   </ul>
   <p>The storage behaves as the LWS drafts allow, which is not always what a client expects: page and
     linkset URLs are opaque, resource URLs do not mirror their containers, binary resources refuse
-    PUT, the search index lags a little, and one resource in the root container is a decoy that
-    challenges with a realm that does not contain it.</p>
+    PUT, the search index lags a little, only data resources move, and one resource in the root
+    container is a decoy whose challenge links to a storage on another origin.</p>
 
   <h2>From a script or CI</h2>
   <p>Everything the page does is plain HTTP, so your client's own test suite can drive a session:</p>

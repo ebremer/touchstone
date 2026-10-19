@@ -18,18 +18,23 @@ import java.time.Duration;
  * @param putOnlyForText PUT is supported, and advertised in {@code Allow}, only on data resources
  *     with a textual media type; a binary one answers PUT with 405
  * @param decoy the storage root lists a resource that answers every request with a 401 whose
- *     {@code realm} does not contain it, so a client that checks the realm never sends it a token
+ *     {@code Link} names a storage whose storage root is on another origin, so a client that makes
+ *     the discovery checks of lws10-core section 5.2.3 never asks for a token for it
  * @param indexLag how long a write takes to reach the type index and search (lws10-index: "MAY
  *     be eventually consistent"); zero for read-your-writes
  * @param noCombinedUpdates a PUT changes only the content even when it asks for a combined update
  *     of content and metadata with {@code Prefer: set-linkset}: combined updates are optional for
  *     servers, which then ignore the preference (lws10-core section 9.3)
+ * @param dataMovesOnly the MoveResource capability covers data resources only, and does not say
+ *     whether a moved resource keeps its identifier: a client may not move a container, and must
+ *     take a moved resource's identifier from the response (lws10-core sections 6.1.3 and 9.6)
  */
 public record Traps(boolean opaquePageUrls, boolean flatResourceUris, boolean opaqueLinksetUrls,
-                    boolean putOnlyForText, boolean decoy, Duration indexLag, boolean noCombinedUpdates) {
+                    boolean putOnlyForText, boolean decoy, Duration indexLag, boolean noCombinedUpdates,
+                    boolean dataMovesOnly) {
 
     /** None: the reference behaviour the self-test's compliant deployment has always had. */
-    public static final Traps NONE = new Traps(false, false, false, false, false, Duration.ZERO, false);
+    public static final Traps NONE = new Traps(false, false, false, false, false, Duration.ZERO, false, false);
 
     public Traps {
         indexLag = indexLag == null ? Duration.ZERO : indexLag;
@@ -37,6 +42,6 @@ public record Traps(boolean opaquePageUrls, boolean flatResourceUris, boolean op
 
     /** Every trap, with {@code indexLag} for the index. */
     public static Traps all(Duration indexLag) {
-        return new Traps(true, true, true, true, true, indexLag, true);
+        return new Traps(true, true, true, true, true, indexLag, true, true);
     }
 }

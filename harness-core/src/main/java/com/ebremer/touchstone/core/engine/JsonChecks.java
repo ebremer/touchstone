@@ -78,6 +78,12 @@ final class JsonChecks {
                     expected = want;
                     ok = selected.isTextual() && LinkValues.resolve(requestUrl, selected.asText()).equals(want);
                 }
+                case "sameOrigin" -> {
+                    String want = Templates.expand(arg.asText(), resolver);
+                    expected = "the scheme and authority of " + want;
+                    ok = selected.isTextual()
+                            && LinkValues.sameOrigin(LinkValues.resolve(requestUrl, selected.asText()), want);
+                }
                 case "hasValue" -> {
                     JsonNode want = Templates.expandJson(arg, resolver);
                     expected = "has value " + want;

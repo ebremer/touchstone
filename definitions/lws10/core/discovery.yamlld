@@ -11,7 +11,7 @@ comment: >-
   rel="storageDescription" link with rel="https://www.w3.org/ns/lws#storage" pointing at
   the canonical storage URI, which itself serves the description as application/lws+cid.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#discovery-get-links-storageDescription"
@@ -26,8 +26,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Get, Head, Discovery, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-link-header
@@ -65,8 +65,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Get, Head, Discovery, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-link-header
@@ -108,10 +108,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-data-model
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-representation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-services
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-representation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-services
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
@@ -172,8 +172,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#lws-media-type-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-media-type-0
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-uri-returns-lws-cid-document
@@ -189,23 +189,25 @@ entries:
     name: discovery-unauthorized-response-headers
     label: A 401 from a protected resource links to the storage
     comment: >-
-      Lets a client that is refused learn where the storage description is without a
-      hard-coded path. The draft is inconsistent on the level: section 6.1.2 requires
-      the link on all GET and HEAD responses, while the section 9.2 notes say servers
-      SHOULD include it on 401 responses. This takes the weaker reading, so a server is
-      not failed for what may turn out to be optional; the 401 challenge itself is a MUST
-      and is tested by getContainer-private-unauthorized.
+      Lets a client that is refused learn which storage it needs a token for, and where the
+      storage description is, without a hard-coded path. Until the 19 October 2026 draft the
+      level was unclear: section 6.1.2 required the link on all GET and HEAD responses, while
+      the section 9.2 notes said servers SHOULD include it on 401 responses. Section 5.2.1 now
+      settles it: "The response MUST also include a Link header identifying the storage that
+      contains the requested resource", which is what a client then asks for a token for. The
+      401 challenge itself is tested by getContainer-private-unauthorized.
     status: Proposed
-    level: SHOULD
+    level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
     traits: [Get, Discovery, Private, Authn]
     requires: [Authentication]
     as: anonymous
     requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-storage-link
       - https://example.org/touchstone/req/lws10-core/create-401-storage-link
-      - https://example.org/touchstone/req/lws10-core/read-401-www-authenticate-discoverability
     mirrors: lws10/manifest.jsonld#discovery-unauthorized-response-headers
     note: >-
       lws-test-suite's version also asserted the challenge (a MUST) and used
@@ -234,7 +236,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-services
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-services
     traits: [Get, Discovery, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-description-storageroot-service
@@ -276,7 +278,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-data-model
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/storage-service-id-optional

@@ -39,9 +39,10 @@ class ClientRulesLoaderTest {
         assertThat(rules.find("client-create-no-server-managed-links").orElseThrow().task()).isNull();
         assertThat(rules.find("client-saml-token-type-saml2").orElseThrow().observe().path("credentialSource").asText())
                 .isEqualTo("samlIdentityProvider");
-        RuleDefinition realm = rules.find("client-token-for-containing-realm").orElseThrow();
-        assertThat(realm.task().arm()).isEqualTo("tokenExpired");
-        assertThat(realm.iri()).isEqualTo(Definitions.BASE + "clients/authentication#client-token-for-containing-realm");
+        RuleDefinition discovery = rules.find("client-token-after-discovery-checks").orElseThrow();
+        assertThat(discovery.task().arm()).isEqualTo("tokenExpired");
+        assertThat(discovery.iri()).isEqualTo(Definitions.BASE + "clients/authentication#client-token-after-discovery-checks");
+        assertThat(discovery.expect().path("discoveryValid").asBoolean()).isTrue();
         assertThat(rules.find("client-cid-credential-signed").orElseThrow().expect()
                 .at("/credential/header/0/pointer").asText()).isEqualTo("/alg");
         // A task that arms a fault, without after: its trials are the exchanges observe selects.

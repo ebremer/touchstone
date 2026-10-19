@@ -133,8 +133,14 @@ final class Session {
                 : "/.well-known/lws-configuration" + config.basePath() + "/p/" + proxyTarget.id();
         String proxied = proxyTarget == null ? null : proxyTarget.prefix();
         String proxiedMetadata = wellKnown == null ? null : config.origin() + wellKnown;
+        String resourceMetadata = config.origin() + RefLwsServer.PROTECTED_RESOURCE_METADATA + URI.create(base).getRawPath() + "/";
+        String proxiedResourceMetadata = wellKnown == null ? null : config.origin()
+                + RefLwsServer.PROTECTED_RESOURCE_METADATA + wellKnown.substring("/.well-known/lws-configuration".length());
         this.recorder = new Recorder(url -> url.startsWith(base + "/") || url.equals(metadata)
-                || (proxied != null && (url.startsWith(proxied) || url.startsWith(proxiedMetadata))), config.maxExchanges());
+                || url.startsWith(resourceMetadata)
+                || (proxied != null && (url.startsWith(proxied) || url.startsWith(proxiedMetadata)
+                        || url.startsWith(proxiedResourceMetadata))), config.maxExchanges());
+        recorder.storageRoots(storage::storageRootOnOriginOf);
         this.proxy = proxyTarget == null ? null : new ProxySession(proxyTarget, wellKnown, recorder);
         this.bucket = new TokenBucket(config.requestBurst(), config.requestsPerSecond());
         this.clientId = base + "/client";
@@ -220,7 +226,7 @@ final class Session {
 
     /** An access token for {@code name}, as the session's authorization server would issue it. */
     String token(String name, Duration lifetime) {
-        String token = as.issue(webid(name), clientId, storage.realm(), lifetime);
+        String token = as.issue(webid(name), clientId, storage.audience(), lifetime);
         tokens.add(token);
         return token;
     }

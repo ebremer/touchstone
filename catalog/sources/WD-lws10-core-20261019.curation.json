@@ -1,18 +1,17 @@
 {
- "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported). Re-baselined onto WD-lws10-core-20261005 (D-0086): the 188 blocks whose text did not change keep their entries; the three that changed are the patch-format MUSTs, which name JSON Patch (RFC 6902) where they named JSON Merge Patch (w3c/lws-protocol#255). Two were Approved seeds (blocks 76 and 101) and now have Draft successors; the linkset PATCH entry is renamed for the new format.",
- "created": "2026-10-05",
+ "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported). Re-baselined onto WD-lws10-core-20261005 (D-0086): the 188 blocks whose text did not change keep their entries; the three that changed are the patch-format MUSTs, which name JSON Patch (RFC 6902) where they named JSON Merge Patch (w3c/lws-protocol#255). Two were Approved seeds (blocks 76 and 101) and now have Draft successors; the linkset PATCH entry is renamed for the new format. Re-baselined onto WD-lws10-core-20261019 (D-0100): the 178 blocks whose text did not change keep their entries, aligned by text; fifteen of them, one a seed, moved from section metadata to metadata-0, the id the draft now gives 9.1.1 Metadata. Of the old blocks that changed, six keep their slug with the new words (the 401 challenge, the resource parameter, aud, the 401 on failed validation, the container listing, Vary: Accept), the linkset restrictions entry is renamed because it is now a MUST, and six are retired: as_uri, realm and the 401 discoverability SHOULD (w3c/lws-protocol#256, RFC 9728 resource_metadata), the two profile equivalence SHOULDs and the Approved seed conneg-media-type-equivalence (#253). Thirty-one blocks are new: seven for protected resource metadata and the client's discovery checks (#256), two for content negotiation and the LWS profile (#253), of which conneg-lws-json-honored succeeds the retired seed as a Draft entry, and twenty-two for moving resources between containers (#237).",
+ "created": "2026-10-19",
  "seeded": [
-  62,
-  64,
-  72,
-  85,
-  86,
-  87,
-  93,
+  71,
+  73,
+  81,
+  94,
+  95,
   96,
-  104,
+  102,
   105,
-  178
+  112,
+  113
  ],
  "skip": {
   "1": "BCP 14 boilerplate - defines keyword interpretation, not a conformance clause"
@@ -127,7 +126,7 @@
   {
    "i": 13,
    "slug": "authz-401-www-authenticate-challenge",
-   "summary": "A storage server generating a 401 sends a WWW-Authenticate header with at least one conforming challenge.",
+   "summary": "A storage server generating a 401 sends a WWW-Authenticate header with at least one conforming challenge, which carries the RFC 9728 resource_metadata parameter: the URL of the protected resource metadata document for the requested resource.",
    "appliesTo": [
     "Server"
    ],
@@ -135,25 +134,15 @@
   },
   {
    "i": 14,
-   "slug": "authz-challenge-as-uri-param",
-   "summary": "The as_uri challenge parameter is required and identifies the authorization server that issues access tokens.",
+   "slug": "authz-401-storage-link",
+   "summary": "A 401 response also carries a Link header identifying the storage that contains the requested resource; the client sends that URI as the token request's resource.",
    "appliesTo": [
     "Server"
    ],
-   "created": "2026-09-02"
+   "created": "2026-10-19"
   },
   {
    "i": 15,
-   "slug": "authz-challenge-realm-param",
-   "summary": "The realm challenge parameter is required; clients verify the request URI is logically within the realm.",
-   "appliesTo": [
-    "Server",
-    "Client"
-   ],
-   "created": "2026-09-02"
-  },
-  {
-   "i": 16,
    "slug": "authz-challenge-extra-params",
    "summary": "Challenges may include other headers and parameters.",
    "appliesTo": [
@@ -162,7 +151,64 @@
    "created": "2026-09-02"
   },
   {
+   "i": 16,
+   "slug": "authz-prm-conforms-rfc9728",
+   "summary": "A protected resource metadata document conforms to OAuth 2.0 Protected Resource Metadata (RFC 9728).",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
    "i": 17,
+   "slug": "authz-prm-authorization-servers",
+   "summary": "A protected resource metadata document must carry authorization_servers, naming the issuer identifier of at least one authorization server.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 18,
+   "slug": "authz-client-discovery-validation",
+   "summary": "Before requesting an access token a client performs the discovery checks against the requested URI, and does not use the discovered values if any check fails.",
+   "appliesTo": [
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 19,
+   "slug": "authz-client-resource-metadata-same-origin",
+   "summary": "The resource_metadata URL has the same scheme and authority as the requested URI.",
+   "appliesTo": [
+    "Client",
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 20,
+   "slug": "authz-client-prm-resource-matches",
+   "summary": "The resource value of the protected resource metadata document is identical to the requested URI (RFC 9728 section 3.3).",
+   "appliesTo": [
+    "Client",
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 21,
+   "slug": "authz-client-storage-root-same-origin",
+   "summary": "The client obtains the storage description of the storage the Link header names, whose StorageRoot serviceEndpoint has the same scheme and authority as the requested URI.",
+   "appliesTo": [
+    "Client",
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 22,
    "slug": "authz-server-metadata-well-known",
    "summary": "Authorization servers provide RFC 8414 metadata at /.well-known/lws-configuration.",
    "appliesTo": [
@@ -171,7 +217,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 18,
+   "i": 23,
    "slug": "authz-metadata-subject-token-types",
    "summary": "An authorization server SHOULD advertise the subject token types its token endpoint accepts via subject_token_types_supported in its metadata.",
    "appliesTo": [
@@ -180,7 +226,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 19,
+   "i": 24,
    "slug": "authz-metadata-subject-identifier-types",
    "summary": "An authorization server SHOULD advertise the subject identifier types it supports (URI schemes, or did: plus method) via subject_identifier_types_supported; omitted means [https].",
    "appliesTo": [
@@ -189,7 +235,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 20,
+   "i": 25,
    "slug": "authz-token-exchange-grant",
    "summary": "The token endpoint supports the RFC 8693 token-exchange grant type.",
    "appliesTo": [
@@ -198,9 +244,9 @@
    "created": "2026-09-02"
   },
   {
-   "i": 21,
+   "i": 26,
    "slug": "authz-token-exchange-resource-param",
-   "summary": "The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected.",
+   "summary": "The resource parameter is a required URI that populates aud, and is the URI of the storage that contains the requested resource, as the 401's Link header gave it; requests naming unknown or untrusted storages are rejected.",
    "appliesTo": [
     "AuthorizationServer",
     "Client"
@@ -208,7 +254,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 22,
+   "i": 27,
    "slug": "authz-token-exchange-subject-token-param",
    "summary": "The subject_token parameter is required and carries a valid subject token such as an authentication credential.",
    "appliesTo": [
@@ -218,7 +264,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 23,
+   "i": 28,
    "slug": "authz-validate-before-issuing",
    "summary": "All presented tokens are validated before an access token is returned.",
    "appliesTo": [
@@ -227,7 +273,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 24,
+   "i": 29,
    "slug": "authz-token-response-rfc6749-rfc9068",
    "summary": "Token responses conform to RFC 6749 section 5.1; access tokens conform to RFC 9068.",
    "appliesTo": [
@@ -236,7 +282,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 25,
+   "i": 30,
    "slug": "authz-access-token-sub-claim",
    "summary": "The access token sub claim is a required URI identifying the acting agent.",
    "appliesTo": [
@@ -245,7 +291,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 26,
+   "i": 31,
    "slug": "authz-access-token-iss-claim",
    "summary": "The access token iss claim is required and is the authorization server URI.",
    "appliesTo": [
@@ -254,7 +300,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 27,
+   "i": 32,
    "slug": "authz-access-token-client-id-claim",
    "summary": "The access token client_id claim is a required URI identifying the client.",
    "appliesTo": [
@@ -263,16 +309,16 @@
    "created": "2026-09-02"
   },
   {
-   "i": 28,
+   "i": 33,
    "slug": "authz-access-token-aud-claim",
-   "summary": "The access token aud claim includes the resource-parameter URI (the storage realm).",
+   "summary": "The access token aud claim includes the resource-parameter URI, which is a storage URI.",
    "appliesTo": [
     "AuthorizationServer"
    ],
    "created": "2026-09-02"
   },
   {
-   "i": 29,
+   "i": 34,
    "slug": "authz-access-token-exp-short-lived",
    "summary": "The exp claim is required; short lifetimes are recommended (300 seconds or less).",
    "appliesTo": [
@@ -281,7 +327,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 30,
+   "i": 35,
    "slug": "authz-access-token-iat-claim",
    "summary": "The iat claim is required.",
    "appliesTo": [
@@ -290,7 +336,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 31,
+   "i": 36,
    "slug": "authz-access-token-jti-claim",
    "summary": "The jti claim is required.",
    "appliesTo": [
@@ -299,7 +345,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 32,
+   "i": 37,
    "slug": "authz-token-error-rfc6749",
    "summary": "Invalid or unauthorized token requests produce RFC 6749 section 5.2 error responses.",
    "appliesTo": [
@@ -308,7 +354,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 33,
+   "i": 38,
    "slug": "authz-bearer-presentation-rfc6750",
    "summary": "Clients present access tokens via the Authorization header per RFC 6750.",
    "appliesTo": [
@@ -317,7 +363,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 34,
+   "i": 39,
    "slug": "authz-token-validation-checklist",
    "summary": "Storage servers validate access tokens with the defined checks, rejecting the request on any failure.",
    "appliesTo": [
@@ -326,7 +372,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 35,
+   "i": 40,
    "slug": "authz-jwt-signature-jwks-rotation",
    "summary": "JWT signatures are verified against the jwks_uri from server metadata; keys should be cached and key rotation is supported.",
    "appliesTo": [
@@ -335,16 +381,16 @@
    "created": "2026-09-02"
   },
   {
-   "i": 36,
+   "i": 41,
    "slug": "authz-invalid-token-401-error-param",
-   "summary": "Failed validation yields 401 with a WWW-Authenticate error parameter such as invalid_token.",
+   "summary": "Failed validation yields 401 with a WWW-Authenticate header carrying resource_metadata and an error parameter such as invalid_token.",
    "appliesTo": [
     "Server"
    ],
    "created": "2026-09-02"
   },
   {
-   "i": 37,
+   "i": 42,
    "slug": "authz-policy-denial-rejected",
    "summary": "A valid token whose authorization policy disallows the operation is rejected.",
    "appliesTo": [
@@ -353,7 +399,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 38,
+   "i": 43,
    "slug": "storage-description-id-required",
    "summary": "The storage description id is REQUIRED and MUST be the canonical URI of the storage, which is also the canonical URL of its controlled identifier document.",
    "appliesTo": [
@@ -362,7 +408,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 39,
+   "i": 44,
    "slug": "storage-description-type-storage",
    "summary": "The storage description type equals or includes the string Storage (case-sensitive).",
    "appliesTo": [
@@ -371,7 +417,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 40,
+   "i": 45,
    "slug": "storage-capability-id-optional",
    "summary": "A capability object id, if present, is a URI.",
    "appliesTo": [
@@ -380,7 +426,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 41,
+   "i": 46,
    "slug": "storage-capability-type-required",
    "summary": "A capability object type is a required string or set of strings.",
    "appliesTo": [
@@ -389,7 +435,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 42,
+   "i": 47,
    "slug": "storage-capability-property",
    "summary": "The capability property, if present, is a set of capability maps; additional properties are allowed.",
    "appliesTo": [
@@ -398,7 +444,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 43,
+   "i": 48,
    "slug": "storage-service-id-optional",
    "summary": "A service object id, if present, is a URI.",
    "appliesTo": [
@@ -407,7 +453,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 44,
+   "i": 49,
    "slug": "storage-service-type-required",
    "summary": "A service object type is a required string or set of strings.",
    "appliesTo": [
@@ -416,7 +462,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 45,
+   "i": 50,
    "slug": "storage-service-endpoint-required",
    "summary": "A service object serviceEndpoint is a required URI.",
    "appliesTo": [
@@ -425,7 +471,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 46,
+   "i": 51,
    "slug": "storage-service-property",
    "summary": "The service property is a required set of service maps; additional properties are allowed.",
    "appliesTo": [
@@ -434,7 +480,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 47,
+   "i": 52,
    "slug": "storage-description-link-header",
    "summary": "GET/HEAD responses on storage resources include a Link header whose target is the canonical storage URI, with rel=https://www.w3.org/ns/lws#storage.",
    "appliesTo": [
@@ -443,7 +489,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 48,
+   "i": 53,
    "slug": "storage-uri-returns-lws-cid-document",
    "summary": "A request for the storage URI returns a storage description document with media type application/lws+cid unless content negotiation requires otherwise.",
    "appliesTo": [
@@ -452,7 +498,37 @@
    "created": "2026-09-02"
   },
   {
-   "i": 49,
+   "i": 54,
+   "slug": "capability-move-resource",
+   "summary": "A storage that lets clients change the up link of a Storage Resource describes a MoveResource capability; clients do not assume the up link is modifiable without it.",
+   "appliesTo": [
+    "Server",
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 55,
+   "slug": "capability-move-applies-to",
+   "summary": "The MoveResource appliesTo property is optional and, if present, a set of Storage Resource type names; absent, the capability covers data resources only.",
+   "appliesTo": [
+    "Server",
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 56,
+   "slug": "capability-move-preserves-identifier",
+   "summary": "The MoveResource preservesIdentifier property is optional and, if present, a boolean; absent, clients do not assume identifiers are preserved and rely on the update's response.",
+   "appliesTo": [
+    "Server",
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 57,
    "slug": "storage-description-storageroot-service",
    "summary": "A storage description contains a StorageRoot service whose serviceEndpoint is the URI of the storage root container.",
    "appliesTo": [
@@ -461,7 +537,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 50,
+   "i": 58,
    "slug": "storage-description-lws-cid",
    "summary": "A storage description is serializable as application/lws+cid, and its @context is an array starting with the CID and LWS context URIs.",
    "appliesTo": [
@@ -470,7 +546,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 51,
+   "i": 59,
    "slug": "container-model-members",
    "summary": "A container holds references to its members, which may be data resources or further containers; storage may itself act as the root container.",
    "appliesTo": [
@@ -479,7 +555,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 52,
+   "i": 60,
    "slug": "containment-rel-up-get-head",
    "summary": "Containment is expressed via a Link header rel=up on GET and HEAD responses of any non-root resource.",
    "appliesTo": [
@@ -488,7 +564,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 53,
+   "i": 61,
    "slug": "containment-integrity",
    "summary": "The server maintains containment integrity at all times.",
    "appliesTo": [
@@ -497,7 +573,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 54,
+   "i": 62,
    "slug": "containment-create-atomic-items",
    "summary": "Creating a resource atomically adds it to the parent container items list.",
    "appliesTo": [
@@ -506,7 +582,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 55,
+   "i": 63,
    "slug": "containment-delete-atomic-items",
    "summary": "Deleting a resource atomically removes it from the parent items list; container deletion requires emptiness unless recursion is requested.",
    "appliesTo": [
@@ -515,7 +591,16 @@
    "created": "2026-09-02"
   },
   {
-   "i": 56,
+   "i": 64,
+   "slug": "containment-integrity-move",
+   "summary": "When the up link of a resource changes, the server atomically removes it from the former parent's items and adds it to the destination's; support for the change is optional.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 65,
    "slug": "containment-no-orphans",
    "summary": "Every non-root resource is reachable from the storage root through the containment hierarchy.",
    "appliesTo": [
@@ -524,7 +609,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 57,
+   "i": 66,
    "slug": "containment-no-cycles",
    "summary": "A container never directly or indirectly contains itself.",
    "appliesTo": [
@@ -533,7 +618,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 58,
+   "i": 67,
    "slug": "uri-independent-of-hierarchy",
    "summary": "Resource URIs are independent of containment position; servers may use client hints but clients must not assume URI structure reflects containment.",
    "appliesTo": [
@@ -543,7 +628,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 59,
+   "i": 68,
    "slug": "container-listing-authorization-visibility",
    "summary": "A readable container lists all members the client can access and may include members the client cannot access.",
    "appliesTo": [
@@ -552,7 +637,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 60,
+   "i": 69,
    "slug": "container-representation-required-properties",
    "summary": "A container representation includes the required property set defined by the Containers section.",
    "appliesTo": [
@@ -561,7 +646,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 61,
+   "i": 70,
    "slug": "container-totalitems-accuracy",
    "summary": "totalItems is the disclosable contained-resource count; it should be accurate but may be approximate.",
    "appliesTo": [
@@ -570,7 +655,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 63,
+   "i": 72,
    "slug": "contained-description-required-members",
    "summary": "Each items entry includes the required contained-resource description members.",
    "appliesTo": [
@@ -579,7 +664,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 65,
+   "i": 74,
    "slug": "contained-description-recommended-members",
    "summary": "Contained-resource descriptions should include the recommended members.",
    "appliesTo": [
@@ -588,7 +673,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 66,
+   "i": 75,
    "slug": "contained-format-for-dataresources",
    "summary": "A contained resource description carries format, the member's media type, which must be present for DataResources.",
    "appliesTo": [
@@ -597,7 +682,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 67,
+   "i": 76,
    "slug": "operations-core-four-atomic",
    "summary": "Servers support the four core operations, handling each atomically and consistently; error responses inform without leaking sensitive detail.",
    "appliesTo": [
@@ -606,7 +691,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 68,
+   "i": 77,
    "slug": "linkset-standalone-rfc9264",
    "summary": "Per-resource metadata links are available as a standalone linkset resource per RFC 9264.",
    "appliesTo": [
@@ -615,7 +700,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 69,
+   "i": 78,
    "slug": "linkset-media-type-json",
    "summary": "Linkset resources are available as application/linkset+json.",
    "appliesTo": [
@@ -624,7 +709,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 70,
+   "i": 79,
    "slug": "linkset-server-managed-atomic",
    "summary": "The linkset link targets a server-managed resource; linkset updates are atomic with the associated resource operations.",
    "appliesTo": [
@@ -633,7 +718,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 71,
+   "i": 80,
    "slug": "link-storage-on-responses",
    "summary": "Relevant responses carry a Link header with rel=https://www.w3.org/ns/lws#storage.",
    "appliesTo": [
@@ -642,7 +727,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 73,
+   "i": 82,
    "slug": "prefer-link-relations-filtering",
    "summary": "Clients may use Prefer with lws#PreferLinkRelations to include or omit specific relations.",
    "appliesTo": [
@@ -651,7 +736,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 74,
+   "i": 83,
    "slug": "metadata-capability-advertising",
    "summary": "Core metadata may be client-modifiable; servers advertise their capabilities via standard HTTP headers.",
    "appliesTo": [
@@ -660,7 +745,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 75,
+   "i": 84,
    "slug": "linkset-allow-get-patch",
    "summary": "Servers advertise GET and PATCH support on the linkset resource via the Allow header.",
    "appliesTo": [
@@ -669,7 +754,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 76,
+   "i": 85,
    "slug": "linkset-accept-patch-json-patch",
    "summary": "Servers advertise JSON Patch support on the linkset resource via the Accept-Patch header: Accept-Patch: application/json-patch+json.",
    "appliesTo": [
@@ -678,7 +763,7 @@
    "created": "2026-10-05"
   },
   {
-   "i": 77,
+   "i": 86,
    "slug": "linkset-optional-methods-advertised",
    "summary": "Optional PUT or alternative patch formats, when supported, appear in Allow and Accept-Patch.",
    "appliesTo": [
@@ -687,7 +772,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 78,
+   "i": 87,
    "slug": "client-no-assumed-methods-405-415",
    "summary": "Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully.",
    "appliesTo": [
@@ -696,7 +781,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 79,
+   "i": 88,
    "slug": "linkset-etag-get-head",
    "summary": "Responses to GET and HEAD on a linkset resource carry an ETag header as defined in RFC 9110.",
    "appliesTo": [
@@ -705,7 +790,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 80,
+   "i": 89,
    "slug": "linkset-patch-json-patch",
    "summary": "PATCH with application/json-patch+json is the primary metadata-management mechanism on the linkset.",
    "appliesTo": [
@@ -714,7 +799,7 @@
    "created": "2026-10-05"
   },
   {
-   "i": 81,
+   "i": 90,
    "slug": "linkset-put-405-if-unsupported",
    "summary": "PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed.",
    "appliesTo": [
@@ -724,16 +809,16 @@
    "created": "2026-09-02"
   },
   {
-   "i": 82,
-   "slug": "linkset-restricted-links",
-   "summary": "Servers may restrict modification of specific links (such as up or items) to maintain integrity.",
+   "i": 91,
+   "slug": "linkset-restricted-links-preserved",
+   "summary": "Servers may restrict modification of specific links (such as up or items), must preserve the links a client may not modify when applying a patch, and must describe a MoveResource capability if they let clients modify the up link.",
    "appliesTo": [
     "Server"
    ],
-   "created": "2026-09-02"
+   "created": "2026-10-19"
   },
   {
-   "i": 83,
+   "i": 92,
    "slug": "linkset-lifecycle-tied-to-resource",
    "summary": "Deleting a resource automatically removes its associated linkset metadata.",
    "appliesTo": [
@@ -742,7 +827,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 84,
+   "i": 93,
    "slug": "create-server-managed-metadata-protected",
    "summary": "On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden.",
    "appliesTo": [
@@ -752,7 +837,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 88,
+   "i": 97,
    "slug": "create-post-not-idempotent",
    "summary": "POST is not idempotent; clients should avoid unintentional retries or use unique identifiers.",
    "appliesTo": [
@@ -761,7 +846,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 89,
+   "i": 98,
    "slug": "create-linkset-before-success",
    "summary": "The linkset resource is created and populated with mandatory server-managed fields before creation success is returned.",
    "appliesTo": [
@@ -770,7 +855,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 90,
+   "i": 99,
    "slug": "create-401-storage-link",
    "summary": "401 responses should include a Link header with rel=https://www.w3.org/ns/lws#storage so clients can discover the storage without hardcoded URIs.",
    "appliesTo": [
@@ -779,7 +864,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 91,
+   "i": 100,
    "slug": "read-container-listing-authz-filtered",
    "summary": "A container GET returns a member listing that may be authorization-filtered, with core metadata per member.",
    "appliesTo": [
@@ -788,7 +873,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 92,
+   "i": 101,
    "slug": "read-type-distinction-metadata-links",
    "summary": "Servers distinguish resource types via metadata; all read responses integrate Link headers rel=linkset, rel=up and rel=type, atomically with resource state.",
    "appliesTo": [
@@ -797,16 +882,16 @@
    "created": "2026-09-02"
   },
   {
-   "i": 94,
+   "i": 103,
    "slug": "read-container-listing-member-metadata",
-   "summary": "Container listings include member identifiers and types (required), media types for DataResources (required), and sizes and timestamps (recommended).",
+   "summary": "An application/lws+json container listing includes member identifiers and types (required), media types for DataResources (required), and sizes and timestamps (recommended).",
    "appliesTo": [
     "Server"
    ],
    "created": "2026-09-02"
   },
   {
-   "i": 95,
+   "i": 104,
    "slug": "read-container-etag-type-links",
    "summary": "Container responses carry an ETag plus Link headers rel=linkset, rel=up and rel=type indicating a container.",
    "appliesTo": [
@@ -815,7 +900,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 97,
+   "i": 106,
    "slug": "conditional-requests-supported",
    "summary": "Servers SHOULD support RFC 9110 conditional requests (entity tags, date validators) and answer 304 Not Modified when nothing changed.",
    "appliesTo": [
@@ -824,16 +909,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 98,
-   "slug": "read-401-www-authenticate-discoverability",
-   "summary": "401 responses should carry WWW-Authenticate parameters that guide clients without hardcoded URIs.",
-   "appliesTo": [
-    "Server"
-   ],
-   "created": "2026-09-02"
-  },
-  {
-   "i": 99,
+   "i": 107,
    "slug": "update-content-vs-metadata-prefer-set-linkset",
    "summary": "PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501).",
    "appliesTo": [
@@ -843,7 +919,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 100,
+   "i": 108,
    "slug": "put-clients-use-conditional-requests",
    "summary": "Clients SHOULD make PUT conditional (RFC 9110) to avoid overwriting concurrent changes; PUT is idempotent for existing resources.",
    "appliesTo": [
@@ -853,7 +929,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 101,
+   "i": 109,
    "slug": "patch-json-patch-baseline",
    "summary": "PATCH minimally supports JSON Patch (application/json-patch+json, RFC 6902).",
    "text": "LWS server MUST minimally support JSON Patch (application/json-patch+json) as defined in [RFC6902].",
@@ -863,7 +939,7 @@
    "created": "2026-10-05"
   },
   {
-   "i": 102,
+   "i": 110,
    "slug": "linkset-precondition-failed-412",
    "summary": "A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there.",
    "appliesTo": [
@@ -873,7 +949,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 103,
+   "i": 111,
    "slug": "delete-if-match-optional",
    "summary": "DELETE targets the resource URI; clients may include If-Match for concurrency checks.",
    "appliesTo": [
@@ -882,7 +958,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 106,
+   "i": 114,
    "slug": "delete-success-204-conditional",
    "summary": "Successful DELETE responds 204 No Content; conditional requests should be supported.",
    "appliesTo": [
@@ -891,7 +967,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 107,
+   "i": 115,
    "slug": "delete-401-403-404-semantics",
    "summary": "Unauthorized deletes yield 403 for a known identity with insufficient permission or 401 without valid authentication; 404 may hide existence.",
    "appliesTo": [
@@ -900,7 +976,126 @@
    "created": "2026-09-02"
   },
   {
-   "i": 108,
+   "i": 116,
+   "slug": "move-server-support",
+   "summary": "A server that lets clients modify the up link describes a MoveResource capability and meets the moving requirements; one that does not rejects the change with a 4xx and describes no MoveResource capability.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 117,
+   "slug": "move-request-json-patch",
+   "summary": "A move is a JSON Patch of the resource's linkset replacing the up target, which servers must accept; clients should send If-Match, and servers may answer an unconditional one with 428.",
+   "appliesTo": [
+    "Server",
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 118,
+   "slug": "move-destination-existing-container",
+   "summary": "A move's destination must be an existing container; a patch setting up to anything else, or removing the up link, is rejected with a 4xx.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 119,
+   "slug": "move-cross-storage-may-reject",
+   "summary": "Servers may reject, with a 4xx, a move into a container in a different storage; one that accepts it still meets the other moving requirements.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 120,
+   "slug": "move-containment-atomic",
+   "summary": "A successful move atomically removes the resource from the former parent's items and adds it to the destination's; both containers' ETags change, and their totalItems should.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 121,
+   "slug": "move-preserves-content-and-links",
+   "summary": "A move leaves the resource's content and user-defined metadata unaffected, preserves the linkset links the client may not modify, and keeps auxiliary resources bound to it.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 122,
+   "slug": "move-containment-integrity-cycles",
+   "summary": "A move that would violate containment integrity is rejected with a 4xx; a container is never moved into itself or one of its descendants.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 123,
+   "slug": "move-identifier-preserved",
+   "summary": "Servers should preserve the identifier of a moved resource and should declare whether they do with preservesIdentifier; absent it, clients do not assume they do.",
+   "appliesTo": [
+    "Server",
+    "Client"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 124,
+   "slug": "move-new-identifier-response",
+   "summary": "A server that does not preserve a moved resource's identifier answers 200 with the updated linkset anchored at the new identifier and a Content-Location naming the linkset's new URI; it should answer 301 at the old identifiers.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 125,
+   "slug": "move-containers-applies-to",
+   "summary": "Servers may let clients move containers and then list Container in the MoveResource appliesTo; otherwise they reject a container move with a 4xx and do not list Container.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 126,
+   "slug": "move-authorization-delete-and-create",
+   "summary": "A server applies a change to an up link only when the agent may delete the moved resource and create in the destination container.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 127,
+   "slug": "move-container-subtree-authorization",
+   "summary": "Moving a container requires the authorization to delete it recursively plus to create in the destination, evaluated for the whole subtree before the change, which is never applied partially.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 128,
+   "slug": "move-notification-single-activity",
+   "summary": "A server that supports moves and emits notifications should describe a successful move with a single Move activity, not a Delete and a Create.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 129,
    "slug": "status-204-410-deletions",
    "summary": "204 indicates success without a body; servers may use 410 Gone for permanent deletions.",
    "appliesTo": [
@@ -909,7 +1104,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 109,
+   "i": 130,
    "slug": "error-rfc9457-problem-details",
    "summary": "Error responses should use the RFC 9457 problem-details format.",
    "appliesTo": [
@@ -918,7 +1113,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 110,
+   "i": 131,
    "slug": "notifications-advertise-notificationservice",
    "summary": "A storage supporting notifications advertises a NotificationService service object in its storage description.",
    "appliesTo": [
@@ -927,7 +1122,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 111,
+   "i": 132,
    "slug": "notificationservice-endpoint-and-subscription-types",
    "summary": "A NotificationService includes a serviceEndpoint for the subscription endpoint and a subscriptionType array of supported subscription types.",
    "appliesTo": [
@@ -936,7 +1131,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 112,
+   "i": 133,
    "slug": "notificationservice-additional-properties",
    "summary": "Additional properties may appear on the notification service object.",
    "appliesTo": [
@@ -945,7 +1140,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 113,
+   "i": 134,
    "slug": "notification-envelope-type",
    "summary": "A notification envelope carries a required type whose value is the string Notification.",
    "appliesTo": [
@@ -954,7 +1149,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 114,
+   "i": 135,
    "slug": "notification-envelope-storage",
    "summary": "A notification envelope carries a required storage property identifying the LWS storage it concerns.",
    "appliesTo": [
@@ -963,7 +1158,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 115,
+   "i": 136,
    "slug": "notification-envelope-activity",
    "summary": "A notification envelope carries a required activity property: one or more Activity Streams 2.0 objects describing what occurred.",
    "appliesTo": [
@@ -972,7 +1167,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 116,
+   "i": 137,
    "slug": "notification-activity-as2-conformance",
    "summary": "Each activity object conforms to the Activity Streams 2.0 data model and includes the required activity properties.",
    "appliesTo": [
@@ -981,7 +1176,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 117,
+   "i": 138,
    "slug": "notification-activity-id",
    "summary": "An activity object carries a required id uniquely identifying the activity.",
    "appliesTo": [
@@ -990,7 +1185,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 118,
+   "i": 139,
    "slug": "notification-activity-type",
    "summary": "An activity object carries a required type: an array holding at least one Activity Streams 2.0 activity type.",
    "appliesTo": [
@@ -999,7 +1194,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 119,
+   "i": 140,
    "slug": "notification-activity-object-id",
    "summary": "The activity object property carries a required id: the URI of the resource the notification is about.",
    "appliesTo": [
@@ -1008,7 +1203,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 120,
+   "i": 141,
    "slug": "notification-activity-object-type",
    "summary": "The activity object property carries a required type array holding at least one resource type, such as Container or DataResource.",
    "appliesTo": [
@@ -1017,7 +1212,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 121,
+   "i": 142,
    "slug": "notification-activity-object",
    "summary": "An activity carries a required object identifying the resource the notification is about, with its own required properties.",
    "appliesTo": [
@@ -1026,7 +1221,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 122,
+   "i": 143,
    "slug": "notification-activity-published",
    "summary": "An activity carries a required published datetime, per RFC 3339, saying when it occurred.",
    "appliesTo": [
@@ -1035,7 +1230,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 123,
+   "i": 144,
    "slug": "notification-activity-optional-properties",
    "summary": "The remaining activity properties are optional.",
    "appliesTo": [
@@ -1044,7 +1239,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 124,
+   "i": 145,
    "slug": "notification-activity-types-supported",
    "summary": "A server supports the listed Activity Streams 2.0 activity types for signalling LWS resource changes.",
    "appliesTo": [
@@ -1053,7 +1248,16 @@
    "created": "2026-09-30"
   },
   {
-   "i": 125,
+   "i": 146,
+   "slug": "notification-activity-move",
+   "summary": "A server that lets clients move resources between containers supports the Move activity type, with origin, target and the moved object.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 147,
    "slug": "notification-activity-types-additional",
    "summary": "A server may support activity types beyond the ones this specification lists.",
    "appliesTo": [
@@ -1062,7 +1266,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 126,
+   "i": 148,
    "slug": "notification-batching",
    "summary": "A server may batch several activities into one envelope by giving the activity property an array.",
    "appliesTo": [
@@ -1071,7 +1275,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 127,
+   "i": 149,
    "slug": "subscription-create-post-lws-json",
    "summary": "A subscription is created by an authenticated POST to the NotificationService endpoint with an application/lws+json body.",
    "appliesTo": [
@@ -1080,7 +1284,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 128,
+   "i": 150,
    "slug": "subscription-request-required-fields",
    "summary": "A subscription request contains the required subscription fields.",
    "appliesTo": [
@@ -1089,7 +1293,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 129,
+   "i": 151,
    "slug": "subscription-request-type",
    "summary": "A subscription request carries a required type, one of the subscription types the NotificationService advertises.",
    "appliesTo": [
@@ -1098,7 +1302,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 130,
+   "i": 152,
    "slug": "subscription-request-topic",
    "summary": "A subscription request carries a required topic: an array of URIs naming the resources in scope.",
    "appliesTo": [
@@ -1107,7 +1311,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 131,
+   "i": 153,
    "slug": "subscription-request-additional-fields",
    "summary": "A subscription request may carry further fields required by its subscription type.",
    "appliesTo": [
@@ -1116,7 +1320,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 132,
+   "i": 154,
    "slug": "subscription-authorization-on-create",
    "summary": "A server enforces resource authorization when a subscription is created, rejecting one whose topic includes resources the subscriber cannot read.",
    "appliesTo": [
@@ -1125,7 +1329,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 133,
+   "i": 155,
    "slug": "subscription-authorization-on-delivery",
    "summary": "A server enforces authorization at delivery time and never delivers a notification for a resource the subscriber cannot read when the event occurs.",
    "appliesTo": [
@@ -1134,7 +1338,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 134,
+   "i": 156,
    "slug": "subscription-authorization-revoked",
    "summary": "When access is revoked the server stops delivering for the affected resources, without terminating the whole subscription unless all access in the topic is lost.",
    "appliesTo": [
@@ -1143,7 +1347,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 135,
+   "i": 157,
    "slug": "subscription-response-lws-json",
    "summary": "A successful subscription response conforms to application/lws+json and carries the required response fields.",
    "appliesTo": [
@@ -1152,7 +1356,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 136,
+   "i": 158,
    "slug": "subscription-response-type",
    "summary": "A subscription response carries a required type equal to the subscription type from the request.",
    "appliesTo": [
@@ -1161,7 +1365,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 137,
+   "i": 159,
    "slug": "subscription-response-subscription-url",
    "summary": "A subscription response carries a required subscription property: the URL representing the subscription.",
    "appliesTo": [
@@ -1170,7 +1374,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 138,
+   "i": 160,
    "slug": "notification-suite-subscription-type-identifier",
    "summary": "Every notification suite is associated with a subscription type string, used in subscriptionType arrays and in subscription requests.",
    "appliesTo": [
@@ -1179,7 +1383,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 139,
+   "i": 161,
    "slug": "access-services-advertised",
    "summary": "Advertised access endpoints use service objects typed AccessRequestService / AccessGrantService, with conformsTo listing supported access profiles.",
    "appliesTo": [
@@ -1188,7 +1392,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 140,
+   "i": 162,
    "slug": "access-extra-properties-allowed",
    "summary": "Other properties may be present on access requests and access grants.",
    "appliesTo": [
@@ -1198,7 +1402,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 141,
+   "i": 163,
    "slug": "access-type-values",
    "summary": "The type value includes AccessRequest for requests or AccessGrant for grants; additional types are allowed.",
    "appliesTo": [
@@ -1208,7 +1412,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 142,
+   "i": 164,
    "slug": "access-type-required",
    "summary": "The type property on access requests and grants is required.",
    "appliesTo": [
@@ -1218,7 +1422,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 143,
+   "i": 165,
    "slug": "access-storage-uri",
    "summary": "The storage property value is a URI.",
    "appliesTo": [
@@ -1228,7 +1432,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 144,
+   "i": 166,
    "slug": "access-storage-required",
    "summary": "The storage property is required.",
    "appliesTo": [
@@ -1238,7 +1442,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 145,
+   "i": 167,
    "slug": "access-inbox-uri",
    "summary": "The inbox property value is a URI.",
    "appliesTo": [
@@ -1248,7 +1452,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 146,
+   "i": 168,
    "slug": "access-inbox-optional",
    "summary": "The inbox property is optional.",
    "appliesTo": [
@@ -1258,7 +1462,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 147,
+   "i": 169,
    "slug": "access-access-collection",
    "summary": "The access property is a collection of one or more objects.",
    "appliesTo": [
@@ -1268,7 +1472,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 148,
+   "i": 170,
    "slug": "access-access-required",
    "summary": "The access property is required.",
    "appliesTo": [
@@ -1278,7 +1482,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 149,
+   "i": 171,
    "slug": "policy-type-access-policy",
    "summary": "A policy type includes AccessPolicy; additional types are allowed.",
    "appliesTo": [
@@ -1288,7 +1492,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 150,
+   "i": 172,
    "slug": "policy-type-required",
    "summary": "The policy type property is required.",
    "appliesTo": [
@@ -1298,7 +1502,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 151,
+   "i": 173,
    "slug": "policy-action-values",
    "summary": "The action property is a collection of server-recognized operation strings; read, modify, create and delete are mandatory to support.",
    "appliesTo": [
@@ -1308,7 +1512,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 152,
+   "i": 174,
    "slug": "policy-action-required",
    "summary": "The action property is required.",
    "appliesTo": [
@@ -1318,7 +1522,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 153,
+   "i": 175,
    "slug": "policy-assignee-uri-foaf-agent",
    "summary": "The assignee is a URI; public access may be assigned via foaf:Agent.",
    "appliesTo": [
@@ -1328,7 +1532,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 154,
+   "i": 176,
    "slug": "policy-assignee-required",
    "summary": "The assignee property is required.",
    "appliesTo": [
@@ -1338,7 +1542,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 155,
+   "i": 177,
    "slug": "policy-target-object",
    "summary": "The target property is an object containing the defined properties.",
    "appliesTo": [
@@ -1348,7 +1552,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 156,
+   "i": 178,
    "slug": "policy-target-extra-types",
    "summary": "Servers may support additional target type values.",
    "appliesTo": [
@@ -1357,7 +1561,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 157,
+   "i": 179,
    "slug": "policy-target-optional",
    "summary": "The target property is optional.",
    "appliesTo": [
@@ -1367,7 +1571,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 158,
+   "i": 180,
    "slug": "policy-constraint-objects",
    "summary": "The constraint property, if present, is a collection of constraint objects with the defined members.",
    "appliesTo": [
@@ -1377,7 +1581,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 159,
+   "i": 181,
    "slug": "policy-constraints-all-satisfied",
    "summary": "When multiple constraint objects are present, all must be satisfied.",
    "appliesTo": [
@@ -1386,7 +1590,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 160,
+   "i": 182,
    "slug": "policy-constraint-left-operands",
    "summary": "Servers advertising this profile support the defined leftOperand values.",
    "appliesTo": [
@@ -1395,7 +1599,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 161,
+   "i": 183,
    "slug": "policy-constraint-optional",
    "summary": "The constraint property is optional.",
    "appliesTo": [
@@ -1405,7 +1609,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 162,
+   "i": 184,
    "slug": "policy-constraints-conjunction-semantics",
    "summary": "All constraint objects must be satisfied for access to be permitted.",
    "appliesTo": [
@@ -1414,7 +1618,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 163,
+   "i": 185,
    "slug": "access-jsonld-context-lws-v1",
    "summary": "Access request/grant JSON-LD documents include an @context ordered set containing https://www.w3.org/ns/lws/v1; extension contexts are allowed.",
    "appliesTo": [
@@ -1424,7 +1628,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 164,
+   "i": 186,
    "slug": "access-endpoints-are-lws-containers",
    "summary": "Access request and grant endpoints are LWS containers conforming to this specification.",
    "appliesTo": [
@@ -1433,7 +1637,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 165,
+   "i": 187,
    "slug": "access-endpoints-get-post-delete",
    "summary": "Access endpoints minimally support GET and POST; DELETE is recommended; other operations may be supported.",
    "appliesTo": [
@@ -1442,7 +1646,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 166,
+   "i": 188,
    "slug": "access-endpoints-jsonld-payloads",
    "summary": "Access request and grant endpoints support the JSON-LD serialization for request and response payloads; other serializations are optional.",
    "appliesTo": [
@@ -1451,7 +1655,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 167,
+   "i": 189,
    "slug": "access-post-location-header",
    "summary": "A successful POST to an access endpoint responds with a Location header for the new resource.",
    "appliesTo": [
@@ -1460,7 +1664,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 168,
+   "i": 190,
    "slug": "access-inbox-notifications",
    "summary": "When an inbox property is present, the server should deliver notifications to that endpoint.",
    "appliesTo": [
@@ -1469,7 +1673,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 169,
+   "i": 191,
    "slug": "access-notification-data-model",
    "summary": "Notification serialization conforms to the LWS notification data model.",
    "appliesTo": [
@@ -1478,7 +1682,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 170,
+   "i": 192,
    "slug": "access-notification-delivery",
    "summary": "Inbox notifications conform to the LWS notification delivery requirements.",
    "appliesTo": [
@@ -1487,7 +1691,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 171,
+   "i": 193,
    "slug": "access-notification-events",
    "summary": "Servers should send notifications for the defined access lifecycle events.",
    "appliesTo": [
@@ -1496,7 +1700,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 172,
+   "i": 194,
    "slug": "access-notify-request-created",
    "summary": "The storage controller should be notified when a new access request is submitted.",
    "appliesTo": [
@@ -1505,7 +1709,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 173,
+   "i": 195,
    "slug": "access-notify-grant-created",
    "summary": "The requesting agent should be notified at the access-request inbox when a grant is created.",
    "appliesTo": [
@@ -1514,7 +1718,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 174,
+   "i": 196,
    "slug": "access-notify-other-events",
    "summary": "Servers may send notifications for other events.",
    "appliesTo": [
@@ -1523,7 +1727,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 175,
+   "i": 197,
    "slug": "lws-cid-media-type-storage-description",
    "summary": "A storage description is serializable as application/lws+cid, a specialization of a W3C Controlled Identifier document extended with the LWS vocabulary.",
    "appliesTo": [
@@ -1532,7 +1736,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 176,
+   "i": 198,
    "slug": "lws-json-media-type-container-representation",
    "summary": "A container representation supports the media type application/lws+json.",
    "appliesTo": [
@@ -1541,26 +1745,34 @@
    "created": "2026-09-02"
   },
   {
-   "i": 177,
-   "slug": "lws-profile-equivalence",
-   "summary": "application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json.",
+   "i": 199,
+   "slug": "conneg-lws-json-honored",
+   "summary": "Servers honor requests for application/lws+json on containers and set Content-Type to the media type of the selected representation.",
    "appliesTo": [
-    "Server",
-    "Client"
+    "Server"
    ],
-   "created": "2026-09-02"
+   "created": "2026-10-19"
   },
   {
-   "i": 179,
+   "i": 200,
+   "slug": "conneg-lws-profile-isomorphic",
+   "summary": "A container representation in an RDF media type selected for a request carrying the LWS profile parameter is RDF isomorphic to the application/lws+json one and carries the same profile parameter; a server that cannot produce it does not select that media type.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 201,
    "slug": "conneg-vary-accept",
-   "summary": "Container responses should carry Vary: Accept, since their Content-Type depends on the request Accept header.",
+   "summary": "Container responses whose representation depends on the request Accept header should carry Vary: Accept.",
    "appliesTo": [
     "Server"
    ],
    "created": "2026-09-02"
   },
   {
-   "i": 180,
+   "i": 202,
    "slug": "pagination-over-threshold",
    "summary": "Servers should paginate containers whose membership exceeds a server-determined threshold.",
    "appliesTo": [
@@ -1569,7 +1781,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 181,
+   "i": 203,
    "slug": "pagination-link-first",
    "summary": "rel=first is present on paginated responses.",
    "appliesTo": [
@@ -1578,7 +1790,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 182,
+   "i": 204,
    "slug": "pagination-link-last",
    "summary": "rel=last may be present on paginated responses.",
    "appliesTo": [
@@ -1587,7 +1799,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 183,
+   "i": 205,
    "slug": "pagination-link-next",
    "summary": "rel=next is present when subsequent pages exist and omitted on the last page.",
    "appliesTo": [
@@ -1596,7 +1808,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 184,
+   "i": 206,
    "slug": "pagination-link-prev",
    "summary": "rel=prev may be present with preceding pages and is omitted on the first page.",
    "appliesTo": [
@@ -1605,7 +1817,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 185,
+   "i": 207,
    "slug": "pagination-uris-opaque",
    "summary": "Pagination URIs are opaque; clients use the URIs the server provides.",
    "appliesTo": [
@@ -1614,7 +1826,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 186,
+   "i": 208,
    "slug": "pagination-first-page-flow",
    "summary": "The composite resource URI yields the first page; servers may support direct access to specific pages.",
    "appliesTo": [
@@ -1624,7 +1836,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 187,
+   "i": 209,
    "slug": "pagination-200-totalitems-all-pages",
    "summary": "Paginated responses are 200 OK; totalItems should reflect the total across all pages.",
    "appliesTo": [
@@ -1633,7 +1845,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 188,
+   "i": 210,
    "slug": "security-notification-access-control",
    "summary": "Access control on subscriptions and on notification delivery is consistent with access control on the underlying resources.",
    "appliesTo": [
@@ -1642,7 +1854,34 @@
    "created": "2026-09-02"
   },
   {
-   "i": 189,
+   "i": 211,
+   "slug": "security-move-privilege-combination",
+   "summary": "Servers evaluate both the delete authorization in the source container and the create authorization in the destination before a move.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 212,
+   "slug": "security-move-container-subtree",
+   "summary": "Servers that support moving containers evaluate the authorization for a recursive delete of the subtree and never partially apply a move whose authorization fails for part of it.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 213,
+   "slug": "security-move-capability-restraint",
+   "summary": "Servers should describe MoveResource only where their deployment needs it and restrict its appliesTo, and must keep preserving the links a client may not modify.",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-10-19"
+  },
+  {
+   "i": 214,
    "slug": "privacy-notification-authorized-resources-only",
    "summary": "Subscribers should only receive notifications for resources they are authorized to access.",
    "appliesTo": [
@@ -1651,7 +1890,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 190,
+   "i": 215,
    "slug": "privacy-notification-actor-omitted",
    "summary": "The actor property should be omitted by default; servers may make its inclusion configurable.",
    "appliesTo": [
@@ -1660,14 +1899,13 @@
    "created": "2026-09-02"
   },
   {
-   "i": 191,
-   "slug": "iana-ld-json-profile-equivalence",
-   "summary": "Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json.",
+   "i": 216,
+   "slug": "privacy-move-redirect-access-control",
+   "summary": "Servers should apply the moved resource's access control to a 301 left at a previous identifier, and may answer 404 instead.",
    "appliesTo": [
-    "Server",
-    "Client"
+    "Server"
    ],
-   "created": "2026-09-02"
+   "created": "2026-10-19"
   }
  ]
 }

@@ -108,9 +108,9 @@ final class Scope implements Templates.Resolver {
             case "storage":
                 return TextNode.valueOf(run.storage(this));
             case "as.uri":
-                return TextNode.valueOf(run.challenge(this).asUri());
-            case "as.realm":
-                return TextNode.valueOf(run.challenge(this).realm());
+                return TextNode.valueOf(run.asUri(this));
+            case "as.resource":
+                return TextNode.valueOf(run.challenge(this).resource());
             case "as.metadataUrl":
                 return TextNode.valueOf(run.metadataUrl(this));
             case "as.issuer":

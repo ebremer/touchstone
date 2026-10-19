@@ -101,7 +101,7 @@ const controls = {
   'credential with a part other than header and claims': [ruleCredential, t => { t.expect.credential.payload = t.expect.credential.claims || t.expect.credential.header; }],
   'empty credential': [ruleCredential, t => { t.expect.credential = {}; }],
   'form that is not a list': [ruleCredential, t => { t.expect.form = { pointer: '/resource', jsonType: 'string' }; }],
-  'realmContainsRequest that is not a boolean': [ruleCredential, t => { t.expect.realmContainsRequest = 'yes'; }],
+  'discoveryValid that is not a boolean': [ruleCredential, t => { t.expect.discoveryValid = 'yes'; }],
   'client rule with an unknown delivery signature': [ruleDelivery, t => { t.observe.deliverySignature = 'forged'; }],
   'inboxShared that is not a boolean': [ruleDelivery, t => { t.expect.inboxShared = 'no'; }],
   'task arming the dropped stale-created forgery': [ruleTask, t => { t.task.arm = 'forgedStaleCreated'; }],

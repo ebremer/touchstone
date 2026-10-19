@@ -51,7 +51,7 @@ final class Conditions {
                 || (f = bool(condition, "containerEmpty", a.containerEmpty())) != null
                 || (f = bool(condition, "audienceIncludesAs", a.audienceIncludesAs())) != null
                 || (f = bool(condition, "identifiersAgree", a.identifiersAgree())) != null
-                || (f = bool(condition, "realmContainsRequest", a.realmContainsRequest())) != null
+                || (f = bool(condition, "discoveryValid", a.discoveryValid())) != null
                 || (f = bool(condition, "inboxShared", a.inboxShared())) != null) {
             return f;
         }

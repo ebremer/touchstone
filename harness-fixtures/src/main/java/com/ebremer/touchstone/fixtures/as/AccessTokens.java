@@ -18,7 +18,7 @@ import com.nimbusds.jwt.SignedJWT;
 
 /**
  * Mints RFC 9068 access tokens for the negative matrix (DESIGN.md paragraph 5.4). A valid
- * token is signed by the issuer's current key with the subject, the storage realm as
+ * token is signed by the issuer's current key with the subject, the storage URI as
  * audience, and the issuer as {@code iss}; each broken variant corrupts exactly one of
  * those so a failing conformance test names a single cause.
  */
@@ -28,15 +28,15 @@ public final class AccessTokens {
     private static final JOSEObjectType AT_JWT = new JOSEObjectType("at+jwt");
 
     private final RefAuthorizationServer issuer;
-    private final String realm;
+    private final String audience;
 
     /**
      * @param issuer the authorization server minting tokens
-     * @param realm  the storage's audience (its base URI) — the {@code aud} a valid token carries
+     * @param audience the storage URI (its base URI) — the {@code aud} a valid token carries
      */
-    public AccessTokens(RefAuthorizationServer issuer, String realm) {
+    public AccessTokens(RefAuthorizationServer issuer, String audience) {
         this.issuer = issuer;
-        this.realm = realm;
+        this.audience = audience;
     }
 
     public String valid(String subject) {
@@ -85,7 +85,7 @@ public final class AccessTokens {
     }
 
     private JWTClaimsSet.Builder base(String subject) {
-        return claims(subject).audience(realm);
+        return claims(subject).audience(audience);
     }
 
     private JWTClaimsSet.Builder claims(String subject) {

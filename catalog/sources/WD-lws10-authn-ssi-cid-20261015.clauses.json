@@ -104,7 +104,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "Any audience restriction in the ID Token MUST use the aud (audience) claim. The aud claim MUST include the target authorization server."
+  "text": "Any audience restriction in the JWT MUST use the aud (audience) claim. The aud claim MUST include the target authorization server."
  },
  {
   "i": 8,
@@ -194,7 +194,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "The verifier MUST use the kid (key id) value from the signed JWT header to identify a verification method from the subject's controlled identifier document. This process is described in [CID-1.0] Section 3.3. Using the selected verification method from the controlled identifier document, the signature of the JWT MUST be validated as described in [RFC7515], Section 5.2."
+  "text": "The verifier MUST use the kid (key ID) value from the signed JWT header to identify a verification method from the subject's controlled identifier document. This process is described in [CID-1.0] Section 3.3. Using the selected verification method from the controlled identifier document, the signature of the JWT MUST be validated as described in [RFC7515], Section 5.2."
  },
  {
   "i": 14,

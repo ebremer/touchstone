@@ -84,7 +84,7 @@ class ClientRulesSelfTest {
             entry(Flaw.ID_TOKEN_TYPED_AS_JWT, Set.of("client-oidc-token-type-id-token")),
             entry(Flaw.TOKEN_REQUEST_WITHOUT_RESOURCE, Set.of("client-token-exchange-resource")),
             entry(Flaw.TOKEN_REQUEST_WITHOUT_SUBJECT_TOKEN, Set.of("client-token-exchange-subject-token")),
-            entry(Flaw.TOKEN_FOR_FOREIGN_REALM, Set.of("client-token-for-containing-realm")),
+            entry(Flaw.SKIPS_DISCOVERY_CHECKS, Set.of("client-token-after-discovery-checks")),
             entry(Flaw.INBOX_SKIPS_SIGNATURE_CHECK, Set.of("client-inbox-refuses-unpublished-key")),
             entry(Flaw.INBOX_SKIPS_DIGEST_CHECK, Set.of("client-inbox-refuses-altered-body")),
             entry(Flaw.INBOX_ACCEPTS_KEYID_WITHOUT_FRAGMENT, Set.of("client-inbox-refuses-keyid-without-fragment")),

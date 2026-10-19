@@ -1,5 +1,5 @@
-# Storage server authorization: challenges, token validation, policy denial
-# (LWS 1.0 core sections 5.2.1, 5.2.4, 9.4 and 9.5).
+# Storage server authorization: challenges, protected resource metadata, token validation,
+# policy denial (LWS 1.0 core sections 5.2.1 to 5.2.3, 5.2.6, 9.4 and 9.5).
 "@context":
   - ../context.jsonld
   - ../touchstone.jsonld
@@ -8,13 +8,14 @@ type: Manifest
 label: "LWS 1.0 core: storage server authorization"
 comment: >-
   What a storage server does with the requests it must refuse. Every 401 carries a Bearer
-  challenge with as_uri and realm (section 5.2.1 requires a conforming challenge on any
-  401), every failed token validation also names an error, and a valid token without
-  permission is refused without being mistaken for no token at all. The challenge is
-  parsed per RFC 9110 section 11.6.1, so parameter order and quoting do not matter.
-  All tests need a target that enforces authentication.
+  challenge whose resource_metadata names the requested resource's protected resource
+  metadata (RFC 9728), as section 5.2.1 of the 19 October 2026 draft requires of a conforming
+  challenge, and that metadata names the authorization server. Every failed token validation
+  also names an error, and a valid token without permission is refused without being mistaken
+  for no token at all. The challenge is parsed per RFC 9110 section 11.6.1, so parameter order
+  and quoting do not matter. All tests need a target that enforces authentication.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#getContainer-private-unauthorized"
@@ -23,23 +24,23 @@ entries:
     label: An anonymous request for a protected container is refused with 401 and a conforming challenge
     comment: >-
       The challenge is how a client discovers where to get a token: a Bearer challenge
-      (RFC 6750) whose as_uri names the authorization server and whose realm names the
-      protection scope, both absolute URIs. Also stands for lws-test-suite's
-      discovery-unauthorized-response-headers challenge and authn-oidc-server-metadata-discovery,
-      which asserted the same response.
+      (RFC 6750) whose resource_metadata (RFC 9728 section 5.1) is the URL of the protected
+      resource metadata of the resource requested. A client uses that URL only if it has the
+      requested URI's scheme and authority (section 5.2.3), so a server whose metadata lives
+      elsewhere is one no conforming client can get a token from. Also stands for
+      lws-test-suite's discovery-unauthorized-response-headers challenge and
+      authn-oidc-server-metadata-discovery, which asserted the same response.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
       - https://www.rfc-editor.org/rfc/rfc6750#section-3
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
     as: anonymous
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
-      - https://example.org/touchstone/req/lws10-core/authz-challenge-as-uri-param
-      - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
-      - https://example.org/touchstone/req/lws10-core/read-401-www-authenticate-discoverability
+      - https://example.org/touchstone/req/lws10-core/authz-client-resource-metadata-same-origin
     mirrors:
       - lws10/manifest.jsonld#getContainer-private-unauthorized
       - lws10/manifest.jsonld#discovery-unauthorized-response-headers
@@ -53,8 +54,168 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {matches: '^https?://'}
-        realm: {matches: '^https?://'}
+        params:
+          - paramName: resource_metadata
+            matches: '^https?://'
+            sameOrigin: "${test.container}"
+
+  - id: "#protected-resource-metadata"
+    type: ValidationTest
+    name: protected-resource-metadata
+    label: The challenge's resource_metadata is the protected resource metadata of the container requested
+    comment: >-
+      A protected resource metadata document "MUST conform to OAuth 2.0 Protected Resource
+      Metadata [RFC9728]", whose section 3.2 serves it as application/json with the required
+      resource member. lws10-core makes authorization_servers required too, naming at least one
+      authorization server by its issuer identifier. Its resource "MUST be identical to the
+      requested URI", or a client must not use it (section 5.2.3, RFC 9728 section 3.3); the
+      requested URI here is the test container, character for character.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#protected-resource-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+      - https://www.rfc-editor.org/rfc/rfc9728#section-3.2
+    traits: [Get, Container, Private, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-prm-conforms-rfc9728
+      - https://example.org/touchstone/req/lws10-core/authz-prm-authorization-servers
+      - https://example.org/touchstone/req/lws10-core/authz-client-prm-resource-matches
+    steps:
+      - label: an anonymous GET of the test container is challenged
+        request:
+          method: GET
+          url: "${test.container}"
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            wwwAuthenticate: Bearer
+            params:
+              - paramName: resource_metadata
+                capture: metadata
+      - label: the protected resource metadata names the container and an authorization server
+        request:
+          method: GET
+          url: "${metadata}"
+          accept: application/json
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /resource
+              equals: "${test.container}"
+            - pointer: /authorization_servers
+              jsonType: array
+            - pointer: /authorization_servers/0
+              jsonType: string
+              matches: '^https?://'
+
+  - id: "#protected-resource-metadata-data-resource"
+    type: ValidationTest
+    name: protected-resource-metadata-data-resource
+    label: A data resource's challenge names protected resource metadata of its own
+    comment: >-
+      Protected resource metadata describes one resource: "the URL of the protected resource
+      metadata document for the requested resource", whose resource is that resource's URI. A
+      storage that answered every 401 with its root's metadata would leave a conforming client
+      unable to use any of them.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+    traits: [Get, DataResource, Private, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+      - https://example.org/touchstone/req/lws10-core/authz-client-prm-resource-matches
+    prereqs:
+      hierarchy:
+        - dataResource: created
+          contentType: text/plain
+          body: protected
+    steps:
+      - label: an anonymous GET of the data resource is challenged
+        request:
+          method: GET
+          url: "${created}"
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            wwwAuthenticate: Bearer
+            params:
+              - paramName: resource_metadata
+                sameOrigin: "${created}"
+                capture: metadata
+      - label: its protected resource metadata names the data resource
+        request:
+          method: GET
+          url: "${metadata}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /resource
+              equals: "${created}"
+            - pointer: /authorization_servers/0
+              jsonType: string
+
+  - id: "#storage-root-same-origin"
+    type: ValidationTest
+    name: storage-root-same-origin
+    label: The storage a 401 links to has its storage root on the requested URI's origin
+    comment: >-
+      Before it asks for a token, a client "MUST obtain the storage description of the storage
+      identified by the Link header, and the serviceEndpoint of its StorageRoot service MUST have
+      the same scheme and authority as the requested URI" (section 5.2.3). The test reads the
+      description as such a client does, without a token; a storage that does not let it is not
+      something this test can judge, so it is then inapplicable.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-services
+    traits: [Get, Discovery, StorageDescription, Authn]
+    requires: [Authentication]
+    as: anonymous
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-client-storage-root-same-origin
+      - https://example.org/touchstone/req/lws10-core/authz-401-storage-link
+    steps:
+      - label: an anonymous GET of the test container is challenged, with a link to the storage
+        request:
+          method: GET
+          url: "${test.container}"
+        response:
+          statusCode: 401
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              capture: linked
+      - label: anyone may read the storage description (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linked}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+      - label: its StorageRoot service is on the origin of the URL requested
+        request:
+          method: GET
+          url: "${linked}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: StorageRoot
+                - pointer: /serviceEndpoint
+                  sameOrigin: "${test.container}"
 
   - id: "#getContainer-authenticated-owner"
     type: ValidationTest
@@ -66,8 +227,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-presentation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authn, Authz]
     requires: [Authentication]
     as: alice
@@ -96,8 +257,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, Container, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -115,8 +276,9 @@ entries:
           statusCode: 401
           authenticationChallenge:
             wwwAuthenticate: Bearer
-            asUri: {present: true}
-            realm: {present: true}
+            params:
+              - paramName: resource_metadata
+                present: true
       - label: the container is still empty
         request:
           method: GET
@@ -138,8 +300,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
     traits: [Put, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -161,8 +323,9 @@ entries:
           statusCode: 401
           authenticationChallenge:
             wwwAuthenticate: Bearer
-            asUri: {present: true}
-            realm: {present: true}
+            params:
+              - paramName: resource_metadata
+                present: true
       - label: the content is unchanged
         request:
           method: GET
@@ -180,8 +343,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Delete, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -203,8 +366,9 @@ entries:
           statusCode: 401
           authenticationChallenge:
             wwwAuthenticate: Bearer
-            asUri: {present: true}
-            realm: {present: true}
+            params:
+              - paramName: resource_metadata
+                present: true
       - label: the resource survives
         request:
           method: GET
@@ -224,8 +388,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: bob
@@ -248,9 +412,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Put, Post, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
@@ -312,7 +476,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Delete, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
@@ -349,7 +513,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
       - https://www.rfc-editor.org/rfc/rfc6750#section-3.1
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
@@ -367,9 +531,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -383,7 +547,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-bad-signature
@@ -399,9 +563,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -415,7 +579,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-alg-none
@@ -435,9 +599,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -451,7 +615,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-unknown-key
@@ -467,9 +631,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -483,8 +647,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-response
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-audience
@@ -503,9 +667,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -518,7 +682,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-issuer
@@ -534,9 +698,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -549,7 +713,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-not-yet-valid
@@ -563,9 +727,9 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token
 
@@ -578,7 +742,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-issued-in-future
@@ -592,39 +756,8 @@ entries:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
         params:
-          - paramName: error
-            paramValue: invalid_token
-
-  - id: "#authz-token-multiple-audiences-rejected"
-    type: NegativeTest
-    name: authz-token-multiple-audiences-rejected
-    label: An access token naming two audiences is refused
-    comment: >-
-      "Verify the aud claim contains exactly one value." A token valid for two storages
-      at once would let either one replay it at the other.
-    status: Proposed
-    level: MUST
-    source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
-    traits: [Get, Container, Private, Authz]
-    requires: [Authentication]
-    as: alice-multiple-audiences
-    requirements:
-      - https://example.org/touchstone/req/lws10-core/authz-token-validation-checklist
-      - https://example.org/touchstone/req/lws10-core/authz-access-token-aud-claim
-    request:
-      method: GET
-      url: "${test.container}"
-      accept: application/lws+json
-    response:
-      statusCode: 401
-      authenticationChallenge:
-        wwwAuthenticate: Bearer
-        asUri: {present: true}
-        realm: {present: true}
-        params:
+          - paramName: resource_metadata
+            present: true
           - paramName: error
             paramValue: invalid_token

@@ -1,0 +1,1256 @@
+# Moving resources between containers (LWS 1.0 core sections 6.1.3, 7, 9.6 and 10.2.2).
+"@context":
+  - ../context.jsonld
+  - ../touchstone.jsonld
+id: "#manifest"
+type: Manifest
+label: "LWS 1.0 core: moving resources between containers"
+comment: >-
+  The 19 October 2026 draft lets a client move a resource to another container by changing the
+  up link in its linkset with JSON Patch (w3c/lws-protocol#237). A storage that allows it says
+  so with a MoveResource capability in its storage description, whose appliesTo says whether
+  containers move too and whose preservesIdentifier says whether a moved resource keeps its
+  URI; one that does not must refuse the change. Each test reads the storage description first
+  and applies only to the storages its precondition describes. A move patch replaces
+  /linkset/0/up/0/href, which assumes that the resource's own link context is the first in its
+  linkset and its up link the first target: the draft's own examples do, and a test whose
+  linkset is laid out otherwise does not apply. Every patch is conditional on the linkset's
+  current ETag, as clients SHOULD make it.
+specification:
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+entries:
+
+  - id: "#discovery-move-capability"
+    type: ValidationTest
+    name: discovery-move-capability
+    label: A MoveResource capability's appliesTo and preservesIdentifier are well formed
+    comment: >-
+      "appliesTo - the appliesTo property is OPTIONAL. If present, its value MUST be a set of
+      strings naming the types of Storage Resource the capability applies to, such as
+      DataResource or Container." "preservesIdentifier - ... If present, its value MUST be a
+      boolean." A set of strings is a JSON array of them; a Storage Resource type is
+      DataResource or Container, by its term or its IRI.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+    traits: [Get, Discovery, StorageDescription]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/capability-move-applies-to
+      - https://example.org/touchstone/req/lws10-core/capability-move-preserves-identifier
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: its appliesTo, if any, is a set of Storage Resource types, and its preservesIdentifier a boolean
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+                - pointer: /appliesTo
+                  optional: true
+                  jsonType: array
+                - pointer: /appliesTo
+                  optional: true
+                  every:
+                    - pointer: ""
+                      matches: '^(https://www\.w3\.org/ns/lws#)?(DataResource|Container)$'
+                - pointer: /preservesIdentifier
+                  optional: true
+                  jsonType: boolean
+
+  - id: "#move-data-resource"
+    type: ValidationTest
+    name: move-data-resource
+    label: Patching a data resource's up link moves it to the other container
+    comment: >-
+      A client "moves a resource by applying a partial update to the resource's linkset
+      resource, replacing the target of the up link with the identifier of the destination
+      container", which servers that describe MoveResource must accept as JSON Patch. "On a
+      successful update, the server MUST atomically remove the resource from the items list of
+      its former parent container and add it to the items list of the destination container."
+      Whether the moved resource keeps its URI is the storage's choice, so the destination is
+      checked for one data resource rather than for the old URI. The linkset must show the up
+      link the patch replaces: that is how a client learns its position.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+    traits: [Patch, Get, Linkset, DataResource, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-server-support
+      - https://example.org/touchstone/req/lws10-core/move-request-json-patch
+      - https://example.org/touchstone/req/lws10-core/move-containment-atomic
+      - https://example.org/touchstone/req/lws10-core/containment-integrity-move
+      - https://example.org/touchstone/req/lws10-core/capability-move-resource
+    prereqs:
+      hierarchy:
+        - container: source
+        - container: destination
+        - dataResource: moved
+          in: source
+          contentType: text/plain
+          body: a resource on the move
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the linkset shows the up link to its container
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset
+              some:
+                - pointer: /anchor
+                  equalsIri: "${moved}"
+                - pointer: /up
+                  some:
+                    - pointer: /href
+                      equalsIri: "${source}"
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${source}"
+      - label: replace the up link with the destination
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: [200, 204]
+      - label: the destination lists one data resource
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1
+            - pointer: /items/0/type
+              hasValue: DataResource
+      - label: and the container it left lists nothing
+        request:
+          method: GET
+          url: "${source}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#move-updates-container-etags"
+    type: ValidationTest
+    name: move-updates-container-etags
+    label: A move changes the ETag of the container left and of the container joined
+    comment: >-
+      On a successful move, "the ETag of both containers MUST be updated to reflect the change."
+      Each container's tag is read before the move and must differ after it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+    traits: [Patch, Get, Linkset, Container, Conditional]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-containment-atomic
+    prereqs:
+      hierarchy:
+        - container: source
+        - container: destination
+        - dataResource: moved
+          in: source
+          contentType: text/plain
+          body: a resource on the move
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: the container it is in has an ETag
+        request:
+          method: GET
+          url: "${source}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              capture: sourceTag
+      - label: and so has the destination
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              capture: destinationTag
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${source}"
+      - label: move it
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: [200, 204]
+      - label: the container it left has a new ETag
+        request:
+          method: GET
+          url: "${source}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              differsFrom: "${sourceTag}"
+      - label: and so has the container it joined
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          otherHeaders:
+            - headerName: ETag
+              differsFrom: "${destinationTag}"
+
+  - id: "#move-keeps-identifier-content-and-links"
+    type: ValidationTest
+    name: move-keeps-identifier-content-and-links
+    label: A storage that preserves identifiers keeps a moved resource's URI, content and links
+    comment: >-
+      A storage whose MoveResource says preservesIdentifier true says that it "preserves the
+      identifier of a moved resource", which servers SHOULD do so that links to it stay valid.
+      Whatever it does with identifiers, "The content of the moved resource and its
+      user-defined metadata are unaffected by the move", and "Servers MUST preserve the links
+      in the linkset resource that the client is not permitted to modify". The resource gets a
+      license link before it moves; afterwards its old URI answers with the same content, an up
+      link to the destination and its type, and its linkset still holds the license.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+    traits: [Patch, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-identifier-preserved
+      - https://example.org/touchstone/req/lws10-core/capability-move-preserves-identifier
+      - https://example.org/touchstone/req/lws10-core/move-preserves-content-and-links
+    prereqs:
+      hierarchy:
+        - container: source
+        - container: destination
+        - dataResource: moved
+          in: source
+          contentType: text/plain
+          body: content that travels unchanged
+    steps:
+      - label: the storage's MoveResource says it preserves identifiers (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+                - pointer: /preservesIdentifier
+                  equals: true
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${source}"
+      - label: give it a license link (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: add
+              path: /linkset/0/license
+              value:
+                - href: https://creativecommons.org/licenses/by/4.0/
+        response:
+          statusCode: [200, 204]
+      - label: move it
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: [200, 204]
+      - label: its URI answers with the same content, linked up to the destination
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${destination}"
+            - rel: type
+              href: https://www.w3.org/ns/lws#DataResource
+          bodyMatches: '^content that travels unchanged$'
+      - label: the destination lists it by that URI
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${moved}"
+      - label: its linkset still holds the license
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset
+              some:
+                - pointer: /license
+                  some:
+                    - pointer: /href
+                      equals: https://creativecommons.org/licenses/by/4.0/
+
+  - id: "#move-invalid-destination-refused"
+    type: NegativeTest
+    name: move-invalid-destination-refused
+    label: A move to anything but an existing container, or away from every container, is refused
+    comment: >-
+      "The destination MUST be an existing container. Servers MUST reject a patch that would set
+      the target of the up link to anything other than an existing container with an
+      appropriate 4xx status code ... Servers MUST likewise reject a patch that would leave the
+      resource without an up link." Three patches are tried: one to a container that does not
+      exist, one to a data resource, and one removing the up link. Each is refused, and the
+      resource stays where it was.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+    traits: [Patch, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-destination-existing-container
+    prereqs:
+      hierarchy:
+        - container: nowhere
+          absent: true
+        - dataResource: notContainer
+          contentType: text/plain
+          body: a data resource is no container
+        - dataResource: moved
+          contentType: text/plain
+          body: a resource that stays put
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${test.container}"
+      - label: a move into a container that does not exist is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${nowhere}"
+        response:
+          statusCode: "4xx"
+      - label: a move into a data resource is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${notContainer}"
+        response:
+          statusCode: "4xx"
+      - label: removing the up link is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: remove
+              path: /linkset/0/up
+        response:
+          statusCode: "4xx"
+      - label: the resource is still in the test container
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+
+  - id: "#move-container"
+    type: ValidationTest
+    name: move-container
+    label: A storage that moves containers moves one, with what it holds
+    comment: >-
+      "Servers MAY support changing the up link of a container, and MUST indicate that they do
+      so by including Container in the appliesTo property of the MoveResource capability. When
+      a container is moved, its descendants move with it." The moved container holds a data
+      resource; afterwards the destination holds one container, which holds one data resource,
+      and the container left holds nothing.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+    traits: [Patch, Get, Linkset, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-containers-applies-to
+      - https://example.org/touchstone/req/lws10-core/capability-move-applies-to
+      - https://example.org/touchstone/req/lws10-core/move-containment-atomic
+    prereqs:
+      hierarchy:
+        - container: source
+        - container: destination
+        - container: moved
+          in: source
+        - dataResource: inner
+          in: moved
+          contentType: text/plain
+          body: carried along
+    steps:
+      - label: the storage moves containers (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+                - pointer: /appliesTo
+                  hasValue: Container
+      - label: find the container's linkset
+        request:
+          method: GET
+          url: "${moved}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the container's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${source}"
+      - label: move it
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: [200, 204]
+      - label: the destination lists one container
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1
+            - pointer: /items/0/type
+              hasValue: Container
+            - pointer: /items/0/id
+              capture: arrived
+      - label: which still holds the data resource
+        request:
+          method: GET
+          url: "${arrived}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              count: 1
+            - pointer: /items/0/type
+              hasValue: DataResource
+      - label: and the container it left lists nothing
+        request:
+          method: GET
+          url: "${source}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#move-container-into-itself-refused"
+    type: NegativeTest
+    name: move-container-into-itself-refused
+    label: A container cannot be moved into itself or into a container it holds
+    comment: >-
+      "In particular, a container MUST NOT be moved into itself or into one of its own
+      descendants, as this would introduce a cycle in the containment hierarchy", and such an
+      update is rejected with a 4xx. Only a storage that moves containers is asked; one that
+      does not refuses any container move, which move-container-refused-without-container-support
+      checks.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+    traits: [Patch, Get, Linkset, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-containment-integrity-cycles
+    prereqs:
+      hierarchy:
+        - container: outer
+        - container: inner
+          in: outer
+    steps:
+      - label: the storage moves containers (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+                - pointer: /appliesTo
+                  hasValue: Container
+      - label: find the outer container's linkset
+        request:
+          method: GET
+          url: "${outer}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the container's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${outer}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${test.container}"
+      - label: a move into the container it holds is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${inner}"
+        response:
+          statusCode: "4xx"
+      - label: a move into itself is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${outer}"
+        response:
+          statusCode: "4xx"
+      - label: the outer container is still in the test container
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${outer}"
+      - label: and still holds the inner one
+        request:
+          method: GET
+          url: "${outer}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              some:
+                - pointer: /id
+                  equalsIri: "${inner}"
+
+  - id: "#move-container-refused-without-container-support"
+    type: NegativeTest
+    name: move-container-refused-without-container-support
+    label: A storage whose MoveResource leaves out Container refuses to move a container
+    comment: >-
+      "If the property is absent, the capability applies to data resources only", and "A server
+      that supports moving data resources but not containers MUST reject such a request with an
+      appropriate 4xx status code, such as 409 Conflict, and MUST NOT include Container in the
+      appliesTo property." The test applies to a storage whose MoveResource has no appliesTo,
+      or one without Container.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+    traits: [Patch, Get, Linkset, Container]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-containers-applies-to
+      - https://example.org/touchstone/req/lws10-core/capability-move-applies-to
+    prereqs:
+      hierarchy:
+        - container: destination
+        - container: moved
+    steps:
+      - label: the storage moves data resources but not containers (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+                - pointer: /appliesTo
+                  optional: true
+                  none:
+                    - pointer: ""
+                      matches: '^(https://www\.w3\.org/ns/lws#)?Container$'
+      - label: find the container's linkset
+        request:
+          method: GET
+          url: "${moved}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the container's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${test.container}"
+      - label: moving the container is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: "4xx"
+      - label: the container is still in the test container
+        request:
+          method: GET
+          url: "${moved}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+
+  - id: "#move-refused-without-capability"
+    type: NegativeTest
+    name: move-refused-without-capability
+    label: A storage that describes no MoveResource capability refuses to move a resource
+    comment: >-
+      "A server that does not allow it MUST reject the request with an appropriate 4xx status
+      code, such as 409 Conflict, and MUST NOT describe a MoveResource capability." The test
+      applies to a storage that describes none, and points a data resource's up link at another
+      container that exists, so the refusal can only be for the move itself.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+    traits: [Patch, Get, Linkset, DataResource]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-server-support
+      - https://example.org/touchstone/req/lws10-core/capability-move-resource
+    prereqs:
+      hierarchy:
+        - container: destination
+        - dataResource: moved
+          contentType: text/plain
+          body: a resource that stays put
+    steps:
+      - label: the storage describes no MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              optional: true
+              none:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: point its up link at the other container, which is refused
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: add
+              path: /linkset/0/up
+              value:
+                - href: "${destination}"
+        response:
+          statusCode: "4xx"
+      - label: the resource is still in the test container
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+      - label: and the other container is empty
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#move-needs-create-in-destination"
+    type: NegativeTest
+    name: move-needs-create-in-destination
+    label: An agent who may not create in the destination cannot move a resource there
+    comment: >-
+      "A server MUST NOT apply a change to an up link unless the requesting agent is authorized
+      both to perform the delete resource operation on the resource being moved and to perform
+      the create resource operation in the destination container." bob may read, modify and
+      delete the resource, and read the destination, but not create in it.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+    traits: [Patch, Get, Linkset, DataResource, Authz, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-authorization-delete-and-create
+      - https://example.org/touchstone/req/lws10-core/security-move-privilege-combination
+    prereqs:
+      hierarchy:
+        - container: destination
+          authorization:
+            read: [bob]
+        - dataResource: moved
+          contentType: text/plain
+          body: bob may delete this, not put it there
+          authorization:
+            read: [bob]
+            modify: [bob]
+            delete: [bob]
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: bob finds its linkset
+        as: bob
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${test.container}"
+      - label: bob's move into the destination is refused
+        as: bob
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: "4xx"
+      - label: the destination is still empty
+        request:
+          method: GET
+          url: "${destination}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /items
+              equals: []
+
+  - id: "#move-needs-delete-of-resource"
+    type: NegativeTest
+    name: move-needs-delete-of-resource
+    label: An agent who may not delete a resource cannot move it
+    comment: >-
+      The other half of the rule move-needs-create-in-destination checks: bob may read and
+      modify the resource and create in the destination, but not delete the resource. Without
+      the delete, a move would let him take a resource out of a container he cannot delete from
+      (section 16.6, "Privilege Combination").
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+    traits: [Patch, Get, Linkset, DataResource, Authz, AccessGrants]
+    requires: [Authentication]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/move-authorization-delete-and-create
+      - https://example.org/touchstone/req/lws10-core/security-move-privilege-combination
+    prereqs:
+      hierarchy:
+        - container: destination
+          authorization:
+            read: [bob]
+            create: [bob]
+        - dataResource: moved
+          contentType: text/plain
+          body: bob may change this, not take it away
+          authorization:
+            read: [bob]
+            modify: [bob]
+    steps:
+      - label: the storage describes a MoveResource capability (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+      - label: bob finds its linkset
+        as: bob
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${test.container}"
+      - label: bob's move into the destination is refused
+        as: bob
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: "4xx"
+      - label: the resource is still in the test container
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: up
+              href: "${test.container}"
+
+  - id: "#move-notification"
+    type: ValidationTest
+    name: move-notification
+    label: A move is announced as one Move activity from the container left to the container joined
+    comment: >-
+      A server that allows moves "MUST support the following activity type: Move ... The origin
+      field indicates the container from which the resource was removed, and the target field
+      indicates the container into which it was added", and "SHOULD describe a successful move
+      with a single Move activity ... rather than with a separate Delete and Create activity."
+      A subscription to the test container, which holds both containers, hears the move.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+    traits: [Patch, Get, Linkset, Notifications]
+    requires: [ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/notification-activity-move
+      - https://example.org/touchstone/req/lws10-core/move-notification-single-activity
+    prereqs:
+      hierarchy:
+        - container: source
+        - container: destination
+        - dataResource: moved
+          in: source
+          contentType: text/plain
+          body: a resource on the move
+    steps:
+      - label: the storage moves resources and offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /capability
+              some:
+                - pointer: /type
+                  hasValue: MoveResource
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: find its linkset
+        request:
+          method: GET
+          url: "${moved}"
+        response:
+          statusCode: 200
+          linkHeaders:
+            - rel: linkset
+              capture: linkset
+      - label: the resource's link context comes first, and its up link first in it (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${linkset}"
+          accept: application/linkset+json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /linkset/0/anchor
+              equalsIri: "${moved}"
+            - pointer: /linkset/0/up/0/href
+              equalsIri: "${source}"
+      - label: subscribe to the test container
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: move the resource
+        request:
+          method: PATCH
+          url: "${linkset}"
+          contentType: application/json-patch+json
+          ifMatch: current
+          bodyJSON:
+            - op: replace
+              path: /linkset/0/up/0/href
+              value: "${destination}"
+        response:
+          statusCode: [200, 204]
+      - label: a Notification announcing the Move arrives
+        as: anonymous
+        poll: {within: 30, every: 2}
+        request:
+          method: GET
+          url: "${test.inbox}"
+          accept: application/json
+        response:
+          statusCode: 200
+          json:
+            - pointer: /deliveries
+              some:
+                - pointer: /activities
+                  some:
+                    - pointer: /type
+                      hasValue: Move
+                    - pointer: /origin
+                      equalsIri: "${source}"
+                    - pointer: /target
+                      equalsIri: "${destination}"
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]

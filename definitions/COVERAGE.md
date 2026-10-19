@@ -1,15 +1,15 @@
 # Coverage of the LWS 1.0 test definitions
 
 Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD
-2026-09-21, the OpenID Connect and SAML suites of 2026-08-03, and the CID suite of
-2026-09-21. The did:key suite was discontinued on 2026-09-29; its tests run under the CID suite.
+2026-10-19, and the OpenID Connect, SAML and CID suites of 2026-10-15. The did:key suite was
+discontinued on 2026-09-29; its tests run under the CID suite.
 
 ## Summary
 
-- **205 tests**: 163 MUST, 31 SHOULD, 11 MAY; 130 validation tests, 75 negative tests.
-- **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 64 of the 79 requirements that bind a client or a receiver; the other 15 are not judged, each for a reason section 4 gives: 11 permissions a client cannot break, 3 obligations that do not show in what a client sends, and the conformance class itself (sections 4 and 5).
-- **264 catalog requirements** cited, 225 of the 248 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
-- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 5 October draft.
+- **221 tests**: 181 MUST, 29 SHOULD, 11 MAY; 140 validation tests, 81 negative tests.
+- **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 66 of the 85 requirements that bind a client or a receiver; the other 19 are not judged, each for a reason section 4 gives: 11 permissions a client cannot break, 5 obligations that do not show in what a client sends, 2 checks the session's one origin never puts to the test, and the conformance class itself (sections 4 and 5).
+- **282 catalog requirements** cited, 243 of the 272 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
+- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 19 October draft.
 - **manifests/ (retired, D-0055):** 31 of its 33 tests have a successor; the other 2 were dropped because the specification no longer says what they tested (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
@@ -20,13 +20,14 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 | `core/access_grants` | 17 | 13 | 2 | 2 |
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
-| `core/containers` | 18 | 11 | 5 | 2 |
+| `core/containers` | 19 | 13 | 4 | 2 |
 | `core/data_resources` | 17 | 10 | 6 | 1 |
-| `core/discovery` | 7 | 6 | 1 | 0 |
-| `core/linksets` | 9 | 8 | 1 | 0 |
+| `core/discovery` | 7 | 7 | 0 | 0 |
+| `core/linksets` | 10 | 9 | 1 | 0 |
+| `core/moving` | 12 | 12 | 0 | 0 |
 | `core/notifications` | 15 | 14 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
-| `core/storage_authorization` | 17 | 17 | 0 | 0 |
+| `core/storage_authorization` | 19 | 19 | 0 | 0 |
 | `index/manifest` | 40 | 30 | 6 | 4 |
 | `notifications/webhook/manifest` | 11 | 8 | 1 | 2 |
 
@@ -34,7 +35,7 @@ Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 
 
 | lws-test-suite test | Definition(s) | What changed |
 |---|---|---|
-| `discovery-unauthorized-response-headers` | `core/discovery#discovery-unauthorized-response-headers`, `core/storage_authorization#getContainer-private-unauthorized` | Split. The 401 challenge (MUST) is getContainer-private-unauthorized; the Link on the 401 became SHOULD, with rel lws#storage replacing storageDescription. |
+| `discovery-unauthorized-response-headers` | `core/discovery#discovery-unauthorized-response-headers`, `core/storage_authorization#getContainer-private-unauthorized` | Split. The 401 challenge (MUST) is getContainer-private-unauthorized; the Link on the 401, with rel lws#storage replacing storageDescription, is a MUST since the 19 October 2026 draft. |
 | `discovery-storage-description` | `core/discovery#discovery-storage-description` | application/lws+cid instead of lws+json. The URL comes from the lws#storage link, not /alice/description. Asserts the WD data model (CID @context array, StorageRoot service) instead of an exact body. |
 | `discovery-get-links-storageDescription` | `core/discovery#discovery-get-links-storageDescription` | Asserts rel lws#storage to the storage URI, on GET and HEAD. |
 | `getContainer` | `core/access_grants#getContainer-public-read`, `core/containers#getContainer` | Owner read: ETag, linkset/up/type/storage links, container properties. The public-read half is getContainer-public-read, via an access grant. |
@@ -223,7 +224,8 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `delete-container-recursive` | Validation | MAY |  |  |
 | `delete-container-recursive-deep` | Validation | MAY |  |  |
 | `containment-hierarchy-consistent` | Validation | MUST |  |  |
-| `container-ld-json-lws-profile` | Validation | SHOULD |  |  |
+| `container-lws-profile-ld-json` | Validation | MUST |  |  |
+| `container-lws-profile-turtle` | Validation | MUST |  |  |
 
 ### `core/data_resources`
 
@@ -255,7 +257,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `discovery-link-storage-on-data-resource` | Validation | MUST |  |  |
 | `discovery-storage-description` | Validation | MUST |  | discovery-storage-description |
 | `discovery-storage-description-default-media-type` | Validation | MUST |  |  |
-| `discovery-unauthorized-response-headers` | Negative | SHOULD | Authentication | discovery-unauthorized-response-headers |
+| `discovery-unauthorized-response-headers` | Negative | MUST | Authentication | discovery-unauthorized-response-headers |
 | `discovery-storage-root-is-container` | Validation | MUST |  |  |
 | `discovery-storage-description-ids-are-uris` | Validation | MUST |  |  |
 
@@ -269,9 +271,27 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `linkset-put-405-when-unsupported` | Negative | MUST |  |  |
 | `linkset-removed-with-resource` | Validation | MUST |  |  |
 | `linkset-ready-at-create` | Validation | MUST |  |  |
-| `linkset-up-not-redirected` | Validation | MUST |  |  |
+| `linkset-up-not-redirected` | Negative | MUST |  |  |
 | `linkset-patch-stays-linkset` | Validation | MUST |  |  |
 | `linkset-patch-json-patch` | Validation | SHOULD |  |  |
+| `linkset-patch-preserves-server-links` | Validation | MUST |  |  |
+
+### `core/moving`
+
+| Test | Type | Level | Requires | Mirrors |
+|---|---|---|---|---|
+| `discovery-move-capability` | Validation | MUST |  |  |
+| `move-data-resource` | Validation | MUST |  |  |
+| `move-updates-container-etags` | Validation | MUST |  |  |
+| `move-keeps-identifier-content-and-links` | Validation | MUST |  |  |
+| `move-invalid-destination-refused` | Negative | MUST |  |  |
+| `move-container` | Validation | MUST |  |  |
+| `move-container-into-itself-refused` | Negative | MUST |  |  |
+| `move-container-refused-without-container-support` | Negative | MUST |  |  |
+| `move-refused-without-capability` | Negative | MUST |  |  |
+| `move-needs-create-in-destination` | Negative | MUST | Authentication |  |
+| `move-needs-delete-of-resource` | Negative | MUST | Authentication |  |
+| `move-notification` | Validation | MUST | ReachableFixtures |  |
 
 ### `core/notifications`
 
@@ -308,6 +328,9 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | Test | Type | Level | Requires | Mirrors |
 |---|---|---|---|---|
 | `getContainer-private-unauthorized` | Negative | MUST | Authentication | getContainer-private-unauthorized, discovery-unauthorized-response-headers, authn-oidc-server-metadata-discovery |
+| `protected-resource-metadata` | Validation | MUST | Authentication |  |
+| `protected-resource-metadata-data-resource` | Validation | MUST | Authentication |  |
+| `storage-root-same-origin` | Validation | MUST | Authentication |  |
 | `getContainer-authenticated-owner` | Validation | MUST | Authentication | getContainer-authenticated-owner |
 | `createDataResource-unauthorized` | Negative | MUST | Authentication | createDataResource-unauthorized |
 | `updateDataResource-unauthorized` | Negative | MUST | Authentication |  |
@@ -323,7 +346,6 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `authz-token-wrong-issuer-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-not-yet-valid-rejected` | Negative | MUST | Authentication |  |
 | `authz-token-issued-in-future-rejected` | Negative | MUST | Authentication |  |
-| `authz-token-multiple-audiences-rejected` | Negative | MUST | Authentication |  |
 
 ### `index/manifest`
 
@@ -394,9 +416,9 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 
 | Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |
 |---|---:|---:|---:|---:|---:|---:|
-| Server | 223 | 167 | 24 | 32 | 201 | 31 |
+| Server | 247 | 192 | 23 | 32 | 219 | 32 |
 | AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
-| Client | 75 | 54 | 8 | 13 | 64 | 60 |
+| Client | 81 | 62 | 6 | 13 | 69 | 62 |
 | IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |
 | Receiver | 4 | 4 | 0 | 0 | 4 | 4 |
 | Specification | 2 | 2 | 0 | 0 | 2 | 0 |
@@ -411,8 +433,8 @@ client sends (unobservable), or the conformance class itself (D-0087).
 
 | Level | Requirements | Judged by a client rule | Not judged: a permission | Not judged: unobservable | Not judged: the conformance class |
 |---|---:|---:|---:|---:|---:|
-| MUST | 58 | 56 | 0 | 1 | 1 |
-| SHOULD | 8 | 6 | 0 | 2 | 0 |
+| MUST | 66 | 58 | 0 | 5 | 1 |
+| SHOULD | 6 | 6 | 0 | 0 | 0 |
 | MAY | 13 | 2 | 11 | 0 | 0 |
 
 | Requirement | Level | Also binds | Summary | Cited by | Judged by |
@@ -445,9 +467,15 @@ client sends (unobservable), or the conformance class itself (D-0087).
 | `lws10-core/authn-issuer-claim-uri` | MUST | IdentityProvider | The issuer claim is required and its value is a URI. | `authn-cid-didkey-missing-issuer` | `client-cid-issuer-claim` |
 | `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` | `client-cid-subject-claim` |
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST |  | Clients present access tokens via the Authorization header per RFC 6750. | `getContainer-authenticated-owner` | `client-token-in-authorization-header` |
-| `lws10-core/authz-challenge-realm-param` | MUST | Server | The realm challenge parameter is required; clients verify the request URI is logically within the realm. | `getContainer-private-unauthorized` | `client-token-for-containing-realm` |
-| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` | `client-token-exchange-resource` |
+| `lws10-core/authz-client-discovery-validation` | MUST |  | Before requesting an access token a client performs the discovery checks against the requested URI, and does not use the discovered values if any check fails. |  | `client-token-after-discovery-checks` |
+| `lws10-core/authz-client-prm-resource-matches` | MUST | Server | The resource value of the protected resource metadata document is identical to the requested URI (RFC 9728 section 3.3). | `protected-resource-metadata`, `protected-resource-metadata-data-resource` | *Not judged: untried here.* The session's protected resource metadata always names the URL requested, so no 401 tries the check. Servers are judged on it by `protected-resource-metadata`. |
+| `lws10-core/authz-client-resource-metadata-same-origin` | MUST | Server | The resource_metadata URL has the same scheme and authority as the requested URI. | `getContainer-private-unauthorized` | *Not judged: untried here.* The session serves everything from one origin, so none of its 401s names protected resource metadata elsewhere for a client to refuse. Servers are judged on it by `getContainer-private-unauthorized`. |
+| `lws10-core/authz-client-storage-root-same-origin` | MUST | Server | The client obtains the storage description of the storage the Link header names, whose StorageRoot serviceEndpoint has the same scheme and authority as the requested URI. | `storage-root-same-origin` | `client-token-after-discovery-checks` |
+| `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud, and is the URI of the storage that contains the requested resource, as the 401's Link header gave it; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` | `client-token-exchange-resource` |
 | `lws10-core/authz-token-exchange-subject-token-param` | MUST | AuthorizationServer | The subject_token parameter is required and carries a valid subject token such as an authentication credential. | `authz-token-exchange-missing-subject-token`, `authz-token-exchange-valid` | `client-token-exchange-subject-token` |
+| `lws10-core/capability-move-applies-to` | MUST | Server | The MoveResource appliesTo property is optional and, if present, a set of Storage Resource type names; absent, the capability covers data resources only. | `discovery-move-capability`, `move-container`, `move-container-refused-without-container-support` | *Not judged: unobservable.* As `capability-move-resource`: moving a container where only data resources move shows only as a refused patch of its linkset. |
+| `lws10-core/capability-move-preserves-identifier` | MUST | Server | The MoveResource preservesIdentifier property is optional and, if present, a boolean; absent, clients do not assume identifiers are preserved and rely on the update's response. | `discovery-move-capability`, `move-keeps-identifier-content-and-links` | *Not judged: unobservable.* Whether a client takes a moved resource's URI from the response shows only in what it requests next. The session's storage keeps identifiers, without saying so, so a client that assumes it is never caught out. |
+| `lws10-core/capability-move-resource` | MUST | Server | A storage that lets clients change the up link of a Storage Resource describes a MoveResource capability; clients do not assume the up link is modifiable without it. | `move-data-resource`, `move-refused-without-capability` | *Not judged: unobservable.* A client's assumption shows only as a patch of an up link the capability does not cover, a container's in a session, which the storage refuses; no rule yet tells such a patch from an edit of a container's other links. |
 | `lws10-core/client-no-assumed-methods-405-415` | MUST |  | Clients do not assume PUT or patch-format support unless advertised, and handle 405 and 415 gracefully. |  | `client-linkset-patch-format-advertised`, `client-linkset-put-only-when-advertised`, `client-no-repeat-after-405-415` |
 | `lws10-core/conformance-client-class` | MUST |  | An LWS Client is an HTTP client that complies with all relevant MUST statements, specifically those in the Operations section. |  | *Not judged: the conformance class.* The client conformance class itself: the session's verdict, which only MUST rules decide, answers for it. |
 | `lws10-core/create-container-type-link` | MUST | Server | Creating a container is signalled by a request Link header rel=type pointing at lws#Container; the server materializes a container accordingly. | `createContainer` | `client-create-container-type-link` |
@@ -455,10 +483,10 @@ client sends (unobservable), or the conformance class itself (D-0087).
 | `lws10-core/create-server-managed-metadata-protected` | MUST | Server | On create, clients may supply user-managed metadata as Link headers, but server-managed metadata is generated by the server and must not be overridden. | `create-server-managed-links-protected` | `client-create-no-server-managed-links` |
 | `lws10-core/delete-if-match-optional` | MAY |  | DELETE targets the resource URI; clients may include If-Match for concurrency checks. | `conditional-delete-stale-if-match-412` | `client-delete-conditional` |
 | `lws10-core/delete-non-empty-container-409-depth` | MUST | Server | Non-recursive DELETE of a non-empty container is rejected with 409; recursive deletion is requested via Depth: infinity. | `delete-container-recursive`, `delete-container-recursive-deep`, `delete-non-empty-container-409` | `client-delete-container-depth` |
-| `lws10-core/iana-ld-json-profile-equivalence` | SHOULD | Server | Per the IANA registration, application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` | *Not judged: unobservable.* The IANA registration's restatement of `lws-profile-equivalence`, unobservable for the same reason. |
 | `lws10-core/linkset-precondition-failed-412` | MUST | Server | A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there. | `linkset-conditional-412` | `client-linkset-write-conditional` |
 | `lws10-core/linkset-put-405-if-unsupported` | MUST | Server | PUT may replace the entire linkset if advertised; otherwise the server rejects it with 405 Method Not Allowed. | `linkset-put-405-when-unsupported` | `client-linkset-put-only-when-advertised` |
-| `lws10-core/lws-profile-equivalence` | SHOULD | Server | application/ld+json with the lws/v1 profile should be treated as equivalent to application/lws+json. | `container-ld-json-lws-profile` | *Not judged: unobservable.* How a client treats a body it receives, which shows only in what it does next. The session may label a listing with the profile only when the client's Accept allows it, and a client that does not take it for LWS stops or reads again, as conformant clients also may. |
+| `lws10-core/move-identifier-preserved` | MUST | Server | Servers should preserve the identifier of a moved resource and should declare whether they do with preservesIdentifier; absent it, clients do not assume they do. | `move-keeps-identifier-content-and-links` | *Not judged: unobservable.* The clients' half restates `capability-move-preserves-identifier`, unobservable for the same reason. |
+| `lws10-core/move-request-json-patch` | MUST | Server | A move is a JSON Patch of the resource's linkset replacing the up target, which servers must accept; clients should send If-Match, and servers may answer an unconditional one with 428. | `move-data-resource` | `client-linkset-write-conditional` |
 | `lws10-core/pagination-first-page-flow` | MAY | Server | The composite resource URI yields the first page; servers may support direct access to specific pages. | `pagination-first-page` | *Not judged: a permission.* Its keyword lets servers offer direct access to pages. The flow it describes for clients, following the links given, is judged by `client-page-urls-issued`. |
 | `lws10-core/pagination-uris-opaque` | SHOULD |  | Pagination URIs are opaque; clients use the URIs the server provides. |  | `client-page-urls-issued` |
 | `lws10-core/policy-action-required` | MUST | Server | The action property is required. | `access-grant-document-shape`, `access-grant-incomplete-refused` | `client-access-policy-action` |
@@ -508,7 +536,7 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 |---|---|---|---|
 | `client-token-exchange-resource` | MUST | authentication | `authz-token-exchange-resource-param` |
 | `client-token-exchange-subject-token` | MUST | authentication | `authz-token-exchange-subject-token-param` |
-| `client-token-for-containing-realm` | MUST | authentication | `authz-challenge-realm-param` |
+| `client-token-after-discovery-checks` | MUST | authentication | `authz-client-discovery-validation`, `authz-client-storage-root-same-origin` |
 | `client-cid-token-type-jwt` | MUST | authentication | `token-type-jwt` |
 | `client-cid-credential-signed` | MUST | authentication | `alg-not-none`, `authn-credential-signed` |
 | `client-cid-subject-claim` | MUST | authentication | `sub-claim`, `authn-subject-claim-uri`, `authn-credential-tamper-evident-claims` |
@@ -530,7 +558,7 @@ Each rule judges the exchanges an LWS client sends to a client session (definiti
 | `client-linkset-put-only-when-advertised` | SHOULD | core | `client-no-assumed-methods-405-415`, `linkset-put-405-if-unsupported` |
 | `client-linkset-patch-format-advertised` | SHOULD | core | `client-no-assumed-methods-405-415` |
 | `client-put-conditional` | SHOULD | core | `put-clients-use-conditional-requests` |
-| `client-linkset-write-conditional` | SHOULD | core | `linkset-precondition-failed-412` |
+| `client-linkset-write-conditional` | SHOULD | core | `linkset-precondition-failed-412`, `move-request-json-patch` |
 | `client-page-urls-issued` | SHOULD | core | `pagination-uris-opaque` |
 | `client-member-urls-issued` | SHOULD | core | `uri-independent-of-hierarchy` |
 | `client-access-document-context` | MUST | core | `access-jsonld-context-lws-v1` |

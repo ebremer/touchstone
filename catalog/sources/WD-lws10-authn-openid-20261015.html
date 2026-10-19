@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
-<meta name="generator" content="ReSpec 37.1.0">
+<meta name="generator" content="ReSpec 37.4.1">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <style>
 span.example-title{text-transform:none}
@@ -32,7 +32,7 @@ dfn{cursor:pointer}
 </style>
     
     
-<title>LWS 1.0 Authentication Suite: SAML 2.0</title>
+<title>LWS 1.0 Authentication Suite: OpenID Connect</title>
     
 <style id="respec-mainstyle">
 @keyframes pop{
@@ -70,11 +70,11 @@ details.respec-tests-details>li{padding-left:1em}
 .self-link:hover{opacity:1;text-decoration:none;background-color:transparent}
 aside.example .marker>a.self-link{color:inherit}
 .header-wrapper{display:flex;align-items:baseline}
-:is(h2,h3,h4,h5,h6):not(#toc>h2,#abstract>h2,#sotd>h2,.head>h2):has(+a.self-link){position:relative;left:-.5em}
-:is(h2,h3,h4,h5,h6):not(#toch2)+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.5}
-:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§";text-decoration:none;color:var(--heading-text)}
+:is(h2,h3,h4,h5,h6):not(:where(#toc>h2,#abstract>h2,#sotd>h2,.head>h2)):has(+a.self-link){position:relative;left:-.5em}
+:is(h2,h3,h4,h5,h6):not(:where(#toch2))+a.self-link{color:inherit;order:-1;position:relative;left:-1.1em;font-size:1rem;opacity:.8;text-decoration:none}
+:is(h2,h3,h4,h5,h6)+a.self-link::before{content:"§"}
 :is(h2,h3)+a.self-link{top:-.2em}
-:is(h4,h5,h6)+a.self-link::before{color:#000}
+:is(h2,h3)+a.self-link::before{color:var(--heading-text)}
 @media (max-width:767px){
 dd{margin-left:0}
 }
@@ -89,9 +89,9 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
     
   
 <meta name="color-scheme" content="light">
-<meta name="revision" content="ebadab7f0343f6bed0ea3d54e550fd1e5afc1082">
-<meta name="description" content="This document defines a SAML-based authentication suite for the Linked Web Storage (LWS) protocol, enabling LWS applications to integrate with SAML 2.0 identity providers.">
-<link rel="canonical" href="https://www.w3.org/TR/lws10-authn-saml/">
+<meta name="revision" content="688c11e8f2bed77dceac18734346e97fc92fa662">
+<meta name="description" content="This document defines an OpenID Connect-based authentication suite for the Linked Web Storage (LWS) protocol, enabling LWS applications to integrate with OpenID Providers.">
+<link rel="canonical" href="https://www.w3.org/TR/lws10-authn-openid/">
 <style>
 .hljs,body:has(input[name=color-scheme][value=light]:checked) .hljs,head:not(:has(meta[name=color-scheme][content~=dark]))+body .hljs{--base:#fafafa;--mono-1:#383a42;--mono-2:#686b77;--mono-3:#717277;--hue-1:#0b76c5;--hue-2:#336ae3;--hue-3:#a626a4;--hue-4:#42803c;--hue-5:#ca4706;--hue-5-2:#c91243;--hue-6:#986801;--hue-6-2:#9a6a01}
 @media (prefers-color-scheme:dark){
@@ -163,8 +163,8 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
 </style>
 <script id="initialUserConfig" type="application/json">{
   "specStatus": "WD",
-  "shortName": "lws10-authn-saml",
-  "edDraftURI": "https://w3c.github.io/lws-protocol/lws10-authn-saml/",
+  "shortName": "lws10-authn-openid",
+  "edDraftURI": "https://w3c.github.io/lws-protocol/lws10-authn-openid/",
   "editors": [
     {
       "name": "Jesse Wright",
@@ -192,57 +192,51 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       "publisher": "W3C",
       "status": "FPWD",
       "id": "lws10-core"
-    },
-    "SAML2-SEC": {
-      "title": "Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0",
-      "href": "https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf",
-      "publisher": "OASIS",
-      "date": "March 2005",
-      "id": "saml2-sec"
     }
   },
-  "gitRevision": "ebadab7f0343f6bed0ea3d54e550fd1e5afc1082",
-  "publishDate": "2026-08-03",
+  "gitRevision": "688c11e8f2bed77dceac18734346e97fc92fa662",
+  "publishDate": "2026-10-15",
   "previousMaturity": "WD",
-  "previousPublishDate": "2026-06-09",
-  "publishISODate": "2026-08-03T00:00:00.000Z",
-  "generatedSubtitle": "W3C Working Draft 03 August 2026"
+  "previousPublishDate": "2026-08-03",
+  "publishISODate": "2026-10-15T00:00:00.000Z",
+  "generatedSubtitle": "W3C Working Draft 15 October 2026"
 }</script>
-<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD"></head>
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD">
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/dark.css" disabled=""></head>
   <body class="h-entry" data-cite="web-platform"><div class="head">
     <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
   </a></p>
-    <h1 id="title" class="title">LWS 1.0 Authentication Suite: SAML 2.0</h1> 
-    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-08-03">03 August 2026</time></p>
+    <h1 id="title" class="title">LWS 1.0 Authentication Suite: OpenID Connect</h1> 
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-10-15">15 October 2026</time></p>
     <details open="">
       <summary>More details about this document</summary>
       <dl>
         <dt>This version:</dt><dd>
-                <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/">https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/</a>
-              </dd>
+                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/">https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/</a>
+                </dd>
         <dt>Latest published version:</dt><dd>
-                <a href="https://www.w3.org/TR/lws10-authn-saml/">https://www.w3.org/TR/lws10-authn-saml/</a>
-              </dd>
-        <dt>Latest editor's draft:</dt><dd><a href="https://w3c.github.io/lws-protocol/lws10-authn-saml/">https://w3c.github.io/lws-protocol/lws10-authn-saml/</a></dd>
+                  <a href="https://www.w3.org/TR/lws10-authn-openid/">https://www.w3.org/TR/lws10-authn-openid/</a>
+                </dd>
+        <dt>Latest editor's draft:</dt><dd><a href="https://w3c.github.io/lws-protocol/lws10-authn-openid/">https://w3c.github.io/lws-protocol/lws10-authn-openid/</a></dd>
         <dt>History:</dt><dd>
-                    <a href="https://www.w3.org/standards/history/lws10-authn-saml/">https://www.w3.org/standards/history/lws10-authn-saml/</a>
-                  </dd><dd>
-                    <a href="https://github.com/w3c/lws-protocol/commits/">Commit history</a>
-                  </dd>
+                        <a href="https://www.w3.org/standards/history/lws10-authn-openid/">https://www.w3.org/standards/history/lws10-authn-openid/</a>
+                      </dd><dd>
+                        <a href="https://github.com/w3c/lws-protocol/commits/">Commit history</a>
+                      </dd>
         
         
         
         
         
         <dt>
-                Editor:
-              </dt><dd class="editor p-author h-card vcard" data-editor-id="132252">
+                  Editor:
+                </dt><dd class="editor p-author h-card vcard" data-editor-id="132252">
     <span class="p-name fn">Jesse Wright</span> (<a class="p-org org h-org" href="https://www.ox.ac.uk/">University of Oxford</a>)
   </dd>
         
         <dt>
-                Author:
-              </dt><dd class="editor p-author h-card vcard">
+                  Author:
+                </dt><dd class="editor p-author h-card vcard">
     <span class="p-name fn">Aaron Coburn</span> (<a class="p-org org h-org" href="https://www.inrupt.com/">Inrupt Inc.</a>)
   </dd>
         <dt>Feedback:</dt><dd>
@@ -272,7 +266,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
   </div>
     <section id="abstract" class="introductory"><h2>Abstract</h2>
       <p>
-        This document defines a SAML-based authentication suite for the Linked Web Storage (LWS) protocol, enabling LWS applications to integrate with SAML 2.0 identity providers.
+        This document defines an OpenID Connect-based authentication suite for the Linked Web Storage (LWS) protocol, enabling LWS applications to integrate with OpenID Providers.
       </p>
     </section>
     <section id="sotd" class="introductory"><h2>Status of This Document</h2><p><em>This section describes the status of this
@@ -303,31 +297,29 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
           Policy</a>.
       
     
-                <abbr title="World Wide Web Consortium">W3C</abbr> maintains a
-                <a rel="disclosure" href="https://www.w3.org/groups/wg/lws/ipr">public list of any patent disclosures</a>
-          made in connection with the deliverables of
-          the group; that page also includes
-          instructions for disclosing a patent. An individual who has actual
-          knowledge of a patent that the individual believes contains
-          <a href="https://www.w3.org/policies/patent-policy/#def-essential">Essential Claim(s)</a>
-          must disclose the information in accordance with
-          <a href="https://www.w3.org/policies/patent-policy/#sec-Disclosure">section 6 of the <abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>.
-        
+                    <abbr title="World Wide Web Consortium">W3C</abbr> maintains a
+                    <a rel="disclosure" href="https://www.w3.org/groups/wg/lws/ipr">public list of any patent disclosures</a>
+            made in connection with the deliverables of
+            the group; that page also includes
+            instructions for disclosing a patent. An individual who has actual
+            knowledge of a patent that the individual believes contains
+            <a href="https://www.w3.org/policies/patent-policy/#def-essential">Essential Claim(s)</a>
+            must disclose the information in accordance with
+            <a href="https://www.w3.org/policies/patent-policy/#sec-Disclosure">section 6 of the <abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>.
+          
   </p><p>
-                      This document is governed by the
-                      <a id="w3c_process_revision" href="https://www.w3.org/policies/process/20250818/">18 August 2025 <abbr title="World Wide Web Consortium">W3C</abbr> Process Document</a>.
-                    </p></section><nav id="toc"><h2 class="introductory" id="table-of-contents">Table of Contents</h2><ol class="toc"><li class="tocline"><a class="tocxref" href="#abstract">Abstract</a></li><li class="tocline"><a class="tocxref" href="#sotd">Status of This Document</a></li><li class="tocline"><a class="tocxref" href="#introduction"><bdi class="secno">1. </bdi>Introduction</a></li><li class="tocline"><a class="tocxref" href="#conformance"><bdi class="secno">2. </bdi>Conformance</a></li><li class="tocline"><a class="tocxref" href="#terminology"><bdi class="secno">3. </bdi>Terminology</a></li><li class="tocline"><a class="tocxref" href="#serialization"><bdi class="secno">4. </bdi>Authentication Credential Serialization</a></li><li class="tocline"><a class="tocxref" href="#validation"><bdi class="secno">5. </bdi>Authentication Credential Validation</a></li><li class="tocline"><a class="tocxref" href="#token-type"><bdi class="secno">6. </bdi>Token Type Identifier</a></li><li class="tocline"><a class="tocxref" href="#security-considerations"><bdi class="secno">7. </bdi>Security Considerations</a></li><li class="tocline"><a class="tocxref" href="#privacy-considerations"><bdi class="secno">8. </bdi>Privacy Considerations</a></li><li class="tocline"><a class="tocxref" href="#references"><bdi class="secno">A. </bdi>References</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#normative-references"><bdi class="secno">A.1 </bdi>Normative references</a></li><li class="tocline"><a class="tocxref" href="#informative-references"><bdi class="secno">A.2 </bdi>Informative references</a></li></ol></li></ol></nav>
+                          This document is governed by the
+                          <a id="w3c_process_revision" href="https://www.w3.org/policies/process/20250818/">18 August 2025 <abbr title="World Wide Web Consortium">W3C</abbr> Process Document</a>.
+                        </p></section><nav id="toc"><h2 class="introductory" id="table-of-contents">Table of Contents</h2><ol class="toc"><li class="tocline"><a class="tocxref" href="#abstract">Abstract</a></li><li class="tocline"><a class="tocxref" href="#sotd">Status of This Document</a></li><li class="tocline"><a class="tocxref" href="#introduction"><bdi class="secno">1. </bdi>Introduction</a></li><li class="tocline"><a class="tocxref" href="#conformance"><bdi class="secno">2. </bdi>Conformance</a></li><li class="tocline"><a class="tocxref" href="#terminology"><bdi class="secno">3. </bdi>Terminology</a></li><li class="tocline"><a class="tocxref" href="#serialization"><bdi class="secno">4. </bdi>Authentication Credential Serialization</a></li><li class="tocline"><a class="tocxref" href="#validation"><bdi class="secno">5. </bdi>Authentication Credential Validation</a></li><li class="tocline"><a class="tocxref" href="#token-type"><bdi class="secno">6. </bdi>Token Type Identifier</a></li><li class="tocline"><a class="tocxref" href="#security-considerations"><bdi class="secno">7. </bdi>Security Considerations</a></li><li class="tocline"><a class="tocxref" href="#privacy-considerations"><bdi class="secno">8. </bdi>Privacy Considerations</a></li><li class="tocline"><a class="tocxref" href="#references"><bdi class="secno">A. </bdi>References</a><ol class="toc"><li class="tocline"><a class="tocxref" href="#normative-references"><bdi class="secno">A.1 </bdi>Normative references</a></li><li class="tocline"><a class="tocxref" href="#informative-references"><bdi class="secno">A.2 </bdi>Informative references</a></li></ol></li></ol></nav>
 
     <section id="introduction"><div class="header-wrapper"><h2 id="x1-introduction"><bdi class="secno">1. </bdi>Introduction</h2><a class="self-link" href="#introduction" aria-label="Permalink for Section 1."></a></div>
       
       <p>
-        The Security Assertion Markup Language (SAML) is an open standard for exchanging authentication and authorization assertions between parties,
-        typically between web-based service providers (i.e., an application) and identity providers. These assertions are encoded in an XML format
-        containing a digital signature. This specification describes how SAML-based identity tokens can be used to authenticate end users in a Linked Web Storage environment.
+        OpenID Connect is a widely used mechanism for web-based authentication. This authentication suite describes how an OpenID Provider can be used with Linked Web Storage-conforming applications.
       </p>
     </section>
     <section id="conformance"><div class="header-wrapper"><h2 id="x2-conformance"><bdi class="secno">2. </bdi>Conformance</h2><a class="self-link" href="#conformance" aria-label="Permalink for Section 2."></a></div><p>As well as sections marked as non-normative, all authoring guidelines, diagrams, examples, and notes in this specification are non-normative. Everything else in this specification is normative.</p><p>
-        The key words <em class="rfc2119">MUST</em> and <em class="rfc2119">SHOULD</em> in this document
+        The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, and <em class="rfc2119">SHOULD</em> in this document
         are to be interpreted as described in
         <a href="https://www.rfc-editor.org/info/bcp14">BCP 14</a>
         [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc2119" title="Key words for use in RFCs to Indicate Requirement Levels">RFC2119</a></cite>] [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8174" title="Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words">RFC8174</a></cite>]
@@ -343,11 +335,27 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       </p>
 
       <p>
-        The terms "identity provider" and "assertion" are defined by The Security Assertion Markup Language (SAML) 2.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-saml2-core" title="Assertions and Protocols for SAML V2.0">SAML2-CORE</a></cite>].
+        The terms "OpenID Provider", "ID Token", "end-user", and "issuer" are defined by OpenID Connect Core 1.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-core" title="OpenID Connect Core 1.0 incorporating errata set 2">OPENID-CONNECT-CORE</a></cite>].
       </p>
 
       <p>
-        The terms "<dfn data-plurals="authentication credentials" id="dfn-authentication-credential" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a></dfn>" and "<dfn id="dfn-authentication-suite" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-suite">authentication suite</a></dfn>" are defined by Linked Web Storage Protocol [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>]
+        The term "OpenID Connect Discovery" is defined by OpenID Connect Discovery 1.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-discovery" title="OpenID Connect Discovery 1.0 incorporating errata set 2">OPENID-CONNECT-DISCOVERY</a></cite>].
+      </p>
+
+      <p>
+        The term "controlled identifier document" is defined by <abbr title="World Wide Web Consortium">W3C</abbr> Controlled Identifiers 1.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>].
+      </p>
+
+      <p>
+        The terms "JSON Web Token (JWT)" and "claim" are defined by JSON Web Token [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7519" title="JSON Web Token (JWT)">RFC7519</a></cite>].
+      </p>
+
+      <p>
+        The term "JSON Web Key (JWK)" is defined by JSON Web Key [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7517" title="JSON Web Key (JWK)">RFC7517</a></cite>].
+      </p>
+
+      <p>
+        The terms "<dfn id="dfn-agent" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a></dfn>", "<dfn id="dfn-authentication-credential" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a></dfn>", and "<dfn id="dfn-authentication-suite" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-suite">authentication suite</a></dfn>" are defined by Linked Web Storage Protocol [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>].
       </p>
     </section>
 
@@ -355,71 +363,60 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       
 
       <p>
-        SAML tokens used as <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credentials</a> <em class="rfc2119">MUST</em> be signed. In addition, a valid SAML token <em class="rfc2119">MUST</em> include the following assertions:
+        OpenID Connect defines a protocol for producing signed ID Tokens, which are used to describe an end-user.
+        An ID Token is serialized as a signed JSON Web Token (JWT). In order to use an ID Token as an LWS <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>,
+        the following additional requirements apply.
       </p>
+
+      <ul>
+        <li>
+          The ID Token <em class="rfc2119">MUST NOT</em> use "none" as the signing algorithm.
+        </li>
+
+        <li>
+          The ID Token <em class="rfc2119">MUST</em> use the <code>sub</code> (subject) claim for the LWS subject identifier.
+        </li>
+
+        <li>
+          The ID Token <em class="rfc2119">MUST</em> use the <code>iss</code> (issuer) claim for the LWS issuer identifier.
+        </li>
+
+        <li>
+          The ID Token <em class="rfc2119">MUST</em> use the <code>azp</code> (authorized party) claim for the LWS client identifier.
+        </li>
+
+        <li>
+          Any audience restriction in the ID Token <em class="rfc2119">MUST</em> use the <code>aud</code> (audience) claim.
+          The <code>aud</code> claim <em class="rfc2119">SHOULD</em> include the client identifier and any additional target
+          audience such as an authorization server.
+        </li>
+      </ul>
 
       <p>
-        The SAML token <em class="rfc2119">MUST</em> use the <code>saml:NameID</code> assertion for the LWS subject identifier.
+        An example ID Token that is also an LWS <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> is included below.
       </p>
 
-      <p>
-        The SAML token <em class="rfc2119">MUST</em> use the <code>saml:Issuer</code> assertion for the LWS issuer identifier.
-      </p>
-
-      <p>
-        The SAML token <em class="rfc2119">MUST</em> use the <code>Recipient</code> parameter within a <code>saml:SubjectConfirmationData</code> assertion for the LWS client identifier.
-      </p>
-
-      <p>
-        Any audience restriction in the SAML token <em class="rfc2119">MUST</em> use the <code>saml:Audience</code> assertion. The <code>saml:Audience</code> assertion <em class="rfc2119">SHOULD</em> include a client identifier and any additional target audience such as an authorization server.
-      </p>
-
-      <p>
-        An example SAML Authentication Credential is included below.
-      </p>
-
-<div class="example" id="example-saml-token">
+      <div class="example" id="example-id-token">
         <div class="marker">
-    <a class="self-link" href="#example-saml-token">Example<bdi> 1</bdi></a>
-  </div> <pre aria-busy="false"><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">samlp:Response</span>
-    <span class="hljs-attr">xmlns:samlp</span>=<span class="hljs-string">"urn:oasis:names:tc:SAML:2.0:protocol"</span>
-    <span class="hljs-attr">xmlns:saml</span>=<span class="hljs-string">"urn:oasis:names:tc:SAML:2.0:assertion"</span>
-    <span class="hljs-attr">xmlns:ds</span>=<span class="hljs-string">"http://www.w3.org/2000/09/xmldsig#"</span>
-    <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0"</span>
-    <span class="hljs-attr">IssueInstant</span>=<span class="hljs-string">"2025-10-25T01:01:16Z"</span>&gt;</span>
-
-  <span class="hljs-tag">&lt;<span class="hljs-name">saml:Issuer</span>&gt;</span>https://idp.example
-
-  <span class="hljs-tag">&lt;<span class="hljs-name">ds:Signature</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">ds:SignedInfo</span>&gt;</span>
-      ...
-    <span class="hljs-tag">&lt;<span class="hljs-name">ds:SignedInfo</span>&gt;</span>
-  <span class="hljs-tag">&lt;<span class="hljs-name">ds:SignedInfo</span>&gt;</span>
-
-  <span class="hljs-tag">&lt;<span class="hljs-name">samlp:Status</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">samlp:StatusCode</span> <span class="hljs-attr">Value</span>=<span class="hljs-string">"urn:oasis:names:tc:SAML:2.0:status:Success"</span>/&gt;</span>
-  <span class="hljs-tag">&lt;<span class="hljs-name">samlp:Status</span>&gt;</span>
-
-  <span class="hljs-tag">&lt;<span class="hljs-name">saml:Assertion</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0"</span> <span class="hljs-attr">IssueInstant</span>=<span class="hljs-string">"2025-10-25T01:01:16Z"</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">saml:Issuer</span>&gt;</span>https://idp.example<span class="hljs-tag">&lt;/<span class="hljs-name">saml:Issuer</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">saml:Subject</span>&gt;</span>
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:NameID</span> <span class="hljs-attr">Format</span>=<span class="hljs-string">"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"</span>&gt;</span>
-          https://id.example/end-user
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:NameID</span>&gt;</span>
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:SubjectConfirmation</span> <span class="hljs-attr">Method</span>=<span class="hljs-string">"urn:oasis:names:tc:SAML:2.0:cm:bearer"</span>&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">saml:SubjectConfirmationData</span> <span class="hljs-attr">NotOnOrAfter</span>=<span class="hljs-string">"2025-10-25T02:01:16Z"</span>
-                                      <span class="hljs-attr">Recipient</span>=<span class="hljs-string">"https://app.example/SAML"</span>/&gt;</span>
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:SubjectConfirmation</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">saml:Subject</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">saml:Conditions</span> <span class="hljs-attr">NotBefore</span>=<span class="hljs-string">"2025-10-25T01:01:16Z"</span>
-                     <span class="hljs-attr">NotOnOrAfter</span>=<span class="hljs-string">"2025-10-25T02:01:16Z"</span>&gt;</span>
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:AudienceRestriction</span>&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">saml:Audience</span>&gt;</span>https://app.example/SAML
-        <span class="hljs-tag">&lt;<span class="hljs-name">saml:Audience</span>&gt;</span>https://as.example
-      <span class="hljs-tag">&lt;<span class="hljs-name">saml:AudienceRestriction</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">saml:Conditions</span>&gt;</span>
-  <span class="hljs-tag">&lt;<span class="hljs-name">saml:Assertion</span>&gt;</span>
-<span class="hljs-tag">&lt;<span class="hljs-name">samlp:Response</span>&gt;</span></code></pre>
+    <a class="self-link" href="#example-id-token">Example<bdi> 1</bdi></a>
+  </div> <pre aria-busy="false"><code class="hljs css">{
+  "typ": <span class="hljs-string">"JWT"</span>,
+  <span class="hljs-string">"kid"</span>: <span class="hljs-string">"12dbe73a"</span>,
+  <span class="hljs-string">"kty"</span>: <span class="hljs-string">"EC"</span>,
+  <span class="hljs-string">"alg"</span>: <span class="hljs-string">"ES256"</span>,
+  <span class="hljs-string">"crv"</span>: <span class="hljs-string">"P-256"</span>
+}
+.
+{
+  "sub": <span class="hljs-string">"https://id.example/end-user"</span>,
+  <span class="hljs-string">"iss"</span>: <span class="hljs-string">"https://openid.example"</span>,
+  <span class="hljs-string">"azp"</span>: <span class="hljs-string">"https://client.example/17da1b"</span>,
+  <span class="hljs-string">"aud"</span>: [<span class="hljs-string">"https://client.example/17da1b"</span>, <span class="hljs-string">"https://as.example"</span>],
+  <span class="hljs-string">"iat"</span>: <span class="hljs-number">1761313600</span>,
+  <span class="hljs-string">"exp"</span>: <span class="hljs-number">1761313900</span>
+}
+.
+signature</code></pre>
       </div>
     </section>
 
@@ -427,101 +424,160 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       
 
       <p>
-        In order to validate a SAML <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>, there must be a trust relationship with the issuing identity provider.
-        This specification does not define how a validating entity establishes a trust relationship with an identity provider,
-        expecting these relationships to be established out-of-band.
+        For an ID Token to be valid as an LWS <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>,
+        there must be a trust relationship between the verifier and the issuing party.
       </p>
 
       <p>
-        Using a trust relationship with an issuer, the signature of the credential <em class="rfc2119">MUST</em> be validated as described in SAML Core, section 5 [<cite><a class="bibref" data-link-type="biblio" href="#bib-saml2-core" title="Assertions and Protocols for SAML V2.0">SAML2-CORE</a></cite>].
+        In the absence of a pre-existing trust relationship, the validator <em class="rfc2119">MUST</em> dereference the <code>sub</code> (subject) claim in the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>.
+        The resulting resource <em class="rfc2119">MUST</em> be formatted as a valid controlled identifier document [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>] with an <code>id</code> value equal to the subject identifier.
       </p>
+
+      <p>
+        The verifier <em class="rfc2119">MUST</em> use the subject's controlled identifier document to locate a service object whose <code>serviceEndpoint</code> value
+        is equal to the value of the <code>iss</code> claim from the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>, and whose <code>type</code> value is equal to <code>https://www.w3.org/ns/lws#OpenIdProvider</code>.
+        The verifier <em class="rfc2119">MUST</em> perform OpenID Connect Discovery to locate the public portion of the JSON Web Key (JWK) used to sign the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a>.
+        The JWT <em class="rfc2119">MUST</em> be validated as described by OpenID Connect Core Section 3.1.3.7 [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-core" title="OpenID Connect Core 1.0 incorporating errata set 2">OPENID-CONNECT-CORE</a></cite>].
+      </p>
+
+      <p>
+        An example Controlled Identifier Document for an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a> using OpenID Connect is included below.
+      </p>
+
+      <div class="example" id="example-cid">
+        <div class="marker">
+    <a class="self-link" href="#example-cid">Example<bdi> 2</bdi></a>
+  </div> <pre aria-busy="false"><code class="hljs json"><span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"@context"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">"https://www.w3.org/ns/cid/v1"</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://id.example/end-user"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"service"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://www.w3.org/ns/lws#OpenIdProvider"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"serviceEndpoint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://openid.example"</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div>
     </section>
 
     <section id="token-type"><div class="header-wrapper"><h2 id="x6-token-type-identifier"><bdi class="secno">6. </bdi>Token Type Identifier</h2><a class="self-link" href="#token-type" aria-label="Permalink for Section 6."></a></div>
       
 
       <p>
-        A SAML 2.0 assertion used as an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> <em class="rfc2119">MUST</em> use the <code>urn:ietf:params:oauth:token-type:saml2</code> URI when interacting with an authorization server.
+        An ID Token used as an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> <em class="rfc2119">MUST</em> use the <code>urn:ietf:params:oauth:token-type:id_token</code> URI when interacting with an authorization server.
       </p>
+
     </section>
 
     <section id="security-considerations" class="informative"><div class="header-wrapper"><h2 id="x7-security-considerations"><bdi class="secno">7. </bdi>Security Considerations</h2><a class="self-link" href="#security-considerations" aria-label="Permalink for Section 7."></a></div><p><em>This section is non-normative.</em></p>
       
 
       <p>
-        All security considerations described in "<cite><a data-matched-text="[[[SAML2-SEC]]]" href="https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf">Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0</a></cite>" [<cite><a class="bibref" data-link-type="biblio" href="#bib-saml2-sec" title="Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0">SAML2-SEC</a></cite>] apply to this specification.
+        All security considerations described in "Best Current Practice for OAuth 2.0 Security" [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9700" title="Best Current Practice for OAuth 2.0 Security">RFC9700</a></cite>] and "OpenID Connect Core 1.0" Section 16 [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-core" title="OpenID Connect Core 1.0 incorporating errata set 2">OPENID-CONNECT-CORE</a></cite>] apply to this specification.
       </p>
 
       <p>
-        A SAML identity provider should support a mechanism to restrict the audience of an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> to a limited set of entities,
-        including an authorization server. A client in possession of an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> with no audience restrictions
-        should exchange this token for an equivalent audience-restricted token by using, for example, OAuth 2.0 Token Exchange [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8693" title="OAuth 2.0 Token Exchange">RFC8693</a></cite>].
+        An OpenID Provider should support a mechanism to restrict the audience of an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> to a limited set of entities, including an authorization server.
+        One mechanism for achieving this is to use Resource Indicators for OAuth 2.0 [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8707" title="Resource Indicators for OAuth 2.0">RFC8707</a></cite>].
+        A client in possession of an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> with no audience restrictions should exchange this token for an equivalent audience-restricted token by using, for example, OAuth 2.0 Token Exchange [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc8693" title="OAuth 2.0 Token Exchange">RFC8693</a></cite>].
+      </p>
+
+      <p>
+        An OpenID Provider should provide support for "OAuth 2.0 Authorization Server Issuer Identification" [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc9207" title="OAuth 2.0 Authorization Server Issuer Identification">RFC9207</a></cite>] by including an <code>iss</code> parameter in the authorization response of an OAuth flow.
+      </p>
+
+      <p>
+        An OpenID Provider should provide support for end-user logout, such as RP-Initiated Logout 1.0.
+      </p>
+
+      <p>
+        The issuer of an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> is responsible for validating the client identifier.
+        The issuer may use mechanisms such as an OAuth Client ID Metadata Document, an OAuth 2.0 Client ID Prefix, or OpenID Federation.
+      </p>
+
+      <p>
+        It is recommended that OpenID Providers support WebAuthn [<cite><a class="bibref" data-link-type="biblio" href="#bib-webauthn-3" title="Web Authentication: An API for accessing Public Key Credentials - Level 3">WEBAUTHN-3</a></cite>] as a mechanism for authenticating users.
       </p>
     </section>
     <section id="privacy-considerations" class="informative"><div class="header-wrapper"><h2 id="x8-privacy-considerations"><bdi class="secno">8. </bdi>Privacy Considerations</h2><a class="self-link" href="#privacy-considerations" aria-label="Permalink for Section 8."></a></div><p><em>This section is non-normative.</em></p>
       
 
       <p>
-        All privacy considerations described in "<cite><a data-matched-text="[[[SAML2-SEC]]]" href="https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf">Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0</a></cite>" [<cite><a class="bibref" data-link-type="biblio" href="#bib-saml2-sec" title="Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0">SAML2-SEC</a></cite>]
-        apply to this specification.
+        All privacy considerations described in "OpenID Connect Core 1.0" Section 17 [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-core" title="OpenID Connect Core 1.0 incorporating errata set 2">OPENID-CONNECT-CORE</a></cite>] apply to this specification.
       </p>
 
       <p>
-        A SAML assertion used as an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> can contain attributes
-        that reveal personally identifiable information about the end-user. Identity providers
-        are encouraged to issue assertions that contain only the information necessary for LWS
-        authentication — specifically, the <code>saml:NameID</code>, <code>saml:Issuer</code>,
-        and <code>saml:Audience</code> elements and the <code>Recipient</code> attribute of
-        <code>saml:SubjectConfirmationData</code> — and to avoid including additional identity
-        attributes unless explicitly required.
+        An ID Token used as an <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a> can contain claims that reveal
+        personally identifiable information about the end-user, such as email addresses,
+        names, or other profile attributes. OpenID Providers are encouraged to issue ID Tokens
+        that contain only the claims necessary for LWS authentication — specifically, the
+        <code>sub</code>, <code>iss</code>, <code>azp</code>, and <code>aud</code> claims —
+        and to avoid including additional identity attributes unless explicitly required.
       </p>
 
       <p>
-        The <code>saml:NameID</code> element is used as the LWS subject identifier. When a
-        persistent name identifier format is used, it enables verifiers and storage servers
-        to correlate an end-user's activity across sessions and resources. Identity providers
-        that support transient name identifiers can reduce this correlation, though deployers
-        will need to evaluate whether transient identifiers are compatible with the access
-        control requirements of their LWS deployment.
+        Because the <code>sub</code> (subject) claim is used as the LWS subject identifier and
+        can be dereferenced during validation, the choice of subject identifier has privacy
+        implications. A persistent, globally unique subject identifier allows verifiers and
+        storage servers to correlate an end-user's activity across sessions and resources.
+        OpenID Providers that support pairwise subject identifiers (as described in
+        [<cite><a class="bibref" data-link-type="biblio" href="#bib-openid-connect-core" title="OpenID Connect Core 1.0 incorporating errata set 2">OPENID-CONNECT-CORE</a></cite>] Section 8) can reduce the potential for cross-provider
+        correlation, though the LWS validation model requires the subject identifier
+        to resolve to a controlled identifier document.
       </p>
 
       <p>
-        The trust model for SAML in this
-        specification relies on out-of-band trust establishment with identity providers.
-        This means there is no subject identifier dereference step during validation, which
-        avoids the associated metadata leakage. However, the out-of-band trust relationship
-        itself reveals which identity providers are used within a deployment.
+        The validation process requires dereferencing the subject identifier to retrieve a
+        controlled identifier document. This dereference operation can reveal to the hosting
+        server of that document which verifiers are validating credentials for a given subject,
+        including timing and frequency of access. Verifiers are encouraged to cache controlled
+        identifier documents to reduce unnecessary network requests and the associated metadata
+        leakage.
       </p>
 
       <p>
-        SAML assertions presented to a storage server or authorization server can be read by
-        those parties. Audience restriction (via the <code>saml:AudienceRestriction</code>
-        element) limits which parties the assertion is intended for but does not prevent an
-        intermediary from reading the assertion's contents in transit. The use of TLS is
-        essential for protecting authentication credentials during transmission.
+        Clients and relying parties are advised that an ID Token presented to a storage
+        server or authorization server can be read by those parties. Audience restriction
+        (via the <code>aud</code> claim) limits which parties the token is intended for but
+        does not prevent an intermediary from reading the token's contents in transit.
+        The use of TLS is essential for protecting authentication credentials during transmission.
       </p>
     </section>
   
 
 <section id="references" class="appendix"><div class="header-wrapper"><h2 id="a-references"><bdi class="secno">A. </bdi>References</h2><a class="self-link" href="#references" aria-label="Permalink for Appendix A."></a></div><section id="normative-references"><div class="header-wrapper"><h3 id="a-1-normative-references"><bdi class="secno">A.1 </bdi>Normative references</h3><a class="self-link" href="#normative-references" aria-label="Permalink for Appendix A.1"></a></div>
     
-    <dl class="bibliography"><dt id="bib-lws10-core">[LWS10-CORE]</dt><dd>
+    <dl class="bibliography"><dt id="bib-cid-1-0">[CID-1.0]</dt><dd>
+      <a href="https://www.w3.org/TR/cid-1.0/"><cite>Controlled Identifiers v1.0</cite></a>. Michael Jones; Manu Sporny.  W3C. 15 May 2025. W3C Recommendation. URL: <a href="https://www.w3.org/TR/cid-1.0/">https://www.w3.org/TR/cid-1.0/</a>
+    </dd><dt id="bib-lws10-core">[LWS10-CORE]</dt><dd>
       <a href="https://www.w3.org/TR/lws10-core/"><cite>Linked Web Storage Protocol 1.0</cite></a>.  W3C. FPWD. URL: <a href="https://www.w3.org/TR/lws10-core/">https://www.w3.org/TR/lws10-core/</a>
+    </dd><dt id="bib-openid-connect-core">[OPENID-CONNECT-CORE]</dt><dd>
+      <a href="https://openid.net/specs/openid-connect-core-1_0.html"><cite>OpenID Connect Core 1.0 incorporating errata set 2</cite></a>. N. Sakimura; J. Bradley; M. Jones; B. de Medeiros; C. Mortimore.  OpenID Foundation. 15 December 2023. Final. URL: <a href="https://openid.net/specs/openid-connect-core-1_0.html">https://openid.net/specs/openid-connect-core-1_0.html</a>
+    </dd><dt id="bib-openid-connect-discovery">[OPENID-CONNECT-DISCOVERY]</dt><dd>
+      <a href="https://openid.net/specs/openid-connect-discovery-1_0.html"><cite>OpenID Connect Discovery 1.0 incorporating errata set 2</cite></a>. N. Sakimura; J. Bradley; M. Jones; E. Jay.  OpenID Foundation. 15 December 2023. Final. URL: <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">https://openid.net/specs/openid-connect-discovery-1_0.html</a>
     </dd><dt id="bib-rfc2119">[RFC2119]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc2119/"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. S. Bradner.  IETF. March 1997. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc2119/">https://www.rfc-editor.org/info/rfc2119/</a>
     </dd><dt id="bib-rfc6749">[RFC6749]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc6749/"><cite>The OAuth 2.0 Authorization Framework</cite></a>. D. Hardt, Ed. IETF. October 2012. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc6749/">https://www.rfc-editor.org/info/rfc6749/</a>
+    </dd><dt id="bib-rfc7517">[RFC7517]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc7517/"><cite>JSON Web Key (JWK)</cite></a>. M. Jones.  IETF. May 2015. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc7517/">https://www.rfc-editor.org/info/rfc7517/</a>
+    </dd><dt id="bib-rfc7519">[RFC7519]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc7519/"><cite>JSON Web Token (JWT)</cite></a>. M. Jones; J. Bradley; N. Sakimura.  IETF. May 2015. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc7519/">https://www.rfc-editor.org/info/rfc7519/</a>
     </dd><dt id="bib-rfc8174">[RFC8174]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc8174/"><cite>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</cite></a>. B. Leiba.  IETF. May 2017. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc8174/">https://www.rfc-editor.org/info/rfc8174/</a>
-    </dd><dt id="bib-saml2-core">[SAML2-CORE]</dt><dd>
-      <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf"><cite>Assertions and Protocols for SAML V2.0</cite></a>. Scott Cantor; John Kemp; Rob Philpott; Eve Maler. 15 March 2005. URL: <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf">https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf</a>
     </dd></dl>
   </section><section id="informative-references"><div class="header-wrapper"><h3 id="a-2-informative-references"><bdi class="secno">A.2 </bdi>Informative references</h3><a class="self-link" href="#informative-references" aria-label="Permalink for Appendix A.2"></a></div>
     
     <dl class="bibliography"><dt id="bib-rfc8693">[RFC8693]</dt><dd>
       <a href="https://www.rfc-editor.org/info/rfc8693/"><cite>OAuth 2.0 Token Exchange</cite></a>. M. Jones; A. Nadalin; B. Campbell, Ed.; J. Bradley; C. Mortimore.  IETF. January 2020. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc8693/">https://www.rfc-editor.org/info/rfc8693/</a>
-    </dd><dt id="bib-saml2-sec">[SAML2-SEC]</dt><dd>
-      <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf"><cite>Security and Privacy Considerations for the OASIS Security Assertion Markup Language (SAML) V2.0</cite></a>.  OASIS. March 2005. URL: <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf">https://docs.oasis-open.org/security/saml/v2.0/saml-sec-consider-2.0-os.pdf</a>
+    </dd><dt id="bib-rfc8707">[RFC8707]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc8707/"><cite>Resource Indicators for OAuth 2.0</cite></a>. B. Campbell; J. Bradley; H. Tschofenig.  IETF. February 2020. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc8707/">https://www.rfc-editor.org/info/rfc8707/</a>
+    </dd><dt id="bib-rfc9207">[RFC9207]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc9207/"><cite>OAuth 2.0 Authorization Server Issuer Identification</cite></a>. K. Meyer zu Selhausen; D. Fett.  IETF. March 2022. Proposed Standard. URL: <a href="https://www.rfc-editor.org/info/rfc9207/">https://www.rfc-editor.org/info/rfc9207/</a>
+    </dd><dt id="bib-rfc9700">[RFC9700]</dt><dd>
+      <a href="https://www.rfc-editor.org/info/rfc9700/"><cite>Best Current Practice for OAuth 2.0 Security</cite></a>. T. Lodderstedt; J. Bradley; A. Labunets; D. Fett.  IETF. January 2025. Best Current Practice. URL: <a href="https://www.rfc-editor.org/info/rfc9700/">https://www.rfc-editor.org/info/rfc9700/</a>
+    </dd><dt id="bib-webauthn-3">[WEBAUTHN-3]</dt><dd>
+      <a href="https://www.w3.org/TR/webauthn-3/"><cite>Web Authentication: An API for accessing Public Key Credentials - Level 3</cite></a>. Akshay Kumar; Emil Lundberg; Tim Cappalli; Nina Satragno; Matthew Miller; ㅤ Pascoe.  W3C. 25 August 2026. W3C Recommendation. URL: <a href="https://www.w3.org/TR/webauthn-3/">https://www.w3.org/TR/webauthn-3/</a>
     </dd></dl>
   </section></section><p role="navigation" id="back-to-top">
     <a href="#title"><abbr title="Back to Top">↑</abbr></a>

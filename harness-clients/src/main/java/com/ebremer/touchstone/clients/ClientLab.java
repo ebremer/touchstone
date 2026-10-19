@@ -57,7 +57,9 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code /s/{sid}/storage/...}, {@code /s/{sid}/as/...}, {@code /s/{sid}/op/...} and
  *       {@code /s/{sid}/id/{name}}: the session's storage, authorization server, OpenID Provider and
  *       identity documents, every exchange with them recorded; the authorization server's metadata
- *       is at {@code /.well-known/lws-configuration} followed by its issuer's path.</li>
+ *       is at {@code /.well-known/lws-configuration} followed by its issuer's path, and the
+ *       protected resource metadata of each storage resource at
+ *       {@code /.well-known/oauth-protected-resource} followed by the resource's path (RFC 9728).</li>
  * </ul>
  */
 public final class ClientLab implements AutoCloseable {
@@ -276,10 +278,26 @@ public final class ClientLab implements AutoCloseable {
             String base = config.basePath();
             String wellKnown = "/.well-known/lws-configuration" + base + "/s/";
             String proxiedWellKnown = "/.well-known/lws-configuration" + base + "/p/";
-            if (path.startsWith(proxiedWellKnown)) {
-                String rest = path.substring(proxiedWellKnown.length());
+            String resourceMetadata = RefLwsServer.PROTECTED_RESOURCE_METADATA + base + "/s/";
+            String proxiedResourceMetadata = RefLwsServer.PROTECTED_RESOURCE_METADATA + base + "/p/";
+            for (String proxiedPrefix : List.of(proxiedWellKnown, proxiedResourceMetadata)) {
+                if (path.startsWith(proxiedPrefix)) {
+                    String rest = path.substring(proxiedPrefix.length());
+                    int slash = rest.indexOf('/');
+                    proxied(rest.substring(0, slash < 0 ? rest.length() : slash), request, response, callback);
+                    return true;
+                }
+            }
+            if (path.startsWith(resourceMetadata)) {
+                // A storage resource's protected resource metadata, which its storage serves.
+                String rest = path.substring(resourceMetadata.length());
                 int slash = rest.indexOf('/');
-                proxied(rest.substring(0, slash < 0 ? rest.length() : slash), request, response, callback);
+                Session s = slash < 0 ? null : sessions.get(rest.substring(0, slash));
+                if (s == null || s.proxy != null || !rest.substring(slash).startsWith("/storage/")) {
+                    plain(response, callback, 404);
+                    return true;
+                }
+                protocol(s, s.storage.handler(), STORAGE, null, request, response, callback);
                 return true;
             }
             if (path.startsWith(wellKnown)) {
@@ -967,6 +985,7 @@ public final class ClientLab implements AutoCloseable {
             traps.put("decoy", s.traps.decoy());
             traps.put("indexLagSeconds", s.traps.indexLag().toSeconds());
             traps.put("noCombinedUpdates", s.traps.noCombinedUpdates());
+            traps.put("dataMovesOnly", s.traps.dataMovesOnly());
             }
             ObjectNode limits = body.putObject("limits");
             limits.put("idleTimeout", config.idleTimeout().toString());
@@ -1092,7 +1111,7 @@ public final class ClientLab implements AutoCloseable {
             TokenRequests.Facts facts = !role.equals("asToken") || !request.getMethod().equals("POST")
                     ? TokenRequests.Facts.NONE
                     : session.proxy == null ? TokenRequests.of(session, requestType, requestBody)
-                    : TokenRequests.realmOnly(session, requestType, requestBody);
+                    : TokenRequests.Facts.NONE;
             if (role.equals("asToken")) {
                 rememberIssuedToken(responseText);
             }
@@ -1125,7 +1144,7 @@ public final class ClientLab implements AutoCloseable {
                     essence != null && listed(advertised.get("Accept-Query"), essence, true),
                     repeat, role.equals("container") && Integer.valueOf(0).equals(members),
                     facts.credentialSource(), facts.credential(), facts.audienceIncludesAs(), facts.identifiersAgree(),
-                    facts.realmContainsRequest(), null,
+                    facts.discoveryValid(), null,
                     role.equals("subscriptions") && method.equals("POST") ? inboxShared : null,
                     fault == null ? null : fault.toString(), limit);
             int cap = config.maxRecordedResponseBytes();

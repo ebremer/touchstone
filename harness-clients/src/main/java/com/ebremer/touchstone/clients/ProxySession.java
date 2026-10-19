@@ -54,9 +54,10 @@ final class ProxySession {
 
     /** Annotations only the session's own servers can compute (OBSERVATION.md section 11). */
     private static final Set<String> UNKNOWN_TERMS = Set.of("credentialSource", "credential", "audienceIncludesAs",
-            "identifiersAgree", "deliverySignature", "inboxShared", "containerEmpty");
+            "identifiersAgree", "deliverySignature", "inboxShared", "containerEmpty", "discoveryValid");
     /** Roles only the session's own servers have. */
-    private static final Set<String> UNKNOWN_ROLES = Set.of("delivery", "keyDocument", "decoy", "identityDocument",
+    private static final Set<String> UNKNOWN_ROLES = Set.of("delivery", "keyDocument", "decoy", "decoyStorage",
+            "identityDocument",
             "opDiscovery", "opJwks", "opAuthorize", "opToken");
     private static final Set<String> HOP_BY_HOP = Set.of("connection", "keep-alive", "proxy-connection",
             "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade", "host",
@@ -67,8 +68,6 @@ final class ProxySession {
     private static final String LWS_CID = "application/lws+cid";
     private static final Pattern LINK = Pattern.compile("<([^>]*)>\\s*((?:;[^,<]*)*)");
     private static final Pattern REL = Pattern.compile("(?i)\\brel\\s*=\\s*\"?([^\";,]+)\"?");
-    private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*\"([^\"]*)\"");
-    private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     final ProxyTargets.ProxyTarget target;
@@ -82,8 +81,8 @@ final class ProxySession {
     private final Map<String, String> created = new ConcurrentHashMap<>();
     private final Map<String, String> pages = new ConcurrentHashMap<>();
     private final Set<String> linksets = ConcurrentHashMap.newKeySet();
-    private volatile String challengeRealm;
-    private volatile String challengeAsUri;
+    /** The server's latest Bearer challenge, without its error parameters, which a refused token is answered with. */
+    private volatile String challengeParams;
 
     /**
      * @param wellKnown the public path prefix of the target's authorization server metadata,
@@ -156,9 +155,22 @@ final class ProxySession {
         return role != null && role.startsWith("as") ? "authorizationServer" : "storage";
     }
 
-    /** Whether {@code path} is the target's authorization server metadata. */
+    /**
+     * Whether {@code path} is under one of the target's well-known prefixes: its authorization
+     * server metadata, or the protected resource metadata of its resources (RFC 9728 section 3).
+     */
     boolean isWellKnown(String path) {
+        return isAsMetadata(path) || isProtectedResourceMetadata(path);
+    }
+
+    private boolean isAsMetadata(String path) {
         return path.equals(wellKnown) || path.startsWith(wellKnown + "/");
+    }
+
+    private boolean isProtectedResourceMetadata(String path) {
+        String prefix = RefLwsServer.PROTECTED_RESOURCE_METADATA
+                + wellKnown.substring("/.well-known/lws-configuration".length());
+        return path.equals(prefix) || path.startsWith(prefix + "/");
     }
 
     /** The backend URL a public request is forwarded to. */
@@ -297,16 +309,13 @@ final class ProxySession {
         };
     }
 
-    /** The challenge for a refused token: the server's own realm and as_uri, as it last gave them. */
+    /**
+     * The challenge for a refused token: the server's own Bearer challenge as it last gave it,
+     * whether with resource_metadata or with the as_uri and realm of earlier drafts, and an error.
+     */
     private String challenge() {
-        StringBuilder c = new StringBuilder("Bearer ");
-        if (challengeRealm != null) {
-            c.append("realm=\"").append(challengeRealm).append("\", ");
-        }
-        if (challengeAsUri != null) {
-            c.append("as_uri=\"").append(challengeAsUri).append("\", ");
-        }
-        return c.append("error=\"invalid_token\"").toString();
+        String params = challengeParams;
+        return "Bearer " + (params == null || params.isBlank() ? "" : params + ", ") + "error=\"invalid_token\"";
     }
 
     /** The role an earlier answer gave this URL, or unknown. */
@@ -324,8 +333,11 @@ final class ProxySession {
         String key = withoutFragment(url);
         String bare = withoutQuery(key);
         String path = URI.create(bare).getRawPath();
-        if (path != null && isWellKnown(path)) {
+        if (path != null && isAsMetadata(path)) {
             return "asMetadata";
+        }
+        if (path != null && isProtectedResourceMetadata(path)) {
+            return "protectedResourceMetadata";
         }
         String endpoint = endpoints.get(bare);
         if (endpoint != null) {
@@ -429,13 +441,15 @@ final class ProxySession {
         }
         if (status == 401) {
             for (String c : headers.getValuesList(HttpHeader.WWW_AUTHENTICATE)) {
-                Matcher r = REALM.matcher(c);
-                if (r.find()) {
-                    challengeRealm = r.group(1);
-                }
-                Matcher a = AS_URI.matcher(c);
-                if (a.find()) {
-                    challengeAsUri = a.group(1);
+                if (c.regionMatches(true, 0, "Bearer", 0, 6)) {
+                    List<String> kept = new ArrayList<>();
+                    for (String param : c.substring(6).split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")) {
+                        String name = param.trim().split("=", 2)[0].trim().toLowerCase(Locale.ROOT);
+                        if (!param.isBlank() && !name.startsWith("error")) {
+                            kept.add(param.trim());
+                        }
+                    }
+                    challengeParams = String.join(", ", kept);
                 }
             }
         }

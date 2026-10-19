@@ -86,10 +86,10 @@ class ProxyRulesSelfTest {
     /**
      * Twins whose mistake only a trap brings out (CLIENT-TESTING.md section 6.1), so a server
      * without traps cannot show it: one builds the "?page=2" URL that a server without opaque page
-     * URLs really does hand out, and one asks for a token for the decoy's realm, and there is no
-     * decoy. Their rules still apply; these twins just cannot break them here.
+     * URLs really does hand out, and one asks for a token for the storage the decoy's 401 links to,
+     * and there is no decoy. Their rules still apply; these twins just cannot break them here.
      */
-    static final Set<Flaw> NEED_A_TRAP = Set.of(Flaw.BUILDS_PAGE_URL, Flaw.TOKEN_FOR_FOREIGN_REALM);
+    static final Set<Flaw> NEED_A_TRAP = Set.of(Flaw.BUILDS_PAGE_URL, Flaw.SKIPS_DISCOVERY_CHECKS);
 
     /** The twins whose rules a proxy session can judge, and whose mistakes show without a trap. */
     static Stream<Flaw> applicableTwins() {
@@ -103,10 +103,11 @@ class ProxyRulesSelfTest {
     void aProxySessionCannotJudgeWhatOnlyItsOwnServersKnow() {
         assertThat(UNAVAILABLE).contains("client-cid-subject-claim", "client-oidc-token-type-id-token",
                 "client-inbox-refuses-altered-body", "client-subscription-own-inbox", "client-delete-container-depth");
-        assertThat(UNAVAILABLE).doesNotContain("client-token-exchange-resource", "client-token-for-containing-realm",
+        assertThat(UNAVAILABLE).doesNotContain("client-token-exchange-resource",
                 "client-no-repeat-after-405-415", "client-page-urls-issued", "client-subscription-inbox");
-        assertThat(UNAVAILABLE).contains("client-saml-token-type-saml2");
-        assertThat(UNAVAILABLE).hasSize(19);
+        // Whether a 401's storage passes the discovery checks needs the session's own storage (D-0100).
+        assertThat(UNAVAILABLE).contains("client-saml-token-type-saml2", "client-token-after-discovery-checks");
+        assertThat(UNAVAILABLE).hasSize(20);
     }
 
     @Test
@@ -145,7 +146,7 @@ class ProxyRulesSelfTest {
         }
         assertThat(lastServerRoles).hasSizeGreaterThan(30);
         assertThat(unmatched).as("the server's roles the proxy did not infer; left over: " + inferred).isEmpty();
-        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 25 MUST rules exercised, of 25 that apply");
+        assertThat(results.at("/verdict/text").asText()).isEqualTo("no MUST failure in 24 MUST rules exercised, of 24 that apply");
     }
 
     @ParameterizedTest
@@ -296,7 +297,10 @@ class ProxyRulesSelfTest {
             @Override
             public boolean handle(Request request, Response response, Callback callback) throws Exception {
                 String path = request.getHttpURI().getPath();
-                if (path.startsWith("/touchstone/clients/p/ref/as") || path.startsWith("/.well-known/")) {
+                // The storage serves its resources' protected resource metadata (RFC 9728), the
+                // authorization server its own metadata (RFC 8414).
+                if (path.startsWith("/touchstone/clients/p/ref/as") || (path.startsWith("/.well-known/")
+                        && !path.startsWith(RefLwsServer.PROTECTED_RESOURCE_METADATA + "/"))) {
                     return as.handler().handle(request, response, callback);
                 }
                 boolean handled = storage.handler().handle(request, response, callback);

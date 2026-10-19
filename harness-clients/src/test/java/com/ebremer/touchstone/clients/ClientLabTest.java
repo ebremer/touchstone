@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.ebremer.touchstone.fixtures.lws.RefLwsServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
@@ -58,12 +59,20 @@ class ClientLabTest {
         String alice = session.at("/tokens/alice").asText();
         assertThat(storage).isEqualTo(base + "/s/" + session.get("id").asText() + "/storage/");
 
-        // Anonymous: the challenge names the session's authorization server and the storage as realm.
+        // Anonymous: the challenge names the storage's protected resource metadata and links to the
+        // storage, and the metadata names the session's authorization server (RFC 9728, D-0100).
         HttpResponse<String> anonymous = send("GET", storage, null, null, "application/lws+json");
         assertThat(anonymous.statusCode()).isEqualTo(401);
         String challenge = anonymous.headers().firstValue("WWW-Authenticate").orElseThrow();
-        assertThat(challenge).contains("as_uri=\"" + session.at("/authorizationServer/issuer").asText() + "\"")
-                .contains("realm=\"" + storage + "\"");
+        assertThat(challenge).contains("resource_metadata=\"" + protectedResourceMetadata(storage) + "\"")
+                .doesNotContain("as_uri=").doesNotContain("realm=");
+        assertThat(anonymous.headers().allValues("Link"))
+                .contains("<" + storage + ">; rel=\"https://www.w3.org/ns/lws#storage\"");
+        HttpResponse<String> prm = send("GET", protectedResourceMetadata(storage), null, null, "application/json");
+        assertThat(prm.statusCode()).isEqualTo(200);
+        assertThat(JSON.readTree(prm.body()).get("resource").asText()).isEqualTo(storage);
+        assertThat(JSON.readTree(prm.body()).at("/authorization_servers/0").asText())
+                .isEqualTo(session.at("/authorizationServer/issuer").asText());
         HttpResponse<String> metadata = send("GET", session.at("/authorizationServer/metadata").asText(), null, null, null);
         assertThat(metadata.statusCode()).isEqualTo(200);
         assertThat(JSON.readTree(metadata.body()).get("issuer").asText())
@@ -104,14 +113,18 @@ class ClientLabTest {
         JsonNode first = find(all, "GET", storage);
         assertThat(first.at("/annotations/identity").isNull()).isTrue();
         assertThat(first.at("/annotations/presentation").toString()).isEqualTo("[\"none\"]");
+        JsonNode resourceMetadata = find(all, "GET", protectedResourceMetadata(storage));
+        assertThat(resourceMetadata.at("/annotations/role").asText()).isEqualTo("protectedResourceMetadata");
+        assertThat(resourceMetadata.at("/annotations/server").asText()).isEqualTo("storage");
+        assertThat(resourceMetadata.at("/annotations/issuedVia").asText()).isEqualTo("challenge:resource_metadata");
         JsonNode md = find(all, "GET", session.at("/authorizationServer/metadata").asText());
         assertThat(md.at("/annotations/role").asText()).isEqualTo("asMetadata");
         assertThat(md.at("/annotations/server").asText()).isEqualTo("authorizationServer");
-        assertThat(md.at("/annotations/issuedVia").asText()).isEqualTo("challenge:as_uri");
+        assertThat(md.at("/annotations/issuedVia").asText()).isEqualTo("body:protectedResourceMetadata");
     }
 
     @Test
-    void aUrlTheClientBuiltIsMarkedAndTheDecoyNamesAForeignRealm() throws Exception {
+    void aUrlTheClientBuiltIsMarkedAndTheDecoyLinksToAForeignStorage() throws Exception {
         JsonNode session = startSession(base);
         String storage = session.get("storage").asText();
         String alice = session.at("/tokens/alice").asText();
@@ -121,7 +134,15 @@ class ClientLabTest {
         HttpResponse<String> decoy = send("GET", storage + "_t/decoy", alice, null, null);
         assertThat(decoy.statusCode()).isEqualTo(401);
         assertThat(decoy.headers().firstValue("WWW-Authenticate").orElseThrow())
-                .contains("realm=\"" + storage + "_t/vault/\"").contains("error=\"invalid_token\"");
+                .contains("resource_metadata=\"" + protectedResourceMetadata(storage + "_t/decoy") + "\"")
+                .contains("error=\"invalid_token\"");
+        assertThat(decoy.headers().allValues("Link"))
+                .contains("<" + storage + "_t/vault/>; rel=\"https://www.w3.org/ns/lws#storage\"");
+        // The storage it links to puts its root on another origin.
+        HttpResponse<String> vault = send("GET", storage + "_t/vault/", null, null, "application/lws+cid");
+        assertThat(vault.statusCode()).isEqualTo(200);
+        assertThat(JSON.readTree(vault.body()).at("/service/0/serviceEndpoint").asText())
+                .isEqualTo("https://vault.invalid/root/");
         // Six members: the decoy is listed first, so it is on the first page.
         for (int i = 0; i < 5; i++) {
             send("POST", storage, alice, "note " + i, "text/plain");
@@ -491,7 +512,7 @@ class ClientLabTest {
         HttpResponse<String> expired = send("GET", storage, alice, null, "application/lws+json");
         assertThat(expired.statusCode()).isEqualTo(401);
         assertThat(expired.headers().firstValue("WWW-Authenticate").orElseThrow()).contains("error=\"invalid_token\"")
-                .contains("realm=\"" + storage + "\"");
+                .contains("resource_metadata=\"" + protectedResourceMetadata(storage) + "\"");
         assertThat(send("GET", storage, alice, null, "application/lws+json").statusCode()).isEqualTo(401);
         String fresh = JSON.readTree(HTTP.send(HttpRequest.newBuilder(URI.create(api + "/tokens/alice"))
                 .header("Authorization", "Bearer " + key).POST(HttpRequest.BodyPublishers.noBody()).build(),
@@ -852,6 +873,12 @@ class ClientLabTest {
         List<JsonNode> out = new ArrayList<>();
         array.forEach(out::add);
         return out;
+    }
+
+    /** RFC 9728 section 3.1: the well-known string between the URL's authority and its path. */
+    private static String protectedResourceMetadata(String url) {
+        URI u = URI.create(url);
+        return u.getScheme() + "://" + u.getRawAuthority() + RefLwsServer.PROTECTED_RESOURCE_METADATA + u.getRawPath();
     }
 
     private static JsonNode find(List<JsonNode> exchanges, String method, String url) {

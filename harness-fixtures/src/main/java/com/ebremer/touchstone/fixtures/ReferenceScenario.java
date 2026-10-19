@@ -25,7 +25,8 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
  *
  * <ul>
  *   <li>{@link Kind#OPEN}: a storage that authenticates nobody; every test that requires
- *       Authentication is inapplicable against it.</li>
+ *       Authentication is inapplicable against it. It lets no client move a resource, so the
+ *       test of a storage without the MoveResource capability applies to it (D-0100).</li>
  *   <li>{@link Kind#SECURED}: the compliant deployment. The harness holds the authorization
  *       server's key (HarnessIssuedTokens), the target reaches the harness fixture host
  *       (ReachableFixtures), and the authorization server trusts the harness identity provider
@@ -65,7 +66,9 @@ public final class ReferenceScenario implements AutoCloseable {
 
     public static ReferenceScenario start(Kind kind) {
         if (kind == Kind.OPEN) {
-            return new ReferenceScenario(null, RefLwsServer.start(0), Map.of(), List.of());
+            RefLwsServer open = RefLwsServer.start(0);
+            open.moves(false);
+            return new ReferenceScenario(null, open, Map.of(), List.of());
         }
         String fixtures = "http://localhost:" + freePort() + "/";
         String alice = fixtures + "agents/alice";
@@ -78,7 +81,7 @@ public final class ReferenceScenario implements AutoCloseable {
         if (kind == Kind.BROKEN_STORAGE) {
             RefAuthorizationServer minter = RefAuthorizationServer.start(0);
             RefLwsServer storage = RefLwsServer.startBroken(0);
-            AccessTokens tokens = new AccessTokens(minter, storage.realm());
+            AccessTokens tokens = new AccessTokens(minter, storage.audience());
             // The broken storage checks no token, so their validity is beside the point; they are
             // real JWTs so the signature faults can be derived from them. They are minted expired
             // because without HarnessIssuedTokens the Expired fault is a real token held until it

@@ -31,10 +31,12 @@ import org.junit.jupiter.api.Test;
  * The self-test loop (DESIGN.md section 8) for the YAML-LD definitions: every definition runs
  * through the engine against the reference deployment, and against its broken twins.
  *
- * <p>Against the compliant deployment every test passes, except the one that checks a
- * notification service's advertisement, which the reference does not provide (D-0041). Against
- * each broken twin the tests that exist to catch its defect fail, and nothing else does: that
- * is what shows they can fail, which a test that only ever passes never shows (D-0017).
+ * <p>Against the compliant deployment every test passes, except those whose precondition
+ * describes another storage: one that presents a five-member container as one page, or that
+ * moves no resources, or data resources only (D-0100). The trapped and the open deployments are
+ * such storages, so each move test passes against one of the three. Against each broken twin
+ * the tests that exist to catch its defect fail, and nothing else does: that is what shows they
+ * can fail, which a test that only ever passes never shows (D-0017).
  */
 class DefinitionsSelfTest {
 
@@ -43,6 +45,20 @@ class DefinitionsSelfTest {
      * presents it as one page does not apply to it; every other definition does.
      */
     private static final String SINGLE_PAGE = "core/pagination#pagination-single-page";
+    /** For a storage that describes no MoveResource capability: the open deployment. */
+    private static final String NO_MOVES = "core/moving#move-refused-without-capability";
+    /** For a storage that moves data resources but not containers: the trapped deployment. */
+    private static final String NO_CONTAINER_MOVES = "core/moving#move-container-refused-without-container-support";
+    /**
+     * For a storage that moves containers, or says that it keeps identifiers: the compliant
+     * deployment, not the trapped one.
+     */
+    private static final List<String> FULL_MOVES = List.of("core/moving#move-keeps-identifier-content-and-links",
+            "core/moving#move-container", "core/moving#move-container-into-itself-refused");
+    /** Every test that needs a MoveResource capability and nothing the open deployment lacks. */
+    private static final List<String> ANY_MOVES = List.of("core/moving#discovery-move-capability",
+            "core/moving#move-data-resource", "core/moving#move-updates-container-etags",
+            "core/moving#move-invalid-destination-refused");
     private static Definitions definitions;
 
     @BeforeAll
@@ -58,7 +74,8 @@ class DefinitionsSelfTest {
             RunResult run = run(scenario);
 
             assertThat(run.results()).hasSize(definitions.tests().size());
-            assertThat(notPassed(run)).as(details(run)).containsExactly(Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE));
+            assertThat(notPassed(run)).as(details(run)).containsOnlyKeys(SINGLE_PAGE, NO_MOVES, NO_CONTAINER_MOVES);
+            assertThat(notPassed(run).values()).containsOnly(Outcome.INAPPLICABLE);
             assertThat(run.conformant()).isTrue();
             // Every test container, grant and access request is gone, and the run root with them.
             assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
@@ -76,9 +93,10 @@ class DefinitionsSelfTest {
         try (ReferenceScenario scenario = ReferenceScenario.start(Kind.TRAPPED)) {
             RunResult run = run(scenario);
 
-            assertThat(notPassed(run)).as(details(run)).containsExactly(
-                    Map.entry(SINGLE_PAGE, Outcome.INAPPLICABLE),
-                    Map.entry("index/manifest#type-search-reflects-update", Outcome.INAPPLICABLE));
+            Set<String> expected = new TreeSet<>(FULL_MOVES);
+            expected.addAll(List.of(SINGLE_PAGE, NO_MOVES, "index/manifest#type-search-reflects-update"));
+            assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(expected);
+            assertThat(notPassed(run).values()).containsOnly(Outcome.INAPPLICABLE);
             assertThat(run.results()).filteredOn(r -> r.testId().endsWith("#type-search-reflects-update"))
                     .singleElement().extracting(TestResult::reason).asString().contains("Preference-Applied");
             assertThat(scenario.storage().residue()).as("left on the storage").isEmpty();
@@ -96,6 +114,10 @@ class DefinitionsSelfTest {
                     .map(TestDefinition::id).collect(Collectors.toCollection(TreeSet::new));
             Set<String> expected = new TreeSet<>(needAuthentication);
             expected.add(SINGLE_PAGE);
+            // It moves nothing, so only the test of a storage that moves nothing applies.
+            expected.addAll(ANY_MOVES);
+            expected.addAll(FULL_MOVES);
+            expected.add(NO_CONTAINER_MOVES);
             assertThat(notPassed(run).keySet()).as(details(run)).isEqualTo(expected);
             assertThat(notPassed(run).values()).containsOnly(Outcome.INAPPLICABLE);
             assertThat(scenario.storage().residue()).isEmpty();
@@ -127,6 +149,9 @@ class DefinitionsSelfTest {
             assertThat(failed(run)).as(details(run)).containsExactlyInAnyOrder(
                     "core/discovery#discovery-unauthorized-response-headers",
                     "core/storage_authorization#getContainer-private-unauthorized",
+                    "core/storage_authorization#protected-resource-metadata",
+                    "core/storage_authorization#protected-resource-metadata-data-resource",
+                    "core/storage_authorization#storage-root-same-origin",
                     "core/storage_authorization#createDataResource-unauthorized",
                     "core/storage_authorization#updateDataResource-unauthorized",
                     "core/storage_authorization#deleteDataResource-unauthorized",
@@ -144,6 +169,8 @@ class DefinitionsSelfTest {
                     "core/access_grants#access-grant-constraint-format",
                     "core/access_grants#access-grant-constraint-type",
                     "core/access_grants#access-grant-constraint-client",
+                    "core/moving#move-needs-create-in-destination",
+                    "core/moving#move-needs-delete-of-resource",
                     "core/notifications#subscription-unreadable-topic-refused",
                     "index/manifest#type-index-omits-unreadable-type",
                     "index/manifest#type-search-authorization-filtered",

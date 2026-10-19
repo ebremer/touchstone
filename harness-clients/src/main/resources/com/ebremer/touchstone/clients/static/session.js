@@ -15,8 +15,9 @@
     opaqueLinksetUrls: 'A linkset is found only through its rel="linkset" link.',
     putOnlyForText: 'Binary resources do not support PUT: check Allow before replacing one.',
     linksetPutOnlyForDataResources: 'Linksets of data resources accept PUT, linksets of containers do not: check Allow first.',
-    decoy: 'The root container lists a decoy whose 401 names a realm that does not contain it: send it no token.',
+    decoy: 'The root container lists a decoy whose 401 links to a storage whose root is on another origin: ask for no token for it.',
     noCombinedUpdates: 'A PUT changes only the content, even with Prefer: set-linkset: update metadata through the linkset.',
+    dataMovesOnly: 'Only data resources move, and the storage does not say whether a moved resource keeps its URL: take it from the response.',
   };
 
   const AREAS = {

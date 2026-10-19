@@ -46,8 +46,14 @@ final class RunSession implements AutoCloseable {
      */
     private static final java.util.regex.Pattern RUN_ID = java.util.regex.Pattern.compile("[A-Za-z0-9._~-]+");
 
-    /** The Bearer challenge an anonymous request draws: where the authorization server is, and the realm. */
-    record Challenge(String asUri, String realm) {
+    /**
+     * What the 401 an anonymous request draws says about getting a token: the protected resource
+     * metadata URL of its Bearer challenge, and the storage its Link names, which a token is
+     * requested for. {@code asUri} is set only for the challenge of the drafts before 19 October
+     * 2026, which named the authorization server itself (D-0100); otherwise it is read from the
+     * protected resource metadata.
+     */
+    record Challenge(String resourceMetadata, String resource, String asUri) {
     }
 
     /** A container POST: the URI created, or why not, and the exchange either way. */
@@ -245,10 +251,11 @@ final class RunSession implements AutoCloseable {
     }
 
     /**
-     * {@code ${as.uri}} and {@code ${as.realm}}: the Bearer challenge an anonymous GET draws.
-     * The probe is the test container, as section 3 says. Provisioning needs the values before
-     * any test container exists, when alice's token is minted to create the run root, and then
-     * probes the base URL the same way; either way they are derived once per run.
+     * The Bearer challenge an anonymous GET draws, from which {@code ${as.resource}} and
+     * {@code ${as.uri}} are derived (section 3). The probe is the test container, as section 3
+     * says. Provisioning needs the values before any test container exists, when alice's token is
+     * minted to create the run root, and then probes the base URL the same way; either way they
+     * are derived once per run.
      */
     Challenge challenge(Scope scope) {
         return derive("as.challenge", () -> {
@@ -266,19 +273,65 @@ final class RunSession implements AutoCloseable {
                 throw Unresolvable.inapplicable("an anonymous GET of " + uri + " answered " + resp.status()
                         + ", not 401, so the target does not enforce authentication and ${as.*} does not exist");
             }
-            for (Challenges.Challenge c : Challenges.parse(resp.header("WWW-Authenticate"))) {
+            String storage = null;
+            for (LinkValues.Link link : LinkValues.parse(resp.header("Link"), uri)) {
+                if (link.hasRel(LWS + "storage")) {
+                    storage = link.target();
+                    break;
+                }
+            }
+            List<Challenges.Challenge> challenges = Challenges.parse(resp.header("WWW-Authenticate"));
+            for (Challenges.Challenge c : challenges) {
+                if (c.scheme().equalsIgnoreCase("Bearer") && c.param("resource_metadata") != null) {
+                    if (storage == null) {
+                        throw Unresolvable.cantTell("an anonymous GET of " + uri + " answered 401 with no Link whose"
+                                + " rel is " + LWS + "storage, so the storage a token is for is unknown");
+                    }
+                    return new Challenge(LinkValues.resolve(uri, c.param("resource_metadata")), storage, null);
+                }
+            }
+            // The challenge of the drafts before 19 October 2026: as_uri named the authorization
+            // server and realm the audience. Accepted so that a server not yet following the new
+            // draft can still be tested; the tests of the challenge itself fail it (D-0100).
+            for (Challenges.Challenge c : challenges) {
                 if (c.scheme().equalsIgnoreCase("Bearer") && c.param("as_uri") != null && c.param("realm") != null) {
-                    return new Challenge(c.param("as_uri"), c.param("realm"));
+                    LOG.warn("target '{}': the 401 challenge carries as_uri and realm, not resource_metadata;"
+                            + " ${as.*} is derived from them as the drafts before 19 October 2026 had it",
+                            target.id());
+                    return new Challenge(null, c.param("realm"), c.param("as_uri"));
                 }
             }
             throw Unresolvable.cantTell("an anonymous GET of " + uri + " answered 401 without a Bearer challenge"
-                    + " carrying as_uri and realm");
+                    + " carrying resource_metadata");
+        });
+    }
+
+    /**
+     * {@code ${as.uri}}: the first issuer in {@code authorization_servers} of the protected
+     * resource metadata the challenge names (RFC 9728), fetched anonymously as application/json.
+     */
+    String asUri(Scope scope) {
+        Challenge c = challenge(scope);
+        if (c.asUri() != null) {
+            return c.asUri();
+        }
+        return derive("as.uri", () -> {
+            String url = c.resourceMetadata();
+            JsonNode metadata = json("the protected resource metadata",
+                    fetch("the protected resource metadata", get(URI.create(url), "application/json", Map.of())), url);
+            for (JsonNode server : metadata.path("authorization_servers")) {
+                if (server.isTextual() && !server.asText().isBlank()) {
+                    return server.asText();
+                }
+            }
+            throw Unresolvable.cantTell("the protected resource metadata at " + url
+                    + " names no issuer in authorization_servers");
         });
     }
 
     /** {@code ${as.metadataUrl}}: RFC 8414 section 3.1, the well-known segment before the issuer's path. */
     String metadataUrl(Scope scope) {
-        URI as = URI.create(challenge(scope).asUri());
+        URI as = URI.create(asUri(scope));
         String path = as.getRawPath() == null ? "" : as.getRawPath();
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);

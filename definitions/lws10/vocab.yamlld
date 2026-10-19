@@ -1052,6 +1052,16 @@
     domain: lwst:ConnegExpectation
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:rdfIsomorphicWith
+    type: rdf:Property
+    label: "rdfIsomorphicWith"
+    comment: >-
+      A media type: the step's URL, fetched again with it as Accept, answers 200 with a
+      representation whose RDF dataset is isomorphic to this response's (format 0.14.0,
+      EXECUTION.md section 7.11). Each is read as RDF by its own Content-Type.
+    domain: lwst:ResponseExpectation
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:present
     type: rdf:Property
     label: "present"
@@ -1081,6 +1091,14 @@
     comment: >-
       Template for an absolute IRI; the selected string, resolved against the request URL,
       equals it.
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:sameOrigin
+    type: rdf:Property
+    label: "sameOrigin"
+    comment: >-
+      Template for an absolute URI; the selected string or auth-param, resolved against
+      the request URL, has its scheme and authority (format 0.14.0).
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:matches
@@ -1376,12 +1394,13 @@
     domain: lwst:ExchangeCondition
     range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
-  - id: lwst:realmContainsRequest
+  - id: lwst:discoveryValid
     type: rdf:Property
-    label: "realmContainsRequest"
+    label: "discoveryValid"
     comment: >-
-      Whether a token request's resource is a realm the session presented in a 401 for a
-      URL that realm contains (format 0.10.0).
+      Whether a token request's resource is a storage the session named, in the Link of a
+      401, for a URL whose discovery checks of lws10-core section 5.2.3 passed (format
+      0.14.0, in place of 0.10.0's realmContainsRequest).
     domain: lwst:ExchangeCondition
     range: xsd:boolean
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1

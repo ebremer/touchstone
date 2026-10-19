@@ -21,8 +21,8 @@ import com.nimbusds.jose.jwk.JWKSet;
 /**
  * Evaluates a step's {@code response} against what came back (EXECUTION.md section 7), in the
  * order the contract fixes: status, content type, location, links, other headers, challenge,
- * body, JSON, JWT, content negotiation. A capture is bound as soon as its expectation passes,
- * and the first failure ends the evaluation: it is the finding the test reports.
+ * body, JSON, JWT, content negotiation, RDF isomorphism. A capture is bound as soon as its
+ * expectation passes, and the first failure ends the evaluation: it is the finding the test reports.
  */
 final class Evaluator {
 
@@ -66,7 +66,7 @@ final class Evaluator {
                                Function<String, Req> refetch, JsonNode json) {
         Evaluator e = new Evaluator(expect, req, resp, scope, directory, refetch, json);
         boolean passed = e.statusCode() && e.contentType() && e.location() && e.linkHeaders() && e.otherHeaders()
-                && e.challenge() && e.body() && e.json() && e.jwt() && e.conneg();
+                && e.challenge() && e.body() && e.json() && e.jwt() && e.conneg() && e.isomorphic();
         return new Evaluation(passed, List.copyOf(e.results), List.copyOf(e.cleanup));
     }
 
@@ -175,6 +175,10 @@ final class Evaluator {
             return false;
         }
         if (p.has("matches") && (value == null || !Pattern.compile(p.get("matches").asText()).matcher(value).find())) {
+            return false;
+        }
+        if (p.has("sameOrigin") && (value == null || !LinkValues.sameOrigin(LinkValues.resolve(req.uri(), value),
+                Templates.expand(p.get("sameOrigin").asText(), scope)))) {
             return false;
         }
         if (p.has("capture")) {
@@ -314,6 +318,45 @@ final class Evaluator {
         return check(identical, "conneg equivalence", "byte-identical representations",
                 identical ? "byte-identical" : "different bytes; the JSON-LD graphs are "
                         + JsonLdGraphs.compare(bodies, req.uri()));
+    }
+
+    // 11. rdfIsomorphicWith (since 0.14.0)
+    private boolean isomorphic() {
+        if (!expect.has("rdfIsomorphicWith")) {
+            return true;
+        }
+        String accept = expect.get("rdfIsomorphicWith").asText();
+        Req again = refetch.apply(accept);
+        Resp r;
+        try {
+            r = scope.run().send(again);
+        } catch (IOException ex) {
+            throw Unresolvable.cantTell("the fetch as " + accept + " failed: " + ex);
+        }
+        if (RateLimits.isRefusal(r.status())) {
+            throw Unresolvable.cantTell("the fetch as " + accept + " answered " + r.status()
+                    + " even after waiting as asked (EXECUTION.md section 4.5)");
+        }
+        if (!check(r.status() == 200, "rdfIsomorphicWith " + accept, "200", String.valueOf(r.status()))) {
+            return false;
+        }
+        org.apache.jena.sparql.core.DatasetGraph mine;
+        org.apache.jena.sparql.core.DatasetGraph theirs;
+        try {
+            mine = JsonLdGraphs.dataset(resp.body(), resp.first("Content-Type"), req.uri());
+        } catch (RuntimeException ex) {
+            return check(false, "RDF of this response", "RDF in " + Headers.essence(resp.first("Content-Type")),
+                    String.valueOf(ex.getMessage()));
+        }
+        try {
+            theirs = JsonLdGraphs.dataset(r.body(), r.first("Content-Type"), again.uri());
+        } catch (RuntimeException ex) {
+            return check(false, "RDF of the response as " + accept, "RDF in " + Headers.essence(r.first("Content-Type")),
+                    String.valueOf(ex.getMessage()));
+        }
+        String verdict = JsonLdGraphs.compare(mine, theirs);
+        return check(verdict.equals("isomorphic"), "RDF isomorphism with " + accept,
+                "the same RDF as the " + Headers.essence(r.first("Content-Type")) + " representation", verdict);
     }
 
     private static String abbreviate(String s) {

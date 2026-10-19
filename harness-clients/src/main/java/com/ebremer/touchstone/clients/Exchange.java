@@ -42,7 +42,7 @@ record Exchange(long seq, String at, long millis, String method, String url,
      *     form, otherHeader; or none
      * @param issued whether the session had handed out this URL before the request
      * @param issuedVia how the URL was handed out: session, location, content-location,
-     *     link:<rel>, challenge:as_uri, body:<role>
+     *     link:<rel>, challenge:resource_metadata, challenge:as_uri, body:<role>
      * @param builtBy for a URL not issued, query or path: how it relates to the issued URL it was
      *     built from (OBSERVATION.md section 4.3); null otherwise
      * @param builtFrom that issued URL, or null
@@ -62,8 +62,8 @@ record Exchange(long seq, String at, long millis, String method, String url,
      * @param audienceIncludesAs whether the credential's aud names the session's authorization
      *     server, or null
      * @param identifiersAgree whether the credential's sub, iss and client_id agree, or null
-     * @param realmContainsRequest whether a token request's resource is a realm the session
-     *     presented for a URL it contains, or null
+     * @param discoveryValid whether a token request's resource is a storage a 401 named for a
+     *     URL whose discovery checks pass, or null
      * @param deliverySignature for a delivery, how its signature was made: genuine, or the forgery it
      *     carries; null for anything else
      * @param inboxShared for a subscription request, whether a subscription the storage holds
@@ -76,7 +76,7 @@ record Exchange(long seq, String at, long millis, String method, String url,
                        Map<String, String> advertised, boolean methodAdvertised, boolean patchFormatAdvertised,
                        boolean queryFormatAdvertised, boolean repeat, boolean containerEmpty, String credentialSource,
                        com.fasterxml.jackson.databind.JsonNode credential, Boolean audienceIncludesAs,
-                       Boolean identifiersAgree, Boolean realmContainsRequest, String deliverySignature,
+                       Boolean identifiersAgree, Boolean discoveryValid, String deliverySignature,
                        Boolean inboxShared, String fault, String limit) {
     }
 }

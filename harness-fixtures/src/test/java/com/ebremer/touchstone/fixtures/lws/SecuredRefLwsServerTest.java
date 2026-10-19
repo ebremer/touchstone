@@ -53,7 +53,18 @@ class SecuredRefLwsServerTest {
         HttpResponse<Void> r = get(aliceContainer, null);
         assertThat(r.statusCode()).isEqualTo(401);
         String challenge = r.headers().firstValue("WWW-Authenticate").orElseThrow();
-        assertThat(challenge).contains("Bearer").contains("as_uri=").contains("realm=");
+        // RFC 9728 section 3.1: the well-known string between the authority and the path.
+        String metadata = storage.baseUri().resolve(RefLwsServer.PROTECTED_RESOURCE_METADATA
+                + aliceContainer.getRawPath()).toString();
+        assertThat(challenge).startsWith("Bearer ").contains("resource_metadata=\"" + metadata + "\"")
+                .doesNotContain("as_uri=").doesNotContain("realm=");
+        assertThat(r.headers().allValues("Link")).anyMatch(l -> l.contains("rel=\"https://www.w3.org/ns/lws#storage\""));
+
+        HttpResponse<String> prm = http.send(HttpRequest.newBuilder(URI.create(metadata)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertThat(prm.statusCode()).isEqualTo(200);
+        assertThat(prm.body()).contains("\"resource\":\"" + aliceContainer + "\"")
+                .contains("\"authorization_servers\":[\"" + issuer.issuer() + "\"]");
     }
 
     @Test

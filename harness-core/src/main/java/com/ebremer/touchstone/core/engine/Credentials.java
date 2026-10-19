@@ -227,10 +227,10 @@ final class Credentials {
             header.put("kid", key.getKeyID());
         }
         long now = Instant.now().getEpochSecond();
-        String realm = scope.resolve("as.realm").asText();
+        String storage = scope.resolve("as.resource").asText();
         ObjectNode claims = Templates.JSON.createObjectNode();
         claims.put("iss", scope.resolve("as.issuer").asText());
-        claims.putArray("aud").add(realm);
+        claims.putArray("aud").add(storage);
         claims.put("sub", subject);
         claims.put("client_id", target.properties().getOrDefault("as.clientId", "touchstone"));
         claims.put("iat", now);
@@ -250,7 +250,7 @@ final class Credentials {
                 case "WrongAudience" -> claims.set("aud", Templates.JSON.createArrayNode()
                         .add("https://not-this-storage.invalid/"));
                 case "MultipleAudiences" -> claims.set("aud", Templates.JSON.createArrayNode()
-                        .add(realm).add("https://another-storage.invalid/"));
+                        .add(storage).add("https://another-storage.invalid/"));
                 case "WrongIssuer" -> claims.put("iss", "https://untrusted-issuer.invalid/");
                 default -> throw Unresolvable.cantTell("fault " + fault + " does not apply to an access token");
             }
@@ -301,7 +301,7 @@ final class Credentials {
         String credential = mintJwt(identity("didkey"), key, didKeySelf(key), null, scope);
         Map<String, String> form = new LinkedHashMap<>();
         form.put("grant_type", TOKEN_EXCHANGE);
-        form.put("resource", scope.resolve("as.realm").asText());
+        form.put("resource", scope.resolve("as.resource").asText());
         form.put("subject_token", credential);
         form.put("subject_token_type", JWT_TOKEN_TYPE);
         String body = form(form);

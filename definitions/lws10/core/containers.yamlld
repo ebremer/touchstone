@@ -12,7 +12,7 @@ comment: >-
   matched by content (`some`, `none`), never by position, because the draft does not
   order items.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#getContainer"
@@ -28,10 +28,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-properties
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/read-container-etag-type-links
@@ -81,8 +81,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-container-type-link
@@ -131,7 +131,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -161,10 +161,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-membership-and-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#contained-resource-description
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-membership-and-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/containment-create-atomic-items
@@ -224,8 +224,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#container-properties
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Get, Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/container-totalitems-accuracy
@@ -287,7 +287,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-resource-type-values
@@ -354,8 +354,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#contained-resource-description
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-format-for-dataresources
@@ -397,7 +397,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-description-recommended-members
@@ -432,19 +432,21 @@ entries:
   - id: "#container-conneg"
     type: ValidationTest
     name: container-conneg
-    label: A container serves the same document as lws+json, ld+json and json
+    label: A container asked for as application/lws+json answers as application/lws+json
     comment: >-
-      The three media types are equivalent: the body is the same document and only the
-      Content-Type varies, echoing what was asked for. connegEquivalent fetches the
-      container once per type and compares the bytes.
+      "Servers MUST honor requests for application/lws+json on containers, and MUST set the
+      Content-Type response header to the media type of the selected representation." Until the
+      19 October 2026 draft, application/ld+json and application/json were equivalent and
+      required as well; now only application/lws+json is, and the other JSON types are whatever
+      a server makes of them (w3c/lws-protocol#253).
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#media-type-equivalence
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#lws-media-type-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-media-type-0
     traits: [Get, Container, Conneg]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
+      - https://example.org/touchstone/req/lws10-core/conneg-lws-json-honored
       - https://example.org/touchstone/req/lws10-core/lws-json-media-type-container-representation
     supersedes: [core/container-conneg]
     request:
@@ -454,61 +456,76 @@ entries:
     response:
       statusCode: 200
       contentType: application/lws+json
-      connegEquivalent:
-        accepts:
-          - application/lws+json
-          - application/ld+json
-          - application/json
+      json:
+        - pointer: /type
+          hasValue: Container
 
   - id: "#container-conneg-vary"
     type: ValidationTest
     name: container-conneg-vary
     label: Container responses say that they vary by Accept
     comment: >-
-      Without Vary: Accept a shared cache can hand a JSON-LD client the plain-JSON
-      response of the same container. A SHOULD, split from container-conneg.
+      "When the selected representation depends on the request's Accept header, responses
+      SHOULD include a Vary: Accept header." It does when the container also answers
+      application/ld+json, which the test asks for first; a container that serves one
+      representation whatever is asked does not vary, and the test does not apply to it.
+      Without Vary: Accept a shared cache can hand a JSON-LD client the response meant for an
+      LWS client. A SHOULD, split from container-conneg.
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#media-type-equivalence
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
     traits: [Get, Container, Conneg]
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-vary-accept
     supersedes: [core/container-conneg]
-    request:
-      method: GET
-      url: "${test.container}"
-      accept: application/lws+json
-    response:
-      statusCode: 200
-      otherHeaders:
-        - headerName: Vary
-          matches: '(?i)(^|[\s,])accept($|[\s,])'
+    steps:
+      - label: the container also answers as application/ld+json (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/ld+json
+        response:
+          statusCode: 200
+          contentType: application/ld+json
+      - label: so its application/lws+json response says that it varies by Accept
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: application/lws+json
+        response:
+          statusCode: 200
+          contentType: application/lws+json
+          otherHeaders:
+            - headerName: Vary
+              matches: '(?i)(^|[\s,])accept($|[\s,])'
 
   - id: "#container-conneg-weighted"
     type: ValidationTest
     name: container-conneg-weighted
-    label: A container honours an LWS media type that the Accept header ranks below one it cannot serve
+    label: A container honours application/lws+json when the Accept header ranks it below a type it cannot serve
     comment: >-
-      "Servers MUST honor a request for any of these media types and MUST set the
-      Content-Type response header to the requested media type." A client that prefers
-      text/html but accepts application/ld+json at q=0.5 has requested ld+json among
-      others. The container answers 200 with Content-Type application/ld+json, not 406.
+      "Servers MUST honor requests for application/lws+json on containers." A client that
+      would rather have a media type of its own invention but accepts application/lws+json at
+      q=0.5 has requested lws+json among others. The container answers 200 with Content-Type
+      application/lws+json, not 406. The preferred type is one no server serves, so that a
+      server honouring the client's first choice is not mistaken for one ignoring its second.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#media-type-equivalence
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
       - https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
     traits: [Get, Container, Conneg]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/conneg-media-type-equivalence
+      - https://example.org/touchstone/req/lws10-core/conneg-lws-json-honored
     request:
       method: GET
       url: "${test.container}"
-      accept: "text/html;q=0.9, application/ld+json;q=0.5"
+      accept: "application/x-touchstone-unservable;q=0.9, application/lws+json;q=0.5"
     response:
       statusCode: 200
-      contentType: application/ld+json
+      contentType: application/lws+json
       json:
         - pointer: /type
           hasValue: Container
@@ -523,7 +540,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
     traits: [Get, Head, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/head-parity-with-get
@@ -569,8 +586,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
@@ -623,8 +640,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -683,7 +700,7 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -749,8 +766,8 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Post, Delete, Get, Container, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -832,7 +849,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
     traits: [Get, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/containment-integrity
@@ -899,35 +916,98 @@ entries:
                 - pointer: /id
                   equalsIri: "${outer}"
 
-  - id: "#container-ld-json-lws-profile"
+  - id: "#container-lws-profile-ld-json"
     type: ValidationTest
-    name: container-ld-json-lws-profile
-    label: A container asked for as JSON-LD with the LWS profile answers as it does for application/lws+json
+    name: container-lws-profile-ld-json
+    label: A container asked for as JSON-LD in the LWS profile answers with the same RDF as application/lws+json
     comment: >-
-      "Implementations SHOULD consider the application/ld+json; profile=
-      "https://www.w3.org/ns/lws/v1" media type as equivalent to application/lws+json." A
-      container asked for that way answers 200 with the container representation. The
-      Content-Type is left open: answering application/lws+json or the profiled
-      application/ld+json both treat the two as equivalent.
+      "A client requests a representation in the LWS profile by including the LWS profile URI
+      in the profile parameter of an RDF media type ... If the server selects such a media
+      type, the response MUST conform to the LWS profile, that is, it MUST be RDF isomorphic to
+      the application/lws+json representation, and its Content-Type MUST include the same
+      profile parameter." A server may select another media type, application/lws+json above
+      all, and then the test does not apply. The container holds a data resource and a
+      container, so the RDF has members to compare. rdfIsomorphicWith reads both as RDF, the
+      application/lws+json one as JSON-LD with the LWS context.
     status: Proposed
-    level: SHOULD
+    level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#lws-media-type-0
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#iana-media-type-registry
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-profile
     traits: [Get, Container, Conneg]
     requirements:
-      - https://example.org/touchstone/req/lws10-core/lws-profile-equivalence
-      - https://example.org/touchstone/req/lws10-core/iana-ld-json-profile-equivalence
-    request:
-      method: GET
-      url: "${test.container}"
-      accept: 'application/ld+json; profile="https://www.w3.org/ns/lws/v1"'
-    response:
-      statusCode: 200
-      json:
-        - pointer: /id
-          equalsIri: "${test.container}"
-        - pointer: /type
-          hasValue: Container
-        - pointer: /items
-          jsonType: array
+      - https://example.org/touchstone/req/lws10-core/conneg-lws-profile-isomorphic
+    prereqs:
+      hierarchy:
+        - dataResource: note
+          contentType: text/plain
+          body: in the profile
+        - container: inner
+    steps:
+      - label: the container answers as application/ld+json when asked in the LWS profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: 'application/ld+json; profile="https://www.w3.org/ns/lws/v1"'
+        response:
+          statusCode: 200
+          contentType: application/ld+json
+      - label: its Content-Type names the profile, and its RDF is that of application/lws+json
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: 'application/ld+json; profile="https://www.w3.org/ns/lws/v1"'
+        response:
+          statusCode: 200
+          contentType: application/ld+json
+          otherHeaders:
+            - headerName: Content-Type
+              matches: '(?i);\s*profile\s*=\s*"?([^";]*\s)?https://www\.w3\.org/ns/lws/v1(\s[^";]*)?"?\s*(;|$)'
+          rdfIsomorphicWith: application/lws+json
+
+  - id: "#container-lws-profile-turtle"
+    type: ValidationTest
+    name: container-lws-profile-turtle
+    label: A container asked for as Turtle in the LWS profile answers with the same RDF as application/lws+json
+    comment: >-
+      As container-lws-profile-ld-json, in Turtle, one of the RDF media types the draft names
+      as taking the profile parameter. The LWS context defines format, size and modified on
+      data resources only, so a contained container's modified is not RDF, and a Turtle
+      representation that states it is not isomorphic.
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-profile
+    traits: [Get, Container, Conneg]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/conneg-lws-profile-isomorphic
+    prereqs:
+      hierarchy:
+        - dataResource: note
+          contentType: text/plain
+          body: in the profile
+        - container: inner
+    steps:
+      - label: the container answers as Turtle when asked in the LWS profile (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: 'text/turtle; profile="https://www.w3.org/ns/lws/v1"'
+        response:
+          statusCode: 200
+          contentType: text/turtle
+      - label: its Content-Type names the profile, and its RDF is that of application/lws+json
+        request:
+          method: GET
+          url: "${test.container}"
+          accept: 'text/turtle; profile="https://www.w3.org/ns/lws/v1"'
+        response:
+          statusCode: 200
+          contentType: text/turtle
+          otherHeaders:
+            - headerName: Content-Type
+              matches: '(?i);\s*profile\s*=\s*"?([^";]*\s)?https://www\.w3\.org/ns/lws/v1(\s[^";]*)?"?\s*(;|$)'
+          rdfIsomorphicWith: application/lws+json

@@ -96,6 +96,37 @@ final class LinkValues {
         }
     }
 
+    /**
+     * Whether two absolute URIs have the same scheme and authority (EXECUTION.md section 7.8,
+     * {@code sameOrigin}): scheme and host compare case-insensitively, an absent port is the
+     * scheme's default, and user information compares exactly. False when either is not an
+     * absolute URI with a host.
+     */
+    static boolean sameOrigin(String a, String b) {
+        try {
+            URI x = URI.create(a);
+            URI y = URI.create(b);
+            if (x.getScheme() == null || y.getScheme() == null || x.getHost() == null || y.getHost() == null) {
+                return false;
+            }
+            return x.getScheme().equalsIgnoreCase(y.getScheme()) && x.getHost().equalsIgnoreCase(y.getHost())
+                    && port(x) == port(y) && java.util.Objects.equals(x.getRawUserInfo(), y.getRawUserInfo());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private static int port(URI uri) {
+        if (uri.getPort() >= 0) {
+            return uri.getPort();
+        }
+        return switch (uri.getScheme().toLowerCase(Locale.ROOT)) {
+            case "https", "wss" -> 443;
+            case "http", "ws" -> 80;
+            default -> -1;
+        };
+    }
+
     /** Serialises request links as EXECUTION.md section 6.2 says: {@code <href>; rel="rel"[; type="t"]}, joined by ", ". */
     static String serialize(List<String[]> links) {
         StringBuilder sb = new StringBuilder();

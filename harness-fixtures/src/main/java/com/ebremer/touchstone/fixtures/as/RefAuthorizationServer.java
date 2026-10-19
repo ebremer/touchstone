@@ -165,9 +165,9 @@ public final class RefAuthorizationServer implements AutoCloseable {
         return baseUri().resolve("token");
     }
 
-    /** A storage this server issues tokens for: its realm, which access tokens carry as aud. */
-    public void addResource(String realm) {
-        resources.add(realm);
+    /** A storage this server issues tokens for: its URI, which access tokens carry as aud. */
+    public void addResource(String storage) {
+        resources.add(storage);
     }
 
     /**

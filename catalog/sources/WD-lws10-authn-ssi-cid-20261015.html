@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
-<meta name="generator" content="ReSpec 37.3.6">
+<meta name="generator" content="ReSpec 37.4.1">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <style>
 span.example-title{text-transform:none}
@@ -101,7 +101,8 @@ body:has(input[name=color-scheme][value=dark]:checked){color-scheme:dark}
 <link rel="stylesheet" href="local.css">
     
   
-<meta name="revision" content="3ddc6423bb08c1e3285176bb72e995706a32465c">
+<meta name="color-scheme" content="light">
+<meta name="revision" content="1625863b65720e1999c1e6349fa559ff0381d809">
 <meta name="description" content="This document defines an authentication suite for the Linked Web Storage (LWS) protocol, enabling clients that are able to sign their own identity tokens to integrate with LWS.">
 <link rel="canonical" href="https://www.w3.org/TR/lws10-authn-ssi-cid/">
 <style>
@@ -206,24 +207,25 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       "id": "lws10-core"
     }
   },
-  "gitRevision": "3ddc6423bb08c1e3285176bb72e995706a32465c",
-  "publishDate": "2026-09-21",
+  "gitRevision": "1625863b65720e1999c1e6349fa559ff0381d809",
+  "publishDate": "2026-10-15",
   "previousMaturity": "WD",
-  "previousPublishDate": "2026-08-21",
-  "publishISODate": "2026-09-21T00:00:00.000Z",
-  "generatedSubtitle": "W3C Working Draft 21 September 2026"
+  "previousPublishDate": "2026-09-21",
+  "publishISODate": "2026-10-15T00:00:00.000Z",
+  "generatedSubtitle": "W3C Working Draft 15 October 2026"
 }</script>
-<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD"></head>
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/W3C-WD">
+<link rel="stylesheet" href="https://www.w3.org/StyleSheets/TR/2021/dark.css" disabled=""></head>
   <body class="h-entry" data-cite="web-platform"><div class="head">
     <p class="logos"><a class="logo" href="https://www.w3.org/"><img crossorigin="" alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2021/logos/W3C" width="72">
   </a></p>
     <h1 id="title" class="title">LWS 1.0 Authentication Suite: Self-signed Identity using Controlled Identifiers</h1> 
-    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-09-21">21 September 2026</time></p>
+    <p id="w3c-state"><a href="https://www.w3.org/standards/types#WD">W3C Working Draft</a> <time class="dt-published" datetime="2026-10-15">15 October 2026</time></p>
     <details open="">
       <summary>More details about this document</summary>
       <dl>
         <dt>This version:</dt><dd>
-                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/">https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/</a>
+                  <a class="u-url" href="https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/">https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/</a>
                 </dd>
         <dt>Latest published version:</dt><dd>
                   <a href="https://www.w3.org/TR/lws10-authn-ssi-cid/">https://www.w3.org/TR/lws10-authn-ssi-cid/</a>
@@ -327,7 +329,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       
       <p>
         Self-issued identity is important for cases where applications act on their own behalf. This includes autonomous bots as well as server-side scripts, among others.
-        In these cases, the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a> is able to securely manage the private portion of a keypair, which it uses to generate signed JSON Web Tokens (JWT).
+        In these cases, the <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a> is able to securely manage the private portion of a key pair, which it uses to generate signed JSON Web Tokens (JWT).
         This specification describes how this class of <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-agent">agents</a> can generate <a data-link-type="dfn" href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credentials</a> that can be used with a Linked Web Storage.
       </p>
 
@@ -362,7 +364,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       </p>
 
       <p>
-        The terms "<dfn data-plurals="agents" id="dfn-agent" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a></dfn>", "<dfn data-plurals="authentication credentials" id="dfn-authentication-credential" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a></dfn>", and "<dfn id="dfn-authentication-suite" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-suite">authentication suite</a></dfn>" are defined by Linked Web Storage Protocol [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>]
+        The terms "<dfn data-plurals="agents" id="dfn-agent" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-agent">agent</a></dfn>", "<dfn data-plurals="authentication credentials" id="dfn-authentication-credential" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-credential">authentication credential</a></dfn>", and "<dfn id="dfn-authentication-suite" class="externalDFN" data-no-export="" data-dfn-type="dfn"><a href="https://www.w3.org/TR/lws10-core/#dfn-authentication-suite">authentication suite</a></dfn>" are defined by Linked Web Storage Protocol [<cite><a class="bibref" data-link-type="biblio" href="#bib-lws10-core" title="Linked Web Storage Protocol 1.0">LWS10-CORE</a></cite>].
       </p>
     </section>
 
@@ -394,7 +396,7 @@ var[data-type]:hover::after,var[data-type]:hover::before{opacity:1}
       </p>
 
       <p>
-        Any audience restriction in the ID Token <em class="rfc2119">MUST</em> use the <code>aud</code> (audience) claim. The <code>aud</code> claim <em class="rfc2119">MUST</em> include the target authorization server.
+        Any audience restriction in the JWT <em class="rfc2119">MUST</em> use the <code>aud</code> (audience) claim. The <code>aud</code> claim <em class="rfc2119">MUST</em> include the target authorization server.
       </p>
 
       <p>
@@ -454,7 +456,7 @@ signature</code></pre>
       </p>
 
       <p>
-        The verifier <em class="rfc2119">MUST</em> use the <code>kid</code> (key id) value from the signed JWT header to identify a verification method from the subject's controlled identifier document.
+        The verifier <em class="rfc2119">MUST</em> use the <code>kid</code> (key ID) value from the signed JWT header to identify a verification method from the subject's controlled identifier document.
         This process is described in [<cite><a class="bibref" data-link-type="biblio" href="#bib-cid-1-0" title="Controlled Identifiers v1.0">CID-1.0</a></cite>] Section 3.3.
         Using the selected verification method from the controlled identifier document, the signature of the JWT <em class="rfc2119">MUST</em> be validated as described in [<cite><a class="bibref" data-link-type="biblio" href="#bib-rfc7515" title="JSON Web Signature (JWS)">RFC7515</a></cite>], Section 5.2.
       </p>

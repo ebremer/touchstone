@@ -177,12 +177,14 @@ V = [
     ("claims", P, None, "claims", "A condition on the decoded JWT claims set: of the token a jwt expectation names, or of a client's credential.", "lwst:JwtExpectation", "lwst:JsonExpectation"),
     ("connegEquivalent", P, None, "connegEquivalent", "The step's URL serves one document under several media types.", "lwst:ResponseExpectation", "lwst:ConnegExpectation"),
     ("accepts", P, None, "accepts", "The media types to request, in order.", "lwst:ConnegExpectation", "xsd:string"),
+    ("rdfIsomorphicWith", P, None, "rdfIsomorphicWith", "A media type: the step's URL, fetched again with it as Accept, answers 200 with a representation whose RDF dataset is isomorphic to this response's (format 0.14.0, EXECUTION.md section 7.11). Each is read as RDF by its own Content-Type.", "lwst:ResponseExpectation", "xsd:string"),
 
     # ---- operators
     ("present", P, None, "present", "When true, the header or auth-param is present; when false, it is absent.", None, "xsd:boolean"),
     ("absent", P, None, "absent", "On a link expectation: no Link value satisfies its other conditions (a header's absence is present: false). On a prerequisite resource: the engine does not create it, and binds its variable to a fresh URI inside its parent that names nothing.", None, "xsd:boolean"),
     ("equals", P, None, "equals", "The selected JSON value equals this one (deep equality; strings are templates).", None, "rdf:JSON"),
     ("equalsIri", P, None, "equalsIri", "Template for an absolute IRI; the selected string, resolved against the request URL, equals it.", None, "xsd:string"),
+    ("sameOrigin", P, None, "sameOrigin", "Template for an absolute URI; the selected string or auth-param, resolved against the request URL, has its scheme and authority (format 0.14.0).", None, "xsd:string"),
     ("matches", P, None, "matches", "A regular expression in the portable dialect of EXECUTION.md (unanchored search; a leading (?i) makes it case-insensitive). On a header, some field line or the combined value matches; on JSON, a string value matches, any other value is matched as its compact JSON text.", None, "xsd:string"),
     ("hasValue", P, None, "hasValue", "The selected value equals this one, or is an array containing an element equal to it (strings are templates).", None, "rdf:JSON"),
     ("exists", P, None, "exists", "When true, the pointer selects a value; when false, it selects nothing.", None, "xsd:boolean"),
@@ -220,7 +222,7 @@ V = [
     ("credentialSource", P, None, "credentialSource", "Where a token request's subject token came from: selfIssued, openidProvider, samlIdentityProvider, authorizationServer or other (format 0.10.0; samlIdentityProvider since 0.12.0).", "lwst:ExchangeCondition", "xsd:string"),
     ("audienceIncludesAs", P, None, "audienceIncludesAs", "Whether the aud claim of a token request's subject token names the session's authorization server (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("identifiersAgree", P, None, "identifiersAgree", "Whether the sub, iss and client_id claims of a token request's subject token are the same string (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
-    ("realmContainsRequest", P, None, "realmContainsRequest", "Whether a token request's resource is a realm the session presented in a 401 for a URL that realm contains (format 0.10.0).", "lwst:ExchangeCondition", "xsd:boolean"),
+    ("discoveryValid", P, None, "discoveryValid", "Whether a token request's resource is a storage the session named, in the Link of a 401, for a URL whose discovery checks of lws10-core section 5.2.3 passed (format 0.14.0, in place of 0.10.0's realmContainsRequest).", "lwst:ExchangeCondition", "xsd:boolean"),
     ("deliverySignature", P, None, "deliverySignature", "For a delivery, the session's request to a client's inbox, how its signature was made: genuine, or the forgery it carries (unpublishedKey, alteredBody, keyidWithoutFragment, foreignKeyDocument) (format 0.11.0).", "lwst:ExchangeCondition", "xsd:string"),
     ("inboxShared", P, None, "inboxShared", "For a subscription request, whether a subscription the storage holds already delivers to the inbox it names (format 0.11.0).", "lwst:ExchangeCondition", "xsd:boolean"),
 

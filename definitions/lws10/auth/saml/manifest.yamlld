@@ -10,7 +10,7 @@ comment: >-
   saml2 token type. The suite leaves trust to out-of-band configuration, so these tests
   apply only to a target whose authorization server already trusts the harness IdP.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
 entries:
 
   - id: "#authn-saml-valid-assertion"
@@ -23,9 +23,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#validation
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]
     as: anonymous
@@ -57,7 +57,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.saml}"
             subject_token_type: urn:ietf:params:oauth:token-type:saml2
         response:
@@ -74,7 +74,7 @@ entries:
               - pointer: /sub
                 equals: "${identity.saml.webid}"
               - pointer: /aud
-                hasValue: "${as.realm}"
+                hasValue: "${as.resource}"
 
   - id: "#authn-saml-invalid-signature"
     type: NegativeTest
@@ -85,7 +85,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]
@@ -113,7 +113,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.saml-bad-signature}"
             subject_token_type: urn:ietf:params:oauth:token-type:saml2
         response:
@@ -132,7 +132,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]
@@ -159,7 +159,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.saml-unsigned}"
             subject_token_type: urn:ietf:params:oauth:token-type:saml2
         response:

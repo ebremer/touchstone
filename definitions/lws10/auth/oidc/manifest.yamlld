@@ -13,7 +13,7 @@ comment: >-
   Tests that present ID Tokens to the storage itself do not belong here: the storage
   validates access tokens, which core/storage_authorization.yamlld covers.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/
 entries:
 
   - id: "#authn-oidc-valid-id-token"
@@ -27,9 +27,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
     as: anonymous
@@ -64,7 +64,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:
@@ -81,7 +81,7 @@ entries:
               - pointer: /sub
                 equals: "${identity.oidc.webid}"
               - pointer: /aud
-                hasValue: "${as.realm}"
+                hasValue: "${as.resource}"
 
   - id: "#authn-oidc-expired-id-token"
     type: NegativeTest
@@ -93,7 +93,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -123,7 +123,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc-expired}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:
@@ -142,7 +142,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -172,7 +172,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc-alg-none}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:
@@ -192,7 +192,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -222,7 +222,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc-bad-signature}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:
@@ -243,7 +243,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -273,7 +273,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc-untrusted-issuer}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:
@@ -294,7 +294,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, ReachableFixtures]
@@ -324,7 +324,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.oidc-missing-azp}"
             subject_token_type: urn:ietf:params:oauth:token-type:id_token
         response:

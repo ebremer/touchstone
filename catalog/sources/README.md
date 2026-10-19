@@ -11,18 +11,19 @@ is removed rather than kept alongside — git holds the history, and two snapsho
 this directory would leave it ambiguous which one a hash was derived from. The
 2026-09-02 re-baseline (DECISIONS.md D-0037, D-0040, D-0042) retired the 22 June core
 WD and the four editor's-draft auth snapshots; the 2026-09-30 one (D-0057) retired the
-21 August core and CID WDs; the 2026-10-05 one (D-0086) retired the 21 September core WD.
+21 August core and CID WDs; the 2026-10-05 one (D-0086) retired the 21 September core WD;
+the 2026-10-19 one (D-0100) retired the 5 October core WD, the 3 August OpenID Connect and
+SAML WDs and the 21 September CID WD.
 
 | File | Source | Fetched |
 |---|---|---|
-| `WD-lws10-core-20261005.html` | https://www.w3.org/TR/2026/WD-lws10-core-20261005/ | 2026-10-05 |
-| `WD-lws10-core-20261005.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-05 |
-| `WD-lws10-core-20261005.curation.json` | human review record: slug + summary per extracted block | 2026-10-05 |
-| `WD-lws10-authn-openid-20260803.html` | https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/ | 2026-09-02 |
-| `WD-lws10-authn-saml-20260803.html` | https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/ | 2026-09-02 |
-| `WD-lws10-authn-ssi-cid-20260921.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/ | 2026-09-30 |
-| `WD-lws10-authn-ssi-did-key-20260803.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-did-key-20260803/ | 2026-09-02 |
-| `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-09-02 (CID: 2026-09-30) |
+| `WD-lws10-core-20261019.html` | https://www.w3.org/TR/2026/WD-lws10-core-20261019/ | 2026-10-19 |
+| `WD-lws10-core-20261019.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-19 |
+| `WD-lws10-core-20261019.curation.json` | human review record: slug + summary per extracted block | 2026-10-19 |
+| `WD-lws10-authn-openid-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/ | 2026-10-19 |
+| `WD-lws10-authn-saml-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/ | 2026-10-19 |
+| `WD-lws10-authn-ssi-cid-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/ | 2026-10-19 |
+| `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-19 |
 | `ED-lws10-notifications-webhook-20261002.html` | https://w3c.github.io/lws-protocol/lws10-notifications-webhook/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `4e9481c`) | 2026-10-02 |
 | `ED-lws10-notifications-webhook-20261002.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-02 |
 | `ED-lws10-index-20261002.html` | https://w3c.github.io/lws-protocol/lws10-index/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `3039b37`) | 2026-10-02 |

@@ -28,7 +28,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "SAML tokens used as authentication credentials MUST be signed. In addition, a valid SAML token MUST include the following assertions:"
+  "text": "SAML tokens used as authentication credentials MUST be signed. In addition, a valid SAML token MUST include the following elements and attributes:"
  },
  {
   "i": 3,
@@ -43,7 +43,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "The SAML token MUST use the saml:NameID assertion for the LWS subject identifier."
+  "text": "The SAML token MUST use the saml:NameID element for the LWS subject identifier."
  },
  {
   "i": 4,
@@ -58,7 +58,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "The SAML token MUST use the saml:Issuer assertion for the LWS issuer identifier."
+  "text": "The SAML token MUST use the saml:Issuer element for the LWS issuer identifier."
  },
  {
   "i": 5,
@@ -73,7 +73,7 @@
   "keywords": [
    "MUST"
   ],
-  "text": "The SAML token MUST use the Recipient parameter within a saml:SubjectConfirmationData assertion for the LWS client identifier."
+  "text": "The SAML token MUST use the Recipient attribute within a saml:SubjectConfirmationData element for the LWS client identifier."
  },
  {
   "i": 6,
@@ -89,7 +89,7 @@
    "MUST",
    "SHOULD"
   ],
-  "text": "Any audience restriction in the SAML token MUST use the saml:Audience assertion. The saml:Audience assertion SHOULD include a client identifier and any additional target audience such as an authorization server."
+  "text": "Any audience restriction in the SAML token MUST use the saml:Audience element. The saml:Audience element SHOULD include a client identifier and any additional target audience such as an authorization server."
  },
  {
   "i": 7,

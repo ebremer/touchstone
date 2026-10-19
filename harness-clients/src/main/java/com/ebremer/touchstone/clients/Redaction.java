@@ -27,6 +27,8 @@ final class Redaction {
             "actor_token", "client_secret", "code", "code_verifier", "password", "assertion");
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    /** A quoted string with a query: the URL before it, and the query. */
+    private static final java.util.regex.Pattern QUOTED_QUERY = java.util.regex.Pattern.compile("\"([^\"?]*)\\?([^\"]*)\"");
 
     private Redaction() {
     }
@@ -45,14 +47,25 @@ final class Redaction {
     }
 
     /**
-     * A credential header's value, its scheme kept: {@code Bearer [redacted 1a2b3c4d5e6f]}; and a
+     * A credential header's value, its scheme kept: {@code Bearer [redacted 1a2b3c4d5e6f]}; a
      * {@code Location}'s query with the values of credential fields replaced, such as the
-     * authorization code an OpenID Provider redirects with.
+     * authorization code an OpenID Provider redirects with; and the same of the URLs quoted in a
+     * {@code WWW-Authenticate}, whose {@code resource_metadata} is built from the URL requested,
+     * query and all (RFC 9728 section 3.1), so a server can echo a token a client put there.
      */
     static String header(String name, String value) {
         if (name.equalsIgnoreCase("location")) {
             int q = value.indexOf('?');
             return q < 0 ? value : value.substring(0, q + 1) + form(value.substring(q + 1));
+        }
+        if (name.equalsIgnoreCase("www-authenticate")) {
+            java.util.regex.Matcher m = QUOTED_QUERY.matcher(value);
+            StringBuilder out = new StringBuilder();
+            while (m.find()) {
+                m.appendReplacement(out, java.util.regex.Matcher.quoteReplacement(
+                        "\"" + m.group(1) + "?" + form(m.group(2)) + "\""));
+            }
+            return m.appendTail(out).toString();
         }
         if (!HEADERS.contains(name.toLowerCase(Locale.ROOT))) {
             return value;

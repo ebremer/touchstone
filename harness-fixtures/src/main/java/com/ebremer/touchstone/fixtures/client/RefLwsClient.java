@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,8 +50,9 @@ import com.nimbusds.jose.jwk.ECKey;
  * with a token the session handed out, and when the storage refuses it, she signs a credential with
  * her own key (the CID suite); bob signs in at his OpenID Provider (the OpenID suite), and later
  * presents a SAML 2.0 assertion from the session's identity provider (the SAML suite). Each time
- * the client finds the authorization server from the storage's 401, checks that the URL it asked
- * for is within the challenge's realm, and exchanges the credential for a token for that realm.
+ * the client finds the authorization server through the protected resource metadata the storage's
+ * 401 names (RFC 9728), makes the discovery checks of lws10-core section 5.2.3, and exchanges the
+ * credential for a token for the storage the 401 links to.
  *
  * <p>It reports nothing itself: the session judges it. With a {@link Flaw} it is a broken twin,
  * which gets exactly one thing wrong and is otherwise the same client.
@@ -147,8 +149,11 @@ public final class RefLwsClient {
         TOKEN_REQUEST_WITHOUT_RESOURCE,
         /** Sends its first credential as assertion instead of subject_token. */
         TOKEN_REQUEST_WITHOUT_SUBJECT_TOKEN,
-        /** Asks for a token for the decoy's realm, which does not contain the decoy. */
-        TOKEN_FOR_FOREIGN_REALM,
+        /**
+         * Asks for a token for the storage the decoy's 401 links to, without checking that the
+         * storage's root is on the decoy's origin.
+         */
+        SKIPS_DISCOVERY_CHECKS,
         /** Its inbox does not verify the signature itself; it makes every other check. */
         INBOX_SKIPS_SIGNATURE_CHECK,
         /** Its inbox does not check the body against the Content-Digest the signature covers. */
@@ -226,8 +231,7 @@ public final class RefLwsClient {
     private static final String JWT_TYPE = "urn:ietf:params:oauth:token-type:jwt";
     private static final String ID_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:id_token";
     private static final String SAML2_TYPE = "urn:ietf:params:oauth:token-type:saml2";
-    private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
-    private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*\"([^\"]*)\"");
+    private static final Pattern RESOURCE_METADATA = Pattern.compile("(?i)\\bresource_metadata\\s*=\\s*\"([^\"]*)\"");
     private static final Pattern REQUEST_HANDLE = Pattern.compile("name=\"request\" value=\"([^\"]*)\"");
     private static final Pattern LINK = Pattern.compile("<([^>]*)>\\s*((?:;[^,<]*)*)");
     private static final Pattern REL = Pattern.compile("(?i)\\brel\\s*=\\s*\"?([^\";,]+)\"?");
@@ -246,6 +250,8 @@ public final class RefLwsClient {
     private final Map<String, String> tokens = new HashMap<>();
     /** The token endpoint of each authorization server met, by issuer. */
     private final Map<String, URI> tokenEndpoints = new HashMap<>();
+    /** The storage root each storage met names, by storage, or null where it names none: a client may cache it. */
+    private final Map<String, Optional<URI>> storageRoots = new HashMap<>();
     /** Whether the twin has made its one mistake. */
     private boolean flawShown;
     /** The agents that have signed in at their OpenID Provider, by WebID. */
@@ -274,10 +280,10 @@ public final class RefLwsClient {
 
     /** Runs the whole script. */
     public void run() throws IOException, InterruptedException {
-        // The root container lists the decoy first, whose 401 names a realm that does not
-        // contain it. Meanwhile the session refuses alice's token once, as expired, and she
+        // The root container lists the decoy first, whose 401 links to a storage whose root is on
+        // another origin. Meanwhile the session refuses alice's token once, as expired, and she
         // authenticates again with her own key.
-        tasks.start("client-token-for-containing-realm");
+        tasks.start("client-token-after-discovery-checks");
         Reply root = send("GET", storage, alice, null, null, LWS_JSON, Map.of());
         JsonNode items = root.status() == 200 ? json.readTree(root.body()).path("items") : json.createArrayNode();
         if (!items.isEmpty()) {
@@ -595,9 +601,10 @@ public final class RefLwsClient {
 
     /**
      * Sends a request as {@code as}, with its access token if it has one. On a 401 with a
-     * challenge, it checks that {@code url} is within the challenge's realm (lws10-core section
-     * 5.2.1), authenticates, and sends the request once more; a URL outside the realm gets no
-     * token. A null {@code as} sends no credential.
+     * challenge, it reads the protected resource metadata the challenge names, makes the
+     * discovery checks of lws10-core section 5.2.3, authenticates for the storage the 401 links
+     * to, and sends the request once more; a 401 that fails a check gets no token. A null
+     * {@code as} sends no credential.
      */
     private Reply send(String method, URI url, Agent as, String contentType, String body, String accept,
                        Map<String, String> headers) throws IOException, InterruptedException {
@@ -606,61 +613,108 @@ public final class RefLwsClient {
             return r;
         }
         String challenge = r.header("WWW-Authenticate");
-        Matcher asUri = challenge == null ? null : AS_URI.matcher(challenge);
-        Matcher realm = challenge == null ? null : REALM.matcher(challenge);
-        if (asUri == null || !asUri.find() || !realm.find()) {
+        Matcher metadata = challenge == null ? null : RESOURCE_METADATA.matcher(challenge);
+        URI storageLinked = r.link(LWS + "storage");
+        if (metadata == null || !metadata.find() || storageLinked == null) {
             return r;
         }
-        if (!within(realm.group(1), url)) {
-            if (flaw == Flaw.TOKEN_FOR_FOREIGN_REALM && !flawShown) {
+        Discovery found = discover(url, r.url().resolve(metadata.group(1)), storageLinked);
+        if (found == null) {
+            return r;
+        }
+        if (!found.checked()) {
+            if (flaw == Flaw.SKIPS_DISCOVERY_CHECKS && !flawShown) {
                 flawShown = true;
-                authenticate(as, asUri.group(1), realm.group(1));
+                authenticate(as, found.issuer(), found.storage());
             }
             return r;
         }
-        return authenticate(as, asUri.group(1), realm.group(1))
+        return authenticate(as, found.issuer(), found.storage())
                 ? raw(method, url, tokens.get(as.webid()), contentType, body, accept, headers) : r;
     }
 
-    /** Whether {@code url} is the realm or below it: "logically contained", as lws10-core section 5.2.1 asks. */
-    private static boolean within(String realm, URI url) {
-        String u = url.toString().replaceAll("[?#].*$", "");
-        return realm.endsWith("/") ? u.startsWith(realm) : u.equals(realm) || u.startsWith(realm + "/");
+    /**
+     * What a 401 says about getting a token: the authorization server its protected resource
+     * metadata names, the storage it links to, and whether the discovery checks passed.
+     */
+    private record Discovery(String issuer, String storage, boolean checked) {
+    }
+
+    /**
+     * Reads the protected resource metadata at {@code metadataUrl} and checks, as lws10-core section
+     * 5.2.3 requires, that its URL and the storage root of {@code storage} have the scheme and
+     * authority of {@code requested}, and that its resource is {@code requested}. Null when it
+     * names no authorization server, or is not on the requested URL's origin, which the client
+     * then does not fetch.
+     */
+    private Discovery discover(URI requested, URI metadataUrl, URI storage) throws IOException, InterruptedException {
+        if (!sameOrigin(metadataUrl, requested)) {
+            return null;
+        }
+        Reply prm = send("GET", metadataUrl, null, null, null, "application/json", Map.of());
+        if (prm.status() != 200) {
+            return null;
+        }
+        JsonNode doc = json.readTree(prm.body());
+        String issuer = null;
+        for (JsonNode server : doc.path("authorization_servers")) {
+            if (server.isTextual()) {
+                issuer = server.asText();
+                break;
+            }
+        }
+        if (issuer == null) {
+            return null;
+        }
+        boolean checked = requested.toString().equals(doc.path("resource").asText(null));
+        Optional<URI> root = storageRoots.get(storage.toString());
+        if (root == null) {
+            Reply description = send("GET", storage, null, null, null, "application/lws+cid", Map.of());
+            root = Optional.ofNullable(description.status() == 200 ? services(description).get("StorageRoot") : null);
+            storageRoots.put(storage.toString(), root);
+        }
+        checked = checked && root.isPresent() && sameOrigin(root.get(), requested);
+        return new Discovery(issuer, storage.toString(), checked);
+    }
+
+    private static boolean sameOrigin(URI a, URI b) {
+        return a.getScheme() != null && a.getScheme().equalsIgnoreCase(b.getScheme()) && a.getRawAuthority() != null
+                && a.getRawAuthority().equalsIgnoreCase(b.getRawAuthority());
     }
 
     // ---- authentication ----
 
     /**
-     * Gets {@code as} a new access token for {@code realm} from the authorization server
+     * Gets {@code as} a new access token for the storage {@code resource} from the authorization server
      * {@code issuer}: with a self-issued credential if it holds a key, else with an ID Token from
      * its OpenID Provider the first time and a SAML assertion after that, when it has both. Returns
      * whether it got one.
      */
-    private boolean authenticate(Agent as, String issuer, String realm) throws IOException, InterruptedException {
+    private boolean authenticate(Agent as, String issuer, String resource) throws IOException, InterruptedException {
         URI endpoint = tokenEndpoint(issuer);
         Reply answer;
         if (as.key() != null) {
             if (CREDENTIAL_FLAWS.contains(flaw) && !flawShown) {
                 flawShown = true;
                 exchange(endpoint, selfIssued(as, issuer, flaw), flaw == Flaw.CID_TYPED_AS_ID_TOKEN ? ID_TOKEN_TYPE : JWT_TYPE,
-                        realm);
+                        resource);
             }
-            answer = exchange(endpoint, selfIssued(as, issuer, Flaw.NONE), JWT_TYPE, realm);
+            answer = exchange(endpoint, selfIssued(as, issuer, Flaw.NONE), JWT_TYPE, resource);
         } else if (as.assertions() != null && (as.login() == null || signedIn.contains(as.webid()))) {
             String assertion = as.assertions().next();
             if (flaw == Flaw.SAML_TYPED_AS_JWT && !flawShown) {
                 flawShown = true;
-                exchange(endpoint, assertion, JWT_TYPE, realm);
+                exchange(endpoint, assertion, JWT_TYPE, resource);
             }
-            answer = exchange(endpoint, assertion, SAML2_TYPE, realm);
+            answer = exchange(endpoint, assertion, SAML2_TYPE, resource);
         } else {
             signedIn.add(as.webid());
             String idToken = idToken(as);
             if (flaw == Flaw.ID_TOKEN_TYPED_AS_JWT && !flawShown) {
                 flawShown = true;
-                exchange(endpoint, idToken, JWT_TYPE, realm);
+                exchange(endpoint, idToken, JWT_TYPE, resource);
             }
-            answer = exchange(endpoint, idToken, ID_TOKEN_TYPE, realm);
+            answer = exchange(endpoint, idToken, ID_TOKEN_TYPE, resource);
         }
         if (answer.status() != 200) {
             return false;

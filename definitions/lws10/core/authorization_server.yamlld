@@ -1,4 +1,4 @@
-# Authorization server: metadata and token exchange (LWS 1.0 core sections 5.2.2-5.2.3).
+# Authorization server: metadata and token exchange (LWS 1.0 core sections 5.2.4-5.2.5).
 "@context":
   - ../context.jsonld
   - ../touchstone.jsonld
@@ -7,15 +7,16 @@ type: Manifest
 label: "LWS 1.0 core: authorization server"
 comment: >-
   Tests of the storage's authorization server, which the harness finds the way a client
-  does: an anonymous request to the test container yields a challenge whose as_uri is the
-  authorization server, whose metadata sits at the RFC 8414 well-known location for
+  does: an anonymous request to the test container yields a challenge whose protected
+  resource metadata (RFC 9728) names the authorization server, whose metadata sits at the
+  RFC 8414 well-known location for
   lws-configuration, and whose token endpoint performs RFC 8693 token exchange. A CID-suite
   credential for a did:key subject is the vehicle wherever a valid subject token is
   needed, because it needs no trust set up in advance and no document the storage must
   reach; those tests apply only when the metadata lists did:key among its subject
   identifier types.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#authz-server-metadata-well-known"
@@ -23,15 +24,16 @@ entries:
     name: authz-server-metadata-well-known
     label: The authorization server publishes RFC 8414 metadata at lws-configuration
     comment: >-
-      Discovered from the challenge rather than a host name assumed in advance. The
+      Discovered through the challenge's protected resource metadata rather than a host name
+      assumed in advance. The
       issuer must be the identifier the well-known URL was built from (RFC 8414 section
       3.3), the token endpoint and jwks_uri must be named, and token exchange must be
       among the grant types, since the RFC 8414 default excludes it.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc8414#section-3
     traits: [Get, Discovery, Authz, TokenExchange]
     requires: [Authentication]
@@ -66,7 +68,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -96,8 +98,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-type-identifier
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-type-identifier
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -127,7 +129,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-metadata
     traits: [Get, Discovery, TokenExchange]
     requires: [Authentication]
     as: anonymous
@@ -156,8 +158,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-response
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.1
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.1
       - https://www.rfc-editor.org/rfc/rfc9068#section-2
@@ -199,7 +201,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:
@@ -226,7 +228,7 @@ entries:
               - pointer: /iss
                 equals: "${as.issuer}"
               - pointer: /aud
-                hasValue: "${as.realm}"
+                hasValue: "${as.resource}"
               - pointer: /sub
                 equals: "${identity.didkey.webid}"
               - pointer: /client_id
@@ -250,8 +252,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-response
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -298,7 +300,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -343,7 +345,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
       - https://www.rfc-editor.org/rfc/rfc6749#section-5.2
     traits: [Post, TokenExchange]
     requires: [Authentication]
@@ -357,7 +359,7 @@ entries:
       url: "${as.tokenEndpoint}"
       bodyForm:
         grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-        resource: "${as.realm}"
+        resource: "${as.resource}"
         subject_token_type: urn:ietf:params:oauth:token-type:jwt
     response:
       statusCode: 400
@@ -378,8 +380,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-response
     traits: [Post, Get, TokenExchange, Authz]
     requires: [Authentication]
     as: anonymous
@@ -404,7 +406,7 @@ entries:
           url: "${as.tokenEndpoint}"
           bodyForm:
             grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-            resource: "${as.realm}"
+            resource: "${as.resource}"
             subject_token: "${credential.didkey}"
             subject_token_type: urn:ietf:params:oauth:token-type:jwt
         response:

@@ -1,4 +1,4 @@
-# Client rules for authentication and token exchange (YAML-LD, format 0.12.0).
+# Client rules for authentication and token exchange (YAML-LD, format 0.14.0).
 "@context":
   - ../context.jsonld
   - ../touchstone.jsonld
@@ -6,18 +6,19 @@ id: "#manifest"
 type: Manifest
 label: Authentication and token exchange, as a client does them
 comment: >-
-  What a client's requests to the session's token endpoint must satisfy: the token exchange of
-  lws10-core section 5.2.3, the self-issued credentials of the CID suite, and the token types of
+  What a client's requests to the session's token endpoint must satisfy: the discovery checks of
+  lws10-core section 5.2.3 and the token exchange of section 5.2.5, the self-issued credentials of
+  the CID suite, and the token types of
   the OpenID suite's ID Tokens and the SAML suite's assertions. The session's identities, alice and
   bob, have identity documents that name a key each, which the developer downloads from the session
   page, and the session's own OpenID Provider; the session's SAML identity provider hands out
   assertions about them through the session API. The session's authorization server trusts those
   and nothing else.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
 entries:
 
   # ---- every token request ----
@@ -29,7 +30,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -46,8 +47,9 @@ entries:
           jsonType: string
           matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
     guidance: >-
-      Send resource with every token exchange request: the realm of the storage's 401 challenge,
-      an absolute URI. The access token's aud is made from it.
+      Send resource with every token exchange request: the storage that the Link of the storage's
+      401 names (rel https://www.w3.org/ns/lws#storage), an absolute URI. The access token's aud is
+      made from it.
 
   - id: "#client-token-exchange-subject-token"
     type: ObservationTest
@@ -56,7 +58,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -77,25 +79,32 @@ entries:
       subject_token, with its type in subject_token_type. Not as assertion, id_token or another
       parameter.
 
-  - id: "#client-token-for-containing-realm"
+  - id: "#client-token-after-discovery-checks"
     type: ObservationTest
-    name: client-token-for-containing-realm
-    label: After a 401, the client asks for a token only for a realm that contains the URL it was refused
+    name: client-token-after-discovery-checks
+    label: After a 401, the client asks for a token only when the discovery checks pass
     comment: >-
-      A client must check that the URL it requested is within the realm of the challenge before
-      it acts on it. The session's root container lists a decoy whose 401 names a realm that does
-      not contain it, so a client that does not check asks the authorization server for a token
-      for that realm. Each 401 from the storage opens a trigger, and the client's next token
-      request is the trial. The task arms tokenExpired, so that a client which keeps its token
-      has a reason to ask for a new one after meeting the decoy.
+      Before it asks for a token, a client "MUST perform the following checks, each of which
+      compares a discovered value against the requested URI that produced the 401 response. If any
+      check fails, the client MUST NOT use the discovered values to request an access token." The
+      session's root container lists a decoy whose 401 is in order but for its Link, which names a
+      storage whose description puts the storage root on another origin; a client that does not
+      check asks the authorization server for a token for that storage, which a malicious server
+      could then replay (section 16.3, "Storage Binding"). Each 401 from the storage opens a
+      trigger, and the client's next token request is the trial. The task arms tokenExpired, so that
+      a client which keeps its token has a reason to ask for a new one after meeting the decoy. The
+      other two checks are not tried: the session has one origin, and its protected resource
+      metadata always names the URL requested.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-resource-discovery
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
-      - https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param
+      - https://example.org/touchstone/req/lws10-core/authz-client-discovery-validation
+      - https://example.org/touchstone/req/lws10-core/authz-client-storage-root-same-origin
     task:
       prompt: >-
         Open the first entry of the storage's root container, then any resource you can read. The
@@ -112,11 +121,12 @@ entries:
         server: storage
         statusCode: 401
     expect:
-      realmContainsRequest: true
+      discoveryValid: true
     guidance: >-
-      Before you ask for a token, check that the URL the 401 answered is within the challenge's
-      realm: the realm itself, or below it. If it is not, do not ask for a token for that realm
-      or send one to that URL.
+      Before you ask for a token, read the storage description of the storage the 401 links to,
+      and check that its StorageRoot's serviceEndpoint has the scheme and authority of the URL the
+      401 answered; check the same of the resource_metadata URL, and that the protected resource
+      metadata's resource is that URL. If any check fails, ask for no token, and send none there.
 
   # ---- self-issued credentials (the CID suite) ----
 
@@ -130,7 +140,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -153,8 +163,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -181,8 +191,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -209,8 +219,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -236,8 +246,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -263,7 +273,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -293,7 +303,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -309,8 +319,8 @@ entries:
     expect:
       audienceIncludesAs: true
     guidance: >-
-      Put the authorization server's issuer identifier, the as_uri of the storage's challenge, in
-      aud, alone or in an array.
+      Put the authorization server's issuer identifier, from authorization_servers in the protected
+      resource metadata the storage's challenge names, in aud, alone or in an array.
 
   - id: "#client-cid-audience-restricted"
     type: ObservationTest
@@ -319,7 +329,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -344,7 +354,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -368,7 +378,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20260921/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -396,7 +406,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20260803/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -427,7 +437,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20260803/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#token-type
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:

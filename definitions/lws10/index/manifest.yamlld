@@ -1993,7 +1993,7 @@ entries:
     level: SHOULD
     source:
       - https://w3c.github.io/lws-protocol/lws10-index/#type-derivation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
     traits: [Discovery, Put]
     requires: [Authentication]
     requirements:

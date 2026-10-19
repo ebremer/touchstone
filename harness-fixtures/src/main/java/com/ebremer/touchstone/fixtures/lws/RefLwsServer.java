@@ -36,11 +36,14 @@ import org.eclipse.jetty.util.Callback;
 
 /**
  * In-memory reference LWS server: the target of the conformance self-test loop (DECISIONS.md
- * D-0015). It implements the WD-20261005 behaviour the definitions test:
+ * D-0015). It implements the WD-20261019 behaviour the definitions test:
  * <ul>
  *   <li>containers with {@code items}/{@code totalItems} listings, each member's {@code format},
- *       {@code size} and {@code modified}, and lws+json/ld+json/json conneg with
+ *       {@code size} and {@code modified}, served as lws+json, as ld+json and json (the same
+ *       document), and as Turtle, in the LWS profile when it is asked for, with
  *       {@code Vary: Accept};</li>
+ *   <li>a 401 whose Bearer challenge names the requested resource's protected resource metadata
+ *       (RFC 9728), served at the well-known URL for any resource of the storage;</li>
  *   <li>a storage description served as {@code application/lws+cid} at the storage URI,
  *       advertised by {@code rel="https://www.w3.org/ns/lws#storage"} on every response,
  *       including a 401, and naming the root, access grant and access request services;</li>
@@ -50,7 +53,9 @@ import org.eclipse.jetty.util.Callback;
  *       deleting a non-empty container unless {@code Depth: infinity}, JSON Patch on JSON data
  *       resources, single byte ranges;</li>
  *   <li>a linkset per resource, stored, with its own ETag, patchable with JSON Patch and
- *       refusing PUT with 405, removed with its resource;</li>
+ *       refusing PUT with 405, removed with its resource; it shows the server's up and type
+ *       links, and a patch of the up link moves the resource (section 9.6), as the storage's
+ *       MoveResource capability describes;</li>
  *   <li>PUT that changes only the content, unless it asks for a combined update with
  *       {@code Prefer: set-linkset}: then its Link headers replace the types and links the
  *       client declared, and the answer carries {@code Preference-Applied: set-linkset}
@@ -96,6 +101,7 @@ public final class RefLwsServer implements AutoCloseable {
     private static final String LWS_JSON = "application/lws+json";
     private static final String LINKSET_JSON = "application/linkset+json";
     private static final String JSON_PATCH = "application/json-patch+json";
+    private static final String TURTLE = "text/turtle";
     /** The storage URI, which here is also the storage root container. */
     private static final String STORAGE_PATH = "/";
     /** The access grant and access request services: containers outside the storage root's listing. */
@@ -109,8 +115,19 @@ public final class RefLwsServer implements AutoCloseable {
     private static final String LINKSET_PREFIX = "/_t/l/";
     private static final String FLAT_PREFIX = "/_r/";
     private static final String DECOY = "/_t/decoy";
-    /** The realm the decoy's challenge names: one that does not contain the decoy. */
+    /**
+     * The storage the decoy's 401 links to. Its description names a storage root on another
+     * origin, so a client that checks the storage before it asks for a token never asks for one.
+     */
     private static final String VAULT = "/_t/vault/";
+    private static final String VAULT_ROOT = "https://vault.invalid/root/";
+    /**
+     * RFC 9728 section 3: a resource's protected resource metadata is at this path followed by
+     * the resource's own path, a lone "/" left out.
+     */
+    public static final String PROTECTED_RESOURCE_METADATA = "/.well-known/oauth-protected-resource";
+    /** The LWS profile (lws10-core section 12.1.1), which a client asks for in an RDF media type's profile parameter. */
+    private static final String LWS_PROFILE = "https://www.w3.org/ns/lws/v1";
 
     /** Request attribute: what the request addressed, such as container, page or linkset. */
     public static final String ROLE_ATTRIBUTE = "touchstone.lws.role";
@@ -263,6 +280,8 @@ public final class RefLwsServer implements AutoCloseable {
     private volatile Courier courier = RefLwsServer::sendDirectly;
     /** Whether the linksets of data resources support PUT; containers' never do. */
     private volatile boolean linksetPut;
+    /** Whether clients may move resources by changing their up link (lws10-core section 9.6). */
+    private volatile boolean moves = true;
     /** The faults armed and not yet fired. */
     private final Set<Fault> armed = ConcurrentHashMap.newKeySet();
     /** Access tokens refused from now on, though otherwise valid: those the tokenExpired fault fired on. */
@@ -456,8 +475,8 @@ public final class RefLwsServer implements AutoCloseable {
 
     /**
      * Secured mode: Bearer tokens are validated against {@code as}, and {@code owner} (an agent
-     * IRI) controls the storage. The realm is this server's base URI, which a valid token's
-     * {@code aud} must name, alone; the server registers itself with {@code as} as a resource.
+     * IRI) controls the storage. The storage URI is this server's base URI, which a valid token's
+     * {@code aud} must include; the server registers itself with {@code as} as a resource.
      */
     public static RefLwsServer startSecured(int port, RefAuthorizationServer as, String owner) {
         return startSecured(port, as, owner, Traps.NONE);
@@ -466,9 +485,8 @@ public final class RefLwsServer implements AutoCloseable {
     /** Secured mode with {@code traps} set: the self-test's trapped deployment. */
     public static RefLwsServer startSecured(int port, RefAuthorizationServer as, String owner, Traps traps) {
         RefLwsServer server = startIn(AuthMode.SECURED, port, traps);
-        String realm = server.realm();
         try {
-            server.validator = new TokenValidator(as.issuer(), as.jwksUri().toURL(), realm);
+            server.validator = new TokenValidator(as.issuer(), as.jwksUri().toURL(), server.audience());
         } catch (Exception e) {
             server.close();
             throw new IllegalStateException("cannot build token validator", e);
@@ -488,7 +506,7 @@ public final class RefLwsServer implements AutoCloseable {
             throw new IllegalArgumentException("a storage URI ends in a slash: " + storage);
         }
         RefLwsServer server = new RefLwsServer(AuthMode.SECURED, storage, traps);
-        server.validator = new TokenValidator(as.issuer(), as.jwkSource(), server.realm());
+        server.validator = new TokenValidator(as.issuer(), as.jwkSource(), server.audience());
         server.deliveryGuard = uri -> false;
         server.secure(as, owner);
         return server;
@@ -498,7 +516,7 @@ public final class RefLwsServer implements AutoCloseable {
         asUri = as.issuer();
         storageOwner = owner;
         store.get(STORAGE_PATH).owner = owner;
-        as.addResource(realm());
+        as.addResource(audience());
     }
 
     /** The handler that serves this storage, for a mounted one to be placed in another server. */
@@ -514,6 +532,17 @@ public final class RefLwsServer implements AutoCloseable {
      */
     public void linksetPutOnDataResources(boolean supported) {
         this.linksetPut = supported;
+    }
+
+    /**
+     * Whether clients may move resources between containers by changing their up link, as the
+     * MoveResource capability says (lws10-core section 9.6). On by default: data resources and
+     * containers move and keep their identifiers, or, with {@link Traps#dataMovesOnly}, only data
+     * resources move and the storage does not say whether identifiers are kept. Off, a change to
+     * an up link is refused with 409 and no capability is described.
+     */
+    public void moves(boolean supported) {
+        this.moves = supported;
     }
 
     /** Arms {@code fault}: it fires once, on the next request it applies to. */
@@ -626,9 +655,40 @@ public final class RefLwsServer implements AutoCloseable {
         return publicStorage != null ? publicStorage : URI.create("http://localhost:" + connector.getLocalPort() + "/");
     }
 
-    /** The realm access tokens must be issued for: the storage's base URI. */
-    public String realm() {
+    /**
+     * The audience access tokens must be issued for: the storage URI, which is the storage's base
+     * URI, and which a 401 names in its Link (lws10-core section 5.2.1).
+     */
+    public String audience() {
         return baseUri().toString();
+    }
+
+    /**
+     * Whether the storage description of {@code storage} names a StorageRoot with the scheme and
+     * authority of {@code url}, which a client checks before it asks for a token for it
+     * (lws10-core section 5.2.3): this storage's root is its own URI, the decoy's vault has its
+     * root on another origin. Null for a storage that is neither.
+     */
+    public Boolean storageRootOnOriginOf(String storage, String url) {
+        URI root = baseUri();
+        URI requested;
+        try {
+            requested = URI.create(url);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        if (storage.equals(root.toString())) {
+            return sameOrigin(root, requested);
+        }
+        if (traps.decoy() && storage.equals(root.resolve(VAULT.substring(1)).toString())) {
+            return sameOrigin(URI.create(VAULT_ROOT), requested);
+        }
+        return null;
+    }
+
+    private static boolean sameOrigin(URI a, URI b) {
+        return a.getScheme() != null && a.getScheme().equalsIgnoreCase(b.getScheme()) && a.getRawAuthority() != null
+                && a.getRawAuthority().equalsIgnoreCase(b.getRawAuthority());
     }
 
     /**
@@ -677,6 +737,15 @@ public final class RefLwsServer implements AutoCloseable {
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             String path = request.getHttpURI().getCanonicalPath();
             String method = request.getMethod();
+            // RFC 9728 path insertion: the metadata of the storage's resources is outside its path.
+            if (path != null && (path.startsWith(PROTECTED_RESOURCE_METADATA + mount + "/")
+                    || (mount.isEmpty() && path.equals(PROTECTED_RESOURCE_METADATA)))) {
+                role(request, "protectedResourceMetadata");
+                String resource = path.substring(PROTECTED_RESOURCE_METADATA.length() + mount.length());
+                protectedResourceMetadata(request, response, callback, resource.isEmpty() ? STORAGE_PATH : resource,
+                        method);
+                return true;
+            }
             if (publicStorage != null) {
                 if (path == null || !path.startsWith(mount + "/")) {
                     role(request, "unknown");
@@ -718,6 +787,11 @@ public final class RefLwsServer implements AutoCloseable {
             if (traps.decoy() && path.equals(DECOY)) {
                 role(request, "decoy");
                 decoy(request, response, callback);
+                return true;
+            }
+            if (traps.decoy() && path.equals(VAULT)) {
+                role(request, "decoyStorage");
+                vault(request, response, callback, method);
                 return true;
             }
             // A refused token is answered as soon as the target's role is known, so that a recorded
@@ -836,7 +910,7 @@ public final class RefLwsServer implements AutoCloseable {
             }
 
             if (linkset) {
-                linksetResource(request, response, callback, resourcePath, method);
+                linksetResource(request, response, callback, resourcePath, method, subject, client);
                 return true;
             }
             switch (method) {
@@ -888,40 +962,120 @@ public final class RefLwsServer implements AutoCloseable {
             return false;
         }
 
-        /** 401 with a Bearer challenge naming the authorization server and realm, and the storage link. */
+        /**
+         * 401 with a Bearer challenge naming the requested resource's protected resource metadata
+         * (lws10-core section 5.2.1, RFC 9728 section 5.1), and a Link to the storage that holds it,
+         * which is what a client asks for a token for.
+         */
         private void challenge(Request request, Response response, Callback callback, String error) {
-            StringBuilder c = new StringBuilder("Bearer");
+            List<String> params = new ArrayList<>();
             if (asUri != null) {
-                c.append(" as_uri=\"").append(asUri).append('"');
-                c.append(", realm=\"").append(validator.realm()).append('"');
+                params.add("resource_metadata=\"" + protectedResourceMetadataUrl(requestUrl(request)) + '"');
             }
             if (error != null) {
-                c.append(", error=\"").append(error).append('"');
+                params.add("error=\"" + error + '"');
             }
-            response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, c.toString());
-            // The storage link on a 401 is a SHOULD (section 9.2 notes): it is how a client that
-            // was refused still finds the storage description, and with it the services.
+            response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, "Bearer" + (params.isEmpty() ? "" : " ")
+                    + String.join(", ", params));
             response.getHeaders().add("Link", storageLink(request));
             status(request, response, callback, 401);
         }
 
         /**
-         * The decoy (Traps#decoy): a 401 whatever is sent, naming a realm that does not contain the
-         * decoy. A client that checks "that the URI of the originating request is logically
-         * contained within the realm" before it presents a token never sends this one any.
+         * The decoy (Traps#decoy): a 401 whatever is sent. Its protected resource metadata is in
+         * order, but its Link names the vault, a storage whose description puts the storage root
+         * on another origin. A client that checks "the serviceEndpoint of its StorageRoot service"
+         * against the URL it requested, as lws10-core section 5.2.3 requires, asks for no token
+         * for the vault, and sends none here.
          */
         private void decoy(Request request, Response response, Callback callback) {
             StringBuilder c = new StringBuilder("Bearer ");
-            if (asUri != null) {
-                c.append("as_uri=\"").append(asUri).append("\", ");
-            }
-            c.append("realm=\"").append(absolute(request, VAULT)).append('"');
+            c.append("resource_metadata=\"").append(protectedResourceMetadataUrl(requestUrl(request))).append('"');
             if (bearerToken(request) != null) {
                 c.append(", error=\"invalid_token\"");
             }
             response.getHeaders().put(HttpHeader.WWW_AUTHENTICATE, c.toString());
-            response.getHeaders().add("Link", storageLink(request));
+            response.getHeaders().add("Link", "<" + absolute(request, VAULT) + ">; rel=\"" + LWS_NS + "storage\"");
             status(request, response, callback, 401);
+        }
+
+        /** The vault's storage description: anyone may read it, and its storage root is elsewhere. */
+        private void vault(Request request, Response response, Callback callback, String method) {
+            if (!method.equals("GET") && !method.equals("HEAD")) {
+                methodNotAllowed(response, callback, "GET, HEAD");
+                return;
+            }
+            String vault = absolute(request, VAULT);
+            ObjectNode doc = mapper.createObjectNode();
+            doc.putArray("@context").add(CID_CONTEXT).add(LWS_CONTEXT);
+            doc.put("id", vault);
+            doc.put("type", "Storage");
+            service(doc.putArray("service"), vault + "#storage-root", "StorageRoot", VAULT_ROOT);
+            response.setStatus(200);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, LWS_CID);
+            send(response, callback, bytes(doc), method.equals("GET"));
+        }
+
+        /**
+         * The protected resource metadata of the resource at {@code path} (RFC 9728 section 3.2,
+         * lws10-core section 5.2.2): its URL, and the authorization server, which lws10-core makes
+         * a required member. It describes any URL under the storage, since an anonymous request
+         * for any of them is challenged, whether or not something is there.
+         */
+        private void protectedResourceMetadata(Request request, Response response, Callback callback, String path,
+                                               String method) {
+            if (!method.equals("GET") && !method.equals("HEAD")) {
+                methodNotAllowed(response, callback, "GET, HEAD");
+                return;
+            }
+            if (asUri == null) {
+                status(request, response, callback, 404);
+                return;
+            }
+            String query = withoutAccessToken(request.getHttpURI().getQuery());
+            ObjectNode doc = mapper.createObjectNode();
+            doc.put("resource", absolute(request, path) + (query == null ? "" : "?" + query));
+            doc.putArray("authorization_servers").add(asUri);
+            doc.putArray("bearer_methods_supported").add("header");
+            response.setStatus(200);
+            response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json");
+            send(response, callback, bytes(doc), method.equals("GET"));
+        }
+
+        /**
+         * The URL a client sent its request to: the storage's public origin, the request's path and
+         * query. An {@code access_token} in the query is a credential (RFC 6750 section 2.3), not
+         * part of the resource's name, so it is left out: the challenge must not echo it.
+         */
+        private URI requestUrl(Request request) {
+            URI origin = publicStorage != null ? publicStorage : URI.create(request.getHttpURI().asString());
+            String query = withoutAccessToken(request.getHttpURI().getQuery());
+            return URI.create(origin.getScheme() + "://" + origin.getRawAuthority() + request.getHttpURI().getPath()
+                    + (query == null ? "" : "?" + query));
+        }
+
+        /** A query without its {@code access_token} parameters; null when nothing else is left. */
+        private static String withoutAccessToken(String query) {
+            if (query == null) {
+                return null;
+            }
+            List<String> kept = new ArrayList<>();
+            for (String param : query.split("&")) {
+                if (!param.isEmpty() && !param.split("=", 2)[0].equals("access_token")) {
+                    kept.add(param);
+                }
+            }
+            return kept.isEmpty() ? null : String.join("&", kept);
+        }
+
+        /**
+         * RFC 9728 section 3.1: the well-known string inserted between the resource's authority and
+         * its path and query, a path of only "/" dropped.
+         */
+        private String protectedResourceMetadataUrl(URI resource) {
+            String path = resource.getRawPath() == null || resource.getRawPath().equals("/") ? "" : resource.getRawPath();
+            return resource.getScheme() + "://" + resource.getRawAuthority() + PROTECTED_RESOURCE_METADATA + path
+                    + (resource.getRawQuery() == null ? "" : "?" + resource.getRawQuery());
         }
 
         /**
@@ -1008,27 +1162,27 @@ public final class RefLwsServer implements AutoCloseable {
             }
             byte[] body;
             String contentType;
-            if (STORAGE_PATH.equals(path)) {
+            if (node.container) {
                 // "Requests for the storage URI MUST return a document that conforms to the
                 // storage description resource data model with a media type of
                 // application/lws+cid, unless content negotiation requires a different format."
-                contentType = negotiateStorage(request.getHeaders().get("Accept"));
-                if (contentType == null) {
+                String accept = request.getHeaders().get("Accept");
+                Negotiated chosen = STORAGE_PATH.equals(path) && describes(accept) ? null : negotiate(accept);
+                if (chosen == null && !(STORAGE_PATH.equals(path) && describes(accept))) {
                     status(request, response, callback, 406);
                     return;
                 }
+                // "When the selected representation depends on the request's Accept header,
+                // responses SHOULD include a Vary: Accept header."
                 response.getHeaders().put(HttpHeader.VARY, "Accept");
-                body = LWS_CID.equals(contentType) ? storageDescription(request) : listing(request, path, node, page);
-            } else if (node.container) {
-                contentType = negotiate(request.getHeaders().get("Accept"));
-                if (contentType == null) {
-                    status(request, response, callback, 406);
-                    return;
+                if (chosen == null) {
+                    contentType = LWS_CID;
+                    body = storageDescription(request);
+                } else {
+                    contentType = chosen.contentType();
+                    ObjectNode listing = listing(request, path, node, page);
+                    body = chosen.mediaType().equals(TURTLE) ? turtle(listing) : bytes(listing);
                 }
-                // "Because the Content-Type of a container response depends on the request's
-                // Accept header, these responses SHOULD include a Vary: Accept header."
-                response.getHeaders().put(HttpHeader.VARY, "Accept");
-                body = listing(request, path, node, page);
             } else {
                 contentType = node.contentType;
                 body = node.bytes;
@@ -1263,10 +1417,10 @@ public final class RefLwsServer implements AutoCloseable {
          * A resource's linkset (RFC 9264): GET and HEAD, and PATCH with JSON Patch, which
          * the Allow and Accept-Patch headers advertise. PUT is not supported, so it is 405 with
          * the methods that are, unless {@link #linksetPutOnDataResources} lets a data resource's
-         * linkset be replaced.
+         * linkset be replaced. A PATCH that changes the up link moves the resource (section 9.6).
          */
-        private void linksetResource(Request request, Response response, Callback callback, String path, String method)
-                throws Exception {
+        private void linksetResource(Request request, Response response, Callback callback, String path, String method,
+                                     String subject, String client) throws Exception {
             Node node = store.get(path);
             if (node == null) {
                 status(request, response, callback, 404);
@@ -1295,9 +1449,10 @@ public final class RefLwsServer implements AutoCloseable {
                         status(request, response, callback, 412);
                         return;
                     }
+                    ObjectNode rendered = linksetDocument(request, path, node);
                     JsonNode patched;
                     try (InputStream in = Content.Source.asInputStream(request)) {
-                        patched = JsonPatch.apply(linksetDocument(request, path, node), mapper.readTree(in.readAllBytes()));
+                        patched = JsonPatch.apply(rendered, mapper.readTree(in.readAllBytes()));
                     } catch (JsonPatch.Failure e) {
                         status(request, response, callback, e.status());
                         return;
@@ -1309,10 +1464,44 @@ public final class RefLwsServer implements AutoCloseable {
                         status(request, response, callback, 422);
                         return;
                     }
+                    // The type link is the server's: "Servers MUST preserve the links a client is
+                    // not permitted to modify when applying a patch" (section 9.1.1).
+                    String uri = absolute(request, path);
+                    ObjectNode own = ownContext(patched, uri);
+                    if (own == null || !java.util.Objects.equals(own.get("type"), ownContext(rendered, uri).get("type"))) {
+                        status(request, response, callback, 409);
+                        return;
+                    }
+                    String destination = null;
+                    if (!java.util.Objects.equals(own.get("up"), ownContext(rendered, uri).get("up"))) {
+                        destination = moveDestination(request, path, own.get("up"));
+                        if (destination == null) {
+                            status(request, response, callback, 409);
+                            return;
+                        }
+                        if (destination.equals(parentOf(path))) {
+                            destination = null;
+                        }
+                    }
+                    if (destination != null) {
+                        int refused = refuseMove(request, path, node, destination, subject, client);
+                        if (refused != 0) {
+                            status(request, response, callback, refused);
+                            return;
+                        }
+                    }
+                    own.remove("up");
+                    own.remove("type");
+                    if (destination != null) {
+                        move(request, path, node, destination);
+                    }
                     node.linkset = (ObjectNode) patched;
                     node.linksetEtag = newEtag();
                     node.indexed = Instant.now();
                     response.getHeaders().put(HttpHeader.ETAG, node.linksetEtag);
+                    if (destination != null) {
+                        response.getHeaders().add("Link", "<" + absolute(request, destination) + ">; rel=\"up\"");
+                    }
                     status(request, response, callback, 204);
                 }
                 case "PUT" -> {
@@ -1345,6 +1534,12 @@ public final class RefLwsServer implements AutoCloseable {
                         status(request, response, callback, 422);
                         return;
                     }
+                    // The server's links are kept as they are, whatever the replacement says of them.
+                    ObjectNode own = ownContext(replacement, absolute(request, path));
+                    if (own != null) {
+                        own.remove("up");
+                        own.remove("type");
+                    }
                     node.linkset = (ObjectNode) replacement;
                     node.linksetEtag = newEtag();
                     node.indexed = Instant.now();
@@ -1355,13 +1550,130 @@ public final class RefLwsServer implements AutoCloseable {
             }
         }
 
+        /**
+         * The linkset as served: the links the client stored, with the server's own added to the
+         * resource's link context, the first: its up link, which is how a client moves it
+         * (section 9.6), and its LWS type. Neither is stored, so both always say what is so.
+         */
         private ObjectNode linksetDocument(Request request, String path, Node node) {
+            ObjectNode doc;
+            String uri = absolute(request, path);
             if (node.linkset != null) {
-                return node.linkset.deepCopy();
+                doc = node.linkset.deepCopy();
+            } else {
+                doc = mapper.createObjectNode();
+                doc.putArray("linkset").addObject().put("anchor", uri);
             }
-            ObjectNode doc = mapper.createObjectNode();
-            doc.putArray("linkset").addObject().put("anchor", absolute(request, path));
+            ObjectNode own = ownContext(doc, uri);
+            if (own == null) {
+                own = ((ArrayNode) doc.get("linkset")).insertObject(0);
+                own.put("anchor", uri);
+            }
+            if (!path.equals(STORAGE_PATH)) {
+                own.putArray("up").addObject().put("href", absolute(request, parentOf(path)));
+            }
+            own.putArray("type").addObject().put("href", LWS_NS + (node.container ? "Container" : "DataResource"));
             return doc;
+        }
+
+        /** The link context object of a linkset document whose anchor is {@code uri}, or null. */
+        private static ObjectNode ownContext(JsonNode doc, String uri) {
+            for (JsonNode context : doc.path("linkset")) {
+                if (context.isObject() && uri.equals(context.path("anchor").asText(null))) {
+                    return (ObjectNode) context;
+                }
+            }
+            return null;
+        }
+
+        // ---- moves ----
+
+        /**
+         * Where a patched up link points, as a path of this storage: exactly one target, a URI of
+         * a container here. Null for anything else, which is refused with 409: no up link, more
+         * than one, or one to a container that does not exist, to a data resource, or to another
+         * storage, which "servers are not required to support" (section 9.6).
+         */
+        private String moveDestination(Request request, String path, JsonNode up) {
+            if (path.equals(STORAGE_PATH) || up == null || !up.isArray() || up.size() != 1
+                    || !up.get(0).path("href").isTextual()) {
+                return null;
+            }
+            String target;
+            try {
+                target = URI.create(absolute(request, linksetOf(path))).resolve(up.get(0).get("href").asText()).toString();
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+            String destination = pathOf(request, target);
+            Node node = destination == null ? null : store.get(destination);
+            return node != null && node.container ? destination : null;
+        }
+
+        /**
+         * Why a move of {@code path} into {@code destination} is refused, as a status, or 0 when it
+         * is not: 409 when the storage does not move such resources or the move would put a
+         * container inside itself, 403 when the agent may not both delete the resource, with all
+         * it holds, and create in the destination (section 9.6, "Authorization").
+         */
+        private int refuseMove(Request request, String path, Node node, String destination, String subject,
+                               String client) {
+            if (!moves || (node.container && traps.dataMovesOnly())) {
+                return 409;
+            }
+            if (node.container && (destination.equals(path) || inside(destination, path))) {
+                return 409;
+            }
+            if (authMode != AuthMode.SECURED) {
+                return 0;
+            }
+            Node target = store.get(destination);
+            if (!allowed("create", target, absolute(request, destination), subject, client)) {
+                return 403;
+            }
+            List<String> subtree = new ArrayList<>();
+            subtree(path, subtree);
+            for (String member : subtree) {
+                Node m = store.get(member);
+                if (m != null && !allowed("delete", m, absolute(request, member), subject, client)) {
+                    return 403;
+                }
+            }
+            return 0;
+        }
+
+        private void subtree(String path, List<String> out) {
+            out.add(path);
+            Node node = store.get(path);
+            if (node != null && node.container) {
+                for (String child : node.children) {
+                    subtree(child, out);
+                }
+            }
+        }
+
+        /**
+         * Moves {@code path} into {@code destination}, atomically: it leaves its parent's items and
+         * joins the destination's, both containers get a new ETag, and it keeps its identifier.
+         * Subscribers whose topic covered it before or covers it now hear one Move activity.
+         */
+        private void move(Request request, String path, Node node, String destination) {
+            String origin = parentOf(path);
+            Set<String> before = covering(request, path);
+            synchronized (store) {
+                Node from = store.get(origin);
+                Node to = store.get(destination);
+                if (from != null) {
+                    from.children.remove(path);
+                    from.etag = newEtag();
+                    from.modified = now();
+                }
+                to.children.add(path);
+                to.etag = newEtag();
+                to.modified = now();
+                node.parent = destination;
+            }
+            announceMove(request, path, node, origin, destination, before);
         }
 
         // ---- create ----
@@ -1608,7 +1920,7 @@ public final class RefLwsServer implements AutoCloseable {
          * One page of a container's listing: id, type and totalItems describe the whole
          * container, items only the members on this page (section 12.1.2.1).
          */
-        private byte[] listing(Request request, String path, Node node, int page) {
+        private ObjectNode listing(Request request, String path, Node node, int page) {
             ObjectNode root = mapper.createObjectNode();
             // The context is sent by IRI, as the draft's own example does and as a real server
             // does; harness-core resolves it from its bundled copy, offline (D-0026).
@@ -1648,7 +1960,7 @@ public final class RefLwsServer implements AutoCloseable {
             }
             root.put("totalItems", total);
             root.set("items", items);
-            return bytes(root);
+            return root;
         }
 
         /**
@@ -1663,6 +1975,16 @@ public final class RefLwsServer implements AutoCloseable {
             context.add(LWS_CONTEXT);
             root.put("id", storage);
             root.put("type", "Storage");
+            if (moves) {
+                // A storage that lets clients change an up link "MUST describe a capability whose
+                // type equals MoveResource" (section 6.1.3).
+                ObjectNode move = root.putArray("capability").addObject();
+                move.put("type", "MoveResource");
+                if (!traps.dataMovesOnly()) {
+                    move.putArray("appliesTo").add("DataResource").add("Container");
+                    move.put("preservesIdentifier", true);
+                }
+            }
             ArrayNode services = root.putArray("service");
             service(services, storage + "#storage-root", "StorageRoot", storage);
             service(services, storage + "#access-grants", "AccessGrantService", absolute(request, GRANTS))
@@ -1734,26 +2056,145 @@ public final class RefLwsServer implements AutoCloseable {
         }
 
         /**
-         * Conneg at the storage URI, where {@code application/lws+cid} is the default rather
-         * than one option among equals.
+         * Whether a request for the storage URI gets the storage description: when it asks for
+         * {@code application/lws+cid}, for anything, or for nothing in particular. The description
+         * is the default there rather than one option among equals.
          */
-        private String negotiateStorage(String accept) {
-            if (accept == null || accept.isBlank() || accept.contains("*/*") || accept.contains(LWS_CID)) {
-                return LWS_CID;
-            }
-            return negotiate(accept);
+        private boolean describes(String accept) {
+            return accept == null || accept.isBlank() || accept.contains("*/*") || accept.contains(LWS_CID);
         }
 
-        private String negotiate(String accept) {
-            if (accept == null || accept.isBlank() || accept.contains("*/*")) {
-                return LWS_JSON;
+        /**
+         * The representation of a container a request's Accept selects (section 12.1.2), in the
+         * order of its q values: application/lws+json, which any wildcard also gets; JSON-LD or
+         * JSON, the same document; or Turtle. An RDF media type asked for with a profile is
+         * served in the LWS profile, and says so, unless it names another profile, which it is
+         * not served in. Null when nothing acceptable can be produced.
+         */
+        private Negotiated negotiate(String accept) {
+            if (accept == null || accept.isBlank()) {
+                return new Negotiated(LWS_JSON, false);
             }
-            for (String candidate : List.of(LWS_JSON, "application/ld+json", "application/json")) {
-                if (accept.contains(candidate)) {
-                    return candidate;
+            List<String[]> ranges = new ArrayList<>();
+            for (String range : accept.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")) {
+                String[] parts = range.split(";(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                String type = parts[0].trim().toLowerCase(Locale.ROOT);
+                double q = 1;
+                String profile = null;
+                for (int i = 1; i < parts.length; i++) {
+                    String[] param = parts[i].split("=", 2);
+                    String name = param[0].trim().toLowerCase(Locale.ROOT);
+                    String value = param.length < 2 ? "" : param[1].trim().replaceAll("^\"|\"$", "");
+                    if (name.equals("q")) {
+                        try {
+                            q = Double.parseDouble(value);
+                        } catch (NumberFormatException e) {
+                            q = 0;
+                        }
+                    } else if (name.equals("profile")) {
+                        profile = value;
+                    }
+                }
+                if (q > 0) {
+                    ranges.add(new String[] {type, profile, Double.toString(q)});
+                }
+            }
+            ranges.sort(java.util.Comparator.comparingDouble((String[] r) -> -Double.parseDouble(r[2])));
+            for (String[] r : ranges) {
+                String type = r[0];
+                String profile = r[1];
+                boolean lwsProfile = profile != null && List.of(profile.split("\\s+")).contains(LWS_PROFILE);
+                if (profile != null && !lwsProfile) {
+                    continue;
+                }
+                switch (type) {
+                    case LWS_JSON, "*/*", "application/*" -> {
+                        return new Negotiated(LWS_JSON, false);
+                    }
+                    case "application/ld+json", TURTLE -> {
+                        return new Negotiated(type, lwsProfile);
+                    }
+                    case "application/json" -> {
+                        return new Negotiated(type, false);
+                    }
+                    case "text/*" -> {
+                        return new Negotiated(TURTLE, false);
+                    }
+                    default -> {
+                    }
                 }
             }
             return null;
+        }
+
+        /** A container's chosen representation: a media type, and whether it was asked for in the LWS profile. */
+        private record Negotiated(String mediaType, boolean profiled) {
+            String contentType() {
+                return profiled ? mediaType + "; profile=\"" + LWS_PROFILE + '"' : mediaType;
+            }
+        }
+
+        /**
+         * The Turtle of a container listing: the RDF its application/lws+json form encodes, as
+         * JSON-LD reads it with the LWS context (section 12.1.1). That context defines items and
+         * totalItems only on a Container, and format, size and modified only on a DataResource,
+         * so a contained container is said to be one and nothing more. Written here from the
+         * listing, not converted by an RDF library, so that the harness's own conversion is
+         * checked against an independent one.
+         */
+        private byte[] turtle(ObjectNode listing) {
+            StringBuilder ttl = new StringBuilder();
+            ttl.append("@prefix lws: <").append(LWS_NS).append("> .\n");
+            ttl.append("@prefix dcterms: <http://purl.org/dc/terms/> .\n");
+            ttl.append("@prefix schema: <http://schema.org/> .\n");
+            ttl.append("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n");
+            ttl.append(iri(listing.get("id").asText())).append(" a lws:Container ;\n");
+            ttl.append("  lws:totalItems ").append(listing.get("totalItems").asLong());
+            List<String> members = new ArrayList<>();
+            listing.get("items").forEach(item -> members.add(iri(item.get("id").asText())));
+            if (!members.isEmpty()) {
+                ttl.append(" ;\n  lws:items ").append(String.join(", ", members));
+            }
+            ttl.append(" .\n");
+            for (JsonNode item : listing.get("items")) {
+                ttl.append('\n').append(iri(item.get("id").asText()));
+                if (item.get("type").asText().equals("Container")) {
+                    ttl.append(" a lws:Container .\n");
+                    continue;
+                }
+                ttl.append(" a lws:DataResource");
+                if (item.hasNonNull("format")) {
+                    ttl.append(" ;\n  dcterms:format ").append(literal(item.get("format").asText()));
+                }
+                if (item.has("size")) {
+                    ttl.append(" ;\n  schema:size \"").append(item.get("size").asLong()).append("\"^^xsd:long");
+                }
+                if (item.has("modified")) {
+                    ttl.append(" ;\n  dcterms:modified ").append(literal(item.get("modified").asText()))
+                            .append("^^xsd:dateTime");
+                }
+                ttl.append(" .\n");
+            }
+            return ttl.toString().getBytes(StandardCharsets.UTF_8);
+        }
+
+        private static String iri(String iri) {
+            return "<" + iri + ">";
+        }
+
+        /** A Turtle string literal, with the characters a short string escapes escaped. */
+        private static String literal(String value) {
+            StringBuilder sb = new StringBuilder("\"");
+            for (char c : value.toCharArray()) {
+                switch (c) {
+                    case '"' -> sb.append("\\\"");
+                    case '\\' -> sb.append("\\\\");
+                    case '\n' -> sb.append("\\n");
+                    case '\r' -> sb.append("\\r");
+                    default -> sb.append(c);
+                }
+            }
+            return sb.append('"').toString();
         }
 
         private String absolute(Request request, String path) {
@@ -2250,31 +2691,71 @@ public final class RefLwsServer implements AutoCloseable {
         private void announce(Request request, String type, String path, Node node, String relation, String related) {
             String uri = absolute(request, path);
             for (Subscription s : subscriptions.values()) {
-                // Containment, not URI prefixes: a flat URI does not nest under its container's.
-                boolean covered = s.topics().stream().anyMatch(t -> {
-                    if (t.equals(uri)) {
-                        return true;
-                    }
-                    String topic = t.endsWith("/") ? pathOf(request, t) : null;
-                    return topic != null && inside(path, topic);
-                });
-                if (!covered) {
+                if (!covers(request, s, uri, path) || !hears(s, node, uri)) {
                     continue;
                 }
-                if (authMode == AuthMode.SECURED && !deliverToAnyone
-                        && !allowed("read", node, uri, s.subscriber(), s.client())) {
-                    continue;
-                }
-                ObjectNode activity = mapper.createObjectNode();
-                activity.putArray("type").add(type);
-                ObjectNode object = activity.putObject("object");
-                object.put("id", uri);
-                object.putArray("type").add(node.container ? "Container" : "DataResource");
+                ObjectNode activity = activity(type, uri, node);
                 if (relation != null) {
                     activity.put(relation, absolute(request, related));
                 }
                 deliver(request, s.inbox(), activity, s.id());
             }
+        }
+
+        /**
+         * Tells every subscriber whose topic covered the moved resource before the move, or covers
+         * it now, with one Move activity (section 9.6, "Notifications"): its origin the container
+         * the resource left, its target the one it joined.
+         */
+        private void announceMove(Request request, String path, Node node, String origin, String target,
+                                  Set<String> before) {
+            String uri = absolute(request, path);
+            for (Subscription s : subscriptions.values()) {
+                if ((!before.contains(s.id()) && !covers(request, s, uri, path)) || !hears(s, node, uri)) {
+                    continue;
+                }
+                ObjectNode activity = activity("Move", uri, node);
+                activity.put("origin", absolute(request, origin));
+                activity.put("target", absolute(request, target));
+                deliver(request, s.inbox(), activity, s.id());
+            }
+        }
+
+        /** The subscriptions whose topic covers {@code path} where it is now. */
+        private Set<String> covering(Request request, String path) {
+            String uri = absolute(request, path);
+            Set<String> out = new java.util.HashSet<>();
+            subscriptions.values().forEach(s -> {
+                if (covers(request, s, uri, path)) {
+                    out.add(s.id());
+                }
+            });
+            return out;
+        }
+
+        /** Whether a topic of {@code s} is the resource, or a container it is in: containment, not URI prefixes. */
+        private boolean covers(Request request, Subscription s, String uri, String path) {
+            return s.topics().stream().anyMatch(t -> {
+                if (t.equals(uri)) {
+                    return true;
+                }
+                String topic = t.endsWith("/") ? pathOf(request, t) : null;
+                return topic != null && inside(path, topic);
+            });
+        }
+
+        /** Whether the subscriber may read the resource now, or the broken twin tells everyone. */
+        private boolean hears(Subscription s, Node node, String uri) {
+            return authMode != AuthMode.SECURED || deliverToAnyone || allowed("read", node, uri, s.subscriber(), s.client());
+        }
+
+        private ObjectNode activity(String type, String uri, Node node) {
+            ObjectNode activity = mapper.createObjectNode();
+            activity.putArray("type").add(type);
+            ObjectNode object = activity.putObject("object");
+            object.put("id", uri);
+            object.putArray("type").add(node.container ? "Container" : "DataResource");
+            return activity;
         }
 
         /**

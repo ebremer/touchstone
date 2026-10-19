@@ -197,6 +197,60 @@ class EnginePartsTest {
         return new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
     }
 
+    // ------------------------------------------------------------------ sameOrigin (7.6, 7.8)
+
+    @Test
+    void sameOriginComparesSchemeHostAndPort() {
+        assertThat(LinkValues.sameOrigin("https://S.example/a?b", "https://s.example:443/c/")).isTrue();
+        assertThat(LinkValues.sameOrigin("http://s.example/", "http://s.example:80")).isTrue();
+        assertThat(LinkValues.sameOrigin("https://s.example/", "http://s.example/")).isFalse();
+        assertThat(LinkValues.sameOrigin("https://s.example/", "https://s.example:8443/")).isFalse();
+        assertThat(LinkValues.sameOrigin("https://s.example/", "https://evil.example/")).isFalse();
+        assertThat(LinkValues.sameOrigin("/relative", "https://s.example/")).isFalse();
+        assertThat(passes(json("{\"serviceEndpoint\":\"/root/\"}"),
+                "[{\"pointer\":\"/serviceEndpoint\",\"sameOrigin\":\"https://s/c/\"}]")).isTrue();
+        assertThat(passes(json("{\"serviceEndpoint\":\"https://vault.invalid/root/\"}"),
+                "[{\"pointer\":\"/serviceEndpoint\",\"sameOrigin\":\"https://s/c/\"}]")).isFalse();
+    }
+
+    // ------------------------------------------------------------------ rdfIsomorphicWith (7.11)
+
+    private static final String LISTING = "{\"@context\":\"https://www.w3.org/ns/lws/v1\",\"id\":\"https://s/c/\","
+            + "\"type\":\"Container\",\"totalItems\":2,\"items\":["
+            + "{\"id\":\"https://s/c/a\",\"type\":\"DataResource\",\"format\":\"text/plain\",\"size\":3,"
+            + "\"modified\":\"2026-10-19T12:00:00Z\"},"
+            + "{\"id\":\"https://s/c/b/\",\"type\":\"Container\",\"modified\":\"2026-10-19T12:00:00Z\"}]}";
+    private static final String TURTLE = """
+            @prefix lws: <https://www.w3.org/ns/lws#> .
+            @prefix dcterms: <http://purl.org/dc/terms/> .
+            @prefix schema: <http://schema.org/> .
+            @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+            <> a lws:Container ; lws:totalItems 2 ; lws:items <a>, <b/> .
+            <a> a lws:DataResource ; dcterms:format "text/plain" ; schema:size "3"^^xsd:long ;
+              dcterms:modified "2026-10-19T12:00:00Z"^^xsd:dateTime .
+            <b/> a lws:Container .
+            """;
+
+    @Test
+    void anLwsJsonListingIsReadWithTheBundledContext() {
+        URI base = URI.create("https://s/c/");
+        var json = JsonLdGraphs.dataset(LISTING.getBytes(StandardCharsets.UTF_8), "application/lws+json", base);
+        var turtle = JsonLdGraphs.dataset(TURTLE.getBytes(StandardCharsets.UTF_8),
+                "text/turtle; profile=\"https://www.w3.org/ns/lws/v1\"", base);
+        // The context scopes modified to data resources, so a contained container's is no RDF.
+        assertThat(JsonLdGraphs.compare(turtle, json)).isEqualTo("isomorphic");
+        var stated = JsonLdGraphs.dataset((TURTLE + "<b/> dcterms:modified \"2026-10-19T12:00:00Z\"^^xsd:dateTime .\n")
+                .getBytes(StandardCharsets.UTF_8), "text/turtle", base);
+        assertThat(JsonLdGraphs.compare(stated, json)).startsWith("not isomorphic: 10 quads against 9")
+                .contains("only in this response");
+    }
+
+    @Test
+    void onlyRdfMediaTypesAreRead() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> JsonLdGraphs.dataset(new byte[0], "text/html",
+                URI.create("https://s/"))).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("text/html");
+    }
+
     private static boolean passes(JsonNode body, String expectations) {
         return JsonChecks.check("json", body, json(expectations), e -> TextNode.valueOf(e),
                 URI.create("https://s/"), (k, v) -> { }, new ArrayList<>());

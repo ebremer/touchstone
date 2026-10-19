@@ -11,7 +11,7 @@ comment: >-
   server requiring conditional requests send If-Match (ifMatch current), because the
   draft lets a server demand one.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261005/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
 entries:
 
   - id: "#createDataResource"
@@ -28,8 +28,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
     traits: [Post, Get, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -71,7 +71,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -100,8 +100,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#resource-identification-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#resource-identification-0
     traits: [Post, Get, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-not-idempotent
@@ -156,7 +156,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
@@ -190,7 +190,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-missing-container-404
@@ -215,8 +215,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
     traits: [Post, Get, DataResource, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-server-managed-metadata-protected
@@ -262,9 +262,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
     traits: [Get, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/get-data-resource-content-range-etag
@@ -307,7 +307,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
     traits: [Get, Head, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/head-parity-with-get
@@ -358,7 +358,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
     traits: [Get, DataResource, Range]
     requirements:
@@ -404,7 +404,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-14.2
     traits: [Get, DataResource, Range]
     supersedes: [core/data-resource-range-request]
@@ -461,7 +461,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
     traits: [Put, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/update-content-vs-metadata-prefer-set-linkset
@@ -502,7 +502,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
       - https://www.rfc-editor.org/rfc/rfc6902#section-4
     traits: [Patch, DataResource]
     requirements:
@@ -566,7 +566,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
       - https://www.rfc-editor.org/rfc/rfc6902#section-5
       - https://www.rfc-editor.org/rfc/rfc5789#section-2
     traits: [Patch, DataResource]
@@ -614,9 +614,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#summary-of-http-status-mappings
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#summary-of-http-status-mappings
     traits: [Delete, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
@@ -667,7 +667,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
       - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6
     traits: [Post, DataResource]
     supersedes: [core/post-to-non-container-405]
@@ -716,7 +716,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#summary-of-http-status-mappings
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#summary-of-http-status-mappings
       - https://www.rfc-editor.org/rfc/rfc9457#section-3
     traits: [Get, DataResource]
     requirements:

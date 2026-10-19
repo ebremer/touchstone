@@ -32,7 +32,7 @@ if LTS is None:
 
 # What changed relative to lws-test-suite, per mirrored test (hand-written, reviewed against the WD).
 LTS_NOTES = {
-    "discovery-unauthorized-response-headers": "Split. The 401 challenge (MUST) is getContainer-private-unauthorized; the Link on the 401 became SHOULD, with rel lws#storage replacing storageDescription.",
+    "discovery-unauthorized-response-headers": "Split. The 401 challenge (MUST) is getContainer-private-unauthorized; the Link on the 401, with rel lws#storage replacing storageDescription, is a MUST since the 19 October 2026 draft.",
     "discovery-storage-description": "application/lws+cid instead of lws+json. The URL comes from the lws#storage link, not /alice/description. Asserts the WD data model (CID @context array, StorageRoot service) instead of an exact body.",
     "discovery-get-links-storageDescription": "Asserts rel lws#storage to the storage URI, on GET and HEAD.",
     "getContainer": "Owner read: ETag, linkset/up/type/storage links, container properties. The public-read half is getContainer-public-read, via an access grant.",
@@ -69,12 +69,18 @@ TS_NOTES = {
 # both, so section 4 says why instead of leaving a blank. The kinds:
 #   permission    a MAY a client cannot break, whatever it sends;
 #   unobservable  an obligation whose keeping or breaking does not show in what a client sends;
-#   aggregate     the conformance class itself, which the session's verdict answers for.
+#   aggregate     the conformance class itself, which the session's verdict answers for;
+#   untried       an obligation the session never puts to the test, since it serves everything
+#                 from one origin and its own metadata is always right (D-0100).
 NOT_JUDGED = {
     "lws10-core/conformance-client-class": ("aggregate", "The client conformance class itself: the session's verdict, which only MUST rules decide, answers for it."),
     "lws10-index/client-no-read-your-writes": ("unobservable", "An assumption inside the client: one that relies on reading its own writes goes wrong in its own logic, not in what it sends. The lagging-index trap lets the developer see it."),
-    "lws10-core/lws-profile-equivalence": ("unobservable", "How a client treats a body it receives, which shows only in what it does next. The session may label a listing with the profile only when the client's Accept allows it, and a client that does not take it for LWS stops or reads again, as conformant clients also may."),
-    "lws10-core/iana-ld-json-profile-equivalence": ("unobservable", "The IANA registration's restatement of `lws-profile-equivalence`, unobservable for the same reason."),
+    "lws10-core/authz-client-resource-metadata-same-origin": ("untried", "The session serves everything from one origin, so none of its 401s names protected resource metadata elsewhere for a client to refuse. Servers are judged on it by `getContainer-private-unauthorized`."),
+    "lws10-core/authz-client-prm-resource-matches": ("untried", "The session's protected resource metadata always names the URL requested, so no 401 tries the check. Servers are judged on it by `protected-resource-metadata`."),
+    "lws10-core/capability-move-resource": ("unobservable", "A client's assumption shows only as a patch of an up link the capability does not cover, a container's in a session, which the storage refuses; no rule yet tells such a patch from an edit of a container's other links."),
+    "lws10-core/capability-move-applies-to": ("unobservable", "As `capability-move-resource`: moving a container where only data resources move shows only as a refused patch of its linkset."),
+    "lws10-core/capability-move-preserves-identifier": ("unobservable", "Whether a client takes a moved resource's URI from the response shows only in what it requests next. The session's storage keeps identifiers, without saying so, so a client that assumes it is never caught out."),
+    "lws10-core/move-identifier-preserved": ("unobservable", "The clients' half restates `capability-move-preserves-identifier`, unobservable for the same reason."),
     "lws10-core/access-extra-properties-allowed": ("permission", "A client may add properties or not; either is allowed."),
     "lws10-core/access-inbox-optional": ("permission", "A client may leave the inbox out. One it gives is judged by `client-access-document-inbox`."),
     "lws10-core/policy-constraint-optional": ("permission", "A client may leave constraints out. Those it gives are judged by `client-access-policy-constraint`."),
@@ -87,7 +93,8 @@ NOT_JUDGED = {
     "lws10-index/type-filter": ("permission", "A client may filter by type or not; either is allowed."),
     "lws10-index/client-415-accept-query": ("permission", "A client may consult Accept-Query after a 415. While the session accepts only the baseline format, doing so looks the same as `client-query-baseline-after-415` (D-0078)."),
 }
-KINDS = {"permission": "a permission", "unobservable": "unobservable", "aggregate": "the conformance class"}
+KINDS = {"permission": "a permission", "unobservable": "unobservable", "aggregate": "the conformance class",
+         "untried": "untried here"}
 
 
 def load():
@@ -161,8 +168,8 @@ L = []
 L.append("# Coverage of the LWS 1.0 test definitions")
 L.append("")
 L.append("Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD")
-L.append("2026-09-21, the OpenID Connect and SAML suites of 2026-08-03, and the CID suite of")
-L.append("2026-09-21. The did:key suite was discontinued on 2026-09-29; its tests run under the CID suite.")
+L.append("2026-10-19, and the OpenID Connect, SAML and CID suites of 2026-10-15. The did:key suite was")
+L.append("discontinued on 2026-09-29; its tests run under the CID suite.")
 L.append("")
 L.append("## Summary")
 L.append("")
@@ -190,13 +197,14 @@ L.append(f"- **{len(rules)} client rules** (`clients/`, judged by client session
          f"{len(judged & client_side_ids)} of the {len(client_side_ids)} requirements that bind a client or a receiver; "
          f"the other {len(not_judged_ids)} are not judged, each for a reason section 4 gives: {kinds['permission']} "
          f"permissions a client cannot break, {kinds['unobservable']} obligations that do not show in what a client "
-         f"sends, and the conformance class itself (sections 4 and 5).")
+         f"sends, {kinds['untried']} checks the session's one origin never puts to the test, and the conformance "
+         f"class itself (sections 4 and 5).")
 L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_side)} of the {len(server_side)} that bind a "
          "server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.")
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
 L.append(f"- **lws-test-suite:** all {covered} of {len(lts_order)} tests are accounted for "
          "(table 1). The definitions change what those tests assert wherever it contradicts the "
-         "5 October draft.")
+         "19 October draft.")
 sup = sum(1 for m in ts_manifests if m in superseded_by)
 L.append(f"- **manifests/ (retired, D-0055):** {sup} of its {len(ts_manifests)} tests have a successor; the "
          f"other {len(ts_manifests) - sup} were dropped because the specification no longer says what "

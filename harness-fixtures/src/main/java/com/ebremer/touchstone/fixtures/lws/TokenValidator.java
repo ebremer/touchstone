@@ -18,8 +18,8 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
  * Validates RFC 9068 access tokens the way a compliant LWS storage server must
  * (core WD authorization §): RS256 only (so {@code alg=none} is rejected), signature
  * verified against the authorization server's {@code jwks_uri}, and {@code iss} /
- * {@code aud} / {@code exp} / {@code nbf} checked — {@code aud} must contain the storage
- * realm. Returns the authenticated subject, or throws {@link InvalidTokenException}.
+ * {@code aud} / {@code exp} / {@code nbf} checked — {@code aud} must include the storage
+ * URI. Returns the authenticated subject, or throws {@link InvalidTokenException}.
  *
  * Client-side JWK caching is disabled so a mid-session key rotation at the issuer is
  * observed immediately (the rotation negative case); the spec's caching guidance is a
@@ -35,26 +35,27 @@ public final class TokenValidator {
     }
 
     private final DefaultJWTProcessor<SecurityContext> processor;
-    private final String realm;
+    private final String audience;
 
-    public TokenValidator(String issuer, URL jwksUri, String realm) {
+    /** @param audience the storage URI, which a valid token's {@code aud} includes */
+    public TokenValidator(String issuer, URL jwksUri, String audience) {
         this(issuer, JWKSourceBuilder.<SecurityContext>create(jwksUri)
                 .cache(false)
                 .refreshAheadCache(false)
                 .rateLimited(false)
-                .build(), realm);
+                .build(), audience);
     }
 
     /** With the keys from {@code jwks} directly, for an authorization server in the same process. */
-    public TokenValidator(String issuer, JWKSource<SecurityContext> jwks, String realm) {
-        this.realm = realm;
+    public TokenValidator(String issuer, JWKSource<SecurityContext> jwks, String audience) {
+        this.audience = audience;
         this.processor = new DefaultJWTProcessor<>();
         // RFC 9068 access tokens carry typ=at+jwt; the default verifier only allows JWT.
         processor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(
                 new JOSEObjectType("at+jwt"), JOSEObjectType.JWT, null));
         processor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, jwks));
         processor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
-                realm,
+                audience,
                 new JWTClaimsSet.Builder().issuer(issuer).build(),
                 Set.of("sub", "iss", "aud", "exp")));
     }
@@ -72,11 +73,9 @@ public final class TokenValidator {
         } catch (Exception e) {
             throw new InvalidTokenException(e.getMessage() == null ? e.toString() : e.getMessage());
         }
-        // Nimbus accepts a token whose aud merely contains the realm, and does not look at iat.
-        // An access token is for this storage alone, and one issued in the future was not issued.
-        if (claims.getAudience().size() != 1) {
-            throw new InvalidTokenException("aud must name this storage alone");
-        }
+        // Nimbus accepts a token whose aud includes the storage, which is what the 19 October 2026
+        // draft asks ("Verify the aud claim includes the URI of the storage"), and does not look at
+        // iat. A token issued in the future was not issued.
         if (claims.getIssueTime() != null
                 && claims.getIssueTime().toInstant().isAfter(java.time.Instant.now().plusSeconds(60))) {
             throw new InvalidTokenException("iat lies in the future");
@@ -84,7 +83,7 @@ public final class TokenValidator {
         return claims;
     }
 
-    public String realm() {
-        return realm;
+    public String audience() {
+        return audience;
     }
 }

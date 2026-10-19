@@ -24,7 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * section 4.3). The ledger holds every URL of the session that the session handed out: the
  * storage URL on the session page, and from then on whatever its answers name, in
  * {@code Location}, {@code Content-Location} and {@code Link} headers, a challenge's
- * {@code as_uri}, and the URLs in the JSON representations the server generates. A request for
+ * {@code resource_metadata} (or, from a server behind a proxy that still sends it, its
+ * {@code as_uri}), and the URLs in the JSON representations the server generates. A request for
  * a URL outside it is one the client built, and the ledger says which handed-out URL it was
  * built from. The recorder also keeps, per URL, what its answers advertised and the role of its
  * latest exchange.
@@ -34,13 +35,16 @@ final class Recorder {
     /** Roles whose bodies the server generated, so the URLs in them were handed out by it. */
     private static final Set<String> GENERATED = Set.of("storageDescription", "container", "page", "linkset",
             "typeIndex", "typeSearch", "searchPage", "subscriptions", "subscription", "accessGrants", "accessGrant",
-            "accessRequests", "accessRequest", "asMetadata", "identityDocument", "opDiscovery");
+            "accessRequests", "accessRequest", "asMetadata", "identityDocument", "opDiscovery",
+            "protectedResourceMetadata", "decoyStorage");
     /** The headers that say what a resource supports. */
     private static final List<String> ADVERTISING = List.of("Allow", "Accept-Patch", "Accept-Query", "ETag");
     private static final Pattern LINK = Pattern.compile("<([^>]*)>\\s*((?:;[^,<]*)*)");
     private static final Pattern REL = Pattern.compile("(?i)\\brel\\s*=\\s*\"?([^\";,]+)\"?");
     private static final Pattern AS_URI = Pattern.compile("(?i)\\bas_uri\\s*=\\s*\"([^\"]*)\"");
-    private static final Pattern REALM = Pattern.compile("(?i)\\brealm\\s*=\\s*(?:\"([^\"]*)\"|([^\\s,]+))");
+    private static final Pattern RESOURCE_METADATA =
+            Pattern.compile("(?i)\\bresource_metadata\\s*=\\s*(?:\"([^\"]*)\"|([^\\s,]+))");
+    private static final String STORAGE_REL = "https://www.w3.org/ns/lws#storage";
     private static final ObjectMapper JSON = new ObjectMapper();
     /** The characters of body text the log allows for each exchange it may keep, on average. */
     static final int CHARS_PER_EXCHANGE = 8 << 10;
@@ -72,8 +76,16 @@ final class Recorder {
     private final Map<String, Map<String, String>> advertised = new ConcurrentHashMap<>();
     private final Map<String, String> roles = new ConcurrentHashMap<>();
     private final Map<String, String> lastRequests = new ConcurrentHashMap<>();
-    /** Each realm a 401 presented, and the URL of the latest request it was presented for. */
-    private final Map<String, String> realms = new ConcurrentHashMap<>();
+    /**
+     * Each storage a 401's Link named, and whether the discovery checks of lws10-core section 5.2.3
+     * passed for the latest request it was named for (OBSERVATION.md section 4.10).
+     */
+    private final Map<String, Boolean> storages = new ConcurrentHashMap<>();
+    /**
+     * Whether the storage description of a storage names a StorageRoot with the scheme and
+     * authority of a URL: true or false for the session's own storages, null for any other.
+     */
+    private volatile java.util.function.BiFunction<String, String, Boolean> storageRoots = (storage, url) -> null;
 
     /**
      * @param inSession whether a URL is one of the session's, the only ones the ledger tracks
@@ -156,27 +168,37 @@ final class Recorder {
         return key != null && room(lastRequests, key) && signature.equals(lastRequests.put(key, signature));
     }
 
-    /**
-     * Whether {@code realm} logically contains the URL of the latest request a 401 presented it
-     * for (OBSERVATION.md section 4.10); null when no 401 presented it.
-     */
-    Boolean realmContains(String realm) {
-        String url = realms.get(realm);
-        return url == null ? null : contains(realm, url);
+    /** Tells the recorder where the storage roots of the session's storages are (OBSERVATION.md section 4.10). */
+    void storageRoots(java.util.function.BiFunction<String, String, Boolean> roots) {
+        this.storageRoots = roots;
     }
 
     /**
-     * Whether {@code url}, its query and fragment dropped, is within {@code realm}: the realm
-     * itself, or below it, a path segment boundary following the realm when it does not end in a
-     * slash. URLs compare as strings, as in EXECUTION.md section 8.
+     * Whether the discovery checks passed for the latest request a 401 named {@code storage} for
+     * (OBSERVATION.md section 4.10); null when no 401 named it.
      */
-    static boolean contains(String realm, String url) {
-        String u = url;
-        int cut = u.indexOf('#');
-        u = cut < 0 ? u : u.substring(0, cut);
-        cut = u.indexOf('?');
-        u = cut < 0 ? u : u.substring(0, cut);
-        return realm.endsWith("/") ? u.startsWith(realm) : u.equals(realm) || u.startsWith(realm + "/");
+    Boolean discoveryValid(String storage) {
+        return storages.get(storage);
+    }
+
+    /**
+     * The discovery checks of lws10-core section 5.2.3 for a 401 answering {@code url}: its
+     * resource_metadata has the URL's scheme and authority, and the storage it links to has its
+     * storage root there too. The third check, that the metadata's resource is the URL, holds
+     * for every 401 the session's own storage gives, so it is not looked at. Null when the
+     * storage is not the session's, whose description the recorder cannot vouch for.
+     */
+    private Boolean discoveryChecks(String url, String resourceMetadata, String storage) {
+        Boolean root = storageRoots.apply(storage, url);
+        if (root == null) {
+            return null;
+        }
+        return resourceMetadata != null && sameOrigin(URI.create(url).resolve(resourceMetadata), parse(url)) && root;
+    }
+
+    private static boolean sameOrigin(URI a, URI b) {
+        return a != null && b != null && a.getScheme() != null && a.getScheme().equalsIgnoreCase(b.getScheme())
+                && a.getRawAuthority() != null && a.getRawAuthority().equalsIgnoreCase(b.getRawAuthority());
     }
 
     /** What {@code url}'s answers advertised, before the exchange now being recorded. */
@@ -219,12 +241,12 @@ final class Recorder {
                 }
             }
         }
+        String resourceMetadata = null;
         for (String challenge : values(headers, "WWW-Authenticate")) {
-            if (status == 401 && key != null) {
-                Matcher r = REALM.matcher(challenge);
-                while (r.find()) {
-                    realms.put(r.group(1) != null ? r.group(1) : r.group(2), key);
-                }
+            Matcher r = RESOURCE_METADATA.matcher(challenge);
+            if (r.find()) {
+                resourceMetadata = r.group(1) != null ? r.group(1) : r.group(2);
+                issue(resolve(base, resourceMetadata), "challenge:resource_metadata");
             }
             Matcher m = AS_URI.matcher(challenge);
             while (m.find()) {
@@ -239,10 +261,36 @@ final class Recorder {
                 }
             }
         }
+        if (status == 401 && key != null) {
+            for (String link : values(headers, "Link")) {
+                Matcher m = LINK.matcher(link);
+                while (m.find()) {
+                    Matcher rel = REL.matcher(m.group(2));
+                    if (rel.find() && List.of(rel.group(1).trim().split("\\s+")).contains(STORAGE_REL)) {
+                        String storage = resolve(base, m.group(1));
+                        Boolean checked = storage == null ? null : discoveryChecks(url, resourceMetadata, storage);
+                        if (checked != null && room(storages, storage)) {
+                            storages.put(storage, checked);
+                        }
+                    }
+                }
+            }
+        }
         if (body != null && GENERATED.contains(role) && status / 100 == 2) {
             try {
                 JsonNode doc = JSON.readTree(body);
                 collect(doc, "body:" + role);
+                if (role.equals("protectedResourceMetadata")) {
+                    // RFC 8414 section 3.1 derives each authorization server's metadata URL from
+                    // its issuer, so a client that fetches it follows the issuer, not a URL it built.
+                    for (JsonNode issuer : doc.path("authorization_servers")) {
+                        URI i = parse(issuer.asText(null));
+                        if (i != null && i.getScheme() != null && i.getRawAuthority() != null) {
+                            String path = i.getRawPath() == null ? "" : i.getRawPath().replaceAll("/$", "");
+                            issue(i.resolve("/.well-known/lws-configuration" + path).toString(), "body:" + role);
+                        }
+                    }
+                }
                 if (role.equals("identityDocument")) {
                     // OpenID Connect Discovery section 4 derives the configuration's URL from the
                     // provider's issuer, as RFC 8414 does the metadata's.
