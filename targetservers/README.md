@@ -63,7 +63,10 @@ A target container:
 4. **Has its authorization server's issuer at `LWS_PUBLIC_URL`.** RFC 8414 puts the metadata of the issuer
    `<origin>/targets/<name>` at `<origin>/.well-known/lws-configuration/targets/<name>`. The router sends that URL to
    `/.well-known/lws-configuration` of the target's own root (`strip`), to
-   `/targets/<name>/.well-known/lws-configuration` (`keep`), or unchanged (`whole`).
+   `/targets/<name>/.well-known/lws-configuration` (`keep`), or unchanged (`whole`). Since the LWS drafts of
+   19 October 2026 a 401 names the protected resource metadata of the resource requested (RFC 9728), at
+   `<origin>/.well-known/oauth-protected-resource/targets/<name>/<path>`; the router sends it to
+   `/.well-known/oauth-protected-resource/<path>` of the target's own root (`strip`), or unchanged (`keep`, `whole`).
 5. **Gives the storage to `LWS_OWNER`**: the agent, or for lws-server the agents, with full control. Where the
    server records its owner only once, at the storage's first start, changing `LWS_OWNER` later changes nothing.
 6. **Keeps its state in `/data`**, a volume, and runs as a user other than root.
@@ -189,6 +192,9 @@ location ^~ /targets/ {
     proxy_set_header Connection        $connection_upgrade;
 }
 location ^~ /.well-known/lws-configuration/targets/ {
+    # the same
+}
+location ^~ /.well-known/oauth-protected-resource/targets/ {
     # the same
 }
 ```
