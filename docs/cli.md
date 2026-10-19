@@ -51,7 +51,7 @@ touchstone run -t <targetId> [-m <selector>] [--targets <file>] [--definitions <
 Before sending any request, `run` checks that:
 
 - the registry file exists, parses, and holds the target id;
-- the definitions are in the format this engine implements (0.13.0);
+- the definitions are in the format this engine implements (0.14.0);
 - every definition parses as YAML 1.2, validates against the schema, expands as JSON-LD in
   safe mode, and passes the lint, including that every requirement IRI it cites is in the
   catalog;
@@ -121,15 +121,15 @@ touchstone coverage [-c <catalogDir>] [--definitions <dir>]
 
 ```text
 $ touchstone coverage
-Requirements coverage: 225 of 248 covered by 204 test(s)
+Requirements coverage: 243 of 272 covered by 221 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     2/2
 lws10-authn-saml         MUST     1/1
 lws10-authn-ssi-cid      MUST     5/5
-lws10-core               MUST     127/130
-lws10-core               SHOULD   17/21
-lws10-core               MAY      9/19
+lws10-core               MUST     148/155
+lws10-core               SHOULD   15/20
+lws10-core               MAY      8/19
 lws10-index              MUST     37/39
 lws10-index              SHOULD   4/4
 lws10-index              MAY      6/10
@@ -137,7 +137,7 @@ lws10-notifications-webhook MUST     12/12
 lws10-notifications-webhook SHOULD   1/1
 lws10-notifications-webhook MAY      4/4
 
-48 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
+49 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
 ```
 
 `coverage` is a report, not a gate. If a definition cites a requirement that is not in the

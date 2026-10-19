@@ -104,8 +104,7 @@ This assertion and test case are taken from a real run against the broken twin:
 <https://example.org/touchstone/test/lws10/core/storage_authorization#getContainer-private-unauthorized>
         a                    earl:TestCase;
         dcterms:title        "An anonymous request for a protected container is refused with 401 and a conforming challenge";
-        touchstone:verifies  <https://example.org/touchstone/req/lws10-core/authz-challenge-realm-param> ,
-                             <https://example.org/touchstone/req/lws10-core/authz-challenge-as-uri-param> ,
+        touchstone:verifies  <https://example.org/touchstone/req/lws10-core/authz-client-resource-metadata-same-origin> ,
                              <https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge> .
 ```
 

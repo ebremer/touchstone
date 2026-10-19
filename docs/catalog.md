@@ -19,14 +19,14 @@ links are all computed from those citations.
 
 | File | Source document | Requirements |
 |---|---|---:|
-| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 5 October 2026 | 190 |
-| `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 3 August 2026 | 8 |
-| `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 21 September 2026 | 14 |
-| `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 3 August 2026 | 7 |
+| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 19 October 2026 | 215 |
+| `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 15 October 2026 | 8 |
+| `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 15 October 2026 | 14 |
+| `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 15 October 2026 | 7 |
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
-The catalog holds 296 requirements in total: 228 MUST, 30 SHOULD and 38 MAY. Twenty of them are from the webhook notification suite (D-0066) and 57 from the search and type index services (D-0067), both editor's drafts.
+The catalog holds 321 requirements in total: 254 MUST, 29 SHOULD and 38 MAY. Twenty of them are from the webhook notification suite (D-0066) and 57 from the search and type index services (D-0067), both editor's drafts.
 
 ## A requirement
 
@@ -37,7 +37,7 @@ req:create-post-201-location-links
     touchstone:specModule "lws10-core" ;
     touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20261005/#create-resource> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
     touchstone:clauseText """On success, the server MUST return the 201 status code with the new URI in the Location header. ...""" ;
     touchstone:clauseHash "sha256-6808523b25cc42196caf104571dd803d918e6237c1778147d809e65ace11dd87" ;
@@ -131,7 +131,7 @@ or any section anchor no longer resolves. It also lists new normative blocks the
 does not hold. Run against the snapshot the catalog is based on, it passes:
 
 ```text
-catalog entries checked: 190; spec normative blocks: 191; section anchors checked: 190
+catalog entries checked: 215; spec normative blocks: 216; section anchors checked: 215
 info: 1 uncatalogued normative block(s):
   [conformance] The key words MAY, MUST, MUST NOT, OPTIONAL, RECOMMENDED, REQUIRED, SHOULD, and SHOULD NOT...
 no drift: every catalog clause still appears in the spec, and every section anchor resolves
@@ -152,9 +152,15 @@ ones are removed or deprecated. Definitions that cite affected requirements are 
 Because re-baselining rewrites Approved entries, it is a reviewed change.
 
 {: .note }
-The catalog is based on the **5 October 2026** core draft, the **21 September 2026** CID
-draft and the **3 August 2026** OpenID Connect and SAML drafts, the versions W3C published
-as of 5 October 2026 (D-0057, D-0086). The October core draft makes **JSON Patch**
+The catalog is based on the **19 October 2026** core draft and the **15 October 2026** OpenID
+Connect, SAML and CID drafts, the versions W3C published as of 19 October 2026 (D-0057,
+D-0086, D-0100). The 19 October core draft has a 401 name the requested resource's
+**protected resource metadata** (RFC 9728) instead of the authorization server and a realm,
+and link to the storage a token is for, which a client checks before it asks for one. It
+requires only `application/lws+json` of a container, and a representation asked for in the
+**LWS profile** must be RDF isomorphic to it. And it lets clients **move resources** between
+containers by changing their up link, where a MoveResource capability says so. The 5 October
+core draft made **JSON Patch**
 (RFC 6902, `application/json-patch+json`) the patch format every server must support, on
 data resources and on linksets, where the September draft named JSON Merge Patch. Against
 the 21 August baseline, the September core draft removed the `428` on an unconditional

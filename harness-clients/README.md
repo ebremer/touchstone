@@ -33,11 +33,13 @@ java -jar harness-clients/target/touchstone-clients.jar \
 The rules are loaded and checked at start: YAML, schema, JSON-LD and the lint of
 `OBSERVATION.md` section 2. A rule that fails stops the service with exit code 2.
 
-Behind a reverse proxy, forward two path prefixes, keeping the paths:
+Behind a reverse proxy, forward three path prefixes, keeping the paths:
 
 - the public base path, such as `/touchstone/clients/`;
 - `/.well-known/lws-configuration` followed by the public base path: each session's
-  authorization server publishes its RFC 8414 metadata there.
+  authorization server publishes its RFC 8414 metadata there;
+- `/.well-known/oauth-protected-resource` followed by the public base path: each session's
+  storage publishes the RFC 9728 metadata of its resources there, which its 401s name.
 
 The service answers CORS itself, so a proxy must not add or replace `Access-Control-*` headers
 on these paths.
@@ -92,7 +94,7 @@ hex digits of their SHA-256. It is annotated with:
   from, by query or by path;
 - what the URL last advertised in `Allow`, `Accept-Patch`, `Accept-Query` and `ETag`;
 - for a token request, where its credential came from, the credential's header and claims, and
-  whether the realm it asks for contains the URL a 401 refused;
+  whether the storage it asks for was linked by a 401 whose discovery checks pass;
 - the rules it was a trial of, and how each judged it.
 
 A rule's outcome is *passed* once a request has tried it and none failed it, *failed* with the
@@ -150,7 +152,8 @@ A session offers four ways to authenticate as alice or bob:
 - **A token from the session**, for a client without authentication yet.
 
 A client exchanges an ID Token, a self-issued credential or an assertion at the authorization
-server, whose `as_uri` and `realm` the storage's 401 names (RFC 8693 token exchange). The
+server that the protected resource metadata of the storage's 401 names, for the storage the 401
+links to (RFC 9728 discovery, RFC 8693 token exchange). The
 authorization server trusts the session's identities, OpenID Provider and SAML identity provider
 only. It fetches nothing, so a credential about anyone else is refused.
 
@@ -194,8 +197,9 @@ targets:
 ```
 
 The service forwards `<base>/p/<id>/X` to `proxy.backend` followed by `X`. It forwards
-`/.well-known/lws-configuration` followed by the base path and `/p/<id>`, unchanged, to the
-backend's origin, where the server's authorization server publishes its metadata.
+`/.well-known/lws-configuration` and `/.well-known/oauth-protected-resource` followed by the base
+path and `/p/<id>`, unchanged, to the backend's origin, where the server's authorization server
+publishes its metadata and the server the protected resource metadata of its resources.
 
 `POST <base>/sessions` with `{"proxy": "local"}` starts a proxy session. One session holds a
 target at a time, and a second gets `409` until the first ends. A request to the target's URLs
@@ -230,8 +234,11 @@ the self-test leaves it off, because one server test needs a linkset that refuse
   resource's linkset accepts PUT and lists it in `Allow`; a container's does not.
 - Binary resources refuse PUT, and their `Allow` leaves it out. A resource is binary unless its
   media type is text, JSON, XML or an RDF syntax.
-- The root container lists a decoy first. It answers every request with a 401 whose realm does
-  not contain it.
+- The root container lists a decoy first. It answers every request with a 401 that links to a
+  storage whose root is on another origin, so a client that checks before it asks for a token
+  asks for none.
+- Data resources can be moved by changing their up link, as the MoveResource capability says;
+  containers cannot, and the storage does not say whether a moved resource keeps its URI.
 - The type index and search show a write only after three seconds.
 - The storage does no combined updates of content and metadata, which are optional for servers:
   it ignores `Prefer: set-linkset` and changes only the content.

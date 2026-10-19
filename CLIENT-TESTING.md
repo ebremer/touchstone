@@ -227,7 +227,8 @@ no variables and no captures. Format 0.9.0 (phase C3, D-0081) adds a rule's `tas
 window planned as `followedBy` turned out unnecessary. Format 0.10.0 (phase C4, D-0082) adds
 what the recorder knows of a token request: where its credential came from
 (`credentialSource`), the credential's header and claims (`credential`), `audienceIncludesAs`,
-`identifiersAgree` and `realmContainsRequest`; and `form`, for form bodies.
+`identifiersAgree` and `realmContainsRequest` (since 0.14.0 `discoveryValid`, D-0100); and `form`,
+for form bodies.
 
 ```yaml
   - id: "#client-linkset-put-only-when-advertised"
@@ -299,7 +300,10 @@ without noticing; clients relying on unspecified behaviour trip over them.
   refuse PUT and omit it from `Allow`. `Accept-Patch` lists a single format.
 - **A decoy resource** listed first in the root container, which answers `401` with a
   challenge whose `realm` does not contain it (`authz-challenge-realm-param`). A conformant
-  client neither requests nor presents a token for it.
+  client neither requests nor presents a token for it. Since the drafts of 19 October 2026 the
+  decoy's `401` names its own protected resource metadata, as any `401` does, but links to a
+  storage whose description puts the storage root on another origin
+  (`authz-client-storage-root-same-origin`, D-0100).
 - **A lagging index.** Search and type-index results trail writes by a few seconds, as
   `client-no-read-your-writes` allows.
 - **No combined updates.** A PUT changes only the content, even when it asks for a combined
@@ -318,7 +322,7 @@ is something a server may legally do, so a conformant client meets it in the wil
 | `methodNotAllowed` | answers the next PUT to a linkset that supports PUT with `405`, as a server that withdrew the optional PUT | `client-no-assumed-methods-405-415` |
 | `lostCreateResponse` | performs the next POST create, then answers `503` | `create-post-not-idempotent` |
 | `pageGone` | answers the next request for a page of search results with `410` | `client-restart` |
-| `tokenExpired` (C4) | answers the next storage request with a valid token, other than to the decoy, with `401` and `error="invalid_token"`, and refuses that token from then on | `authz-challenge-realm-param`: a client that keeps its token gets a reason to ask for a new one after meeting the decoy |
+| `tokenExpired` (C4) | answers the next storage request with a valid token, other than to the decoy, with `401` and `error="invalid_token"`, and refuses that token from then on | `authz-challenge-realm-param`, since D-0100 `authz-client-discovery-validation`: a client that keeps its token gets a reason to ask for a new one after meeting the decoy |
 | `forgedUnpublishedKey` (C5) | signs the next notification with a key the storage description does not publish, its keyid naming the published one | `inbox-verifies-signature`, `receiver-verification-steps` |
 | `forgedAlteredBody` (C5) | signs the next notification, then alters its body | `inbox-verifies-signature` |
 | `forgedKeyidWithoutFragment` (C5) | signs the next notification with the published key, under a keyid without a fragment | `receiver-verification-steps` |
@@ -495,7 +499,7 @@ clients; only the client half is judged here.
 | `lws10-core/create-post-not-idempotent` | SHOULD | fault `lostCreateResponse`: no identical blind retry | C3 |
 | `lws10-index/client-restart` | SHOULD | fault `pageGone` | C3 |
 | `lws10-index/client-415-accept-query` | MAY | no rule: indistinguishable from `client-query-baseline-after-415` while the session accepts only the baseline (D-0078) | — |
-| `lws10-core/authz-challenge-realm-param` (half) | MUST | trap: the decoy's foreign realm; fault `tokenExpired` | C4 |
+| `lws10-core/authz-challenge-realm-param` (half); since D-0100 `authz-client-discovery-validation` and `authz-client-storage-root-same-origin` | MUST | trap: the decoy's foreign realm, since D-0100 its storage on another origin; fault `tokenExpired` | C4 |
 | `lws10-core/authn-client-claim`, `lws10-authn-ssi-cid/client-id-claim`, and the CID suite's other credential MUSTs | MUST | passive: the self-issued credentials the client presents at the token endpoint | C4 |
 | `lws10-core/authz-token-exchange-resource-param`, `authz-token-exchange-subject-token-param` (half); the suites' token types `id-token-token-type-uri`, `token-type-jwt` | MUST | passive: token requests | C4 |
 | `lws10-authn-saml/token-type-saml2` | MUST | passive: token requests presenting an assertion of the session's SAML identity provider, which the session API hands out (D-0087; D-0082 had none) | D-0087 |
@@ -560,7 +564,7 @@ session's identities and that the session did not issue (`OBSERVATION.md` sectio
 |---|---|---|---|---|
 | `client-token-exchange-resource` | MUST | `authz-token-exchange-resource-param` | token exchange requests | `resource` is a URI |
 | `client-token-exchange-subject-token` | MUST | `authz-token-exchange-subject-token-param` | token exchange requests | `subject_token` is present |
-| `client-token-for-containing-realm` | MUST | `authz-challenge-realm-param` | the next token request naming a realm after a storage 401; task: open the decoy, then a resource; `tokenExpired` | the realm contains the URL the 401 answered |
+| `client-token-for-containing-realm`, since D-0100 `client-token-after-discovery-checks` | MUST | `authz-challenge-realm-param`, since D-0100 `authz-client-discovery-validation`, `authz-client-storage-root-same-origin` | the next token request naming a realm (a resource) after a storage 401; task: open the decoy, then a resource; `tokenExpired` | the realm contains the URL the 401 answered; since D-0100, the storage the 401 linked to passed the discovery checks |
 | `client-cid-token-type-jwt` | MUST | CID `token-type-jwt` | self-issued credentials | `subject_token_type` is the jwt URI |
 | `client-cid-credential-signed` | MUST | CID `alg-not-none`; `authn-credential-signed` | self-issued credentials | `alg` is not `none` |
 | `client-cid-subject-claim` | MUST | CID `sub-claim`; `authn-subject-claim-uri`, `authn-credential-tamper-evident-claims` | self-issued credentials | `sub` is a URI |
@@ -625,7 +629,8 @@ COVERAGE.md section 4 states, generated from `NOT_JUDGED` in `tools/definitions/
   extra properties and fields, QUERY being safe and idempotent, the `PreferLinkRelations` filter,
   the type key, the first-page flow, and consulting `Accept-Query` after a 415;
 - three obligations that do not show in what a client sends: `client-no-read-your-writes`, and
-  the two statements that `application/ld+json; profile="https://www.w3.org/ns/lws/v1"` is
+  the two statements, retired with the 19 October 2026 draft (D-0100), that
+  `application/ld+json; profile="https://www.w3.org/ns/lws/v1"` is
   `application/lws+json`. The session could label a listing that way only when the client's
   `Accept` allows it (a server must answer the type asked for), and a client that does not take it
   for LWS shows that by stopping or reading the container again, as a conformant one may;

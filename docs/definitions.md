@@ -8,8 +8,8 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 {: .no_toc }
 
 {: .important }
-**Format version 0.13.0 (2026-10-08), awaiting review; 0.11.0 was frozen on 2026-10-05.** These are the tests `touchstone run`
-executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`). The engine that runs them implements the format's execution contract, and all 205
+**Format version 0.14.0 (2026-10-19), awaiting review; 0.11.0 was frozen on 2026-10-05.** These are the tests `touchstone run`
+executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`). The engine that runs them implements the format's execution contract, and all 221
 run against the reference deployment in every build.
 
 1. TOC
@@ -25,8 +25,9 @@ serve that effort in three ways:
    contradicts the current draft, the counterpart follows the draft. For example, DELETE
    expects `204`, and discovery uses `rel="https://www.w3.org/ns/lws#storage"` and
    `application/lws+cid`.
-2. **They go further.** There are 205 definitions (163 MUST, 31 SHOULD, 11 MAY). They cover
-   storage discovery, containers, data resources, conditional requests, linksets, pagination,
+2. **They go further.** There are 221 definitions (181 MUST, 29 SHOULD, 11 MAY). They cover
+   storage discovery, containers, data resources, conditional requests, linksets, moving
+   resources between containers, pagination,
    the access-token negative matrix, the authorization server, access grants, notification
    discovery and the webhook notification suite, the search and type index services, and the
    OpenID Connect, CID and SAML suites. The CID tests cover HTTPS and
@@ -66,7 +67,7 @@ A test that is one exchange is written as one, the way lws-test-suite writes its
     type: NegativeTest
     name: getContainer-private-unauthorized
     level: MUST
-    source: [https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery]
+    source: [https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery]
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
     as: anonymous
@@ -77,8 +78,10 @@ A test that is one exchange is written as one, the way lws-test-suite writes its
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {matches: '^https?://'}
-        realm: {matches: '^https?://'}
+        params:
+          - paramName: resource_metadata
+            matches: '^https?://'
+            sameOrigin: "${test.container}"
 ```
 
 What a test needs but does not examine is declared, and the engine creates it. A flow of
@@ -151,9 +154,11 @@ prerequisites and expectations the contract defines. The CLI, the MCP server, th
 image and the GitHub Action all run the definitions through it. [How it
 works](how-it-works.md) follows a run step by step.
 
-Every build runs all 205 against the reference deployment, where 204 pass and the
-single-page pagination test is inapplicable (the reference splits that container into
-pages), and against broken twins, where the tests that exist to catch each defect fail.
+Every build runs all 221 against the reference deployment, where 218 pass and three are
+inapplicable: the single-page pagination test (the reference splits that container into
+pages), and the two move tests for a storage that moves fewer kinds of resource than the
+reference does. The trapped and open deployments run them instead. Against broken twins the
+tests that exist to catch each defect fail.
 
 The definitions replaced the YAML test manifests Touchstone ran before, which followed the
 21 August 2026 draft. 32 of those 33 tests have a successor among the definitions. The
@@ -175,7 +180,7 @@ The definitions are data, so they are checked as data:
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.13.0, as does the JSON-LD export trial below. One command runs
+All six pass for version 0.14.0, as does the JSON-LD export trial below. One command runs
 them all, and CI runs it on every push and pull request. The engine applies the same
 checks, bar the anchor and lws-test-suite ones, before every run:
 

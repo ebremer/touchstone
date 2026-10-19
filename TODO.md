@@ -26,6 +26,37 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-19 — the drafts of 19 October 2026 (D-0100)
+
+W3C published the core WD of 19 October 2026 and the OpenID Connect, SAML and CID WDs of 15
+October. The core draft replaces `as_uri` and `realm` with RFC 9728 protected resource metadata,
+requires only `application/lws+json` of a container (and RDF isomorphism in the LWS profile), and
+lets clients move resources between containers. On branch `spec/wd-2026-10-19`.
+
+- [x] **Re-baseline the catalog** onto the four new WDs: core 190 → 215 requirements; the suites
+  changed words only. → **Done (D-0100).**
+- [x] **Format 0.14.0:** `${as.resource}` and `${as.uri}` from the RFC 9728 challenge (with a
+  fallback to the old one), `sameOrigin`, `rdfIsomorphicWith`, `discoveryValid`; the WG's built
+  LWS context bundled. → **Done (D-0100).**
+- [x] **Tests:** protected resource metadata, the storage link on a 401 (now MUST), content
+  negotiation and the LWS profile, twelve move tests; the multiple-audiences test retired. The
+  reference deployment, the reference client, client sessions and the decoy follow the draft.
+  → **Done (D-0100).**
+- [ ] **Erich: review D-0100's five points** (the seed's successor left Draft, the fallback and
+  the breaking format change, the retired test, the readings in the new tests, the decoy).
+- [ ] **Deployment:** the vulcan front proxy must forward
+  `/.well-known/oauth-protected-resource/touchstone/clients/` to the client-session service, as it
+  forwards `/.well-known/lws-configuration/touchstone/clients/`, before sessions of this version
+  can hand out tokens there.
+- [ ] **Target servers:** each still answers with `as_uri` and `realm`. Their runs go ahead on the
+  fallback, and fail the challenge and protected-resource-metadata tests until they follow the
+  draft.
+- [ ] **Later, if wanted:** a reference variant that does not preserve identifiers, so that
+  `move-new-identifier-response` (200, the new anchor, `Content-Location`, 301 at the old URI) can
+  be tested and validated.
+
+---
+
 ## 2026-10-08 — what five server runs showed (D-0089 to D-0093)
 
 On branch `server-run-fixes`. Each item fixes a place where Touchstone marked correct behaviour

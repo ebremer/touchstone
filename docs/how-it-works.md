@@ -22,7 +22,7 @@ Touchstone is a Java 21 Maven project with four modules, plus the data they oper
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`), built as one runnable jar. |
 | `harness-mcp` | A Model Context Protocol server over the same engine, for AI agents. |
 | `catalog/` | The requirements catalog: one Turtle file per specification document. |
-| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.13.0, and the contract that says how to run them; and the client rules, judged by client sessions ([`OBSERVATION.md`]({% include src.html path="definitions/OBSERVATION.md" %})). |
+| `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.14.0, and the contract that says how to run them; and the client rules, judged by client sessions ([`OBSERVATION.md`]({% include src.html path="definitions/OBSERVATION.md" %})). |
 | `tools/` | Python and Node scripts that check the definitions, extract clauses from a draft, and detect drift. |
 | `targets.yaml` | The registry of servers Touchstone is allowed to test. |
 
@@ -201,8 +201,8 @@ provides both.
 
   It can also set traps: behaviour the drafts allow but a client must not assume away. Page
   and linkset URLs are opaque, resource URLs do not nest under their container's, binary
-  resources refuse PUT, a decoy in the root challenges with a foreign realm, and the index
-  lags behind writes. Client sessions set them all; the server self-test sets them once, to
+  resources refuse PUT, a decoy in the root links its challenge to a storage on another
+  origin, only data resources move, and the index lags behind writes. Client sessions set them all; the server self-test sets them once, to
   prove they are legal.
 - **`RefAuthorizationServer`** publishes RFC 8414 metadata and a JWKS, and exchanges
   CID (HTTPS and did:key subjects), OpenID Connect and SAML subject tokens for access
@@ -212,13 +212,16 @@ provides both.
 
 `./mvnw verify` runs the loop in `DefinitionsSelfTest`:
 
-- against the secured deployment, all 205 definitions run, and every one passes except the
-  single-page pagination test, which is inapplicable because the reference splits that
-  container into pages;
+- against the secured deployment, all 221 definitions run, and every one passes except three
+  that are inapplicable: the single-page pagination test, because the reference splits that
+  container into pages, and the two move tests for a storage that moves less than the
+  reference, which moves data resources and containers and keeps their URIs;
 - against the same deployment with every trap set, the same holds, except that the test that
-  needs a combined update, which one trap takes away, is inapplicable: a definition that failed
-  there would assume something the drafts leave open;
-- against an open storage, exactly the tests that need authentication are inapplicable;
+  needs a combined update, which one trap takes away, and the move tests that need containers
+  to move or URIs to be kept are inapplicable: a definition that failed there would assume
+  something the drafts leave open;
+- against an open storage, which moves nothing, exactly the tests that need authentication or
+  a MoveResource capability are inapplicable;
 - against the broken authorization server, the 26 negative tests of the three
   authentication suites fail, and so does the unknown-storage test;
 - against the broken storage, its 24 access-control tests fail;

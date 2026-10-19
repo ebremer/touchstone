@@ -10,7 +10,7 @@ description: "How to write a Touchstone test definition in YAML-LD: structure, p
 A Touchstone test is a **definition**: an entry in a YAML-LD manifest under
 `definitions/lws10/`. It describes one request and its response, or a flow of steps, with
 declarative expectations. Definitions are data, so a new test needs no Java code. The format
-is version 0.13.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
+is version 0.14.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
 says exactly what every key means, and an engine that does anything else is wrong.
 
 Before a run sends a single request, every definition is parsed as YAML 1.2, validated
@@ -50,8 +50,8 @@ This is `core/data_resources#deleteDataResource`, with its comment and some cita
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
     traits: [Delete, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
@@ -119,8 +119,10 @@ test, with no `steps`. Abridged, `core/storage_authorization#getContainer-privat
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {matches: '^https?://'}
-        realm: {matches: '^https?://'}
+        params:
+          - paramName: resource_metadata
+            matches: '^https?://'
+            sameOrigin: "${test.container}"
 ```
 
 ## Test fields
@@ -203,7 +205,7 @@ expression takes its JSON value, so `"${now+300}"` becomes a number.
 | `run.id` | The run's identifier, unique to the run and safe in a URL as it is. |
 | `uuid`, `now`, `now+N`, `now-N` | A fresh UUID; the time in seconds since the epoch. |
 | `storage` | The storage, from the `lws#storage` link on the test container. |
-| `as.uri`, `as.realm`, `as.metadataUrl` | From the Bearer challenge an anonymous request draws. |
+| `as.resource`, `as.uri`, `as.metadataUrl` | From the 401 an anonymous request draws: the storage its `Link` names, which a token is requested for; the authorization server its protected resource metadata names (RFC 9728); and that server's metadata URL. |
 | `as.issuer`, `as.tokenEndpoint`, `as.jwksUri` | From the authorization server's metadata. |
 | `service.<Type>` | A service's endpoint in the storage description, such as `service.AccessGrantService`. |
 | `identity.<name>.webid`, `credential.<name>` | An identity's agent IRI; a subject credential minted for this test. |
@@ -224,11 +226,12 @@ Expectations are checked in a fixed order, and the first that fails ends the tes
 | `location` | `Location` is present. Its resolved value is captured, and with `cleanup: true` deleted at test end. |
 | `linkHeaders` | A link has the `rel`, and the `href` and `mediaType` if given; `absent: true` inverts it. Parsed per RFC 8288. |
 | `otherHeaders` | The header has `headerValue`, is `present`, `differsFrom` a value, or `matches` a pattern. |
-| `authenticationChallenge` | A `WWW-Authenticate` challenge has the scheme and every parameter. Parsed per RFC 9110, in any order. |
+| `authenticationChallenge` | A `WWW-Authenticate` challenge has the scheme and every parameter, each `present`, equal to a `paramValue`, matching a pattern, or with the scheme and authority of a URL (`sameOrigin`). Parsed per RFC 9110, in any order. |
 | `bodyEmpty`, `bodyMatches`, `bodyURL` | The body is empty, matches a pattern, or equals a fixture byte for byte. |
-| `json` | JSON pointer checks: `equals`, `equalsIri`, `hasValue`, `matches`, `count`, `jsonType`, `exists`, and `some`, `every` or `none` over an array. |
+| `json` | JSON pointer checks: `equals`, `equalsIri`, `sameOrigin`, `hasValue`, `matches`, `count`, `jsonType`, `exists`, and `some`, `every` or `none` over an array. |
 | `jwt` | The token decodes, verifies against a JWKS if one is given, and its header and claims pass the same pointer checks. |
 | `connegEquivalent` | The URL fetched once per media type answers 200 in each, with byte-identical bodies. |
+| `rdfIsomorphicWith` | The URL fetched again with this media type answers 200, and the two responses, each read as RDF by its own `Content-Type`, are isomorphic datasets. Since 0.14.0. |
 
 Any of these may `capture` what it matched for later steps. Regular expressions use the
 subset that Java, Python and ECMAScript agree on. Put them in single quotes in YAML.
@@ -308,6 +311,6 @@ committed directly.
 - [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %}): the
   contract, key by key
 - [The JSON Schema]({% include src.html path="definitions/schema/definitions.schema.json" %}),
-  format 0.13.0
+  format 0.14.0
 - [`definitions/COVERAGE.md`]({% include src.html path="definitions/COVERAGE.md" %}): every
   test, and what it replaced

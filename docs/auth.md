@@ -53,7 +53,7 @@ declares. A test that needs one the target lacks is inapplicable.
 alice and bob send `Authorization: Bearer <token>`, from the first source that applies:
 
 1. **Minted by the harness,** with `HarnessIssuedTokens`: an RFC 9068 access token signed
-   with the authorization server's key, for the realm the storage's challenge names.
+   with the authorization server's key, for the storage the storage's `401` links to.
 2. **Exchanged,** when `didkey.jwk.<name>` gives the identity a P-256 did:key: the engine
    exchanges a CID-suite credential for that DID subject at the token endpoint, exactly as
    the token-exchange tests do.
@@ -103,7 +103,7 @@ touchstone run --target secured-ref --targets targets-secured.yaml --module auth
 conformant: no MUST test failed or ended cantTell
 ```
 
-Leave out `--module` to run all 205 definitions against it.
+Leave out `--module` to run all 221 definitions against it.
 
 Key rotation during a session is tested at fixture level: after the authorization server
 retires its signing key, a token that was valid stops validating.

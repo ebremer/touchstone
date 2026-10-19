@@ -50,7 +50,7 @@ The examples call the CLI as `touchstone`. Either define an alias, for example
 
 ## Run against the open reference server
 
-Touchstone includes an in-memory LWS server that follows the 5 October 2026 Working
+Touchstone includes an in-memory LWS server that follows the 19 October 2026 Working
 Draft. Start it in its own terminal:
 
 ```sh
@@ -146,15 +146,15 @@ or an authorization server) at least one test cites:
 
 ```text
 $ touchstone coverage
-Requirements coverage: 225 of 248 covered by 205 test(s)
+Requirements coverage: 243 of 272 covered by 221 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     2/2
 lws10-authn-saml         MUST     1/1
 lws10-authn-ssi-cid      MUST     5/5
-lws10-core               MUST     127/130
-lws10-core               SHOULD   17/21
-lws10-core               MAY      9/19
+lws10-core               MUST     148/155
+lws10-core               SHOULD   15/20
+lws10-core               MAY      8/19
 lws10-index              MUST     37/39
 lws10-index              SHOULD   4/4
 lws10-index              MAY      6/10
@@ -162,7 +162,7 @@ lws10-notifications-webhook MUST     12/12
 lws10-notifications-webhook SHOULD   1/1
 lws10-notifications-webhook MAY      4/4
 
-48 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
+49 more requirement(s) bind only clients, receivers, identity providers or other specifications, which a server run cannot break, and are not counted.
 ```
 
 ## Compare two runs

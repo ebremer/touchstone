@@ -1,11 +1,19 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.13.0 (2026-10-08, DECISIONS.md D-0091, awaiting review; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+**Status: frozen, format 0.14.0 (2026-10-19, DECISIONS.md D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
 frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
 2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
 0.8.0 added client rules, which `OBSERVATION.md` governs, 0.9.0 gave them tasks and faults, and
 0.10.0 let them judge token requests, 0.11.0 the notifications a client's inbox receives, and
 0.12.0 the assertions of a session's SAML identity provider; none changes anything in this document.
+0.14.0 follows the LWS drafts of 19 October 2026, and is the first format to change what an
+older definition relies on: a 401's challenge now names protected resource metadata (RFC 9728)
+instead of the authorization server and a realm, so `${as.uri}` is derived from that metadata,
+`${as.resource}`, the storage the 401 links to, replaces `${as.realm}` (section 3), and the engine
+falls back to the old challenge for a server that still sends it. It adds `sameOrigin` to
+parameter and JSON expectations (sections 7.6 and 7.8), a response's `rdfIsomorphicWith`
+(section 7.11), and, for client rules, `discoveryValid` in place of `realmContainsRequest`
+(OBSERVATION.md section 4.10).
 0.13.0 adds the variable `run.id` (section 3), so that a document the fixture host mints for a run
 is served at a URL of the run's own (section 5.3), has the engine wait out a 429 or 503 as its
 `Retry-After` asks rather than judge it (section 4.5), and lets a step read a paged result whole
@@ -115,7 +123,9 @@ becomes an object. Anywhere else the value is converted to a string.
 | `uuid` | A fresh random UUID, lower case, each time it is evaluated. |
 | `now`, `now+N`, `now-N` | Current time in whole seconds since the epoch, offset by N seconds. |
 | `storage` | Derived: the target of the `Link` whose rel is `https://www.w3.org/ns/lws#storage` on a GET of `${test.container}` as alice with `Accept: application/lws+json`, resolved against that URL. |
-| `as.uri`, `as.realm` | Derived: from an anonymous GET of `${test.container}`. The response must be 401 with a `Bearer` challenge carrying `as_uri` and `realm`; these are their values. |
+| `as.resource` | Derived (since 0.14.0, in place of `as.realm`): from an anonymous GET of `${test.container}`, which must answer 401 with a `Bearer` challenge carrying `resource_metadata` and a `Link` whose rel is `https://www.w3.org/ns/lws#storage`: the target of that link, resolved against the request URL. It is the storage a token is requested for (lws10-core section 5.2.1), the `resource` of a token request and the `aud` of an access token. |
+| `as.uri` | Derived: the first string in `authorization_servers` of the JSON document at the challenge's `resource_metadata`, resolved against the request URL and fetched anonymously with `Accept: application/json` (RFC 9728, lws10-core section 5.2.2). |
+| | *A challenge of the drafts before 19 October 2026,* a `Bearer` challenge without `resource_metadata` but with `as_uri` and `realm`, is still read, so that a server that has not followed the new draft can be tested: `as.uri` is then its `as_uri` and `as.resource` its `realm` (D-0100). The tests of the challenge itself fail such a server. |
 | `as.metadataUrl` | Derived from `as.uri` by RFC 8414 section 3.1: insert `/.well-known/lws-configuration` between the authority and the path. `https://as.example` gives `https://as.example/.well-known/lws-configuration`; `https://as.example/tenant` gives `https://as.example/.well-known/lws-configuration/tenant` (README.md, "Open questions"). |
 | `as.issuer`, `as.tokenEndpoint`, `as.jwksUri` | Derived: members `issuer`, `token_endpoint`, `jwks_uri` of the JSON document at `as.metadataUrl`, fetched anonymously with `Accept: application/json`. |
 | `service.<Type>` | Derived: the `serviceEndpoint`, resolved against `${storage}`, of the first entry of the storage description's `service` array whose `type` has the value `<Type>`. The description is fetched as alice with `Accept: application/lws+cid`. |
@@ -136,7 +146,7 @@ storage description are cached per run; the rest per test. `run.id` is fixed for
   - `as.*`, when the anonymous probe is not a 401, i.e. the target does not enforce authentication;
   - `identity.*` and `credential.*`, when the identity cannot be produced for this target (section 5);
   - `fixtures.baseUrl` and `test.inbox`, when the target does not declare it.
-- *cantTell*, with the failure named: every other case, such as a missing `lws#storage` link, metadata without `token_endpoint`, or a capture that never happened. The tests that own those behaviours report the failure itself.
+- *cantTell*, with the failure named: every other case, such as a missing `lws#storage` link, protected resource metadata without `authorization_servers`, metadata without `token_endpoint`, or a capture that never happened. The tests that own those behaviours report the failure itself.
 
 ## 4. Running a test
 
@@ -283,7 +293,7 @@ For a step, the answer it stops at is judged as in section 4.2, with these excep
 
 Every attempt sent again appears in the step's record with the refusal that caused it. The same
 waiting applies to every other request the engine sends: provisioning, prerequisites, derived
-variables, token exchanges, `connegEquivalent` fetches and cleanup. One still refused there makes
+variables, token exchanges, `connegEquivalent` and `rdfIsomorphicWith` fetches and cleanup. One still refused there makes
 the test *cantTell*, never *inapplicable*: an anonymous probe answered 429 does not show that a
 target enforces no authentication, nor a grant service answering 503 that it cannot grant.
 
@@ -330,7 +340,7 @@ token comes from depends on the target configuration:
 1. **HarnessIssuedTokens.** The harness is the storage's authorization server, as in the
    touchstone reference scenario. It mints an RFC 9068 JWT:
    - header: `typ at+jwt`, alg `RS256` or `ES256`, `kid` of its current key;
-   - claims: `iss ${as.issuer}`, `aud [${as.realm}]`, `sub` the identity's webid,
+   - claims: `iss ${as.issuer}`, `aud [${as.resource}]`, `sub` the identity's webid,
      `client_id` the harness client, `iat now`, `exp now+300`, and a fresh `jti`.
 2. **Configured subject credential.** Otherwise, if the target configuration gives the
    identity a subject credential (for example a did:key private JWK), the engine exchanges
@@ -525,12 +535,17 @@ passes:
    latter), and their order is irrelevant. The expectation passes if some challenge has
    the scheme `wwwAuthenticate` names (case-insensitive) and satisfies every `params`
    entry. `asUri` and `realm` are shorthand for `params` entries naming `as_uri` and
-   `realm`: a string is the exact value (`paramValue`), and an object carries `present`,
+   `realm`, the parameters of the drafts before 19 October 2026, which no definition uses any
+   more: a string is the exact value (`paramValue`), and an object carries `present`,
    `matches` or `capture`. Each `params` entry is checked as follows:
    - the name matches case-insensitively;
    - `present: true` means the parameter is there;
    - `paramValue` means its value equals the expanded template;
-   - `matches` means the pattern finds a match in its value.
+   - `matches` means the pattern finds a match in its value;
+   - `sameOrigin` (since 0.14.0) means its value, resolved against the request URL, has the
+     scheme and authority of the expanded template, resolved likewise: schemes and hosts
+     compare case-insensitively, an absent port is the scheme's default (443 for https, 80 for
+     http), and user information compares exactly.
 
    Captures come from that challenge.
 7. **Body.**
@@ -547,6 +562,8 @@ passes:
      objects ignore member order.
    - `equalsIri`: the selected string, resolved against the request URL, equals the
      expanded value.
+   - `sameOrigin` (since 0.14.0): the selected string, resolved against the request URL, has
+     the scheme and authority of the expanded value, as in item 6.
    - `hasValue`: the selected value equals the expected value, or is an array
      containing an element equal to it.
    - `matches`: the pattern finds a match in the string. A value that is not a string is
@@ -571,6 +588,16 @@ passes:
     - All bodies must be byte-identical. When they are not, the report says whether
       their JSON-LD graphs are still isomorphic, since "re-serialized" and "different
       content" are different defects (D-0044).
+11. **`rdfIsomorphicWith`** (since 0.14.0). Fetch the step's URL again as the same identity,
+    with the given media type as `Accept`, as for `connegEquivalent`. It must answer 200. Read
+    both that response and the step's as RDF datasets, each by the essence of its own
+    `Content-Type`: `application/lws+json`, `application/ld+json` and `application/json` as
+    JSON-LD 1.1 with the bundled contexts and nothing fetched (D-0026), `text/turtle`,
+    `application/trig`, `application/n-triples` and `application/n-quads` in their syntaxes,
+    each with the URL it was fetched from as its base. Any other media type, or a body that
+    does not parse, fails the expectation. The two datasets must be isomorphic (RDF 1.2
+    Concepts, "RDF Dataset Comparison"), blank nodes mapped one to one. This is how lws10-core
+    section 12.1.1 says a representation conforms to the LWS profile.
 
 ## 8. Matching rules
 

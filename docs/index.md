@@ -69,27 +69,28 @@ As of October 2026:
 - **Client testing:** a service that tests LWS clients against sessions of their own, judged by
   53 client rules, with EARL, JUnit XML and JSON reports, a proxy mode in front of a real server,
   and read-only MCP tools for a coding agent. See [Testing a client](testing-a-client.md).
-- **Requirements catalog:** 296 requirements (228 MUST, 30 SHOULD, 38 MAY) from the four
+- **Requirements catalog:** 321 requirements (254 MUST, 29 SHOULD, 38 MAY) from the four
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
-- **Tests:** 205 [YAML-LD definitions](definitions.md) (163 MUST, 31 SHOULD, 11 MAY),
-  format 0.13.0, frozen. They follow the 5 October 2026 Working Draft and the editor's drafts
+- **Tests:** 221 [YAML-LD definitions](definitions.md) (181 MUST, 29 SHOULD, 11 MAY),
+  format 0.14.0, frozen. They follow the 19 October 2026 Working Draft and the editor's drafts
   of the webhook notification suite and the search and type index services, cover all 27 tests
-  of the LWS test group's `lws-test-suite`, and cover 225 of the 248 catalogued requirements
+  of the LWS test group's `lws-test-suite`, and cover 243 of the 272 catalogued requirements
   that bind a server or an authorization server. Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access
   grants, and the OpenID Connect, CID (HTTPS and did:key subjects) and SAML suites all
-  run end to end. Against the reference deployment, 204 of the 205 definitions pass; the other, the
-  single-page pagination test, is inapplicable, since the reference splits that container into pages.
+  run end to end. Against the reference deployment, 218 of the 221 definitions pass; the other
+  three are inapplicable to it: the single-page pagination test, since the reference splits that
+  container into pages, and two move tests for a storage that moves less than it does.
 - **Target servers:** the six LWS server implementations Touchstone is run against (Halcyon,
   lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd), each built from
   source into a container. One script builds and tests them all on one machine with nothing but
   Docker, and another tests every [lws-client](https://github.com/ebremer/lws-client) library
   against every one of them; see [Every known LWS server](getting-started.md#every-known-lws-server).
 - **Catalog baseline:** the catalog and the definitions follow the drafts W3C published as
-  of 5 October 2026: the 5 October core Working Draft, the 21 September CID one and the
-  3 August OpenID Connect and SAML ones. A weekly CI job fails when W3C publishes a newer version
+  of 19 October 2026: the 19 October core Working Draft and the 15 October OpenID Connect,
+  SAML and CID ones. A weekly CI job fails when W3C publishes a newer version
   (see [Requirements catalog](catalog.md#tracking-the-draft)). The did:key suite, which
   W3C discontinued on 29 September 2026 in favour of the CID suite, is retired (D-0058).
 

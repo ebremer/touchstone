@@ -1,6 +1,6 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.13.0 (2026-10-08, DECISIONS.md D-0091, awaiting review; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05,
+**Status: frozen, format 0.14.0 (2026-10-19, DECISIONS.md D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05,
 D-0083; 0.10.0 the same day, D-0082;
 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and
 faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7).
@@ -9,7 +9,11 @@ recorder knows of a token request (sections 4.9 and 4.10), the conditions `form`
 (section 5), and the fault `tokenExpired`. 0.11.0 adds deliveries, the notifications the session
 sends a client's inbox (sections 3, 4.11 and 4.12), and four forgery faults. 0.12.0 adds the
 session's SAML identity provider as a source of credentials (section 4.9). 0.13.0 changes only
-server tests (`EXECUTION.md`). None changes anything an earlier rule relies on. This
+server tests (`EXECUTION.md`). None of those changes anything an earlier rule relies on. 0.14.0
+follows the LWS drafts of 19 October 2026, in which a 401 names protected resource metadata
+(RFC 9728) and links to a storage instead of naming a realm: `discoveryValid` replaces
+`realmContainsRequest` (section 4.10), the decoy's 401 links to a storage of its own, and the
+roles `protectedResourceMetadata` and `decoyStorage` are new (section 4.2). This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -118,6 +122,8 @@ What the request addressed, as the session's server found it:
 | `typeIndex`, `typeSearch` | storage | the Type Index Service, the Type Search Service |
 | `searchPage` | storage | a page of index or search results |
 | `decoy` | storage | the decoy (CLIENT-TESTING.md section 6.1) |
+| `decoyStorage` | storage | the description of the storage the decoy's 401 links to, whose storage root is on another origin (since 0.14.0) |
+| `protectedResourceMetadata` | storage | a resource's protected resource metadata, at the RFC 9728 well-known URL (since 0.14.0) |
 | `asMetadata`, `asJwks`, `asToken` | authorizationServer | its metadata, JWKS and token endpoint |
 | `opDiscovery`, `opJwks`, `opAuthorize`, `opToken` | openidProvider | its OpenID Connect Discovery document, JWKS, authorization endpoint (with its sign-in form) and token endpoint |
 | `identityDocument` | identityHost | an identity's controlled identifier document |
@@ -136,7 +142,10 @@ fragment, and the first way it was handed out:
 - in an answer:
   - the `Location` and `Content-Location` fields;
   - every `Link` target;
-  - a challenge's `as_uri`, and the metadata URL that RFC 8414 section 3.1 derives from it;
+  - a challenge's `resource_metadata` (since 0.14.0), and, from a server behind a proxy that
+    still sends one, its `as_uri` and the metadata URL that RFC 8414 section 3.1 derives from it;
+  - for each issuer in the `authorization_servers` of protected resource metadata, the metadata
+    URL that RFC 8414 section 3.1 derives from it;
   - every absolute `http` or `https` string in a JSON body that the server generated: a
     listing, a page, the storage description, the metadata, a service's answer, an identity
     document, the OpenID Provider's discovery document;
@@ -239,18 +248,25 @@ such body or no `subject_token`:
 - **`identifiersAgree`:** the JWT's `sub`, `iss` and `client_id` claims are the same string.
   False when any is absent or is not a string.
 
-### 4.10 `realmContainsRequest` (since 0.10.0)
+### 4.10 `discoveryValid` (since 0.14.0)
 
-For a token request whose form body has a `resource` parameter. The recorder keeps, for each
-realm a 401 answer's challenge named, the URL of the latest request answered with it.
-`realmContainsRequest` is true when that URL is logically contained within the realm, and false
-when it is not. It is absent when no 401 named the realm.
+For a token request whose form body has a `resource` parameter. Before it asks for a token, a
+client must check what a 401 told it against the URL that drew the 401 (lws10-core section 5.2.3):
+the `resource_metadata` URL has that URL's scheme and authority, the protected resource metadata
+names that URL as its `resource`, and the storage description of the storage the 401's `Link`
+names (rel `https://www.w3.org/ns/lws#storage`) has a `StorageRoot` whose `serviceEndpoint` has
+that URL's scheme and authority. If a check fails, it must not ask for a token with what it was
+told.
 
-A URL, without its query and fragment, is contained within a realm when it equals the realm or
-starts with it. A realm that does not end in `/` must be followed by `/`. URLs compare as
-strings, as in `EXECUTION.md` section 8. This is what lws10-core section 5.2.1 asks a client to
-check before it asks for a token: "that the URI of the originating request is logically
-contained within the realm".
+The recorder keeps, for each storage a 401 from the session's storage linked to, whether the
+checks passed for the latest request it was linked for. It knows the session's own storages: the
+storage itself, whose root is on the session's origin, and the storage the decoy's 401 links to,
+whose root is not. The session's protected resource metadata always names the URL requested, so
+that check is not looked at. `discoveryValid` is true when the checks passed, false when they did
+not, and absent when no 401 linked to the storage.
+
+`realmContainsRequest` (0.10.0 to 0.13.0) judged the check the drafts before 19 October 2026
+asked for instead: that the URL was logically contained within the challenge's realm.
 
 ### 4.11 `deliverySignature` (since 0.11.0)
 
@@ -280,7 +296,7 @@ when every term it has holds. The terms, in the order they are checked:
    7.1.
 3. **`issued`, `methodAdvertised`, `patchFormatAdvertised`, `queryFormatAdvertised`,
    `repeat`, `containerEmpty`, `audienceIncludesAs`, `identifiersAgree`,
-   `realmContainsRequest`, `inboxShared`:** the annotation equals the boolean. An absent annotation equals
+   `discoveryValid`, `inboxShared`:** the annotation equals the boolean. An absent annotation equals
    neither `true` nor `false`.
 4. **`presentation`:** a value or a list. Every place in the annotation is listed, so
    `presentation: bearer` fails a request that also carried its token in the query string.
@@ -349,7 +365,7 @@ inbox must withstand. The exchange a fault fired on carries its name (section 4.
 | `methodNotAllowed` | a PUT to a linkset that supports PUT | answers 405, with an `Allow` that leaves PUT out, as a server that stopped supporting the optional PUT would |
 | `lostCreateResponse` | a POST that creates a resource in a container | creates it, then answers 503 with `Retry-After` and no `Location`, as if the answer had been lost |
 | `pageGone` | a request for a page of search results | answers 410, as for a page link that expired |
-| `tokenExpired` (since 0.10.0) | a request to the storage with a valid access token, other than to the decoy | answers 401 with a challenge naming the storage's realm and `error="invalid_token"`, and refuses that token from then on, as for one that expired or was revoked |
+| `tokenExpired` (since 0.10.0) | a request to the storage with a valid access token, other than to the decoy | answers 401 with the storage's challenge, its `resource_metadata` and `error="invalid_token"`, and refuses that token from then on, as for one that expired or was revoked |
 | `forgedUnpublishedKey` (since 0.11.0) | the next notification | signs it with a key the storage description does not publish, its keyid naming the published one |
 | `forgedAlteredBody` (since 0.11.0) | the next notification | signs it, then alters its body; the Content-Digest is the signed one |
 | `forgedKeyidWithoutFragment` (since 0.11.0) | the next notification | signs it with the published key, its keyid the storage's URL without a fragment |
@@ -536,9 +552,9 @@ must be a URI:
             matches: "^[A-Za-z][A-Za-z0-9+.-]*:"
 ```
 
-The realm check. Each 401 from the storage opens a trigger, and the client's next token request
-naming a realm is the trial. The decoy's 401 names a realm that does not contain it, so a client
-that does not check asks for a token for that realm:
+The discovery checks. Each 401 from the storage opens a trigger, and the client's next token
+request naming a resource is the trial. The decoy's 401 links to a storage whose root is on
+another origin, so a client that does not check asks for a token for that storage:
 
 ```yaml
     task:
@@ -557,7 +573,7 @@ that does not check asks for a token for that realm:
         server: storage
         statusCode: 401
     expect:
-      realmContainsRequest: true
+      discoveryValid: true
 ```
 
 The next search after a refused format. Each 415 opens a trigger, and the next QUERY to the
@@ -617,9 +633,10 @@ The identity is the `sub` of the access token, if it is a JWT and the server did
   `Allow` without PUT;
 - `lostCreateResponse`: a POST to a container is forwarded, and its answer replaced with 503;
 - `pageGone`: a GET of a `searchPage` is answered with 410;
-- `tokenExpired`: a storage request carrying a token is answered with 401, `error="invalid_token"`
-  and the realm and `as_uri` of the server's last challenge, and so is every later request
-  with that token.
+- `tokenExpired`: a storage request carrying a token is answered with 401, the parameters of the
+  server's last Bearer challenge (its `resource_metadata`, or the realm and `as_uri` of a server
+  still on the drafts before 19 October 2026) and `error="invalid_token"`, and so is every later
+  request with that token.
 
 The forgeries need the session's own notification service, so a proxy session has none. A real
 server delivers its notifications itself, not through the proxy.
@@ -631,10 +648,11 @@ when any of these holds:
     session's provider and identities;
   - `deliverySignature` or `inboxShared`, which need its notification service;
   - `containerEmpty`, which needs its store;
-- it observes a role only they have: `delivery`, `keyDocument`, `decoy`, `identityDocument`, or
-  the OpenID Provider's roles;
+  - `discoveryValid`, which needs to know where the storages a 401 links to have their roots;
+- it observes a role only they have: `delivery`, `keyDocument`, `decoy`, `decoyStorage`,
+  `identityDocument`, or the OpenID Provider's roles;
 - its task arms a fault the proxy cannot inject.
 
-`realmContainsRequest` still applies, since it needs only the challenges the recorder saw. In
+In
 the results, such a rule's `inapplicableBecause` is `proxy`; for an area left out it is `area`.
 Starting its task is refused with 409.

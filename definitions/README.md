@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.13.0 (2026-10-08, DECISIONS.md D-0091), awaiting review; 0.11.0 was
+**Status: format version 0.14.0 (2026-10-19, DECISIONS.md D-0100), awaiting review; 0.11.0 was
 frozen on 2026-10-05 (D-0083).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
@@ -13,7 +13,10 @@ records delivery signatures and admits editor's-draft sources; 0.6.0 adds the QU
 its inbox's answers; 0.8.0 adds client rules, which judge the requests an LWS client sends
 (`OBSERVATION.md`); 0.9.0 gives client rules tasks and faults; 0.10.0 lets them judge a
 client's token requests and credentials; 0.11.0, the notifications its inbox receives; 0.12.0, the
-SAML assertions it presents; 0.13.0 gives the documents a run mints URLs of the run's own. A test that is one
+SAML assertions it presents; 0.13.0 gives the documents a run mints URLs of the run's own; 0.14.0
+follows the 19 October 2026 drafts, whose 401s name protected resource metadata (RFC 9728) and
+whose containers can be asked for in the LWS profile, which is RDF isomorphic to
+application/lws+json. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -27,9 +30,9 @@ exist for three reasons:
    Every one of its 27 tests has a counterpart here. Where one of its tests contradicts
    the current draft, the counterpart is corrected rather than copied (COVERAGE.md,
    table 1).
-2. **Go further than it.** There are 205 definitions against its 27, covering the
-   authorization server, access grants, conditional requests, linksets, byte ranges,
-   pagination, the access-token negative matrix, notifications (discovery and the webhook
+2. **Go further than it.** There are 221 definitions against its 27, covering the
+   authorization server, access grants, conditional requests, linksets, moving resources
+   between containers, byte ranges, pagination, the access-token negative matrix, notifications (discovery and the webhook
    suite), the search and type index services, and the OpenID Connect, CID (HTTPS and
    did:key subjects) and SAML suites.
 3. **Flow back as JSON-LD.** YAML-LD is JSON-LD in YAML syntax, so exporting these
@@ -37,7 +40,7 @@ exist for three reasons:
    contributed yet; that is a later, deliberate step.
 
 `touchstone run` executes them. Its engine (`harness-core`, D-0054) implements
-`EXECUTION.md`, and every build runs all 205 against the reference deployment in
+`EXECUTION.md`, and every build runs all 221 against the reference deployment in
 `harness-fixtures` and against its broken twins.
 
 ## Layout
@@ -79,7 +82,7 @@ test, which is lws-test-suite's shape.
     status: Proposed
     level: MUST                 # one level per test; SHOULD/MAY checks get their own test
     source:                     # dated spec snapshot + anchor (or an RFC section)
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]  # on an open target the test is inapplicable, not failed
     as: anonymous               # who sends the request; never a credential
@@ -91,8 +94,10 @@ test, which is lws-test-suite's shape.
       statusCode: 401
       authenticationChallenge:  # parsed per RFC 9110: any order, token or quoted values
         wwwAuthenticate: Bearer
-        asUri: {matches: '^https?://'}
-        realm: {matches: '^https?://'}
+        params:
+          - paramName: resource_metadata  # RFC 9728: the resource's protected resource metadata
+            matches: '^https?://'
+            sameOrigin: "${test.container}"
 ```
 
 What a test needs but does not examine is declared, and the engine creates it (EXECUTION.md
@@ -255,27 +260,25 @@ lws-test-suite's context in ways its test group must agree to:
   MCP server, the Docker image and the GitHub Action (D-0054). It refuses a set of
   definitions that fails the checks of `EXECUTION.md` section 2 before sending anything.
 - **The reference deployment.** `harness-fixtures` holds a reference storage server and a
-  reference authorization server that follow the 5 October draft. Against them all
-  definitions pass except `pagination-single-page`, which does not apply: the reference splits the
-  test container into pages (D-0062). Against their broken twins, the tests that exist to
-  catch each defect fail.
+  reference authorization server that follow the 19 October draft. Against them all
+  definitions pass except three that do not apply: `pagination-single-page`, since the reference
+  splits the test container into pages (D-0062), and the move tests for a storage that moves
+  less than the reference does, which run against its trapped and open variants instead
+  (D-0100). Against their broken twins, the tests that exist to catch each defect fail.
 - **The retired manifests.** The YAML test manifests Touchstone ran before (schema 1-1-0,
   following the 21 August draft) were retired when the engine replaced them (D-0055).
   COVERAGE.md table 2 maps each to its successor; `supersedes` names them, and
   `tools/definitions/retired-manifests.txt` keeps their ids.
-- **`catalog/`** is baselined on the same 21 September 2026 core and CID drafts as the
-  definitions (D-0057). The tests that had waited for that re-baseline now cite the
-  successor entries: `conditional-requests-supported` (SHOULD),
-  `linkset-precondition-failed-412`, `linkset-etag-get-head`,
-  `delete-removes-from-parent-listing` and `authz-metadata-subject-identifier-types`.
+- **`catalog/`** is baselined on the same 19 October 2026 core draft and 15 October 2026
+  authentication suites as the definitions (D-0057, D-0086, D-0100).
 
 ## Open questions
 
 These affect how tests are written, and are worth raising with the WG:
 
 1. **Storage link on 401 responses.** Section 6.1.2 requires it on all GET/HEAD
-   responses, but the section 9.2 notes make it a SHOULD on 401s. The definitions test
-   it as SHOULD.
+   responses, but the section 9.2 notes made it a SHOULD on 401s. Settled by the 19 October
+   draft: section 5.2.1 makes it a MUST, and the definitions test it as one.
 2. **`/.well-known/lws-configuration` for an authorization server whose issuer has a
    path.** RFC 8414 inserts the well-known segment before the path; the draft says "a
    URL with the path /.well-known/lws-configuration". The definitions follow RFC 8414,
@@ -289,15 +292,17 @@ These affect how tests are written, and are worth raising with the WG:
    array). Servers still MAY restrict links, and how that combines with the MUST to support
    PATCH is unclear, so the happy path is tested as SHOULD. A patch addresses the first
    link context object, `/linkset/0`, as the resource's own, which the draft implies but
-   does not say.
+   does not say; the 19 October draft's move examples do the same, and its up link as the
+   first target, `/linkset/0/up/0`. A move test whose linkset is laid out otherwise does
+   not apply.
 5. **Grant scope.** Does an access grant on a container reach its members? The
    public-read tests target each resource directly.
 6. **CID suite `kid`.** Is it a fragment or a full verification-method IRI? The
    identities use the fragment, as the draft's example does.
-7. **The LWS JSON-LD context.** `https://www.w3.org/ns/lws/v1` still returns 404, and no
-   published context defines `format`, `storage` or `StorageRoot`. Graph and SHACL
-   assertions are therefore left out of the vocabulary until one exists; JSON pointers
-   read responses as sent.
+7. **The LWS JSON-LD context.** `https://www.w3.org/ns/lws/v1` still returns 404. The
+   Working Group's CI builds the context from the LWS vocabulary, and the engine bundles
+   that build (w3c/lws-protocol 9a08ff6, D-0100) to read a container as RDF for
+   `rdfIsomorphicWith`. Other assertions read responses as sent, with JSON pointers.
 8. **The `lwst:` namespace.** `https://www.w3.org/ns/lws-tests/v1#` (lws-test-suite's
    choice) is not published and needs W3C allocation. The context is the only place to
    change it.
@@ -330,7 +335,18 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Format version
 
-Format version 0.13.0 (2026-10-08, D-0091, awaiting review) adds one thing and changes nothing a
+Format version 0.14.0 (2026-10-19, D-0100, awaiting review) follows the LWS drafts of 19 October
+2026, and is the first that changes what an older definition relies on. A 401's challenge names
+the requested resource's protected resource metadata (RFC 9728) and links to the storage a token
+is for, where it named the authorization server (`as_uri`) and a `realm`: `${as.uri}` is now read
+from the protected resource metadata, and `${as.resource}`, the storage the 401 links to, replaces
+`${as.realm}` (`EXECUTION.md` section 3). The engine still reads the old challenge from a server
+that sends it, so the rest of a run goes ahead. It adds `sameOrigin` to parameter and JSON
+expectations (sections 7.6 and 7.8), for the discovery checks of lws10-core section 5.2.3, and a
+response's `rdfIsomorphicWith` (section 7.11), for the LWS profile. For client rules,
+`discoveryValid` replaces `realmContainsRequest` (`OBSERVATION.md` section 4.10).
+
+Format version 0.13.0 (2026-10-08, D-0091) adds one thing and changes nothing a
 0.12.0 definition relies on: the variable `run.id`, the run's identifier (`EXECUTION.md` section
 3). The identity registry puts it in the webids of the CID identities, whose documents carry a
 key made for the run, so each run's documents have URLs of their own and a verifier's cached copy

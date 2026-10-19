@@ -64,7 +64,7 @@ The merged format:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261005/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
       - https://www.rfc-editor.org/rfc/rfc6750#section-3
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
@@ -77,14 +77,18 @@ The merged format:
       statusCode: 401
       authenticationChallenge:
         wwwAuthenticate: Bearer
-        asUri: {matches: '^https?://'}
-        realm: {matches: '^https?://'}
+        params:
+          - paramName: resource_metadata
+            matches: '^https?://'
+            sameOrigin: "${test.container}"
 ```
 
 The shape is the same. The differences are the point:
 - **The URL is the test's own.** The container is fresh, and the server chose its URI.
-- **Nothing depends on the server's hostname.** The expected `asUri` and `realm` accept any
-  absolute URI, where theirs hard-code `authorization.example` and `storage.example`.
+- **Nothing depends on the server's hostname.** The expected parameter accepts any absolute
+  URI on the origin requested, where theirs hard-code `authorization.example` and
+  `storage.example`. (Since the 19 October 2026 draft the challenge names protected resource
+  metadata, RFC 9728, where lws-test-suite's still expects `as_uri` and `realm`; D-0100.)
 - **The test says what it is.** It names its level, cites a dated draft, and says that it
   needs a target which enforces authentication.
 

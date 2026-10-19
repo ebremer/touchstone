@@ -60,10 +60,14 @@ grants it. Your client can authenticate as either in four ways:
 | A SAML 2.0 assertion (the SAML suite) | *Get an assertion* gives a signed assertion from the session's SAML identity provider, base64url-encoded and valid for five minutes. The suite leaves open how a client obtains one, so the page and the session API hand them out (`POST …/assertions/{name}`, which may name your client's identifier). The authorization server trusts the provider's key. |
 
 With an ID Token, a self-issued credential or an assertion, your client asks the authorization
-server for an access token, as the LWS authentication suites describe. The storage's `401` names the
-authorization server in `as_uri` and the realm in `realm`. Its metadata, at
+server for an access token, as the LWS authentication suites describe. The storage's `401` names
+the requested resource's protected resource metadata in `resource_metadata` (RFC 9728), whose
+`authorization_servers` names the authorization server, and links to the storage with
+`rel="https://www.w3.org/ns/lws#storage"`. Before you ask for a token, check that the metadata's URL
+and the storage's root (its description's `StorageRoot`) are on the origin you requested, and that
+the metadata's `resource` is the URL you requested. The authorization server's metadata, at
 `/.well-known/lws-configuration` followed by the issuer's path, gives the token endpoint. Send it an
-RFC 8693 token exchange: `grant_type=urn:ietf:params:oauth:grant-type:token-exchange`, the realm as
+RFC 8693 token exchange: `grant_type=urn:ietf:params:oauth:grant-type:token-exchange`, the storage as
 `resource`, the credential as `subject_token`, and its type as `subject_token_type`: `jwt` for a
 self-issued credential, `id_token` for an ID Token and `saml2` for an assertion, each after
 `urn:ietf:params:oauth:token-type:`.
@@ -82,8 +86,11 @@ over these:
 - A linkset is found only through its `rel="linkset"` link.
 - A data resource's linkset accepts PUT and lists it in `Allow`; a container's does not.
 - Binary resources refuse PUT, and their `Allow` leaves it out.
-- The root container lists a decoy first. It answers with a `401` whose realm does not contain
-  it, so a client should send it no token.
+- The root container lists a decoy first. It answers with a `401` that links to a storage whose
+  root is on another origin, so a client should ask for no token for it, and send it none.
+- Data resources move between containers when their linkset's up link is changed; containers do
+  not, and the storage does not say whether a moved resource keeps its URL: take it from the
+  response.
 - The type index and search show a write only after a few seconds.
 - A PUT or PATCH changes a resource's content only. The storage does no combined updates of
   content and metadata, which are optional for servers: it ignores `Prefer: set-linkset`. Update
@@ -250,7 +257,8 @@ service never sets it. Add `--proxy-targets targets.yaml` to put real servers be
 for proxy mode; the
 [harness-clients README](https://github.com/ebremer/touchstone/blob/master/harness-clients/README.md#proxy-mode)
 shows how to register one. Behind a reverse proxy, give the public URL with `--public-base`, forward
-both the base path and `/.well-known/lws-configuration` followed by it, and add
+the base path, and `/.well-known/lws-configuration` and `/.well-known/oauth-protected-resource`
+followed by it, and add
 `--trust-forwarded-for` when the proxy sets `X-Forwarded-For`. The proxy must leave the
 `Access-Control-*` headers alone, since the service answers CORS itself. The
 [harness-clients README](https://github.com/ebremer/touchstone/blob/master/harness-clients/README.md)
@@ -258,8 +266,8 @@ has the options and the bounds.
 
 ## Troubleshooting
 
-**The storage answers `401` to everything.** That is the LWS challenge: follow `as_uri` to the
-authorization server and exchange a credential, or use a token from the page. For a token from the
+**The storage answers `401` to everything.** That is the LWS challenge: follow `resource_metadata`
+to the authorization server and exchange a credential, or use a token from the page. For a token from the
 page, send it as `Authorization: Bearer <token>`, and nowhere else.
 
 **A rule fails with "issued: expected true".** Your client built a URL instead of following one

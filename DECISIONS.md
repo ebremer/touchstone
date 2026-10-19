@@ -4063,3 +4063,214 @@ for that reason. EXECUTION.md section 4.1 says how
 the root is found. A definition cannot tell the difference, so the format stays 0.13.0. The GitHub Action takes
 `storage-url` as the alternative to `target-url`, and `run-all.sh` registers sparq-lws-core and lws-drupal, whose runs
 already went in the storage root, by their storage (`TS_REGISTER=storage` in their `touchstone.env`).
+
+## 2026-10-19
+
+### D-0100 — the drafts of 19 October 2026: protected resource metadata, the LWS profile, moving resources; format 0.14.0
+Erich asked for Touchstone to be up to date with the W3C LWS specifications of 19 October 2026.
+`check_published.py` found that W3C had published new versions of four of the six documents:
+
+| Document | Latest version on 19 October 2026 | Touchstone was on |
+|---|---|---|
+| LWS Protocol 1.0 | **WD 19 October 2026** | WD 5 October 2026 |
+| Authentication suites: OpenID Connect, SAML 2.0 | **WD 15 October 2026** | WD 3 August 2026 |
+| Authentication suite: CID | **WD 15 October 2026** | WD 21 September 2026 |
+| Webhook notifications, search and type index | editor's drafts, not on `/TR/` | renders of 2 October, the same text |
+
+The w3c/lws-protocol commits after ef02548 (D-0086) to 9a08ff6 (19 October) change three things
+in the core draft, each with tests to follow:
+- **#256, RFC 9728 for discovery.** A 401's conforming challenge now MUST carry
+  `resource_metadata`, the URL of the requested resource's protected resource metadata, in place
+  of `as_uri` and `realm`, and the response MUST link to the storage that holds the resource. The
+  metadata names the authorization servers. A client MUST check, before it asks for a token, that
+  the metadata URL and the storage's root are on the origin it requested and that the metadata's
+  `resource` is the URL it requested. The token request's `resource` MUST be that storage, which
+  becomes the token's audience, and a storage server now checks that `aud` *includes* its URI,
+  where it checked that `aud` held exactly one value.
+- **#253, content negotiation.** Only `application/lws+json` MUST be honoured on a container;
+  `application/ld+json` and `application/json` are no longer equivalent to it. A representation
+  asked for in the *LWS profile*, an RDF media type with `profile="https://www.w3.org/ns/lws/v1"`,
+  MUST be RDF isomorphic to the `application/lws+json` one and say so in its `Content-Type`.
+- **#237, moving resources.** A client moves a resource by patching the up link in its linkset. A
+  storage that allows it describes a `MoveResource` capability, whose `appliesTo` says whether
+  containers move too and `preservesIdentifier` whether a moved resource keeps its URI. A move is
+  atomic, needs delete on the resource and create in the destination, refuses cycles, and is
+  announced as one `Move` activity.
+
+The authentication suites changed words only (#269, #270, #271, #273), as did the core draft
+elsewhere (#264, #275). The vocabulary changes (#265, #268, #274) touch no catalogued text.
+
+**The core catalog moves to WD-lws10-core-20261019** and grows from 190 requirements to **215**
+(170 MUST, 23 SHOULD, 22 MAY). The 178 blocks whose text did not change keep their entries,
+aligned by text; fifteen of them, one a seed, moved from section `metadata` to `metadata-0`, the
+id the draft now gives "9.1.1 Metadata" inside a new "9.1 Resource metadata" (whose id is the
+old `metadata`, which still resolves). Of the 13 blocks that changed:
+- *Six keep their slug with the new words:* `authz-401-www-authenticate-challenge` (the conforming
+  challenge is now defined in the same sentence, by `resource_metadata`),
+  `authz-token-exchange-resource-param` (the resource MUST be the storage the 401 links to),
+  `authz-access-token-aud-claim`, `authz-invalid-token-401-error-param` (the challenge carries
+  `resource_metadata` too), `read-container-listing-member-metadata` (now said of
+  `application/lws+json` only) and `conneg-vary-accept` (when the representation depends on
+  Accept).
+- *One is renamed:* `linkset-restricted-links` becomes `linkset-restricted-links-preserved`. It
+  was a MAY; it is now also a MUST to preserve the links a client may not change, and to describe
+  `MoveResource` when the up link can be changed.
+- *Five are retired without successor:* `authz-challenge-as-uri-param`,
+  `authz-challenge-realm-param`, `read-401-www-authenticate-discoverability` (its paragraph lost
+  its keyword), `lws-profile-equivalence` and `iana-ld-json-profile-equivalence` (both
+  paragraphs are gone).
+- *The Approved seed `conneg-media-type-equivalence` is retired,* and its successor
+  `conneg-lws-json-honored` is a Draft entry. The obligation narrowed to one media type, which
+  D-0057's rule would let keep Approved, but the sentence was rewritten, and its Content-Type
+  clause now covers every representation selected, not only the three requested. As in D-0040,
+  D-0057 and D-0086 the judgement is flagged for Erich: promoting it is moving it above the
+  generated marker.
+
+31 blocks are new: seven for discovery (`authz-401-storage-link`, `authz-prm-conforms-rfc9728`,
+`authz-prm-authorization-servers`, `authz-client-discovery-validation`,
+`authz-client-resource-metadata-same-origin`, `authz-client-prm-resource-matches`,
+`authz-client-storage-root-same-origin`), two for content negotiation (`conneg-lws-json-honored`,
+`conneg-lws-profile-isomorphic`) and 22 for moving (`capability-move-*`,
+`containment-integrity-move`, `move-*`, `notification-activity-move`, `security-move-*`,
+`privacy-move-redirect-access-control`). The clauses of the security and privacy considerations
+carry BCP 14 keywords, so they are catalogued, as `security-notifications` was.
+
+**The three suites move to their 15 October WDs.** Five SAML clauses call `saml:NameID`,
+`saml:Issuer`, `saml:SubjectConfirmationData` and `saml:Audience` elements and `Recipient` an
+attribute, where they said assertion and parameter; two CID clauses say "the JWT" for "the ID
+Token" and "key ID" for "key id"; no OpenID Connect clause changed. Every entry keeps its slug.
+The snapshots replace the old ones, and the whole catalog holds **321 requirements** (254 MUST,
+29 SHOULD, 38 MAY), 272 of which bind a server or an authorization server.
+
+**Format 0.14.0** (awaiting review) is the first format to change what an older definition relies
+on:
+- `${as.resource}`, the storage the anonymous probe's 401 links to, replaces `${as.realm}`;
+  `${as.uri}` is the first issuer in the `authorization_servers` of the protected resource
+  metadata the challenge names. **The engine still reads the challenge of the earlier drafts**
+  (`as_uri` and `realm`) from a server that sends it, and logs that it did, so that a run against
+  a server that has not followed the draft yet tests everything else; the tests of the challenge
+  fail such a server. Every target server Touchstone is run against is in that position today.
+- `sameOrigin`, on parameter and JSON expectations: the value has the scheme and authority of a
+  URL, for the discovery checks.
+- `rdfIsomorphicWith`, on a response: the URL fetched again with another media type encodes an
+  isomorphic RDF dataset, each response read by its own `Content-Type` (JSON-LD with the bundled
+  contexts, Turtle, TriG, N-Triples, N-Quads).
+- For client rules, `discoveryValid` replaces `realmContainsRequest` (OBSERVATION.md section 4.10).
+
+**The bundled `lws/v1` context is replaced** (amending D-0026). The copy of the 22 June draft's
+inline context mapped terms the vocabulary has since renamed (`mediaType`, `as:totalItems`), so a
+correct Turtle representation would not have been isomorphic to the JSON-LD the harness read.
+`https://www.w3.org/ns/lws/v1` still answers 404, so the bundled file is the context the Working
+Group's CI builds from `lws10-vocab/vocabulary.yml`, as published at
+`https://w3c.github.io/lws-protocol/lws10-vocab/vocabulary.context.jsonld` after 9a08ff6
+(Last-Modified 19 October 2026 13:37 GMT), unmodified; sha256
+`b2dda589fea8bb68cdd8f741c46f60e0f439dd303d6765a94498031b18033e50`. It is what the WG's own check
+of its tabbed examples reads lws+json with. Nothing is fetched at run time.
+
+**The definitions follow the draft**, 221 server tests (181 MUST, 29 SHOULD, 11 MAY; was 205), citing
+243 of the 272 requirements that bind a server or an authorization server:
+- Every citation names the new drafts. `anchors.json` was rebuilt from the archived snapshots,
+  keeping the editor's-draft entries, which `fetch_anchors.py` would have dropped.
+- **Challenges.** The 401 tests expect `resource_metadata`; `getContainer-private-unauthorized`
+  also expects it on the requested URL's origin. New: `protected-resource-metadata` and
+  `protected-resource-metadata-data-resource` (the metadata is JSON whose `resource` is the URL
+  requested, character for character, and which names an authorization server) and
+  `storage-root-same-origin` (the linked storage's root is on the requested origin; inapplicable
+  when its description cannot be read without a token). `discovery-unauthorized-response-headers`
+  becomes a MUST, closing open question 1 of definitions/README.md.
+- **`authz-token-multiple-audiences-rejected` is retired**: it asserted "contains exactly one
+  value", which the draft dropped. A stricter server is not wrong, so nothing replaces it; the
+  identity `alice-multiple-audiences` and the fault `MultipleAudiences` stay, unused.
+- **Content negotiation.** `container-conneg` asks for `application/lws+json` alone.
+  `container-conneg-vary` applies only to a container that also answers `application/ld+json`,
+  since a single representation does not depend on Accept. `container-conneg-weighted` ranks an
+  invented type above `application/lws+json`, where it ranked `text/html` above ld+json: a server
+  with HTML views honoured the client's first choice and was failed for it. The SHOULD
+  `container-ld-json-lws-profile` is replaced by `container-lws-profile-ld-json` and
+  `container-lws-profile-turtle` (MUST), which apply when the server selects that media type and
+  then require the profile in its Content-Type and `rdfIsomorphicWith: application/lws+json`.
+- **Linksets.** `linkset-up-not-redirected` now requires the refusal of an up link to a container
+  that does not exist (a NegativeTest, MUST); new `linkset-patch-preserves-server-links` (MUST).
+- **Moving**, a new manifest `core/moving.yamlld` with twelve MUST tests:
+  `discovery-move-capability`, `move-data-resource`, `move-updates-container-etags`,
+  `move-keeps-identifier-content-and-links`, `move-invalid-destination-refused`, `move-container`,
+  `move-container-into-itself-refused`, `move-container-refused-without-container-support`,
+  `move-refused-without-capability`, `move-needs-create-in-destination`,
+  `move-needs-delete-of-resource` and `move-notification`. Each reads the storage description
+  first and applies only to the storages its precondition describes. A move patch replaces
+  `/linkset/0/up/0/href`, as the draft's examples do; a linkset laid out otherwise makes the test
+  inapplicable, after `move-data-resource` has checked that the linkset shows the up link at all.
+  Not tested: a storage that does not preserve identifiers (`move-new-identifier-response`), whose
+  test no reference deployment could exercise, and the redirects and cross-storage moves the draft
+  leaves to servers.
+
+**Client rules.** `client-token-for-containing-realm` becomes `client-token-after-discovery-checks`
+(MUST). The session's decoy now answers with a 401 whose protected resource metadata is in order,
+but whose Link names a storage, `_t/vault/`, whose public description puts the storage root on
+another origin; a client that does not check asks for a token for that storage. The other two
+checks need a second origin or wrong metadata, which a session does not have: they are listed in
+`NOT_JUDGED` with a new kind, *untried*, beside four move-capability client halves that do not
+show in what a client sends. `client-linkset-write-conditional` also cites `move-request-json-patch`.
+A proxy session cannot know where a real server's storages have their roots, so the new rule is
+inapplicable there (20 such rules, was 19). The rules cite 66 of the 85 requirements that bind a
+client or a receiver.
+
+**The reference deployment follows the draft.**
+- `RefLwsServer` answers a 401 with `Bearer resource_metadata="…"` and the storage link, and
+  serves protected resource metadata at `/.well-known/oauth-protected-resource` followed by the
+  resource's path (RFC 9728 section 3.1). Its token validator accepts an `aud` that includes the
+  storage.
+- It serves a container as `application/lws+json`, as `application/ld+json` and
+  `application/json` (the same document), and as `text/turtle`, with the profile in the
+  Content-Type when it was asked for. The Turtle is written from the listing by hand, not
+  converted by Jena, so that `rdfIsomorphicWith` compares two independent readings of the
+  context: the context scopes `format`, `size` and `modified` to data resources, so a contained
+  container is only typed.
+- Its linksets show the server's own links, `up` and `type`, in the resource's link context. A
+  patch that changes `type` is refused with 409; one that changes `up` is a move, refused with
+  409 unless the destination is an existing container of the storage that is not the resource
+  itself or inside it, and with 403 unless the agent may delete everything moved and create in
+  the destination. A move is atomic, keeps the identifier, gives both containers a new ETag, and
+  sends one `Move` activity to each subscriber whose topic covered the resource before or after.
+  It describes `MoveResource` with `appliesTo [DataResource, Container]` and
+  `preservesIdentifier true`; the trap `dataMovesOnly`, set in client sessions and the trapped
+  deployment, describes it bare, and the open deployment moves nothing. So each move test
+  applies to one of the three.
+- `RefLwsClient` makes the three discovery checks, caching storage descriptions; its twin
+  `SKIPS_DISCOVERY_CHECKS` replaces `TOKEN_FOR_FOREIGN_REALM`.
+- Client sessions route `/.well-known/oauth-protected-resource{base}/s/{sid}/storage/…` to the
+  session's storage and `…/p/{id}/…` to a proxy target. A deployment behind a front proxy needs
+  that prefix forwarded as `/.well-known/lws-configuration{base}/` already is.
+- RFC 9728 builds the metadata URL from the URL requested, query and all, so a 401 to a request
+  that carried its token in the query would echo the token in `WWW-Authenticate`. The reference
+  server leaves an `access_token` parameter out of the resource identifier it reports (RFC 6750
+  section 2.3 makes it a credential, not part of the name), and client sessions redact the
+  credential fields of every URL quoted in a recorded `WWW-Authenticate`, as they already did a
+  `Location`'s. `ClientSessionToolsTest` caught the echo.
+
+Verified:
+- `clause_hash.py --check` passes on all six catalogs; `check_drift.py` reports no drift and no
+  dead anchor against the 19 October core and the three 15 October suite snapshots;
+- `tools/definitions/check.py` passes 7 of 7;
+- `./mvnw -B -o clean verify` is green in all five modules (115, 24, 114, 15 and 6 tests). That includes
+  `DefinitionsSelfTest`: the compliant deployment passes 218 of the 221 definitions, and the
+  other three are inapplicable to it (`pagination-single-page`, `move-refused-without-capability`,
+  `move-container-refused-without-container-support`); the trapped and open deployments run the
+  move tests the compliant one cannot; the broken storage fails the new challenge, metadata and
+  move-authorization tests as well as the old ones. `ClientRulesSelfTest` has the new twin fail
+  exactly `client-token-after-discovery-checks`. New engine tests cover `sameOrigin`, the RDF
+  reading (a Turtle body that states a contained container's `modified` is not isomorphic) and
+  the discovery of `${as.*}`, with and without the earlier challenge.
+
+**Needs Erich's review before merge:**
+1. `conneg-lws-json-honored` left Draft (above).
+2. The engine's fallback to the earlier challenge, and format 0.14.0 dropping `as.realm` and
+   `realmContainsRequest`.
+3. Retiring `authz-token-multiple-audiences-rejected` with no successor.
+4. The readings in the new tests: the `/linkset/0/up/0` position, `container-conneg-vary`'s
+   precondition, the invented media type in `container-conneg-weighted`, and the three
+   conditional MUSTs (profile, storage root) being inapplicable rather than failed when the
+   server makes the other legal choice.
+5. The decoy trying only the storage-root check, and the *untried* kind in `NOT_JUDGED`.
+
+Drafted by an agent; waits on branch `spec/wd-2026-10-19`.
