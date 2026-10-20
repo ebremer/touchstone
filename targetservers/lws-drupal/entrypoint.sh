@@ -1,6 +1,6 @@
 #!/bin/bash
 # Starts the lws-drupal target: settings.php from the environment, the site installed and its storage made at the
-# first start, then PHP-FPM and nginx (../README.md).
+# first start, the modules' database updates applied at every start, then PHP-FPM and nginx (../README.md).
 #
 #   LWS_PUBLIC_URL          the public base URL, e.g. https://host.example/targets/lws-drupal (lws.settings:base_url,
 #                           set at every start). The proxy strips its path. The authorization server's issuer is
@@ -49,6 +49,8 @@ if [ "$(drush status --field=bootstrap 2>/dev/null)" != Successful ]; then
   drush pm:install -y lws lws_authz lws_storage lws_index lws_notify
   drush config:set -y --input-format=yaml lws_index.settings content_types.enabled true
 fi
+# A site an earlier image made gets what newer code needs (tables, settings); a new one has nothing to update.
+drush updatedb -y
 drush config:set -y lws.settings base_url "${LWS_PUBLIC_URL%/}"
 if ! drush lws:storage:list --format=csv --fields=slug 2>/dev/null | grep -qx "$slug"; then
   drush lws:storage:create "$slug" --controller="$LWS_OWNER" --page-size="${LWS_PAGE_SIZE:-4}"

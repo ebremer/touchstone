@@ -15,10 +15,10 @@ below is reachable as soon as it starts. A second set can be published beside th
 | Target | Implementation | Built from (default) | Storage | Authorization server key |
 |---|---|---|---|---|
 | `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `00f79d5` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
-| `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `ad6831f` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
+| `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `2bee2c6` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
 | `sparq-lws` | sparq-lws-core, LWS 1.0 mode | [sparq-org/sparq PR #6650](https://github.com/sparq-org/sparq/pull/6650) `5501efa` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
-| `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `c18d4be` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
+| `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `6f3dbe1` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `main` `dd1871b` | `/targets/lwsd/` | `/data/as-key.json` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
