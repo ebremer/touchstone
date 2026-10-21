@@ -5,11 +5,11 @@
 # prefix is the path of LWS_PUBLIC_URL, and it answers its RFC 8414 metadata at /.well-known/lws-configuration<prefix>
 # itself. See ../README.md for the contract and entrypoint.sh for the settings.
 #
-# The source is the repository at LWSD_REF. To build a local checkout instead:
+# The source is the repository at LWSD_REF, the commit of a release tag (v0.0.6). To build a local checkout instead:
 #   docker build --build-context source=/path/to/lwsd targetservers/lwsd
 
 ARG LWSD_REPO=https://github.com/linkedwebstorage/lwsd.git
-ARG LWSD_REF=dd1871ba1ac7e5db3380b5b55bd28aaac4fb46f5
+ARG LWSD_REF=1999965eb8eb5c8fe80745c23a9ccfee68f5d336
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone
