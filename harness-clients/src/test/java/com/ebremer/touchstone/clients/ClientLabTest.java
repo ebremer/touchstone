@@ -360,9 +360,11 @@ class ClientLabTest {
         assertThat(JSON.readTree(get(api + "/clients", key).body()).at("/clients/0/client_id").asText()).isEqualTo(clientId);
         assertThat(get(api + "/credentials/bob", null).statusCode()).isEqualTo(401);
         JsonNode bob = JSON.readTree(get(api + "/credentials/bob", key).body());
+        // cidUrl names bob; webid, its name before D-0101, still carries the same value.
+        assertThat(bob.get("webid").asText()).isEqualTo(bob.get("cidUrl").asText()).isNotEmpty();
 
         // bob's identity document names the provider; its discovery names the endpoints.
-        HttpResponse<String> doc = send("GET", bob.get("webid").asText(), null, null, null);
+        HttpResponse<String> doc = send("GET", bob.get("cidUrl").asText(), null, null, null);
         assertThat(doc.statusCode()).isEqualTo(200);
         assertThat(doc.headers().firstValue("Content-Type").orElseThrow()).isEqualTo("application/cid");
         assertThat(JSON.readTree(doc.body()).at("/service/0/serviceEndpoint").asText()).isEqualTo(issuer);
@@ -454,7 +456,7 @@ class ClientLabTest {
         String idToken = JSON.readTree(tokens.body()).get("id_token").asText();
         JsonNode claims = JSON.readTree(java.util.Base64.getUrlDecoder().decode(idToken.split("\\.")[1]));
         assertThat(claims.get("iss").asText()).isEqualTo(issuer);
-        assertThat(claims.get("sub").asText()).isEqualTo(bob.get("webid").asText());
+        assertThat(claims.get("sub").asText()).isEqualTo(bob.get("cidUrl").asText());
         assertThat(claims.get("azp").asText()).isEqualTo(clientId);
         assertThat(claims.get("aud").toString()).contains(clientId).contains(session.at("/authorizationServer/issuer").asText());
 
@@ -561,7 +563,8 @@ class ClientLabTest {
         String key = session.get("key").asText();
         String issuer = session.at("/authorizationServer/issuer").asText();
         String entity = base + "/s/" + session.get("id").asText() + "/saml";
-        String bob = session.at("/identities/bob/webid").asText();
+        String bob = session.at("/identities/bob/cidUrl").asText();
+        assertThat(session.at("/identities/bob/webid").asText()).isEqualTo(bob);
         assertThat(session.at("/samlIdentityProvider/entityId").asText()).isEqualTo(entity);
         assertThat(session.at("/identities/bob/assertions").asText()).isEqualTo(api + "/assertions/bob");
 
@@ -607,7 +610,7 @@ class ClientLabTest {
         assertThat(exchange.at("/annotations/credentialSource").asText()).isEqualTo("samlIdentityProvider");
         assertThat(verdict(exchange, "client-saml-token-type-saml2")).isEqualTo("failed");
         String forged = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
-                xml.replace(bob, session.at("/identities/alice/webid").asText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                xml.replace(bob, session.at("/identities/alice/cidUrl").asText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         HttpResponse<String> refused = send("POST", issuer + "/token", null,
                 "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&resource=" + resource
                         + "&subject_token=" + forged + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Asaml2",

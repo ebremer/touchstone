@@ -107,7 +107,7 @@
       const tr = el('tr');
       tr.append(el('th', name), el('td'), el('td', identity.role), el('td'), el('td'), el('td'));
       tr.children[0].scope = 'row';
-      tr.children[1].append(el('code', identity.webid));
+      tr.children[1].append(el('code', identity.cidUrl));
       tr.children[3].append(button('Show', '', () => secrets(name)));
       if (proxy) {
         tr.children[4].append(el('span', 'none', 'note'));

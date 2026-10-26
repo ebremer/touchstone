@@ -193,9 +193,9 @@ class ClientRulesSelfTest {
         };
         try (RefInbox inbox = RefInbox.start(flaw)) {
             new RefLwsClient(URI.create(session.get("storage").asText()),
-                    new RefLwsClient.Agent(session.at("/identities/alice/webid").asText(), session.at("/tokens/alice").asText(),
+                    new RefLwsClient.Agent(session.at("/identities/alice/cidUrl").asText(), session.at("/tokens/alice").asText(),
                             aliceSecrets.get("privateKeyJwk").toString(), null),
-                    new RefLwsClient.Agent(session.at("/identities/bob/webid").asText(), null, null,
+                    new RefLwsClient.Agent(session.at("/identities/bob/cidUrl").asText(), null, null,
                             new RefLwsClient.Login(clientId, REDIRECT, "bob", bobSecrets.get("password").asText()),
                             () -> assertion(api, key, "bob", clientId)),
                     inbox, flaw, tasks).run();

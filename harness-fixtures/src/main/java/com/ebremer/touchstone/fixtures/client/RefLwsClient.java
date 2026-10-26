@@ -199,7 +199,7 @@ public final class RefLwsClient {
     /**
      * An agent the client acts for, and how it authenticates.
      *
-     * @param webid its WebID, the URL of its identity document
+     * @param cidUrl its CID URL, the URL of its identity document
      * @param token an access token the session handed out, or null
      * @param key the private JWK of the verification method its identity document lists, for
      *     self-issued credentials, or null
@@ -207,10 +207,10 @@ public final class RefLwsClient {
      * @param assertions where its SAML assertions come from, or null; with a login too, the agent
      *     signs in with OpenID first and presents an assertion after that
      */
-    public record Agent(String webid, String token, String key, Login login, Assertions assertions) {
+    public record Agent(String cidUrl, String token, String key, Login login, Assertions assertions) {
 
-        public Agent(String webid, String token, String key, Login login) {
-            this(webid, token, key, login, null);
+        public Agent(String cidUrl, String token, String key, Login login) {
+            this(cidUrl, token, key, login, null);
         }
     }
 
@@ -246,7 +246,7 @@ public final class RefLwsClient {
     private final Flaw flaw;
     private final Tasks tasks;
     private final SecureRandom random = new SecureRandom();
-    /** Each agent's access token now, by WebID. */
+    /** Each agent's access token now, by CID URL. */
     private final Map<String, String> tokens = new HashMap<>();
     /** The token endpoint of each authorization server met, by issuer. */
     private final Map<String, URI> tokenEndpoints = new HashMap<>();
@@ -254,7 +254,7 @@ public final class RefLwsClient {
     private final Map<String, Optional<URI>> storageRoots = new HashMap<>();
     /** Whether the twin has made its one mistake. */
     private boolean flawShown;
-    /** The agents that have signed in at their OpenID Provider, by WebID. */
+    /** The agents that have signed in at their OpenID Provider, by CID URL. */
     private final Set<String> signedIn = new java.util.HashSet<>();
 
     /**
@@ -273,7 +273,7 @@ public final class RefLwsClient {
         this.tasks = tasks;
         for (Agent a : List.of(alice, bob)) {
             if (a.token() != null) {
-                tokens.put(a.webid(), a.token());
+                tokens.put(a.cidUrl(), a.token());
             }
         }
     }
@@ -380,7 +380,7 @@ public final class RefLwsClient {
         // bob reads the note, this time with a SAML assertion: his token is gone, so the storage
         // answers 401, and the client exchanges an assertion for a new one.
         if (bob.assertions() != null) {
-            tokens.remove(bob.webid());
+            tokens.remove(bob.cidUrl());
             send("GET", note, bob, null, null, null, Map.of());
         }
 
@@ -470,7 +470,7 @@ public final class RefLwsClient {
             policy.putArray("type").add("AccessPolicy");
         }
         policy.putArray("action").add(flaw == Flaw.POLICY_UNKNOWN_ACTION ? "write" : "read");
-        policy.put("assignee", flaw == Flaw.POLICY_ASSIGNEE_NOT_URI ? "bob" : bob.webid());
+        policy.put("assignee", flaw == Flaw.POLICY_ASSIGNEE_NOT_URI ? "bob" : bob.cidUrl());
         if (flaw == Flaw.POLICY_TARGET_NOT_OBJECT) {
             policy.put("target", note.toString());
         } else {
@@ -500,7 +500,7 @@ public final class RefLwsClient {
         ObjectNode policy = doc.putArray("access").addObject();
         policy.putArray("type").add("AccessPolicy");
         policy.putArray("action").add("modify");
-        policy.put("assignee", bob.webid());
+        policy.put("assignee", bob.cidUrl());
         ObjectNode target = policy.putObject("target");
         target.put("type", "StorageResource");
         target.putArray("value").add(note.toString());
@@ -608,7 +608,7 @@ public final class RefLwsClient {
      */
     private Reply send(String method, URI url, Agent as, String contentType, String body, String accept,
                        Map<String, String> headers) throws IOException, InterruptedException {
-        Reply r = raw(method, url, as == null ? null : tokens.get(as.webid()), contentType, body, accept, headers);
+        Reply r = raw(method, url, as == null ? null : tokens.get(as.cidUrl()), contentType, body, accept, headers);
         if (r.status() != 401 || as == null || (as.key() == null && as.login() == null && as.assertions() == null)) {
             return r;
         }
@@ -630,7 +630,7 @@ public final class RefLwsClient {
             return r;
         }
         return authenticate(as, found.issuer(), found.storage())
-                ? raw(method, url, tokens.get(as.webid()), contentType, body, accept, headers) : r;
+                ? raw(method, url, tokens.get(as.cidUrl()), contentType, body, accept, headers) : r;
     }
 
     /**
@@ -700,7 +700,7 @@ public final class RefLwsClient {
                         resource);
             }
             answer = exchange(endpoint, selfIssued(as, issuer, Flaw.NONE), JWT_TYPE, resource);
-        } else if (as.assertions() != null && (as.login() == null || signedIn.contains(as.webid()))) {
+        } else if (as.assertions() != null && (as.login() == null || signedIn.contains(as.cidUrl()))) {
             String assertion = as.assertions().next();
             if (flaw == Flaw.SAML_TYPED_AS_JWT && !flawShown) {
                 flawShown = true;
@@ -708,7 +708,7 @@ public final class RefLwsClient {
             }
             answer = exchange(endpoint, assertion, SAML2_TYPE, resource);
         } else {
-            signedIn.add(as.webid());
+            signedIn.add(as.cidUrl());
             String idToken = idToken(as);
             if (flaw == Flaw.ID_TOKEN_TYPED_AS_JWT && !flawShown) {
                 flawShown = true;
@@ -719,7 +719,7 @@ public final class RefLwsClient {
         if (answer.status() != 200) {
             return false;
         }
-        tokens.put(as.webid(), json.readTree(answer.body()).path("access_token").asText());
+        tokens.put(as.cidUrl(), json.readTree(answer.body()).path("access_token").asText());
         return true;
     }
 
@@ -767,9 +767,9 @@ public final class RefLwsClient {
     private String selfIssued(Agent as, String issuer, Flaw defect) throws IOException {
         long now = Instant.now().getEpochSecond();
         ObjectNode claims = json.createObjectNode();
-        claims.put("sub", as.webid());
-        claims.put("iss", as.webid());
-        claims.put("client_id", defect == Flaw.CID_CLIENT_ID_DIFFERS ? "https://client.invalid/app" : as.webid());
+        claims.put("sub", as.cidUrl());
+        claims.put("iss", as.cidUrl());
+        claims.put("client_id", defect == Flaw.CID_CLIENT_ID_DIFFERS ? "https://client.invalid/app" : as.cidUrl());
         claims.putArray("aud").add(defect == Flaw.CID_AUDIENCE_WITHOUT_AS ? "https://as.invalid/" : issuer);
         claims.put("iat", now);
         claims.put("exp", now + 300);
@@ -804,7 +804,7 @@ public final class RefLwsClient {
      */
     private String idToken(Agent as) throws IOException, InterruptedException {
         Login login = as.login();
-        Reply document = send("GET", URI.create(as.webid()), null, null, null, "application/cid, application/json", Map.of());
+        Reply document = send("GET", URI.create(as.cidUrl()), null, null, null, "application/cid, application/json", Map.of());
         String issuer = null;
         for (JsonNode service : json.readTree(document.body()).path("service")) {
             if (service.path("type").toString().contains("OpenIdProvider")) {
@@ -812,7 +812,7 @@ public final class RefLwsClient {
             }
         }
         if (issuer == null) {
-            throw new IOException(as.webid() + " names no OpenID Provider");
+            throw new IOException(as.cidUrl() + " names no OpenID Provider");
         }
         Reply discovery = send("GET", URI.create(issuer + "/.well-known/openid-configuration"), null, null, null,
                 "application/json", Map.of());

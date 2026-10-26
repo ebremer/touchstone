@@ -43,7 +43,7 @@ final class Session {
      * in to the session's OpenID Provider with, and the private key of the verification method its
      * identity document lists, for self-issued credentials (the CID suite).
      */
-    record Identity(String name, String webid, String password, ECKey key, String document) {
+    record Identity(String name, String cidUrl, String password, ECKey key, String document) {
     }
 
     /**
@@ -115,7 +115,7 @@ final class Session {
         for (String name : IDENTITIES) {
             Identity identity = identity(name);
             identities.put(name, identity);
-            op.addUser(name, identity.webid(), identity.password());
+            op.addUser(name, identity.cidUrl(), identity.password());
         }
         // The session's authorization server trusts the session's identities and providers only, so
         // that no subject token can make the service fetch a URL of a client's choosing (section 8.3).
@@ -123,7 +123,7 @@ final class Session {
         as.dereferenceOnly(this::document);
         String samlEntity = base + "/saml";
         this.saml = new SamlIdentityProvider(samlEntity, signing -> as.trustSamlIdentityProvider(samlEntity, signing));
-        this.storage = RefLwsServer.mounted(URI.create(storageUrl()), as, webid("alice"), traps);
+        this.storage = RefLwsServer.mounted(URI.create(storageUrl()), as, cidUrl("alice"), traps);
         // Notifications go nowhere until the outbound guard of section 8.3 exists (phase C5).
         this.storage.deliverOnlyTo(uri -> false);
         // Some linksets take PUT and some do not, so a client must read Allow first.
@@ -146,7 +146,7 @@ final class Session {
         this.clientId = base + "/client";
         this.judge = new Judge(rules, Set.of(), proxy == null ? Set.of() : ProxySession.unavailable(rules));
         recorder.issue(publicStorage(), "session");
-        IDENTITIES.forEach(name -> recorder.issue(webid(name), "session"));
+        IDENTITIES.forEach(name -> recorder.issue(cidUrl(name), "session"));
     }
 
     /** The URL of the session's own storage, which a proxy session does not serve. */
@@ -159,13 +159,13 @@ final class Session {
         return proxy == null ? storageUrl() : proxy.target.storage().toString();
     }
 
-    String webid(String name) {
+    String cidUrl(String name) {
         return base + "/id/" + name;
     }
 
     /** The verification method of {@code name}'s key: the identity document's URL and a fragment. */
     String keyId(String name) {
-        return webid(name) + "#key-1";
+        return cidUrl(name) + "#key-1";
     }
 
     /**
@@ -183,18 +183,18 @@ final class Session {
         }
         ObjectNode doc = JSON.createObjectNode();
         doc.putArray("@context").add("https://www.w3.org/ns/cid/v1");
-        doc.put("id", webid(name));
+        doc.put("id", cidUrl(name));
         ObjectNode method = doc.putArray("authentication").addObject();
         method.put("id", keyId(name));
         method.put("type", "JsonWebKey");
-        method.put("controller", webid(name));
+        method.put("controller", cidUrl(name));
         method.set("publicKeyJwk", JSON.valueToTree(key.toPublicJWK().toJSONObject()));
         ObjectNode service = doc.putArray("service").addObject();
         service.put("type", OPENID_PROVIDER);
         service.put("serviceEndpoint", op.issuer());
         byte[] password = new byte[12];
         RANDOM.nextBytes(password);
-        return new Identity(name, webid(name), java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(password),
+        return new Identity(name, cidUrl(name), java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(password),
                 key, doc.toString());
     }
 
@@ -204,7 +204,7 @@ final class Session {
      */
     String document(String url) {
         for (Identity identity : identities.values()) {
-            if (identity.webid().equals(url)) {
+            if (identity.cidUrl().equals(url)) {
                 return identity.document();
             }
         }
@@ -217,7 +217,7 @@ final class Session {
     /** alice or bob for the session's identities; any other subject as it is. */
     String identityOf(String subject) {
         for (String name : IDENTITIES) {
-            if (webid(name).equals(subject)) {
+            if (cidUrl(name).equals(subject)) {
                 return name;
             }
         }
@@ -226,7 +226,7 @@ final class Session {
 
     /** An access token for {@code name}, as the session's authorization server would issue it. */
     String token(String name, Duration lifetime) {
-        String token = as.issue(webid(name), clientId, storage.audience(), lifetime);
+        String token = as.issue(cidUrl(name), clientId, storage.audience(), lifetime);
         tokens.add(token);
         return token;
     }
@@ -238,7 +238,7 @@ final class Session {
      * @param client the client identifier, its Recipient and one of its audiences
      */
     String assertion(String name, String client, Duration lifetime) {
-        return saml.issue(webid(name), client, as.issuer(), lifetime);
+        return saml.issue(cidUrl(name), client, as.issuer(), lifetime);
     }
 
     /** Starts the results over (CLIENT-TESTING.md section 3): the storage and the log stay. */

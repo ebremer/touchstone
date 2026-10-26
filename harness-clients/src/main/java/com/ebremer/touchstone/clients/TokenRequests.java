@@ -102,7 +102,7 @@ final class TokenRequests {
                 jwt.path("claims").path("sub").asText(null), jwt.path("claims").path("client_id").asText(null)};
         for (Session.Identity identity : session.identities.values()) {
             for (String v : values) {
-                if (v != null && (v.equals(identity.webid()) || v.startsWith(identity.webid() + "#"))) {
+                if (v != null && (v.equals(identity.cidUrl()) || v.startsWith(identity.cidUrl() + "#"))) {
                     return true;
                 }
             }

@@ -67,13 +67,13 @@
     <p class="note">Your client can authenticate as alice or bob in four ways. It can sign in at the
       session's OpenID Provider with a username and password, after you register it below. It can
       sign a credential itself with the identity's key, as the CID suite describes: sub, iss and
-      client_id are the WebID, and kid names the verification method. It can present a SAML 2.0
+      client_id are the CID URL, and kid names the verification method. It can present a SAML 2.0
       assertion from the session's identity provider, which this page or the session API hands out,
       base64url-encoded, with the token type urn:ietf:params:oauth:token-type:saml2. Or it can use a
       token from this page, for a client without authentication yet.</p>
     <div class="scroll">
       <table class="identities">
-        <thead><tr><th scope="col">Name</th><th scope="col">WebID</th><th scope="col">Access</th>
+        <thead><tr><th scope="col">Name</th><th scope="col">CID URL</th><th scope="col">Access</th>
           <th scope="col">Password and key</th><th scope="col">SAML assertion</th><th scope="col">Token</th></tr></thead>
         <tbody id="identities"></tbody>
       </table>

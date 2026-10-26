@@ -723,7 +723,8 @@ public final class ClientLab implements AutoCloseable {
                 Session.Identity identity = s.identities.get(parts[2]);
                 ObjectNode body = JSON.createObjectNode();
                 body.put("name", identity.name());
-                body.put("webid", identity.webid());
+                body.put("cidUrl", identity.cidUrl());
+                body.put("webid", identity.cidUrl()); // the same, under its name before D-0101
                 body.put("username", identity.name());
                 body.put("password", identity.password());
                 body.put("verificationMethod", s.keyId(identity.name()));
@@ -757,7 +758,7 @@ public final class ClientLab implements AutoCloseable {
                 body.put("access_token", s.token(parts[2], config.tokenLifetime()));
                 body.put("token_type", "Bearer");
                 body.put("expires_in", config.tokenLifetime().toSeconds());
-                body.put("subject", s.webid(parts[2]));
+                body.put("subject", s.cidUrl(parts[2]));
                 json(response, callback, 200, body);
                 return;
             }
@@ -809,7 +810,7 @@ public final class ClientLab implements AutoCloseable {
             ObjectNode body = JSON.createObjectNode();
             body.put("assertion", s.assertion(name, client, lifetime));
             body.put("issuer", s.saml.entityId());
-            body.put("subject", s.webid(name));
+            body.put("subject", s.cidUrl(name));
             body.put("recipient", client);
             body.putArray("audience").add(client).add(s.as.issuer());
             body.put("expires_in", lifetime.toSeconds());
@@ -953,7 +954,8 @@ public final class ClientLab implements AutoCloseable {
             ObjectNode ids = body.putObject("identities");
             for (String name : Session.IDENTITIES) {
                 ObjectNode id = ids.putObject(name);
-                id.put("webid", s.webid(name));
+                id.put("cidUrl", s.cidUrl(name));
+                id.put("webid", s.cidUrl(name)); // the same, under its name before D-0101
                 id.put("verificationMethod", s.keyId(name));
                 id.put("credentials", config.publicBase() + "/sessions/" + s.id + "/credentials/" + name);
                 if (s.proxy == null) {

@@ -242,7 +242,7 @@ class ProxyRulesSelfTest {
         JsonNode session = JSON.readTree(created.body());
         String key = session.get("key").asText();
         String api = session.get("api").asText();
-        Server backend = backend(session.at("/identities/alice/webid").asText());
+        Server backend = backend(session.at("/identities/alice/cidUrl").asText());
         try {
             HttpResponse<String> registered = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/clients"))
                     .header("Authorization", "Bearer " + key).header("Content-Type", "application/json")
@@ -257,8 +257,8 @@ class ProxyRulesSelfTest {
                     .isEqualTo(UNAVAILABLE.contains(rule) ? 409 : 204);
             try (RefInbox inbox = RefInbox.start(flaw)) {
                 new RefLwsClient(URI.create(session.get("storage").asText()),
-                        new RefLwsClient.Agent(alice.get("webid").asText(), null, alice.get("privateKeyJwk").toString(), null),
-                        new RefLwsClient.Agent(bob.get("webid").asText(), null, null,
+                        new RefLwsClient.Agent(alice.get("cidUrl").asText(), null, alice.get("privateKeyJwk").toString(), null),
+                        new RefLwsClient.Agent(bob.get("cidUrl").asText(), null, null,
                                 new RefLwsClient.Login(clientId, REDIRECT, "bob", bob.get("password").asText())),
                         inbox, flaw, tasks).run();
             }
