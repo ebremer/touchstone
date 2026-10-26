@@ -74,8 +74,8 @@ public final class ReferenceScenario implements AutoCloseable {
         String alice = fixtures + "agents/alice";
         String bob = fixtures + "agents/bob";
         Map<String, String> props = new LinkedHashMap<>();
-        props.put("webid.alice", alice);
-        props.put("webid.bob", bob);
+        props.put("cidUrl.alice", alice);
+        props.put("cidUrl.bob", bob);
         props.put("fixtures.baseUrl", fixtures);
 
         if (kind == Kind.BROKEN_STORAGE) {

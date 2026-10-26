@@ -261,7 +261,8 @@ public final class DefinitionLoader {
                     text(i, "suite"),
                     text(i, "tokenType"),
                     text(i, "algorithm"),
-                    text(i, "webid"),
+                    // cidUrl since format 0.15.0; webid, its earlier name, is still read
+                    text(i, "cidUrl") != null ? text(i, "cidUrl") : text(i, "webid"),
                     i.get("credentialHeader"),
                     i.get("credentialClaims"),
                     i.get("identityDocument"),

@@ -46,7 +46,7 @@ class FixtureDocumentsTest {
         try (StubTarget storage = StubTarget.start(exchange -> false)) {
             String fixtures = "http://127.0.0.1:" + freePort() + "/";
             Target target = new Target("stub", storage.base(), "env",
-                    Map.of("fixtures.baseUrl", fixtures, "webid.alice", fixtures + "agents/alice"),
+                    Map.of("fixtures.baseUrl", fixtures, "cidUrl.alice", fixtures + "agents/alice"),
                     Set.of("ReachableFixtures"));
 
             Map<String, JsonNode> first;

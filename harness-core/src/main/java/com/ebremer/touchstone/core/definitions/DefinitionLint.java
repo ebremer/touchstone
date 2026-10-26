@@ -33,7 +33,8 @@ public final class DefinitionLint {
     public static final Pattern VARIABLE = Pattern.compile("\\$\\{([^}]*)}");
     private static final Pattern NOW = Pattern.compile("now[+-]\\d+");
     private static final Pattern SERVICE = Pattern.compile("service\\.([A-Za-z][A-Za-z0-9]*)");
-    private static final Pattern IDENTITY_WEBID = Pattern.compile("identity\\.([a-z][a-z0-9-]*)\\.webid");
+    /** {@code identity.<name>.cidUrl}, or {@code .webid} as it was named before format 0.15.0. */
+    private static final Pattern IDENTITY_CID_URL = Pattern.compile("identity\\.([a-z][a-z0-9-]*)\\.(?:cidUrl|webid)");
     private static final Pattern CREDENTIAL = Pattern.compile("credential\\.([a-z][a-z0-9-]*)");
     private static final Pattern HOST = Pattern.compile("(?i)https?://([^/:?#\"'\\s]+)");
     private static final Set<String> CONDITIONAL_METHODS = Set.of("PUT", "PATCH", "DELETE", "POST");
@@ -204,9 +205,9 @@ public final class DefinitionLint {
                         || SERVICE.matcher(v).matches()) {
                     continue;
                 }
-                Matcher webid = IDENTITY_WEBID.matcher(v);
-                if (webid.matches()) {
-                    if (!identities.containsKey(webid.group(1))) {
+                Matcher cidUrl = IDENTITY_CID_URL.matcher(v);
+                if (cidUrl.matches()) {
+                    if (!identities.containsKey(cidUrl.group(1))) {
                         errors.add(where + ": ${" + v + "} names an unknown identity");
                     }
                     continue;

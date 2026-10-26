@@ -196,7 +196,7 @@ final class TestExecution {
         }
         for (Map.Entry<String, List<String>> g : byAssignee.entrySet()) {
             String assignee = g.getKey().equals("anonymous") ? RunSession.FOAF_AGENT
-                    : run.credentials().webid(g.getKey(), scope);
+                    : run.credentials().cidUrl(g.getKey(), scope);
             String label = "prerequisite: grant " + g.getValue() + " on " + variable + " to " + g.getKey();
             if (service == null) {
                 if (!run.adapter().grant(run.target(), resource, g.getValue(), assignee)) {

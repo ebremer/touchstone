@@ -42,7 +42,9 @@ import com.nimbusds.jose.jwk.RSAKey;
  *       {@code as.clientId}: the {@code client_id} its tokens carry (default {@code touchstone});</li>
  *   <li>{@code token.<name>}, or the environment variable {@code TOUCHSTONE_TOKEN_<NAME>}: a
  *       static access token;</li>
- *   <li>{@code webid.<name>}, or {@code TOUCHSTONE_WEBID_<NAME>}: the identity's agent IRI;</li>
+ *   <li>{@code cidUrl.<name>}, or {@code TOUCHSTONE_CID_URL_<NAME>}: the identity's CID URL, its
+ *       agent IRI. The names before format 0.15.0, {@code webid.<name>} and
+ *       {@code TOUCHSTONE_WEBID_<NAME>}, are still read when the new ones are unset;</li>
  *   <li>{@code didkey.jwk.<name>}: a P-256 private JWK. For alice or bob, a subject credential
  *       the engine exchanges for their access token (5.2, item 2); for {@code didkey}, the
  *       pinned key (5.3);</li>
@@ -90,14 +92,14 @@ final class Credentials {
     }
 
     /**
-     * The credential an identity mints. A CID-suite identity with no {@code webid} template has
+     * The credential an identity mints. A CID-suite identity with no {@code cidUrl} template has
      * a DID subject, a did:key the engine derives from its key, rather than a document the
      * harness hosts (section 5.3).
      */
     private static String suite(IdentityDefinition id) {
         String s = id.suite() == null ? "" : id.suite();
         if (s.contains("ssi-cid")) {
-            return id.webid() == null ? "didkey" : "cid";
+            return id.cidUrl() == null ? "didkey" : "cid";
         }
         if (s.contains("openid")) {
             return "oidc";
@@ -108,34 +110,40 @@ final class Credentials {
         throw Unresolvable.cantTell("identity " + id.name() + " names no suite the engine knows: " + id.suite());
     }
 
-    /** {@code ${identity.<name>.webid}}: the identity's agent IRI (section 5). */
-    String webid(String name, Scope scope) {
+    /**
+     * {@code ${identity.<name>.cidUrl}}, or {@code ${identity.<name>.webid}} as it was named before
+     * format 0.15.0: the identity's CID URL, its agent IRI (section 5).
+     */
+    String cidUrl(String name, Scope scope) {
         IdentityDefinition id = identity(name);
         if (id.basis() != null) {
-            return webid(id.basis(), scope);
+            return cidUrl(id.basis(), scope);
         }
         switch (id.kind()) {
             case IdentityDefinition.NO_CREDENTIAL:
                 return RunSession.FOAF_AGENT;
             case IdentityDefinition.STORAGE_ACCESS_TOKEN: {
-                String configured = setting("webid." + name, "TOUCHSTONE_WEBID_");
+                String configured = setting("cidUrl." + name, "TOUCHSTONE_CID_URL_");
+                if (configured == null) {
+                    configured = setting("webid." + name, "TOUCHSTONE_WEBID_"); // before format 0.15.0
+                }
                 if (configured != null) {
                     return configured;
                 }
                 if (target.properties().containsKey("didkey.jwk." + name)) {
                     return DidKeys.did(pinnedOrFresh(name, null));
                 }
-                throw Unresolvable.inapplicable("no agent IRI for " + name + ": set webid." + name
-                        + " or TOUCHSTONE_WEBID_" + envName(name));
+                throw Unresolvable.inapplicable("no CID URL for " + name + ": set cidUrl." + name
+                        + " or TOUCHSTONE_CID_URL_" + envName(name));
             }
             default: {
                 if (suite(id).equals("didkey")) {
                     return DidKeys.did(didkeyKey.get());
                 }
-                if (id.webid() == null) {
-                    throw Unresolvable.cantTell("identity " + name + " defines no webid");
+                if (id.cidUrl() == null) {
+                    throw Unresolvable.cantTell("identity " + name + " defines no cidUrl");
                 }
-                return Templates.expand(id.webid(), scope);
+                return Templates.expand(id.cidUrl(), scope);
             }
         }
     }
@@ -176,7 +184,7 @@ final class Credentials {
             }
             case "Expired" -> {
                 if (harnessIssued()) {
-                    return Optional.of(mint(webid(id.basis(), scope), fault, scope));
+                    return Optional.of(mint(cidUrl(id.basis(), scope), fault, scope));
                 }
                 return Optional.of(waitForExpiry(id.basis(), scope));
             }
@@ -184,7 +192,7 @@ final class Credentials {
                 if (!harnessIssued()) {
                     throw Unresolvable.inapplicable(name + " (" + fault + ") needs " + HARNESS_ISSUED);
                 }
-                return Optional.of(mint(webid(id.basis(), scope), fault, scope));
+                return Optional.of(mint(cidUrl(id.basis(), scope), fault, scope));
             }
         }
     }
@@ -192,7 +200,7 @@ final class Credentials {
     /** Section 5.2, items 1 to 4, in that order of preference. */
     private Optional<String> baseToken(String name, Scope scope) {
         if (harnessIssued()) {
-            return Optional.of(mint(webid(name, scope), null, scope));
+            return Optional.of(mint(cidUrl(name, scope), null, scope));
         }
         if (target.properties().containsKey("didkey.jwk." + name)) {
             return Optional.of(exchange(name, scope));
@@ -354,19 +362,20 @@ final class Credentials {
             }
             case "cid" -> {
                 ECKey key = cidKey.get();
-                self.put("self.webid", TextNode.valueOf(webid(base.name(), scope)));
+                putCidUrl(self, cidUrl(base.name(), scope));
                 self.put("self.kid", TextNode.valueOf(key.getKeyID()));
                 self.put("self.publicJwk", publicJwk(key));
                 return mintJwt(base, key, self, fault, scope);
             }
             case "oidc" -> {
                 ECKey key = opKey.get();
-                self.put("self.webid", TextNode.valueOf(webid(base.name(), scope)));
+                putCidUrl(self, cidUrl(base.name(), scope));
                 self.put("self.kid", TextNode.valueOf(key.getKeyID()));
                 return mintJwt(base, key, self, fault, scope);
             }
             default -> {
-                Map<String, JsonNode> saml = Map.of("self.webid", TextNode.valueOf(webid(base.name(), scope)));
+                Map<String, JsonNode> saml = new HashMap<>();
+                putCidUrl(saml, cidUrl(base.name(), scope));
                 JsonNode fields = Templates.expandJson(base.samlAssertion(), scope.withSelf(saml));
                 RSAKey key = samlKey.get();
                 try {
@@ -380,14 +389,25 @@ final class Credentials {
     }
 
     /**
-     * {@code self.webid} and {@code self.kid} for a did:key subject: the identifier, and its
+     * {@code self.cidUrl} and {@code self.kid} for a did:key subject: the identifier, and its
      * multibase value, which is the fragment of the one verification method the did:key method
      * derives ({@code did:key:z...#z...}).
      */
     private static Map<String, JsonNode> didKeySelf(ECKey key) {
         String did = DidKeys.did(key);
-        return Map.of("self.webid", TextNode.valueOf(did),
-                "self.kid", TextNode.valueOf(did.substring("did:key:".length())));
+        Map<String, JsonNode> self = new HashMap<>();
+        putCidUrl(self, did);
+        self.put("self.kid", TextNode.valueOf(did.substring("did:key:".length())));
+        return self;
+    }
+
+    /**
+     * Binds {@code self.cidUrl}, the subject identifier a template names, and
+     * {@code self.webid}, the same value under its name before format 0.15.0.
+     */
+    private static void putCidUrl(Map<String, JsonNode> self, String cidUrl) {
+        self.put("self.cidUrl", TextNode.valueOf(cidUrl));
+        self.put("self.webid", TextNode.valueOf(cidUrl));
     }
 
     /** A JWT credential from an identity's templates, with the fault vocab.yamlld defines applied. */
@@ -440,15 +460,15 @@ final class Credentials {
         Map<String, JsonNode> docs = new LinkedHashMap<>();
         String base = run.fixturesBaseUrl();
         for (IdentityDefinition id : run.definitions().identities().values()) {
-            if (id.basis() != null || id.identityDocument() == null || id.webid() == null) {
+            if (id.basis() != null || id.identityDocument() == null || id.cidUrl() == null) {
                 continue;
             }
-            String webid = webid(id.name(), scope);
-            if (!webid.startsWith(base)) {
+            String cidUrl = cidUrl(id.name(), scope);
+            if (!cidUrl.startsWith(base)) {
                 continue;
             }
             Map<String, JsonNode> self = new HashMap<>();
-            self.put("self.webid", TextNode.valueOf(webid));
+            putCidUrl(self, cidUrl);
             if (suite(id).equals("cid")) {
                 ECKey key = cidKey.get();
                 self.put("self.kid", TextNode.valueOf(key.getKeyID()));
@@ -456,7 +476,7 @@ final class Credentials {
             } else if (suite(id).equals("oidc")) {
                 self.put("self.kid", TextNode.valueOf(opKey.get().getKeyID()));
             }
-            docs.put(webid.substring(base.length()), Templates.expandJson(id.identityDocument(), scope.withSelf(self)));
+            docs.put(cidUrl.substring(base.length()), Templates.expandJson(id.identityDocument(), scope.withSelf(self)));
         }
         provider(docs, base, "op", opKey.get());
         provider(docs, base, "rogue-op", rogueOpKey.get());

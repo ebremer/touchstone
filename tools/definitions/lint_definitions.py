@@ -289,7 +289,7 @@ for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True))
                             if m.group(1) not in SERVICES:
                                 E(f"{sw}: unknown service {v}")
                             continue
-                        m = re.match(r"^identity\.([a-z0-9-]+)\.webid$", v)
+                        m = re.match(r"^identity\.([a-z0-9-]+)\.(?:cidUrl|webid)$", v)
                         if m:
                             if m.group(1) not in identities:
                                 E(f"{sw}: unknown identity in {v}")

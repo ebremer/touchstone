@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @param kind  NoCredential, StorageAccessToken or SubjectCredential
  * @param basis the identity a fault identity starts from, or null
  * @param fault the one defect a fault identity adds, or null
+ * @param cidUrl template for the agent's CID URL, from {@code cidUrl} or, before format 0.15.0,
+ *               {@code webid}; null when the identity has none
  */
 public record IdentityDefinition(
         String name,
@@ -22,7 +24,7 @@ public record IdentityDefinition(
         String suite,
         String tokenType,
         String algorithm,
-        String webid,
+        String cidUrl,
         JsonNode credentialHeader,
         JsonNode credentialClaims,
         JsonNode identityDocument,

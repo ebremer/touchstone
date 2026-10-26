@@ -184,6 +184,7 @@
     "suite":              {"@id": "lwst:suite", "@type": "@id"},
     "tokenType":          {"@id": "lwst:tokenType", "@type": "@id"},
     "algorithm":          {"@id": "lwst:algorithm"},
+    "cidUrl":             {"@id": "lwst:cidUrl"},
     "webid":              {"@id": "lwst:webid"},
     "basis":              {"@id": "lwst:basis"},
     "credentialHeader":   {"@id": "lwst:credentialHeader", "@type": "@json"},

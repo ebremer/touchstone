@@ -1456,12 +1456,21 @@
     domain: lwst:Identity
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:cidUrl
+    type: rdf:Property
+    label: "cidUrl"
+    comment: >-
+      Template for the CID URL of a harness-hosted identity, its agent IRI;
+      ${identity.<name>.cidUrl} resolves to it (format 0.15.0).
+    domain: lwst:Identity
+    range: xsd:string
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:webid
     type: rdf:Property
     label: "webid"
     comment: >-
-      Template for the agent IRI of a harness-hosted identity; ${identity.<name>.webid}
-      resolves to it.
+      Deprecated since format 0.15.0: the earlier name of cidUrl, still accepted, but not
+      beside it; ${identity.<name>.webid} still resolves.
     domain: lwst:Identity
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
@@ -1502,7 +1511,7 @@
     label: "identityDocument"
     comment: >-
       Template for the controlled identifier document the harness serves at the identity's
-      webid.
+      CID URL.
     domain: lwst:Identity
     range: rdf:JSON
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1

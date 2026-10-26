@@ -27,7 +27,8 @@ final class Scope implements Templates.Resolver {
 
     private static final Pattern NOW = Pattern.compile("now([+-])(\\d+)");
     private static final Pattern SERVICE = Pattern.compile("service\\.([A-Za-z][A-Za-z0-9]*)");
-    private static final Pattern WEBID = Pattern.compile("identity\\.([a-z][a-z0-9-]*)\\.webid");
+    /** {@code identity.<name>.cidUrl}, or {@code .webid} as it was named before format 0.15.0. */
+    private static final Pattern CID_URL = Pattern.compile("identity\\.([a-z][a-z0-9-]*)\\.(?:cidUrl|webid)");
     private static final Pattern CREDENTIAL = Pattern.compile("credential\\.([a-z][a-z0-9-]*)");
 
     private final RunSession run;
@@ -137,9 +138,9 @@ final class Scope implements Templates.Resolver {
         if (service.matches()) {
             return TextNode.valueOf(run.service(this, service.group(1)));
         }
-        Matcher webid = WEBID.matcher(expression);
-        if (webid.matches()) {
-            return TextNode.valueOf(run.credentials().webid(webid.group(1), this));
+        Matcher cidUrl = CID_URL.matcher(expression);
+        if (cidUrl.matches()) {
+            return TextNode.valueOf(run.credentials().cidUrl(cidUrl.group(1), this));
         }
         Matcher credential = CREDENTIAL.matcher(expression);
         if (credential.matches()) {

@@ -146,6 +146,28 @@ class DefinitionLoaderTest {
                 .hasMessageContaining("identity");
     }
 
+    /**
+     * Format 0.15.0 (D-0101) names an identity's agent IRI {@code cidUrl}, the LWS term; the
+     * earlier {@code webid} still loads to the same value, but an identity may not carry both.
+     */
+    @Test
+    void anIdentityMayStillSpellItsCidUrlWebidButNotBoth(@TempDir Path tmp) throws IOException {
+        Path copy = copy(tmp);
+        Path file = copy.resolve("lws10/identities.yamlld");
+        String cidUrl = Files.readString(file).replace("\n    webid: ", "\n    cidUrl: ");
+        String webid = cidUrl.replace("\n    cidUrl: ", "\n    webid: ");
+
+        Files.writeString(file, cidUrl);
+        String expected = DefinitionLoader.load(copy, CATALOG).identity("cid").orElseThrow().cidUrl();
+        assertThat(expected).endsWith("/cid");
+        Files.writeString(file, webid);
+        assertThat(DefinitionLoader.load(copy, CATALOG).identity("cid").orElseThrow().cidUrl()).isEqualTo(expected);
+
+        Files.writeString(file, first(cidUrl, "\n    cidUrl: ", "\n    webid: \"https://other.example/\"\n    cidUrl: "));
+        assertThatThrownBy(() -> DefinitionLoader.load(copy, CATALOG))
+                .isInstanceOf(InvalidDefinitionsException.class);
+    }
+
     @Test
     void theBundledSchemaIsTheDefinitionsSchema() throws IOException {
         try (var in = DefinitionLoader.class.getResourceAsStream(DefinitionLoader.SCHEMA_RESOURCE)) {

@@ -231,12 +231,13 @@ V = [
     ("suite", P, None, "suite", "The authentication suite specification the credential follows.", "lwst:Identity", "rdfs:Resource"),
     ("tokenType", P, None, "tokenType", "The RFC 8693 token type URI the credential is presented with.", "lwst:Identity", "rdfs:Resource"),
     ("algorithm", P, None, "algorithm", "The signature algorithm the credential is signed with (a JOSE alg, or an XML-DSig algorithm URI for SAML).", "lwst:Identity", "xsd:string"),
-    ("webid", P, None, "webid", "Template for the agent IRI of a harness-hosted identity; ${identity.<name>.webid} resolves to it.", "lwst:Identity", "xsd:string"),
+    ("cidUrl", P, None, "cidUrl", "Template for the CID URL of a harness-hosted identity, its agent IRI; ${identity.<name>.cidUrl} resolves to it (format 0.15.0).", "lwst:Identity", "xsd:string"),
+    ("webid", P, None, "webid", "Deprecated since format 0.15.0: the earlier name of cidUrl, still accepted, but not beside it; ${identity.<name>.webid} still resolves.", "lwst:Identity", "xsd:string"),
     ("basis", P, None, "basis", "The identity a fault identity is derived from.", "lwst:Identity", "xsd:string"),
     ("fault", P, None, "fault", "The single defect of a fault identity.", "lwst:Identity", "lwst:Fault"),
     ("credentialHeader", P, None, "credentialHeader", "Template for the JOSE header of a JWT credential.", "lwst:Identity", "rdf:JSON"),
     ("credentialClaims", P, None, "credentialClaims", "Template for the claims set of a JWT credential.", "lwst:Identity", "rdf:JSON"),
-    ("identityDocument", P, None, "identityDocument", "Template for the controlled identifier document the harness serves at the identity's webid.", "lwst:Identity", "rdf:JSON"),
+    ("identityDocument", P, None, "identityDocument", "Template for the controlled identifier document the harness serves at the identity's CID URL.", "lwst:Identity", "rdf:JSON"),
     ("samlAssertion", P, None, "samlAssertion", "The fields of the SAML assertion the harness IdP issues for the identity.", "lwst:Identity", "rdf:JSON"),
 ]
 
