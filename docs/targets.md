@@ -63,7 +63,7 @@ Tests never carry credentials. They name identities from
 | Property | Meaning |
 |---|---|
 | `token.<name>` | A literal access token for `alice` or `bob`. Use this only for throwaway tokens; otherwise use the environment (below). |
-| `webid.<name>` | The agent IRI of `alice` or `bob`, which grants name and harness-issued tokens carry as `sub`. Also `TOUCHSTONE_WEBID_<NAME>`. |
+| `cidUrl.<name>` | The CID URL of `alice` or `bob`, their agent IRI, which grants name and harness-issued tokens carry as `sub`. Also `TOUCHSTONE_CID_URL_<NAME>`. The names before format 0.15.0, `webid.<name>` and `TOUCHSTONE_WEBID_<NAME>`, still count when these are unset. |
 | `as.signingKey` | The authorization server's private JWK, with `HarnessIssuedTokens`. `as.clientId` sets the `client_id` its tokens carry (default `touchstone`). |
 | `didkey.jwk.<name>` | A P-256 private JWK. For `alice` or `bob`, the engine exchanges a CID-suite credential for that key's did:key subject for their token; for `didkey`, it pins the key the did:key-subject tests use. |
 | `fixtures.baseUrl`, `fixtures.bind` | With `ReachableFixtures`: the URL the server reaches the harness's fixture host at, and where the harness listens if that differs (`host:port`). |
@@ -107,8 +107,8 @@ Never write a real credential into `targets.yaml`. The file is checked in and sh
 the harness. Supply tokens through the environment, for example as CI secrets.
 
 **For an LWS OpenID Connect server**, the token the storage expects is an OpenID Connect
-**ID Token**, not an access token. Its `sub` must be the agent's WebID, and it must come
-from the OpenID Provider that the WebID's controlled identifier document names. The
+**ID Token**, not an access token. Its `sub` must be the agent's CID URL, and it must come
+from the OpenID Provider that the controlled identifier document at that URL names. The
 storage follows that chain to decide whether to trust the issuer. Which provider, which
 client and which grant to use are facts about your deployment. They belong in your
 environment, not in the repository.

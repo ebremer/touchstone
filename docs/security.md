@@ -77,6 +77,6 @@ Security OAuth2 resource server; that does not exist yet.
 - Never put a real token in `targets.yaml`. It is checked in, and it ships with the
   harness. Use `TOUCHSTONE_TOKEN_<NAME>` environment variables, such as CI secrets.
 - Files that ship with the harness describe mechanisms, not deployments. Specific
-  identity providers, WebIDs and OAuth clients belong in the operator's environment.
+  identity providers, CID URLs and OAuth clients belong in the operator's environment.
 - Git ignores `runs/`. Treat report bundles from real servers as sensitive even after
   redaction.

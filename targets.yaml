@@ -3,7 +3,7 @@
 #
 # What a target may declare is in definitions/EXECUTION.md section 5: capabilities
 # (Authentication, HarnessIssuedTokens, ReachableFixtures, SamlTrust) and properties such as
-# webid.<name>, fixtures.baseUrl, timeout and parallelism. Credentials never go in this file.
+# cidUrl.<name>, fixtures.baseUrl, timeout and parallelism. Credentials never go in this file.
 #
 # Start the local reference server first:
 #   mvn -pl harness-fixtures exec:java -Dexec.args=4711
@@ -17,8 +17,8 @@ targets:
   # Your own server: an id of your choice, its URL, and what it supports. Its credentials are
   # NEVER stored here: this file is checked in. Supply alice's in the harness's environment as
   # TOUCHSTONE_TOKEN_ALICE (bob's as TOUCHSTONE_TOKEN_BOB). For an LWS-OIDC target it must be an
-  # ID Token (not the access token) from the OpenID Provider that the identity's WebID names in
-  # its controlled identifier document, and its `sub` must be that WebID: that is the chain the
+  # ID Token (not the access token) from the OpenID Provider that the controlled identifier
+  # document at the identity's CID URL names, and its `sub` must be that CID URL: that is the chain the
   # resource server dereferences to decide whether to trust the issuer. ID Tokens are typically
   # short-lived (5 minutes on a stock Keycloak); mint a fresh one per run. See D-0030.
   #

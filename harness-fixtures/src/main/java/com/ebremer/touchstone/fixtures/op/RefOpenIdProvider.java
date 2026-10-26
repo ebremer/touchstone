@@ -43,7 +43,7 @@ import org.eclipse.jetty.util.Callback;
  * A small OpenID Provider for a client-testing session (CLIENT-TESTING.md section 4.2): OpenID
  * Connect Discovery, a JWKS, an authorization endpoint with a sign-in form, and a token endpoint,
  * for the authorization code flow with PKCE. Its ID Tokens are LWS authentication credentials as
- * lws10-authn-openid section 4 defines them: signed with ES256, the subject's WebID in
+ * lws10-authn-openid section 4 defines them: signed with ES256, the subject's CID URL in
  * {@code sub}, the client in {@code azp}, and {@code aud} naming the client and the authorization
  * server.
  *

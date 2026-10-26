@@ -208,7 +208,7 @@ expression takes its JSON value, so `"${now+300}"` becomes a number.
 | `as.resource`, `as.uri`, `as.metadataUrl` | From the 401 an anonymous request draws: the storage its `Link` names, which a token is requested for; the authorization server its protected resource metadata names (RFC 9728); and that server's metadata URL. |
 | `as.issuer`, `as.tokenEndpoint`, `as.jwksUri` | From the authorization server's metadata. |
 | `service.<Type>` | A service's endpoint in the storage description, such as `service.AccessGrantService`. |
-| `identity.<name>.webid`, `credential.<name>` | An identity's agent IRI; a subject credential minted for this test. |
+| `identity.<name>.cidUrl`, `credential.<name>` | An identity's CID URL, its agent IRI (`identity.<name>.webid` before format 0.15.0); a subject credential minted for this test. |
 | a prerequisite or capture | Bound by `prereqs`, or by a `capture` in an earlier step. |
 
 A variable that cannot be resolved ends the test. If the reason is an optional feature, a

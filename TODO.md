@@ -26,6 +26,19 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-26 — CID URL, not WebID (D-0101)
+
+The LWS drafts never say "WebID"; an agent's identifier is a CID URL. On branch `cid-url-names`.
+
+- [x] **Format 0.15.0:** `cidUrl` for an identity's template, `${identity.<name>.cidUrl}`,
+  `${self.cidUrl}`, `cidUrl.<name>` and `TOUCHSTONE_CID_URL_<NAME>`, with every `webid` name kept
+  as an alias; the definitions, client sessions, docs, Action and target servers use the new
+  names. → **Done (D-0101), awaiting review.**
+- [ ] **Retire the aliases** once the targets and Action users have moved: drop `webid` from the
+  schema, the variables, the target properties and `TOUCHSTONE_WEBID_*` in a later format.
+
+---
+
 ## 2026-10-19 — the drafts of 19 October 2026 (D-0100)
 
 W3C published the core WD of 19 October 2026 and the OpenID Connect, SAML and CID WDs of 15

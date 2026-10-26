@@ -30,8 +30,9 @@ inputs:
       Comma-separated capabilities the target declares (definitions/EXECUTION.md section 5):
       Authentication, HarnessIssuedTokens, ReachableFixtures, SamlTrust. Tests that need one
       the target does not declare are reported inapplicable. With Authentication, set
-      TOUCHSTONE_TOKEN_ALICE and TOUCHSTONE_TOKEN_BOB (and TOUCHSTONE_WEBID_ALICE and
-      TOUCHSTONE_WEBID_BOB) in the step's env; they reach the harness and nothing else.
+      TOUCHSTONE_TOKEN_ALICE and TOUCHSTONE_TOKEN_BOB (and TOUCHSTONE_CID_URL_ALICE and
+      TOUCHSTONE_CID_URL_BOB) in the step's env; they reach the harness and nothing else. The
+      older TOUCHSTONE_WEBID_ALICE and TOUCHSTONE_WEBID_BOB still work.
     required: false
     default: ""
   fail-on-nonconformance:
@@ -114,6 +115,7 @@ runs:
         # without a value passes the runner's variable through and never prints it.
         docker run --rm --network host --user "$(id -u):$(id -g)" \
           -e TOUCHSTONE_TOKEN_ALICE -e TOUCHSTONE_TOKEN_BOB \
+          -e TOUCHSTONE_CID_URL_ALICE -e TOUCHSTONE_CID_URL_BOB \
           -e TOUCHSTONE_WEBID_ALICE -e TOUCHSTONE_WEBID_BOB \
           -v "$GITHUB_WORKSPACE/$REPORT_PATH:/work" \
           touchstone-harness:local \

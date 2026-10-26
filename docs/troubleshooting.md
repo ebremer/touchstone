@@ -44,8 +44,8 @@ the report says what. The usual reasons:
   test is about, such as notifications.
 - `the storage description at ... advertises no AccessGrantService`: the tests that need
   access granted cannot set it up.
-- `no credential for bob ...` or `no agent IRI for bob ...`: supply
-  `TOUCHSTONE_TOKEN_BOB`, and `webid.bob` for tests that grant bob access.
+- `no credential for bob ...` or `no CID URL for bob ...`: supply
+  `TOUCHSTONE_TOKEN_BOB`, and `cidUrl.bob` for tests that grant bob access.
 
 An inapplicable MUST test does not make a server non-conformant, but it is coverage the run
 did not have, and the report lists it.

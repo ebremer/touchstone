@@ -43,7 +43,7 @@ declares. A test that needs one the target lacks is inapplicable.
 
 | Capability | Meaning | The target provides |
 |---|---|---|
-| `Authentication` | The storage challenges anonymous requests, and alice and bob are distinct authenticated agents. | Tokens for alice and bob (see below), and their agent IRIs as `webid.alice` and `webid.bob` when grants name them. |
+| `Authentication` | The storage challenges anonymous requests, and alice and bob are distinct authenticated agents. | Tokens for alice and bob (see below), and their CID URLs as `cidUrl.alice` and `cidUrl.bob` when grants name them. |
 | `HarnessIssuedTokens` | The storage trusts an authorization server whose signing key the harness holds, so the harness can mint valid tokens with one chosen defect. | `as.signingKey`: the authorization server's private JWK. |
 | `ReachableFixtures` | The target can reach the harness's fixture host, which serves the CID and OpenID documents it dereferences. | `fixtures.baseUrl`: the URL the target uses for it, and `fixtures.bind` if the harness must listen elsewhere. |
 | `SamlTrust` | The authorization server trusts the harness identity provider's signing key. | `saml.idpKey`: an RSA private JWK, and `saml.idpCertificate` if the trust is by certificate. |

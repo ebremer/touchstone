@@ -1,6 +1,6 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.14.0 (2026-10-19, DECISIONS.md D-0100), awaiting review; 0.11.0 was
+**Status: format version 0.15.0 (2026-10-26, DECISIONS.md D-0101), awaiting review; 0.11.0 was
 frozen on 2026-10-05 (D-0083).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
@@ -16,7 +16,8 @@ client's token requests and credentials; 0.11.0, the notifications its inbox rec
 SAML assertions it presents; 0.13.0 gives the documents a run mints URLs of the run's own; 0.14.0
 follows the 19 October 2026 drafts, whose 401s name protected resource metadata (RFC 9728) and
 whose containers can be asked for in the LWS profile, which is RDF isomorphic to
-application/lws+json. A test that is one
+application/lws+json; 0.15.0 calls an agent's identifier `cidUrl`, its LWS name, where the
+earlier formats said `webid`. A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -335,6 +336,13 @@ These affect how tests are written, and are worth raising with the WG:
 
 ## Format version
 
+Format version 0.15.0 (2026-10-26, D-0101, awaiting review) changes only names, and nothing an
+older definition or target relies on. The LWS drafts never say "WebID": an agent's identifier is
+a URI the OpenID suite dereferences to a controlled identifier document, a CID URL. An identity's
+template is now `cidUrl`, a template reads `${identity.<name>.cidUrl}` and `${self.cidUrl}`, and a
+target sets `cidUrl.<name>` or `TOUCHSTONE_CID_URL_<NAME>`. Every name 0.14.0 used, spelled
+`webid`, still works; an identity may carry `cidUrl` or `webid`, not both.
+
 Format version 0.14.0 (2026-10-19, D-0100, awaiting review) follows the LWS drafts of 19 October
 2026, and is the first that changes what an older definition relies on. A 401's challenge names
 the requested resource's protected resource metadata (RFC 9728) and links to the storage a token
@@ -348,7 +356,7 @@ response's `rdfIsomorphicWith` (section 7.11), for the LWS profile. For client r
 
 Format version 0.13.0 (2026-10-08, D-0091) adds one thing and changes nothing a
 0.12.0 definition relies on: the variable `run.id`, the run's identifier (`EXECUTION.md` section
-3). The identity registry puts it in the webids of the CID identities, whose documents carry a
+3). The identity registry puts it in the CID URLs of the CID identities, whose documents carry a
 key made for the run, so each run's documents have URLs of their own and a verifier's cached copy
 of an earlier run's never stands for them (section 5.3). It also has the engine wait out a 429 or
 503 as its `Retry-After` asks, and end the test *cantTell* rather than *failed* when waiting does

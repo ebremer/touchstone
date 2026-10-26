@@ -4,11 +4,11 @@
 #   LWS_PUBLIC_URL            the public base URL, e.g. https://host.example/targets/halcyon. Every URI Halcyon
 #                             mints starts with it (:ProxyHostName), the proxy strips its path, and it is the
 #                             authorization server's issuer; the storage is LWS_PUBLIC_URL/lws/.
-#   LWS_OWNER                 the WebID given full control of the storage. Seeded into the root access control
+#   LWS_OWNER                 the CID URL given full control of the storage. Seeded into the root access control
 #                             resource on the storage's first start only.
 #   HALCYON_ALLOWED_ISSUERS   OpenID Providers whose ID Tokens are accepted, whole issuer URIs, space separated.
-#                             Empty: any provider a WebID's document names.
-#   HALCYON_OIDC              "off" disables WebID-OIDC credentials (lws-oidc.json); on by default.
+#                             Empty: any provider a CID document names.
+#   HALCYON_OIDC              "off" disables LWS OpenID Connect credentials (lws-oidc.json); on by default.
 #   HALCYON_ALLOWED_INTERNAL_HOSTS
 #                             hosts on private addresses that Halcyon may still fetch from (identity documents, an
 #                             OpenID Provider), space separated: lws-oidc.json's allowedInternalHosts. Empty by default.
@@ -16,7 +16,7 @@
 #   JAVA_OPTS                 JVM options (default -Xmx4g).
 set -eu
 : "${LWS_PUBLIC_URL:?LWS_PUBLIC_URL must be the public base URL, e.g. https://host.example/targets/halcyon}"
-: "${LWS_OWNER:?LWS_OWNER must be the WebID that owns the storage}"
+: "${LWS_OWNER:?LWS_OWNER must be the CID URL that owns the storage}"
 base=${LWS_PUBLIC_URL%/}
 
 issuers=

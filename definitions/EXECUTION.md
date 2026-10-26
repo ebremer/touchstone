@@ -1,6 +1,6 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.14.0 (2026-10-19, DECISIONS.md D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+**Status: frozen, format 0.15.0 (2026-10-26, DECISIONS.md D-0101, awaiting review; 0.14.0 on 2026-10-19, D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
 frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
 2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
 0.8.0 added client rules, which `OBSERVATION.md` governs, 0.9.0 gave them tasks and faults, and
@@ -14,6 +14,10 @@ falls back to the old challenge for a server that still sends it. It adds `sameO
 parameter and JSON expectations (sections 7.6 and 7.8), a response's `rdfIsomorphicWith`
 (section 7.11), and, for client rules, `discoveryValid` in place of `realmContainsRequest`
 (OBSERVATION.md section 4.10).
+0.15.0 names an agent's identifier by its LWS term, the CID URL: an identity's template is
+`cidUrl`, the variables are `identity.<name>.cidUrl` and `self.cidUrl`, and a target sets
+`cidUrl.<name>` (section 5.2). The names 0.14.0 used, all spelled `webid`, still work, so no
+older definition or target changes meaning.
 0.13.0 adds the variable `run.id` (section 3), so that a document the fixture host mints for a run
 is served at a URL of the run's own (section 5.3), has the engine wait out a 429 or 503 as its
 `Retry-After` asks rather than judge it (section 4.5), and lets a step read a paged result whole
@@ -102,7 +106,7 @@ substitution: nothing is percent-encoded, escaped or trimmed. Templates occur in
 `bodyForm`, `equals` and `hasValue`.
 
 ```
-expression := name ( "." name )*          e.g. test.container, identity.bob.webid, created
+expression := name ( "." name )*          e.g. test.container, identity.bob.cidUrl, created
             | "now" ( ("+" | "-") digits )?
 name       := [A-Za-z][A-Za-z0-9_-]*
 ```
@@ -129,11 +133,11 @@ becomes an object. Anywhere else the value is converted to a string.
 | `as.metadataUrl` | Derived from `as.uri` by RFC 8414 section 3.1: insert `/.well-known/lws-configuration` between the authority and the path. `https://as.example` gives `https://as.example/.well-known/lws-configuration`; `https://as.example/tenant` gives `https://as.example/.well-known/lws-configuration/tenant` (README.md, "Open questions"). |
 | `as.issuer`, `as.tokenEndpoint`, `as.jwksUri` | Derived: members `issuer`, `token_endpoint`, `jwks_uri` of the JSON document at `as.metadataUrl`, fetched anonymously with `Accept: application/json`. |
 | `service.<Type>` | Derived: the `serviceEndpoint`, resolved against `${storage}`, of the first entry of the storage description's `service` array whose `type` has the value `<Type>`. The description is fetched as alice with `Accept: application/lws+cid`. |
-| `identity.<name>.webid` | The identity's agent IRI (section 5). |
+| `identity.<name>.cidUrl` | The identity's CID URL, its agent IRI (section 5). `identity.<name>.webid`, its name before 0.15.0, is the same value. |
 | `credential.<name>` | The subject credential minted for a SubjectCredential identity (section 5.3). |
 | `fixtures.baseUrl` | The harness fixture host as the target reaches it; from target configuration, ending in `/`. Defined only when the target declares ReachableFixtures. |
 | `test.inbox` | This test's inbox on the fixture host (section 5.4): `${fixtures.baseUrl}inbox/` followed by a fresh `${uuid}` and `/`, the same for every use within one test. Defined only when the target declares ReachableFixtures. |
-| `self.webid`, `self.kid`, `self.publicJwk` | Inside identity templates only: the identity being minted. |
+| `self.cidUrl`, `self.kid`, `self.publicJwk` | Inside identity templates only: the identity being minted. `self.webid`, the name before 0.15.0, is `self.cidUrl`. |
 | *captured* | Bound by a prerequisite entry (section 4.3), or by `capture` in an earlier step of the same test, or earlier in the same step for `jwt`. Names match `^[a-z][A-Za-z0-9]*$`. A capture never rebinds a name. |
 
 Derived variables are computed on first use and cached. `storage`, `as.*` and the
@@ -229,12 +233,12 @@ exchanges it examines. Entries are processed in order, always as alice:
    ```
 
    The assignee is `http://xmlns.com/foaf/0.1/Agent` for `anonymous`, and
-   `${identity.<name>.webid}` for any other identity. A 201 with a `Location` registers
+   `${identity.<name>.cidUrl}` for any other identity. A 201 with a `Location` registers
    the grant for cleanup (section 10).
 
    When the storage advertises no access grant service, the engine asks the target's
    provisioning adapter to grant the same access out of band, as lws-test-suite leaves
-   to its harness. When neither can, or the webid cannot be produced, or the service
+   to its harness. When neither can, or the CID URL cannot be produced, or the service
    answers anything but 201, the test is *inapplicable*, naming the entry. Public access
    is a MAY (WD section 11.3.3), and whom to grant access to is the target's policy.
 
@@ -340,7 +344,7 @@ token comes from depends on the target configuration:
 1. **HarnessIssuedTokens.** The harness is the storage's authorization server, as in the
    touchstone reference scenario. It mints an RFC 9068 JWT:
    - header: `typ at+jwt`, alg `RS256` or `ES256`, `kid` of its current key;
-   - claims: `iss ${as.issuer}`, `aud [${as.resource}]`, `sub` the identity's webid,
+   - claims: `iss ${as.issuer}`, `aud [${as.resource}]`, `sub` the identity's CID URL,
      `client_id` the harness client, `iat now`, `exp now+300`, and a fresh `jti`.
 2. **Configured subject credential.** Otherwise, if the target configuration gives the
    identity a subject credential (for example a did:key private JWK), the engine exchanges
@@ -350,8 +354,9 @@ token comes from depends on the target configuration:
 4. **Open target.** On a target that does not enforce authentication, alice and bob
    send nothing.
 
-`identity.alice.webid` and `identity.bob.webid` come from the target configuration
-(`webid.<name>` property or `TOUCHSTONE_WEBID_<NAME>`).
+`identity.alice.cidUrl` and `identity.bob.cidUrl` come from the target configuration
+(`cidUrl.<name>` property or `TOUCHSTONE_CID_URL_<NAME>`). The names before 0.15.0,
+`webid.<name>` and `TOUCHSTONE_WEBID_<NAME>`, still count when the new ones are unset.
 
 A **fault identity** starts from its basis identity's token and applies its `fault`
 exactly as `vocab.yamlld` defines it.
@@ -368,25 +373,25 @@ An identity that cannot be produced makes the test *inapplicable*.
 `${credential.<name>}` is minted when first used in a test, with its audience taken from
 `${as.issuer}`. It is the exact string presented as `subject_token`.
 
-- **cid, HTTPS subject** (an identity with a `webid`). A P-256 key pair per run.
+- **cid, HTTPS subject** (an identity with a `cidUrl`). A P-256 key pair per run.
   - `self.kid` is a fresh short identifier, and `self.publicJwk` is the public JWK,
     carrying that kid and `alg ES256`.
-  - The harness serves the rendered `identityDocument` at the identity's webid as
+  - The harness serves the rendered `identityDocument` at the identity's CID URL as
     `application/ld+json`.
-  - The document carries the run's key, so its URL is the run's too: the registry's webid
+  - The document carries the run's key, so its URL is the run's too: the registry's cidUrl
     templates for these identities contain `${run.id}` (since 0.13.0). A verifier may cache a
     controlled identifier document, and a cached copy from an earlier run, at the same URL,
     would name a key the current credential is not signed with.
   - The JWS header `kid` is `self.kid`, and the document's verification method id is
-    `${self.webid}#${self.kid}`.
-- **cid, DID subject** (an identity with no `webid`). A P-256 key pair per run, unless
+    `${self.cidUrl}#${self.kid}`.
+- **cid, DID subject** (an identity with no `cidUrl`). A P-256 key pair per run, unless
   the target pins one (for an authorization server that only issues tokens to
   pre-registered agents). DID documents extend controlled identifier documents, so the
   CID suite validates them as it does any other (CID suite section 1).
-  - `self.webid` is the did:key identifier: `did:key:z` + base58btc(varint 0x1200 ‖
+  - `self.cidUrl` is the did:key identifier: `did:key:z` + base58btc(varint 0x1200 ‖
     compressed point).
   - `self.kid` is that identifier's multibase value, the part after `did:key:`, so
-    `${self.webid}#${self.kid}` is the one verification method of the DID document the
+    `${self.cidUrl}#${self.kid}` is the one verification method of the DID document the
     did:key method derives.
   - Nothing is hosted: the verifier derives the document from the identifier.
 - In both cases the credential is a compact JWS built from the identity's
@@ -394,7 +399,7 @@ An identity that cannot be produced makes the test *inapplicable*.
 - **oidc.** The harness runs an OpenID Provider at `${fixtures.baseUrl}op`.
   - It serves OpenID Connect Discovery at `…/op/.well-known/openid-configuration` and a
     JWKS at the `jwks_uri` that document names.
-  - It serves the subject's `identityDocument` at `${identity.oidc.webid}`.
+  - It serves the subject's `identityDocument` at `${identity.oidc.cidUrl}`.
   - The ID Token is built from the templates and signed ES256 by the provider's key.
   - Its issuer stays at that URL from run to run, because a deployment may list it as a
     trusted issuer. Its signing key is new each run, under a new `kid`, at the same JWKS URL:

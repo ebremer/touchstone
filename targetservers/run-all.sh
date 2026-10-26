@@ -129,7 +129,7 @@ for t in "${TARGETS[@]}"; do
   else
     [ -z "$TS_WARMUP" ] || tool wait "$url/$TS_WARMUP" 60 >/dev/null
     key=$(compose exec -T "$t" "${TS_KEY_CMD[@]}" | tool key "$TS_KEY_FORMAT")
-    props+=("as.signingKey: '$key'" "webid.alice: '$fx/agents/alice'" "webid.bob: '$fx/agents/bob'")
+    props+=("as.signingKey: '$key'" "cidUrl.alice: '$fx/agents/alice'" "cidUrl.bob: '$fx/agents/bob'")
     token=$(tool mint "$key" "$url$TS_ISSUER" "$url/$TS_STORAGE" "$fx/agents/alice" "$fx/")
   fi
   if [ "$TS_SAML" = yes ]; then

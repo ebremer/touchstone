@@ -231,8 +231,8 @@ targets:
     adapter: env
     capabilities: [Authentication, HarnessIssuedTokens, ReachableFixtures]
     properties:
-      webid.alice: https://fixtures.example/css/agents/alice
-      webid.bob: https://fixtures.example/css/agents/bob
+      cidUrl.alice: https://fixtures.example/css/agents/alice
+      cidUrl.bob: https://fixtures.example/css/agents/bob
       fixtures.baseUrl: https://fixtures.example/css/
       fixtures.bind: 127.0.0.1:18110
       # as.signingKey: the private JWK, supplied at run time, never written here

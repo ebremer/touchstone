@@ -22,7 +22,7 @@ services:
     volumes: *run-ca
     environment:
       LWS_EXTRA_CA: /run/lws-extra-ca.pem
-      # Only the harness's OpenID Provider may vouch for a WebID, as only listed providers may on a deployment.
+      # Only the harness's OpenID Provider may vouch for a CID URL, as only listed providers may on a deployment.
       HALCYON_ALLOWED_ISSUERS: https://fixtures/halcyon/op
       HALCYON_ALLOWED_INTERNAL_HOSTS: fixtures router
 

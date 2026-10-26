@@ -4274,3 +4274,52 @@ Verified:
 5. The decoy trying only the storage-root check, and the *untried* kind in `NOT_JUDGED`.
 
 Drafted by an agent; waits on branch `spec/wd-2026-10-19`.
+
+## 2026-10-26
+
+### D-0101 — format 0.15.0: an agent's identifier is a CID URL, not a WebID
+The LWS drafts never say "WebID". lws10-core calls an end user's identifier the subject, which
+MUST be a URI; lws10-authn-openid has the verifier dereference it to a controlled identifier
+document (CID 1.0) whose `lws:OpenIdProvider` service names the issuer; the self-signed suite takes
+an HTTPS URL, a `did:key` or a `did:web`. "WebID" is Solid's term, for an HTTP URI whose profile
+names its provider with `solid:oidcIssuer`; LWS replaced both the profile and the predicate.
+Touchstone nevertheless named the identifier `webid` everywhere, and every target that configured
+one repeated the Solid term. Halcyon and lws-drupal made the same change on the same day, and
+lws-server relabelled its console.
+
+Format 0.15.0 renames it `cidUrl` wherever it is an interface, and keeps every earlier name:
+
+| | before (still accepted) | 0.15.0 |
+|---|---|---|
+| an identity's template | `webid:` | `cidUrl:` (one or the other, never both) |
+| variables | `${identity.<name>.webid}`, `${self.webid}` | `${identity.<name>.cidUrl}`, `${self.cidUrl}` |
+| a target property | `webid.<name>` | `cidUrl.<name>` |
+| an environment variable | `TOUCHSTONE_WEBID_<NAME>` | `TOUCHSTONE_CID_URL_<NAME>` |
+| a client session's identity (JSON) | `webid` | `cidUrl`, beside `webid` with the same value |
+
+The new name wins when a target sets both. The schema's `$id` and `Definitions.SCHEMA_ID` are
+`…/definitions/0-15-0`; the context and vocabulary gain `lwst:cidUrl` and keep `lwst:webid`,
+described as its deprecated name. The change is additive: every 0.14.0 definition validates and
+runs unchanged, which `DefinitionLoaderTest` and `CidUrlNamesTest` now pin. The definitions, the
+client lab, the docs, the GitHub Action (which passes both sets of variables) and the target
+servers' scripts use the new names. For a did:key subject the value is a DID, not a URL; the
+variable keeps one name for the subject whatever its scheme, as `webid` did.
+
+Two Solid names stay, because they are Solid's and an interoperating client may use them: the
+reference OpenID Provider advertises the `webid` scope and the reference client requests it. The
+Community Solid Server target's comments keep "WebID", which is that server's own term.
+
+Checked:
+- `./mvnw -B verify` is green in all five modules (119, 24, 114, 15 and 6 tests); the four new
+  core tests are the aliases. `DefinitionsSelfTest` passes as before.
+- `tools/definitions/check.py` passes 7 of 7, with the JSON-LD graph unchanged at 17834 triples,
+  run with `LWS_TEST_SUITE` pointing at a clean clone of lws-test-suite `b8cb134`: the local
+  checkout's `lws10/auth/oidc` and `saml` are uncommitted symlinks into a path that does not
+  exist, so the lint and coverage steps cannot read them there.
+
+**Needs Erich's review before merge:**
+1. The names: `cidUrl`, `TOUCHSTONE_CID_URL_<NAME>`, and calling a did:key subject a cidUrl.
+2. Keeping the Solid `webid` scope in the reference OpenID Provider and client.
+3. When to retire the aliases (TODO.md).
+
+Drafted by an agent; waits on branch `cid-url-names`.
