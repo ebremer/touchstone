@@ -82,7 +82,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${test.container}"]
@@ -336,7 +336,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -394,7 +394,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${shared}"]
@@ -458,7 +458,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${test.container}"]
@@ -526,7 +526,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -556,7 +556,7 @@ entries:
             - pointer: /access
               some:
                 - pointer: /assignee
-                  equalsIri: "${identity.bob.webid}"
+                  equalsIri: "${identity.bob.cidUrl}"
             - pointer: /access
               every:
                 - pointer: /type
@@ -625,7 +625,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -642,7 +642,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -682,7 +682,7 @@ entries:
             storage: "${storage}"
             access:
               - action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -700,7 +700,7 @@ entries:
             access:
               - type: ["urn:touchstone:not-an-access-policy"]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -717,7 +717,7 @@ entries:
             storage: "${storage}"
             access:
               - type: [AccessPolicy]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -752,7 +752,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target: "${created}"
         response:
           statusCode: "4xx"
@@ -769,7 +769,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -794,7 +794,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -868,7 +868,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -903,7 +903,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -981,7 +981,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1006,7 +1006,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1031,7 +1031,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1056,7 +1056,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1081,7 +1081,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1149,7 +1149,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${plain}", "${csv}"]
@@ -1228,7 +1228,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${box}", "${doc}"]
@@ -1307,7 +1307,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]
@@ -1339,7 +1339,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${created}"]

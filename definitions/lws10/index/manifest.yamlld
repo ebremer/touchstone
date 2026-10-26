@@ -1603,7 +1603,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${target}"]
@@ -1926,7 +1926,7 @@ entries:
             access:
               - type: [AccessPolicy]
                 action: [read]
-                assignee: "${identity.bob.webid}"
+                assignee: "${identity.bob.cidUrl}"
                 target:
                   type: StorageResource
                   value: ["${typed}"]

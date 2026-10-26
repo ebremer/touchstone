@@ -38,7 +38,7 @@ identities:
       by the harness when the target declares HarnessIssuedTokens; obtained by exchanging
       a configured subject credential at the storage's authorization server; or a static
       bearer token from TOUCHSTONE_TOKEN_ALICE. On a target that does not enforce
-      authentication alice sends no Authorization header. ${identity.alice.webid} is the
+      authentication alice sends no Authorization header. ${identity.alice.cidUrl} is the
       agent IRI named in the target configuration.
 
   - id: "#bob"
@@ -48,7 +48,7 @@ identities:
     comment: >-
       An agent the storage authenticates but that holds no permission on alice's
       resources unless a test grants one. Credential sources as for alice, with
-      TOUCHSTONE_TOKEN_BOB as the static fallback. ${identity.bob.webid} comes from the
+      TOUCHSTONE_TOKEN_BOB as the static fallback. ${identity.bob.cidUrl} comes from the
       target configuration.
 
   # ------------------------------------------- access-token faults (storage validation)
@@ -142,21 +142,21 @@ identities:
     algorithm: ES256
     comment: >-
       A controlled-identifier credential whose subject is a DID (CID suite section 1). A
-      P-256 key pair generated fresh for each run. ${identity.didkey.webid} is its did:key
+      P-256 key pair generated fresh for each run. ${identity.didkey.cidUrl} is its did:key
       identifier (multicodec p256-pub, compressed point, base58btc: did:key:zDn...), and
-      ${self.webid} inside the templates below is the same value. ${self.kid} is the
+      ${self.cidUrl} inside the templates below is the same value. ${self.kid} is the
       identifier's multibase value, so the kid names the one verification method,
-      ${self.webid}#${self.kid}, of the DID document the did:key method derives. It has no
-      webid template and nothing is hosted: the verifier resolves the identifier itself,
+      ${self.cidUrl}#${self.kid}, of the DID document the did:key method derives. It has no
+      cidUrl template and nothing is hosted: the verifier resolves the identifier itself,
       so no trust needs setting up and the target need not reach the harness.
     credentialHeader:
       alg: ES256
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
@@ -227,8 +227,8 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
@@ -250,8 +250,8 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
@@ -273,8 +273,8 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
@@ -289,12 +289,12 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:id_token
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/oidc"
+    cidUrl: "${fixtures.baseUrl}agents/oidc"
     comment: >-
       The harness runs an OpenID Provider at ${fixtures.baseUrl}op (OpenID Connect
       Discovery at ${fixtures.baseUrl}op/.well-known/openid-configuration, JWKS at the
       jwks_uri it names) and hosts the subject's controlled identifier document at
-      ${identity.oidc.webid}. A verifier with no prior trust in that OP must dereference
+      ${identity.oidc.cidUrl}. A verifier with no prior trust in that OP must dereference
       sub, find the OpenIdProvider service equal to iss, and discover the signing key
       (OIDC suite section 5). The target must be able to reach ${fixtures.baseUrl}.
     credentialHeader:
@@ -302,7 +302,7 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
+      sub: "${self.cidUrl}"
       iss: "${fixtures.baseUrl}op"
       azp: "${fixtures.baseUrl}clients/touchstone"
       aud: ["${fixtures.baseUrl}clients/touchstone", "${as.issuer}"]
@@ -310,7 +310,7 @@ identities:
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       service:
         - type: https://www.w3.org/ns/lws#OpenIdProvider
           serviceEndpoint: "${fixtures.baseUrl}op"
@@ -360,11 +360,11 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid"
     comment: >-
       A P-256 key pair generated fresh for each run, published as a JsonWebKey
       verification method in the controlled identifier document the harness hosts at
-      ${identity.cid.webid}. The JWT header kid names that method (CID suite section 5,
+      ${identity.cid.cidUrl}. The JWT header kid names that method (CID suite section 5,
       CID 1.0 section 3.3). The target must be able to reach ${fixtures.baseUrl}. The
       document's URL names the run, as do those of the other CID identities, which carry the
       same key: a verifier may cache a document, and an earlier run's copy names another key
@@ -374,19 +374,19 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       authentication:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
-          controller: "${self.webid}"
+          controller: "${self.cidUrl}"
           publicKeyJwk: "${self.publicJwk}"
 
   - id: "#cid-document-id-mismatch"
@@ -397,7 +397,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid-document-id-mismatch"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid-document-id-mismatch"
     comment: >-
       The document at the subject URL gives a different id, so it is not the subject's document. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -406,9 +406,9 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
@@ -416,9 +416,9 @@ identities:
       "@context": ["https://www.w3.org/ns/cid/v1"]
       id: "${fixtures.baseUrl}agents/someone-else"
       authentication:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
-          controller: "${self.webid}"
+          controller: "${self.cidUrl}"
           publicKeyJwk: "${self.publicJwk}"
   - id: "#cid-key-not-for-authentication"
     type: Identity
@@ -428,7 +428,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid-key-not-for-authentication"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid-key-not-for-authentication"
     comment: >-
       The key is a verificationMethod referenced only from assertionMethod, so the subject does not authenticate with it (CID 1.0 section 3.3). The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -437,21 +437,21 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       verificationMethod:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
-          controller: "${self.webid}"
+          controller: "${self.cidUrl}"
           publicKeyJwk: "${self.publicJwk}"
-      assertionMethod: ["${self.webid}#${self.kid}"]
+      assertionMethod: ["${self.cidUrl}#${self.kid}"]
   - id: "#cid-key-revoked"
     type: Identity
     label: Self-issued credential whose verification method has been revoked
@@ -460,7 +460,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid-key-revoked"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid-key-revoked"
     comment: >-
       The authentication method carries a revoked time in the past (CID 1.0 section 2.2). The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -469,19 +469,19 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       authentication:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
-          controller: "${self.webid}"
+          controller: "${self.cidUrl}"
           publicKeyJwk: "${self.publicJwk}"
           revoked: "2000-01-01T00:00:00Z"
   - id: "#cid-foreign-controller"
@@ -492,7 +492,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid-foreign-controller"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid-foreign-controller"
     comment: >-
       The authentication method names another document as its controller, so it is not the subject's key. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -501,17 +501,17 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       authentication:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
           controller: "${fixtures.baseUrl}agents/someone-else"
           publicKeyJwk: "${self.publicJwk}"
@@ -523,7 +523,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:jwt
     algorithm: ES256
     requires: [ReachableFixtures]
-    webid: "${fixtures.baseUrl}agents/${run.id}/cid-referenced-method"
+    cidUrl: "${fixtures.baseUrl}agents/${run.id}/cid-referenced-method"
     comment: >-
       The authentication relationship names the method by its id, and the method is defined under verificationMethod: the reference form CID 1.0 allows beside embedding. The credential itself is well formed and signed with the run's CID key; only the
       document the harness hosts differs from #cid's (D-0074).
@@ -532,21 +532,21 @@ identities:
       typ: JWT
       kid: "${self.kid}"
     credentialClaims:
-      sub: "${self.webid}"
-      iss: "${self.webid}"
-      client_id: "${self.webid}"
+      sub: "${self.cidUrl}"
+      iss: "${self.cidUrl}"
+      client_id: "${self.cidUrl}"
       aud: ["${as.issuer}"]
       iat: "${now}"
       exp: "${now+300}"
     identityDocument:
       "@context": ["https://www.w3.org/ns/cid/v1"]
-      id: "${self.webid}"
+      id: "${self.cidUrl}"
       verificationMethod:
-        - id: "${self.webid}#${self.kid}"
+        - id: "${self.cidUrl}#${self.kid}"
           type: JsonWebKey
-          controller: "${self.webid}"
+          controller: "${self.cidUrl}"
           publicKeyJwk: "${self.publicJwk}"
-      authentication: ["${self.webid}#${self.kid}"]
+      authentication: ["${self.cidUrl}#${self.kid}"]
   - id: "#cid-unknown-kid"
     type: Identity
     label: Self-issued credential whose kid names no verification method
@@ -592,7 +592,7 @@ identities:
     tokenType: urn:ietf:params:oauth:token-type:saml2
     algorithm: http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
     requires: [SamlTrust]
-    webid: "${fixtures.baseUrl}agents/saml"
+    cidUrl: "${fixtures.baseUrl}agents/saml"
     comment: >-
       A signed saml:Assertion from the harness IdP (entity ${fixtures.baseUrl}idp),
       presented base64url-encoded as RFC 8693 section 3 requires. The SAML suite leaves
@@ -600,7 +600,7 @@ identities:
       IdP's signing certificate (SamlTrust). Instants are xsd:dateTime in UTC.
     samlAssertion:
       issuer: "${fixtures.baseUrl}idp"
-      nameId: "${self.webid}"
+      nameId: "${self.cidUrl}"
       nameIdFormat: urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
       recipient: "${fixtures.baseUrl}clients/touchstone"
       audience: ["${fixtures.baseUrl}clients/touchstone", "${as.issuer}"]

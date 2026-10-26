@@ -86,7 +86,7 @@ entries:
             jwks: "${as.jwksUri}"
             claims:
               - pointer: /sub
-                equals: "${identity.cid.webid}"
+                equals: "${identity.cid.cidUrl}"
               - pointer: /aud
                 hasValue: "${as.resource}"
 
@@ -588,7 +588,7 @@ entries:
             jwks: "${as.jwksUri}"
             claims:
               - pointer: /sub
-                equals: "${identity.cid-referenced-method.webid}"
+                equals: "${identity.cid-referenced-method.cidUrl}"
 
   - id: "#authn-cid-didkey-valid-credential"
     type: ValidationTest
@@ -658,7 +658,7 @@ entries:
             jwks: "${as.jwksUri}"
             claims:
               - pointer: /sub
-                equals: "${identity.didkey.webid}"
+                equals: "${identity.didkey.cidUrl}"
               - pointer: /aud
                 hasValue: "${as.resource}"
 

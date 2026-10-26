@@ -230,7 +230,7 @@ entries:
               - pointer: /aud
                 hasValue: "${as.resource}"
               - pointer: /sub
-                equals: "${identity.didkey.webid}"
+                equals: "${identity.didkey.cidUrl}"
               - pointer: /client_id
                 jsonType: string
               - pointer: /exp

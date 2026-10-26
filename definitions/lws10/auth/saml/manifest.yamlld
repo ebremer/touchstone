@@ -72,7 +72,7 @@ entries:
             jwks: "${as.jwksUri}"
             claims:
               - pointer: /sub
-                equals: "${identity.saml.webid}"
+                equals: "${identity.saml.cidUrl}"
               - pointer: /aud
                 hasValue: "${as.resource}"
 
