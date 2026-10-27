@@ -51,4 +51,12 @@ services:
       # Private addresses for identity documents and OpenID Providers; its webhooks have no such guard.
       LWS_CID_ALLOW_LOOPBACK: "1"
 
+  factoidal:
+    environment:
+      # At the root of an origin of its own (its touchstone.env, TS_URL): 0.18.0's root-relative references are wrong
+      # under the router's path prefix.
+      LWS_PUBLIC_URL: http://factoidal:8080
+      # Plain HTTP and private addresses for identity documents (--allow-http --allow-private-fetch).
+      LWS_ALLOW_PRIVATE_FETCH: "1"
+
   # css: its LWS code fetches any http(s) URL as it is; nothing to switch.

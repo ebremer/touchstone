@@ -197,7 +197,7 @@ deletes the run's container, and logs a warning if the server refuses.
 
 The LWS server implementations Touchstone is run against are in the repository too, in
 [`targetservers/`]({% include src.html path="targetservers" kind="tree" %}): Halcyon,
-lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd, each built from
+lws-server, sparq-lws-core, the Community Solid Server, lws-drupal, lwsd and Factoidal, each built from
 source at a pinned commit. One script tests them all. It needs Docker, with its compose
 plugin, and nothing else, not even a JDK:
 

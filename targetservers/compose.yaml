@@ -95,6 +95,17 @@ services:
       LWS_OWNER: ${LWSD_OWNER:-}
     volumes: [lwsd-data:/data]
 
+  factoidal:
+    <<: *target
+    build:
+      context: factoidal
+      args: [FACTOIDAL_VERSION, FACTOIDAL_INTEGRITY]
+    image: ${LWS_TARGETS_IMAGE_PREFIX:-lws-targets}/factoidal
+    environment:
+      LWS_PUBLIC_URL: ${LWS_ORIGIN:-http://localhost:8480}/${LWS_TARGETS_PATH:-targets}/factoidal
+      LWS_OWNER: ${FACTOIDAL_OWNER:-}
+    volumes: [factoidal-data:/data]
+
   # lws-drupal's database: MariaDB with READ COMMITTED, as Drupal's installer sets it. Not a target: it is on a
   # network of its own with lws-drupal, which the router is not on.
   lws-drupal-db:
@@ -128,3 +139,4 @@ volumes:
   lws-drupal-data:
   lws-drupal-db:
   lwsd-data:
+  factoidal-data:

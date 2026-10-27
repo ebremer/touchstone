@@ -83,7 +83,7 @@ targetservers/run-all.sh                # or: targetservers/run-all.sh css lwsd
 ```
 
 It builds the harness and every server implementation in `targetservers/` (Halcyon,
-lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd) from source,
+lws-server, sparq-lws-core, the Community Solid Server, lws-drupal, lwsd and Factoidal) from source,
 starts them on a private Docker network with keys and a fixture host made for the run, tests
 each, and writes the reports, `summary.md` and a requirements matrix to
 `targetservers/runs/<UTC time>/`. See `targetservers/README.md`.

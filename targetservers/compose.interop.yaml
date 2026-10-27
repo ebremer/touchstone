@@ -15,7 +15,7 @@ services:
     networks: [lws-targets]
     environment:
       LWS_DRIVER_TOKEN: ${LWS_DRIVER_TOKEN:?interop-all.sh sets LWS_DRIVER_TOKEN}
-      LWS_DRIVER_ALLOWED_TARGETS: http://router:8080/
+      LWS_DRIVER_ALLOWED_TARGETS: http://router:8080/,http://factoidal:8080/   # factoidal: its own origin (compose.local.yaml)
       LWS_DRIVER_PUBLIC_BASE_URL: http://clients:18095
 
   halcyon:

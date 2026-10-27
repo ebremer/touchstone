@@ -14,12 +14,12 @@
 # DOCKER overrides the docker command (for example DOCKER="sudo docker").
 #
 # The servers run in local mode (compose.local.yaml): they are at http://router:8080/targets/<name>/ on the project's
-# network, and the harness runs there too. Its fixture host is the service "fixtures", in front of the harness:
-# https://fixtures/<name>/ (a certificate from a CA made for the run, which the servers that use it trust) or
-# http://fixtures:18080/<name>/, as each target's touchstone.env says. The servers are told to fetch from that
-# private address, which they refuse by default. Keys made for the run (alice's, bob's, the SAML identity provider's,
-# the CA's) stay in .local/<project>/; reports, the registry, a summary and a requirements matrix go in
-# runs/<UTC time>/.
+# network (or at an origin of their own, a target's TS_URL), and the harness runs there too. Its fixture host is the
+# service "fixtures", in front of the harness: https://fixtures/<name>/ (a certificate from a CA made for the run,
+# which the servers that use it trust) or http://fixtures:18080/<name>/, as each target's touchstone.env says. The
+# servers are told to fetch from that private address, which they refuse by default. Keys made for the run (alice's,
+# bob's, the SAML identity provider's, the CA's) stay in .local/<project>/; reports, the registry, a summary and a
+# requirements matrix go in runs/<UTC time>/.
 #
 # Exit status: 0 when every target ran and is conformant, 1 when every target ran and one is not, 2 when a target
 # could not be run.
@@ -84,6 +84,8 @@ if [ ! -s "$STATE/tls/fixtures.pem" ]; then   # the run's CA, and its certificat
     rm -f fixtures.csr ext ca.srl'
 fi
 fixtures_of() { ( TARGET=$1 TS_FIXTURES=; source "$HERE/$1/touchstone.env"; echo "${TS_FIXTURES:-$HTTP_FIXTURES}/$1" ); }
+# A target's URL: behind the router, unless it is tested at an origin of its own (TS_URL).
+url_of() { ( TARGET=$1 TS_URL=; source "$HERE/$1/touchstone.env"; echo "${TS_URL:-$ORIGIN/targets/$1}" ); }
 {
   echo "# Written by run-all.sh: the settings of compose.yaml and compose.local.yaml for project $PROJECT."
   echo "LWS_ORIGIN=$ORIGIN"
@@ -110,7 +112,7 @@ fi
 log "starting ${TARGETS[*]}"
 compose down -v --remove-orphans >/dev/null 2>&1 || true
 compose up -d router fixtures "${TARGETS[@]}"
-for t in "${TARGETS[@]}"; do tool wait "$ORIGIN/targets/$t/" 900; done
+for t in "${TARGETS[@]}"; do tool wait "$(url_of "$t")/" 900; done
 
 log "registry ($OUT/targets.yaml)"
 echo "targets:" > "$OUT/targets.yaml"
@@ -118,7 +120,7 @@ chmod 600 "$OUT/targets.yaml"   # it holds the servers' signing keys
 for t in "${TARGETS[@]}"; do
   TS_ISSUER= TS_STORAGE= TS_BASE= TS_REGISTER=baseUrl TS_WARMUP= TS_SAML=no TS_KEY_CMD=() TS_KEY_FORMAT=jwk TS_PROPERTIES=() TS_FIXTURES=
   TARGET=$t; source "$HERE/$t/touchstone.env"
-  url=$ORIGIN/targets/$t
+  url=$(url_of "$t")
   base=$url/$TS_BASE
   fx=$(fixtures_of "$t")
   caps="$TS_CAPABILITIES, ReachableFixtures"

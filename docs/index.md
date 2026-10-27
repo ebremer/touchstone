@@ -83,8 +83,8 @@ As of October 2026:
   run end to end. Against the reference deployment, 218 of the 221 definitions pass; the other
   three are inapplicable to it: the single-page pagination test, since the reference splits that
   container into pages, and two move tests for a storage that moves less than it does.
-- **Target servers:** the six LWS server implementations Touchstone is run against (Halcyon,
-  lws-server, sparq-lws-core, the Community Solid Server, lws-drupal and lwsd), each built from
+- **Target servers:** the seven LWS server implementations Touchstone is run against (Halcyon,
+  lws-server, sparq-lws-core, the Community Solid Server, lws-drupal, lwsd and Factoidal), each built from
   source into a container. One script builds and tests them all on one machine with nothing but
   Docker, and another tests every [lws-client](https://github.com/ebremer/lws-client) library
   against every one of them; see [Every known LWS server](getting-started.md#every-known-lws-server).

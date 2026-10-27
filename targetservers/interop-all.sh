@@ -70,6 +70,8 @@ tool() {
 }
 # The agent's URL for a target: its fixture host's scheme, as the target's touchstone.env gives it.
 agent_of() { ( TARGET=$1 TS_FIXTURES=; source "$HERE/$1/touchstone.env"; echo "${TS_FIXTURES:-http://fixtures:18080}/interop/agent" ); }
+# A target's URL: behind the router, unless it is tested at an origin of its own (TS_URL).
+url_of() { ( TARGET=$1 TS_URL=; source "$HERE/$1/touchstone.env"; echo "${TS_URL:-$ORIGIN/targets/$1}" ); }
 
 log "keys and settings ($STATE)"
 tool keys /state
@@ -110,7 +112,7 @@ fi
 log "starting ${TARGETS[*]} and the clients"
 compose down -v --remove-orphans >/dev/null 2>&1 || true
 compose up -d router fixtures clients "${TARGETS[@]}"
-for t in "${TARGETS[@]}"; do tool wait "$ORIGIN/targets/$t/" 900; done
+for t in "${TARGETS[@]}"; do tool wait "$(url_of "$t")/" 900; done
 tool wait http://clients:18095/mcp 300
 
 log "the run's configuration"
@@ -127,7 +129,7 @@ json() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
   for t in "${TARGETS[@]}"; do
     TS_ISSUER= TS_STORAGE= TS_BASE=
     TARGET=$t; source "$HERE/$t/touchstone.env"
-    url=$ORIGIN/targets/$t
+    url=$(url_of "$t")
     printf '%s\n  {"name": "%s", "label": "%s", "language": "%s", "version": "%s", "source": "%s",' "$sep" "$t" \
       "$(json "$TS_NAME")" "$(json "$TS_LANGUAGE")" "$(labels "$t" revision | cut -c1-7)" "$(labels "$t" source)"
     printf ' "base": "%s", "storage": "%s", "issuer": "%s", "agent": "%s"}' "$url/$TS_BASE" "$url/$TS_STORAGE" \

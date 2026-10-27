@@ -20,9 +20,16 @@ below is reachable as soon as it starts. A second set can be published beside th
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `6f3dbe1` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.6` `1999965` | `/targets/lwsd/` | `/data/as-key.json` |
+| `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core) `v0.18.0` `788ee43`, as the npm package `@factoidal/core` 0.18.0 | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
 (`HarnessIssuedTokens`) reads the key from there, for example with `docker compose exec`.
+
+Factoidal 0.18.0 writes root-relative references (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`), which are
+right only when its storage is at the root of an origin: behind the router at `/targets/factoidal/` they lose the
+prefix, and it answers 404 to a prefixed path, so no `$prefix_mode` helps. `run-all.sh` and `interop-all.sh` test it
+at `http://factoidal:8080/` on their network instead (its `touchstone.env`, `TS_URL`; `compose.local.yaml`), and a
+deployment needs an origin of its own for it until it takes a base URL with a path (D-0102).
 
 ## Layout
 
@@ -73,7 +80,8 @@ A target container:
    Where the server can be told to trust more certificate authorities, it takes them from `LWS_EXTRA_CA`, a PEM file
    (Halcyon, lws-server and lws-drupal do; run-all.sh uses it for its private fixture host).
 7. **Builds from source at a pinned commit**: `ARG <NAME>_REPO` and `ARG <NAME>_REF`, fetched in a stage named
-   `source`. Another commit is a build argument (`HALCYON_REF=… docker compose build halcyon`); a local checkout
+   `source`. (Factoidal is the exception: its wasm module is built by a Lean 4 toolchain and is not in its repository,
+   so the stage unpacks the release's npm package, `FACTOIDAL_VERSION`, checked against `FACTOIDAL_INTEGRITY`.) Another commit is a build argument (`HALCYON_REF=… docker compose build halcyon`); a local checkout
    replaces the stage with a named build context:
 
    ```sh
@@ -120,7 +128,9 @@ no account, key or public address: everything a run needs is made for it.
   lws-server) the storage belongs to a did:key made for the run, and alice and bob exchange did:key credentials for
   their tokens, as any client would. The keys stay in `targetservers/.local/<project>/`.
 - **Each target's `touchstone.env`** says where runs go (a container alice creates, when the storage root itself is
-  readable anonymously), how alice and bob get their tokens, where the server keeps its key, and its name and language.
+  readable anonymously), how alice and bob get their tokens, where the server keeps its key, and its name and language;
+  for a server that must be at the root of an origin (Factoidal), `TS_URL` is that origin on the network, and the
+  harness goes there instead of through the router.
   Where runs go in the storage root itself (sparq-lws-core, lws-drupal), `TS_REGISTER=storage` registers the target by
   its storage URL, and Touchstone finds the root in the storage description as a client would; the others are
   registered by the container (`baseUrl`).

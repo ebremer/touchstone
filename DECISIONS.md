@@ -4323,3 +4323,33 @@ Checked:
 3. When to retire the aliases (TODO.md).
 
 Drafted by an agent; waits on branch `cid-url-names`.
+
+### D-0102 — Factoidal as a target server, tested at an origin of its own
+Erich asked for [Factoidal](https://github.com/danbri/factoidal-core) (Dan Brickley; RDF and LWS written in Lean 4 and
+compiled to one wasm module that Node.js runs; Apache-2.0) to join the target servers. It does as
+`targetservers/factoidal`: `factoidal lws-serve --authz`, the LWS server and its authorization server in one process,
+adapted from factoidal-core's own `deploy/lws-target`. alice owns the storage as the fixture host serves her, and the
+harness mints tokens with the server's signing key (`factoidal authz-keys /data/as --private`, the first key of the
+set); tokens are for the storage `/.well-known/lws-storage`, as Factoidal refuses one for the root.
+
+Two departures from the contract:
+
+- **Not from a commit.** Its wasm module is built by a Lean 4 toolchain and is not in the repository, so the image
+  unpacks the release's npm package, `@factoidal/core` 0.18.0 (tag `v0.18.0`, `788ee43`), checked against the
+  registry's `dist.integrity` (`FACTOIDAL_VERSION`, `FACTOIDAL_INTEGRITY`). The package has no dependencies.
+- **Not behind the router.** 0.18.0 builds absolute URLs from `--base`, path included, but writes every other
+  reference root-relative (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`); under `/targets/factoidal/` those
+  resolve outside the target, and the harness's setup stops at "the server made /touchstone/ instead". It answers
+  404 to a prefixed path, so `keep` and `whole` do not help, and rewriting its headers in the router would test the
+  router. So a target's `touchstone.env` may name the URL it is tested at, `TS_URL` (here `http://factoidal:8080`),
+  which `run-all.sh` and `interop-all.sh` use instead of `<router>/targets/<name>`; `compose.local.yaml` gives the
+  server that URL as `LWS_PUBLIC_URL`, and `compose.interop.yaml` lets the clients go there. A deployment behind a
+  path prefix cannot test it until Factoidal resolves its references against the base URL.
+
+**Verified** (2026-10-27) with Touchstone `5fa668a`: `run-all.sh factoidal` (Docker Desktop on Windows), run
+`585775ae`, 221 tests, 212 passed, 0 failed, 9 inapplicable (the three SAML tests, as it is configured with no SAML
+identity provider; three for servers that do less than it does: a linkset without PUT, moving data resources only, no
+moving at all; the move test for a storage that says it keeps identifiers; single-page pagination, as a page holds
+four members; and `type-search-content-location-protected`, as its search response names no result resource),
+conformant; test for test the same as a run made by hand that morning, `f8e37aa5`. `interop-all.sh` was not run
+against it.
