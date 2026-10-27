@@ -95,8 +95,11 @@ services:
       LWS_OWNER: ${LWSD_OWNER:-}
     volumes: [lwsd-data:/data]
 
+  # Only when named (run-all.sh, interop-all.sh, `docker compose up -d factoidal`): it needs an origin of its own, as
+  # its root-relative references are wrong under the router's path prefix (README.md).
   factoidal:
     <<: *target
+    profiles: [own-origin]
     build:
       context: factoidal
       args: [FACTOIDAL_VERSION, FACTOIDAL_INTEGRITY]

@@ -4344,12 +4344,14 @@ Two departures from the contract:
   router. So a target's `touchstone.env` may name the URL it is tested at, `TS_URL` (here `http://factoidal:8080`),
   which `run-all.sh` and `interop-all.sh` use instead of `<router>/targets/<name>`; `compose.local.yaml` gives the
   server that URL as `LWS_PUBLIC_URL`, and `compose.interop.yaml` lets the clients go there. A deployment behind a
-  path prefix cannot test it until Factoidal resolves its references against the base URL.
+  path prefix cannot test it until Factoidal resolves its references against the base URL, so its service is in the
+  compose profile `own-origin`: a plain `docker compose up -d` of a deployment leaves it out, and the scripts, which
+  name every target they test, start it.
 
 **Verified** (2026-10-27) with Touchstone `5fa668a`: `run-all.sh factoidal` (Docker Desktop on Windows), run
 `585775ae`, 221 tests, 212 passed, 0 failed, 9 inapplicable (the three SAML tests, as it is configured with no SAML
 identity provider; three for servers that do less than it does: a linkset without PUT, moving data resources only, no
 moving at all; the move test for a storage that says it keeps identifiers; single-page pagination, as a page holds
 four members; and `type-search-content-location-protected`, as its search response names no result resource),
-conformant; test for test the same as a run made by hand that morning, `f8e37aa5`. `interop-all.sh` was not run
-against it.
+conformant; test for test the same as a run made by hand that morning, `f8e37aa5`, and again with the profile,
+`182b21a6`. `interop-all.sh` was not run against it.

@@ -29,7 +29,8 @@ Factoidal 0.18.0 writes root-relative references (`Location: /x/`, `Link: </>; r
 right only when its storage is at the root of an origin: behind the router at `/targets/factoidal/` they lose the
 prefix, and it answers 404 to a prefixed path, so no `$prefix_mode` helps. `run-all.sh` and `interop-all.sh` test it
 at `http://factoidal:8080/` on their network instead (its `touchstone.env`, `TS_URL`; `compose.local.yaml`), and a
-deployment needs an origin of its own for it until it takes a base URL with a path (D-0102).
+deployment needs an origin of its own for it until it takes a base URL with a path (D-0102). It is in the compose
+profile `own-origin`, so a plain `docker compose up -d` leaves it out; naming it starts it.
 
 ## Layout
 
