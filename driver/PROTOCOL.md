@@ -251,11 +251,19 @@ is the only process of its kind.
 
 ## 6. Checking an adapter
 
-`touchstone driver check -- <the adapter's command line>` starts the adapter and checks it against
-a local client session through this protocol: the hello, framing, every listed operation, and that
-every unlisted one answers `unsupported`. It reports one line per check and exits non-zero on a
-broken one. A passing check says the adapter speaks the protocol. Whether the client it wraps is
-conformant is what a drive says.
+`touchstone driver check -- <the adapter's command line>` starts the adapter and checks, through
+this protocol, that it keeps it (D-0107):
+- its hello, and `configure` with `{"type": "none"}`;
+- an answer within the protocol, a result or an error other than `unsupported`, to every operation
+  it lists, each sent with its required arguments only, naming a storage that cannot be reached
+  (`https://storage.invalid/`);
+- `unsupported` for every operation it does not list, and for one this version does not define;
+- `invalidArguments`, with `"id": null`, for a line that is not a JSON object;
+- after `shutdown`, an empty result and an exit with status 0 within 5 seconds.
+
+Every line the adapter writes is checked against the schema as well. It reports one line per check
+and exits 1 when one fails. It needs no session: a passing check says the adapter speaks the
+protocol, and whether the client it wraps is conformant is what a drive says.
 
 ## 7. Changes from `lws-driver/1`
 

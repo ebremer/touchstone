@@ -1,0 +1,91 @@
+name: Driver starter kits
+
+# Each starter kit's stub must speak touchstone-driver/1 (CLIENT-TESTING.md section 14.4, D-0107):
+# built in its toolchain's container, then run through `touchstone driver check`, which starts it
+# with `docker run -i` and speaks to it on stdin and stdout. ./mvnw verify stays JDK-only.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'driver/**'
+      - 'harness-driver/**'
+      - 'harness-cli/**'
+      - 'harness-core/**'
+      - '.github/workflows/driver-kits.yml'
+  pull_request:
+    paths:
+      - 'driver/**'
+      - 'harness-driver/**'
+      - 'harness-cli/**'
+      - 'harness-core/**'
+      - '.github/workflows/driver-kits.yml'
+
+jobs:
+  kit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kit: java
+            image: maven:3.10.0-eclipse-temurin-25
+            build: mvn -B -q package
+            run: java -jar target/lws-driver-adapter.jar
+          - kit: kotlin
+            image: maven:3.10.0-eclipse-temurin-25
+            build: mvn -B -q package
+            run: java -jar target/lws-driver-adapter.jar
+          - kit: js
+            image: node:22.22.0-bookworm-slim
+            run: node stub.mjs
+          - kit: python
+            image: python:3.13-slim-trixie
+            run: python -B stub.py
+          - kit: go
+            image: golang:1.27.3-trixie
+            build: go build -o lws-driver-adapter ./cmd/stub
+            run: /kit/lws-driver-adapter
+          - kit: rust
+            image: rust:1.97.1-slim-trixie
+            build: cargo build --release
+            run: target/release/lws-driver-adapter
+          - kit: csharp
+            image: mcr.microsoft.com/dotnet/sdk:8.0
+            build: dotnet build -c Release -o out
+            run: dotnet out/lws-driver-adapter.dll
+          - kit: swift
+            image: swift:6.4.1-noble
+            build: swift build -c release --product stub
+            run: .build/release/stub
+          - kit: php
+            image: php:8.5.12-cli
+            run: php stub.php
+          - kit: cpp
+            image: gcc:15
+            build: apt-get update -qq && apt-get install -y -qq cmake ninja-build > /dev/null && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
+            run: build/lws-driver-adapter
+    name: ${{ matrix.kit }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build the checker
+        run: ./mvnw -B -ntp -pl harness-cli -am package -Dmaven.test.skip=true
+
+      - name: Build the stub in its toolchain's container
+        if: matrix.build != ''
+        run: docker run --rm -v "$PWD/driver/kits/${{ matrix.kit }}:/kit" -w /kit ${{ matrix.image }} sh -c "${{ matrix.build }}"
+
+      - name: Check the stub
+        run: >-
+          java -jar harness-cli/target/touchstone.jar driver check --log adapter-check.log --
+          docker run --rm -i -v "$PWD/driver/kits/${{ matrix.kit }}:/kit" -w /kit ${{ matrix.image }} ${{ matrix.run }}
+
+      - name: The adapter's stderr
+        if: failure()
+        run: cat adapter-check.log || true

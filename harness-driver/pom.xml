@@ -40,14 +40,15 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
+      <!-- Before harness-clients, whose jar is shaded and carries a copy of these classes. -->
       <groupId>com.ebremer.touchstone</groupId>
-      <artifactId>harness-clients</artifactId>
+      <artifactId>harness-fixtures</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.ebremer.touchstone</groupId>
-      <artifactId>harness-fixtures</artifactId>
+      <artifactId>harness-clients</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

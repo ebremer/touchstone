@@ -44,6 +44,16 @@ class AdapterRegistryTest {
     }
 
     @Test
+    void aRelativeProgramIsFoundInTheWorkingDirectoryOnEveryPlatform(@TempDir Path tmp) throws IOException {
+        Files.createDirectories(tmp.resolve("build"));
+        Files.writeString(tmp.resolve("build").resolve("adapter"), "");
+        assertThat(AdapterLauncher.resolved(java.util.List.of("build/adapter", "--flag"), tmp))
+                .containsExactly(tmp.resolve("build").resolve("adapter").toAbsolutePath().toString(), "--flag");
+        assertThat(AdapterLauncher.resolved(java.util.List.of("node", "adapter.mjs"), tmp)).containsExactly("node", "adapter.mjs");
+        assertThat(AdapterLauncher.resolved(java.util.List.of("build/missing"), tmp)).containsExactly("build/missing");
+    }
+
+    @Test
     void theRepositorysRegistryLoads() {
         AdapterRegistry r = AdapterRegistry.load(Path.of("..", "adapters.yaml"));
         assertThat(r.services()).containsKey("local");

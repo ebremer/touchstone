@@ -197,6 +197,26 @@ for op, (args, result) in OPS.items():
     defs[f"args-{op}"] = args_schema(args)
     defs[f"result-{op}"] = result
 
+
+def nullable_optional(node):
+    """Section 4: an optional result member may be null, which means absent, as an optional argument may (D-0107)."""
+    if isinstance(node, dict):
+        if isinstance(node.get("properties"), dict):
+            required = set(node.get("required", []))
+            node["properties"] = {name: (nullable_optional(s) if name in required else optional(nullable_optional(s)))
+                                  for name, s in node["properties"].items()}
+        for key in ("items", "additionalProperties"):
+            if isinstance(node.get(key), dict):
+                node[key] = nullable_optional(node[key])
+    return node
+
+
+# The shapes results are made of, and each operation's result.
+RESULT_SHAPES = ["metadata", "link", "item", "itemsResult", "created", "update", "moved", "storage", "subscription",
+                 "activity", "locationResult", "documentResult"]
+for name in RESULT_SHAPES + [f"result-{op}" for op in OPS]:
+    defs[name] = nullable_optional(json.loads(json.dumps(defs[name])))
+
 schema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://example.org/touchstone/schema/driver/1",

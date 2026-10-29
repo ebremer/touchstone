@@ -96,6 +96,20 @@ class DriverSelfTest {
         assertThat(failed).as(flaw + "\n" + report.notes()).isEqualTo(Twins.AIMED.get(flaw));
     }
 
+    /**
+     * Phase C8.3's acceptance (CLIENT-TESTING.md section 13): an adapter built from the Java starter
+     * kit, its files compiled as they are, over the reference client passes the drive of C8.1.
+     */
+    @Test
+    void anAdapterBuiltFromTheJavaKitPassesTheDrive(@org.junit.jupiter.api.io.TempDir Path work) throws Exception {
+        Driver.Report report = Driver.drive(JavaKit.launcher(JavaKit.compile(work)), service, RULES,
+                Driver.Options.defaults().withoutPauses());
+        assertThat(report.notes()).filteredOn(n -> n.status() != DriveNote.Status.COMPLETED
+                && n.status() != DriveNote.Status.NO_DRIVE).isEmpty();
+        assertThat(notPassed(report.results())).as(report.results().toPrettyString()).isEmpty();
+        assertThat(report.client().name()).isEqualTo("Touchstone reference client, through the Java kit");
+    }
+
     @Test
     void anAdapterInAProcessOfItsOwnIsDrivenTheSameWay() throws Exception {
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();

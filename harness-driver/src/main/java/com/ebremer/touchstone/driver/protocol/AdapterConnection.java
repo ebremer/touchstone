@@ -100,6 +100,29 @@ public class AdapterConnection implements AutoCloseable {
         return Reply.of(line);
     }
 
+    /**
+     * Writes one line exactly as given and reads the response, which must still keep the protocol:
+     * for the checker's requests that no driver would build, such as a line that is not JSON or an
+     * operation this version does not define (driver/PROTOCOL.md section 6).
+     */
+    public synchronized JsonNode exchangeRaw(String line, Duration timeout) {
+        if (broken != null) {
+            throw new BrokenAdapterException(broken);
+        }
+        try {
+            toAdapter.write((line + "\n").getBytes(StandardCharsets.UTF_8));
+            toAdapter.flush();
+        } catch (IOException e) {
+            throw breaks("its stdin closed (" + e.getMessage() + ")");
+        }
+        JsonNode reply = next(timeout, "the response to " + line);
+        String problem = schema.checkResponse(reply);
+        if (problem != null) {
+            throw breaks("its response to " + line + " " + problem);
+        }
+        return reply;
+    }
+
     /** Whether the adapter has broken the protocol, and so can no longer be used. */
     public boolean isBroken() {
         return broken != null;

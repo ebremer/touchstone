@@ -758,9 +758,12 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
     *Done:* `TouchstoneMcpStdioTest` does all of it over stdio against the reference adapter
     registered as a command, `DriverToolsTest` covers each tool and the refusals, and
     `TouchstoneMcpEndToEndTest` finds none of the driving tools on the hosted endpoint.
-  - **C8.3: the checker and the starter kits** (§14.4).
+  - **C8.3: the checker and the starter kits** (§14.4). **Done 2026-10-29 (D-0107).**
     *Done when:* every kit's stub passes `touchstone driver check` in CI, and an adapter built
     from the Java kit over the reference client passes the drive of C8.1.
+    *Done:* every kit's stub passes the checker, 34 of 34, built and run in its CI container here;
+    the workflow runs the same steps. In `DriverSelfTest`, the Java kit's files, compiled as they
+    are around the reference client, pass every rule of the C8.1 drive.
   - **C8.4: lws-client and the docs.** lws-client's adapters move to `touchstone-driver/1`, in
     that repository, by the agent working on Touchstone (D-0104). The docs say a client can be driven: the methodology, "Testing a client",
     and the MCP page.
@@ -880,9 +883,16 @@ C++. Each kit has:
   it is;
 - a README on mapping a client to it.
 
+The hello lists the operations an adapter implements. Where the language lets the runner see it,
+the runner finds them itself: an override of the default, by reflection in Java, Kotlin, C#, PHP,
+JavaScript and Python, and at compile time in C++. In Go, Rust and Swift the adapter declares them,
+and the runner answers anything undeclared `unsupported` without calling it, so the hello and the
+behaviour agree (D-0107).
+
 The kits are templates to copy, not published packages: a client's developers own their
 adapter. CI checks each kit's stub with the checker, in a container per toolchain, when
-`driver/` changes. `./mvnw verify` stays JDK-only.
+`driver/` changes (`.github/workflows/driver-kits.yml`). `./mvnw verify` stays JDK-only, and
+`tools/definitions/check.py` checks that every kit names every operation of the protocol.
 
 ### 14.5 Proving the driver
 

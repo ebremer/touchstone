@@ -1,0 +1,21 @@
+<!-- The C# starter kit for touchstone-driver/1 (driver/PROTOCOL.md). Copy this directory into your
+     client's repository, rename the project, and build: dotnet build -c Release, then
+     bin/Release/net8.0/lws-driver-adapter. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Runs on .NET 8 or, when it is missing, on a later runtime. -->
+    <RollForward>Major</RollForward>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>lws-driver-adapter</AssemblyName>
+    <RootNamespace>Example.LwsDriver</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Your client library goes here, as a PackageReference or a ProjectReference. -->
+
+</Project>

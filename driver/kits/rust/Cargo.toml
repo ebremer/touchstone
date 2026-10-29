@@ -1,0 +1,27 @@
+# The Rust starter kit for touchstone-driver/1 (driver/PROTOCOL.md). Copy this directory into your
+# client's repository, rename the package, and build: cargo build --release, then
+# target/release/lws-driver-adapter.
+
+[package]
+name = "lws-driver-adapter"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+description = "An LWS client's adapter for Touchstone's client driver (touchstone-driver/1)."
+publish = false
+
+[dependencies]
+serde_json = "1.0.154"
+# Your client library goes here.
+
+# The stub adapter is the binary. Its name is the library's too, so only the library is documented.
+[[bin]]
+name = "lws-driver-adapter"
+path = "src/main.rs"
+doc = false
+
+# Keep panics unwinding, the default: never set panic = "abort" in a profile. The runner reports a
+# panic as internal and keeps running.
+
+# A package of its own, not a member of a workspace around it. Delete this table to make it one.
+[workspace]

@@ -1,0 +1,13 @@
+{
+    "name": "example/lws-driver-adapter",
+    "description": "An adapter for Touchstone's client driver, touchstone-driver/1 (driver/PROTOCOL.md)",
+    "type": "project",
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Example\\LwsDriver\\": "src/"
+        }
+    }
+}

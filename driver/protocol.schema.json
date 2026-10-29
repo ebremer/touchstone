@@ -370,7 +370,7 @@
       "properties": {
         "href": {"$ref": "#/$defs/url"},
         "rel": {"type": "string"},
-        "params": {"type": "object", "additionalProperties": {"type": "string"}}
+        "params": {"anyOf": [{"type": "object", "additionalProperties": {"type": "string"}}, {"type": "null"}]}
       }
     },
     "metadata": {
@@ -379,20 +379,20 @@
       "properties": {
         "url": {"$ref": "#/$defs/url"},
         "status": {"type": "integer", "minimum": 100, "maximum": 599},
-        "etag": {"type": "string"},
-        "lastModified": {"type": "string"},
-        "contentType": {"type": "string"},
-        "contentLength": {"$ref": "#/$defs/count"},
-        "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
-        "types": {"$ref": "#/$defs/strings"},
-        "allow": {"$ref": "#/$defs/strings"},
-        "acceptPatch": {"$ref": "#/$defs/strings"}
+        "etag": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "lastModified": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "contentType": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "contentLength": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]},
+        "links": {"anyOf": [{"type": "array", "items": {"$ref": "#/$defs/link"}}, {"type": "null"}]},
+        "types": {"anyOf": [{"$ref": "#/$defs/strings"}, {"type": "null"}]},
+        "allow": {"anyOf": [{"$ref": "#/$defs/strings"}, {"type": "null"}]},
+        "acceptPatch": {"anyOf": [{"$ref": "#/$defs/strings"}, {"type": "null"}]}
       }
     },
     "item": {
       "type": "object",
       "required": ["id"],
-      "properties": {"id": {"$ref": "#/$defs/url"}, "types": {"$ref": "#/$defs/strings"}}
+      "properties": {"id": {"$ref": "#/$defs/url"}, "types": {"anyOf": [{"$ref": "#/$defs/strings"}, {"type": "null"}]}}
     },
     "itemsResult": {
       "type": "object",
@@ -402,15 +402,18 @@
     "created": {
       "type": "object",
       "required": ["location"],
-      "properties": {"location": {"$ref": "#/$defs/url"}, "metadata": {"$ref": "#/$defs/metadata"}}
+      "properties": {
+        "location": {"$ref": "#/$defs/url"},
+        "metadata": {"anyOf": [{"$ref": "#/$defs/metadata"}, {"type": "null"}]}
+      }
     },
     "update": {
       "type": "object",
       "required": ["status"],
       "properties": {
         "status": {"type": "integer", "minimum": 200, "maximum": 299},
-        "etag": {"type": "string"},
-        "metadata": {"$ref": "#/$defs/metadata"}
+        "etag": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "metadata": {"anyOf": [{"$ref": "#/$defs/metadata"}, {"type": "null"}]}
       }
     },
     "moved": {
@@ -419,7 +422,7 @@
       "properties": {
         "status": {"type": "integer", "minimum": 200, "maximum": 299},
         "location": {"$ref": "#/$defs/url"},
-        "metadata": {"$ref": "#/$defs/metadata"}
+        "metadata": {"anyOf": [{"$ref": "#/$defs/metadata"}, {"type": "null"}]}
       }
     },
     "storage": {
@@ -427,15 +430,15 @@
       "required": ["id", "services"],
       "properties": {
         "id": {"$ref": "#/$defs/url"},
-        "storageRoot": {"$ref": "#/$defs/url"},
-        "raw": {"type": "object"},
+        "storageRoot": {"anyOf": [{"$ref": "#/$defs/url"}, {"type": "null"}]},
+        "raw": {"anyOf": [{"type": "object"}, {"type": "null"}]},
         "services": {
           "type": "array",
           "items": {
             "type": "object",
             "required": ["types", "serviceEndpoint"],
             "properties": {
-              "id": {"type": "string"},
+              "id": {"anyOf": [{"type": "string"}, {"type": "null"}]},
               "types": {"$ref": "#/$defs/strings"},
               "serviceEndpoint": {"$ref": "#/$defs/url"}
             }
@@ -446,16 +449,16 @@
     "subscription": {
       "type": "object",
       "required": ["subscription"],
-      "properties": {"subscription": {"$ref": "#/$defs/url"}, "raw": {"type": "object"}}
+      "properties": {"subscription": {"$ref": "#/$defs/url"}, "raw": {"anyOf": [{"type": "object"}, {"type": "null"}]}}
     },
     "activity": {
       "type": "object",
       "required": ["types", "object"],
       "properties": {
-        "id": {"type": "string"},
+        "id": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "types": {"$ref": "#/$defs/strings"},
         "object": {"$ref": "#/$defs/url"},
-        "objectTypes": {"$ref": "#/$defs/strings"}
+        "objectTypes": {"anyOf": [{"$ref": "#/$defs/strings"}, {"type": "null"}]}
       }
     },
     "locationResult": {"type": "object", "required": ["location"], "properties": {"location": {"$ref": "#/$defs/url"}}},
@@ -471,7 +474,7 @@
         "timeoutSeconds": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]}
       }
     },
-    "result-configure": {"type": "object", "properties": {"agent": {"$ref": "#/$defs/url"}}},
+    "result-configure": {"type": "object", "properties": {"agent": {"anyOf": [{"$ref": "#/$defs/url"}, {"type": "null"}]}}},
     "args-discover_storage": {
       "type": "object",
       "additionalProperties": false,
@@ -504,7 +507,7 @@
       "properties": {
         "metadata": {"$ref": "#/$defs/metadata"},
         "notModified": {"type": "boolean"},
-        "body": {"$ref": "#/$defs/responseBody"}
+        "body": {"anyOf": [{"$ref": "#/$defs/responseBody"}, {"type": "null"}]}
       }
     },
     "args-list_container": {
@@ -582,7 +585,7 @@
       "required": ["url", "linkset", "allow", "acceptPatch"],
       "properties": {
         "url": {"$ref": "#/$defs/url"},
-        "etag": {"type": "string"},
+        "etag": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "linkset": {"$ref": "#/$defs/linksetDocument"},
         "allow": {"$ref": "#/$defs/strings"},
         "acceptPatch": {"$ref": "#/$defs/strings"}

@@ -25,6 +25,7 @@ STEPS = [
     ("driver protocol schema " + ("regenerated" if WRITE else "is current"),
      [sys.executable, "../driver/gen_schema.py", *GEN]),
     ("driver protocol schema accepts and rejects", ["node", "../driver/check_schema.js"]),
+    ("driver starter kits name every operation", [sys.executable, "../driver/check_kits.py"]),
 ]
 
 failed, ran = [], 0

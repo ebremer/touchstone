@@ -4598,3 +4598,85 @@ driver would differ sooner or later.
   unregistered client, a session of an unregistered service (without repeating its key), an unknown
   session, and an unknown rule.
 - `TouchstoneMcpEndToEndTest` finds none of the eight on the hosted endpoint.
+
+### D-0107 — C8.3: the adapter checker and starter kits in ten languages
+Phase C8.3 (CLIENT-TESTING.md section 13) is built, on branch `clients/driver`.
+
+**The checker.** The command is `touchstone driver check -- <command>` (`AdapterChecker`). PROTOCOL.md
+section 6 had it check an adapter "against a local client session". The checker as built needs no
+session: it checks the protocol, and leaves conformance to a drive. Section 6 now lists what it
+checks:
+- the hello, and `configure`;
+- an answer to every listed operation, sent with its required arguments only and a storage that
+  cannot be reached (`https://storage.invalid/`);
+- `unsupported` for every unlisted operation, and for one the protocol does not define;
+- `invalidArguments`, with a null id, for a line that is not a JSON object;
+- a clean exit after `shutdown`.
+
+A listed operation that answers `unsupported` fails. With only required arguments sent, that answer
+means the hello lists something the client lacks. The Kotlin kit showed why this matters: Kotlin
+compiles an inherited default method into a bridge in the class, so detecting overrides by declaring
+class listed all 29 operations. The checker passed that hello until this rule. `AdapterCheckerTest`
+passes the reference adapter, and fails, each on exactly one check, an adapter that hides an
+operation and one that claims one.
+
+**The schema disagreed with the protocol on null.** PROTOCOL.md section 4 says an optional result
+member may be omitted or null, and both mean absent. The schema accepted null in optional arguments
+only. So an adapter answering `"etag": null`, as Python's `headers.get` and JavaScript's
+`Headers.get` naturally do, would have been called broken. The document wins where the two disagree
+(PROTOCOL.md, opening). `gen_schema.py` now lets optional members of results be null; required ones
+still may not be. This is a correction within `/1`, not a change to it: no adapter that kept the
+document is refused by it. `check_schema.js` holds both cases.
+
+**A relative program in `adapters.yaml`** is now found in the client's `directory` on every
+platform. Linux and macOS did that already. Windows's process creation looks only beside the driver
+and on the PATH, so a kit's `command: [build/lws-driver-adapter]` failed there.
+
+**The kits** are in `driver/kits/<language>/`: Java, Kotlin, JavaScript (with TypeScript types),
+Python, Go, Rust, C#, Swift, PHP and C++. Each has an interface with one method per operation, each
+defaulting to `unsupported`; a runner for the whole protocol; a stub that implements only
+`configure`; and a README.
+
+I wrote the Java kit. Four agents, working in parallel from one brief, wrote the other nine to its
+shape. Each kit was then built and checked again here. How each runner learns what is implemented
+(CLIENT-TESTING.md section 14.4):
+- *by detecting overrides*: reflection in Java, Kotlin (bridges excluded), C#, PHP, JavaScript and
+  Python, and member pointers at compile time in C++;
+- *by declaration*: Go, Rust and Swift, whose runners answer anything undeclared `unsupported`
+  without calling it.
+
+Choices worth knowing:
+- *Names that are keywords:* C++ has `delete_` and Rust `move_resource`.
+- *JavaScript and Python* call the client's name and auth `clientInfo()`/`authKinds()`, so that a
+  field named `client` cannot shadow them. The TypeScript types are `.d.mts` files, the only kind
+  `tsc` pairs with `.mjs`.
+- *Stray output:* every runner routes it to stderr, so a client's stray print cannot corrupt the
+  protocol.
+
+**Versions** were verified when pinned:
+- nlohmann/json v3.12.0, fetched by CMake with its SHA-256 (GitHub releases);
+- serde_json 1.0.154 (crates.io);
+- Kotlin 2.4.21, kotlinx-serialization-json 1.12.0 and maven-shade-plugin 3.6.2 (Maven Central);
+- Go 1.27.3 (go.dev);
+- the images `maven:3.10.0-eclipse-temurin-25`, `swift:6.4.1-noble`, `php:8.5.12-cli`,
+  `golang:1.27.3-trixie`, `rust:1.97.1-slim-trixie`, `node:22.22.0-bookworm-slim`,
+  `python:3.13-slim-trixie`, `gcc:15` and `mcr.microsoft.com/dotnet/sdk:8.0` (Docker Hub, MCR).
+
+The Java kit uses Touchstone's own Jackson 2.22.2 and plugin versions, and targets Java 17.
+
+**CI.** `.github/workflows/driver-kits.yml` builds each kit's stub in its toolchain's container and
+checks it with `touchstone driver check`, which starts the stub with `docker run -i`. It runs when
+`driver/`, the driver, the CLI or the core change. I ran the same steps locally for all ten:
+34 of 34 each. `tools/definitions/check.py` gains a tenth check, `check_kits.py`: every kit has a
+README and names every operation of the schema. So a kit that falls behind when `/1` gains an
+operation fails it.
+
+**The acceptance:** an adapter built from the Java kit over the reference client passes the drive
+of C8.1. `DriverSelfTest` compiles the kit's files as they are, with a twenty-line adapter that
+wraps `RefAdapter`, which now has a public `call`. It serves that adapter with the kit's own runner,
+and every rule passes.
+
+**Found on the way:** harness-clients installs a shaded jar, which carries its own copy of
+harness-fixtures' classes. When harness-driver was built alone, a stale copy came first on the test
+classpath, and the kit's adapter compiled against an old `RefAdapter`. harness-driver now lists
+harness-fixtures first, as harness-mcp and harness-cli already did.

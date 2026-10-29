@@ -42,7 +42,7 @@ public interface AdapterLauncher {
      * stderr goes to a log file of its own.
      */
     static AdapterLauncher process(List<String> command, Path directory, Map<String, String> environment, Path log) {
-        List<String> line = List.copyOf(command);
+        List<String> line = resolved(command, directory);
         return () -> {
             ProcessBuilder pb = new ProcessBuilder(line);
             if (directory != null) {
@@ -83,6 +83,28 @@ public interface AdapterLauncher {
                 throw new BrokenAdapterException("the adapter could not be started: " + e.getMessage());
             }
         };
+    }
+
+    /**
+     * The command with a relative program, such as {@code build/adapter}, resolved against the working
+     * directory when a file is there: Linux and macOS start it so, but Windows looks for it only beside
+     * the driver and on the PATH. A bare name, such as {@code node}, is left to the PATH.
+     */
+    static List<String> resolved(List<String> command, Path directory) {
+        String program = command.getFirst();
+        Path p = Path.of(program);
+        if (directory == null || p.isAbsolute() || p.getNameCount() < 2 && !program.startsWith(".")) {
+            return List.copyOf(command);
+        }
+        for (String candidate : List.of(program, program + ".exe")) {
+            Path there = directory.resolve(candidate).normalize();
+            if (java.nio.file.Files.isRegularFile(there)) {
+                List<String> out = new java.util.ArrayList<>(command);
+                out.set(0, there.toAbsolutePath().toString());
+                return List.copyOf(out);
+            }
+        }
+        return List.copyOf(command);
     }
 
     /** Asks an adapter to stop, as politely as it still allows. */

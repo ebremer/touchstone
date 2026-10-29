@@ -48,5 +48,9 @@ for (const [name, b] of Object.entries(bad)) if (validate(b)) { failures++; cons
 const r = result('read');
 if (!r({metadata: {url: 'https://s.example/a', status: 200, extra: 1}, notModified: true})) { failures++; console.log('result-read rejected an open member'); }
 if (r({notModified: true})) { failures++; console.log('result-read accepted a result without metadata'); }
+// Section 4: an optional result member may be null, which means absent; a required one may not (D-0107).
+if (!r({metadata: {url: 'https://s.example/a', status: 200, etag: null, links: null}, notModified: false, body: null})) { failures++; console.log('result-read rejected null optional members'); }
+if (r({metadata: {url: null, status: 200}, notModified: false})) { failures++; console.log('result-read accepted a null url'); }
+if (!result('read_linkset')({url: 'https://s.example/a.meta', etag: null, linkset: {linkset: []}, allow: [], acceptPatch: []})) { failures++; console.log('result-read_linkset rejected a null etag'); }
 console.log(`${good.length} good and ${Object.keys(bad).length} bad lines, ${failures} wrong`);
 process.exit(failures ? 1 : 0);

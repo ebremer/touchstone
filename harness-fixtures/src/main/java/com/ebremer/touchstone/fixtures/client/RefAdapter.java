@@ -63,7 +63,7 @@ public final class RefAdapter {
     private static final String FORGED_LINKSET = "<https://linkset.invalid/forged>; rel=\"linkset\"";
 
     /** An operation's outcome that is not a result: an error of driver/PROTOCOL.md section 4.2. */
-    static final class Failure extends Exception {
+    public static final class Failure extends Exception {
         final String kind;
         final Integer status;
 
@@ -71,6 +71,14 @@ public final class RefAdapter {
             super(message);
             this.kind = kind;
             this.status = status;
+        }
+
+        public String kind() {
+            return kind;
+        }
+
+        public Integer status() {
+            return status;
         }
     }
 
@@ -174,8 +182,12 @@ public final class RefAdapter {
         out.flush();
     }
 
-    /** Runs one operation; an error the client reaches is a {@link Failure}, never a breakdown. */
-    JsonNode call(String op, JsonNode args) throws Failure {
+    /**
+     * Runs one operation; an error the client reaches is a {@link Failure}, never a breakdown. Public
+     * so that an adapter built from a starter kit can wrap the reference client (CLIENT-TESTING.md
+     * section 14.4).
+     */
+    public JsonNode call(String op, JsonNode args) throws Failure {
         try {
             return switch (op) {
                 case "configure" -> configure(args);
@@ -205,7 +217,7 @@ public final class RefAdapter {
                 default -> throw new Failure("unsupported", null, op + " is not an operation of this client");
             };
         } catch (IOException e) {
-            throw new Failure("transport", null, e.getMessage());
+            throw new Failure("transport", null, e.getMessage() != null ? e.getMessage() : e.toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new Failure("transport", null, "interrupted");

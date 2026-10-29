@@ -10,7 +10,7 @@ import picocli.CommandLine.Command;
         name = "touchstone",
         mixinStandardHelpOptions = true,
         versionProvider = TouchstoneCli.VersionProvider.class,
-        subcommands = {RunCommand.class, CoverageCommand.class, DiffCommand.class, DriveCommand.class},
+        subcommands = {RunCommand.class, CoverageCommand.class, DiffCommand.class, DriveCommand.class, DriverCommand.class},
         exitCodeOnExecutionException = TouchstoneCli.HARNESS_ERROR,
         description = "Conformance test harness for the W3C Linked Web Storage (LWS) protocol family.")
 public final class TouchstoneCli implements Callable<Integer> {

@@ -29,6 +29,15 @@ tools/definitions/node_modules/
 # spec-drift check (tools/extractor/check_published.py): fetched drafts
 tools/extractor/build/
 
+# starter kits (driver/kits): each toolchain's build output
+driver/kits/*/build/
+driver/kits/*/bin/
+driver/kits/*/obj/
+driver/kits/*/.build/
+driver/kits/*/node_modules/
+driver/kits/*/vendor/
+driver/kits/rust/Cargo.lock
+
 # misc
 *.log
 dependency-reduced-pom.xml
