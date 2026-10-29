@@ -230,7 +230,7 @@ provides both.
 
 `ClientRulesSelfTest` does the same for the client rules. In client sessions of their own,
 `RefLwsClient`, a scripted client that does what the rules ask and starts every task, passes all
-30. Each of its 30 broken twins gets one thing wrong and fails exactly the rules aimed at it.
+53. Each of its 54 broken twins gets one thing wrong and fails exactly the rules aimed at it.
 
 Each broken twin fails exactly the tests that exist to catch it, which is what shows those
 tests can fail.
