@@ -311,6 +311,6 @@ committed directly.
 - [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %}): the
   contract, key by key
 - [The JSON Schema]({% include src.html path="definitions/schema/definitions.schema.json" %}),
-  format 0.14.0
+  format 0.16.0
 - [`definitions/COVERAGE.md`]({% include src.html path="definitions/COVERAGE.md" %}): every
   test, and what it replaced

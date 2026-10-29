@@ -41,10 +41,13 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-core` | catalog, the definitions loader and lint, the engine, identities and credentials, reporting — no Spring |
 | `harness-fixtures` | reference LWS server (open/secured/broken), reference authorization server (and its broken twin), the reference deployment the self-test loop runs against |
 | `harness-clients` | client-session service for testing LWS clients ([CLIENT-TESTING.md](CLIENT-TESTING.md)): a reference storage and authorization server per session, every request recorded; `java -jar harness-clients/target/touchstone-clients.jar` |
-| `harness-cli` | picocli front end (`run`, `coverage`, `diff`) |
-| `harness-mcp` | Spring AI MCP server over the core engine |
+| `harness-driver` | the client driver ([harness-driver/README.md](harness-driver/README.md)): drives an LWS client through a client session, through an adapter that speaks `touchstone-driver/1` ([driver/PROTOCOL.md](driver/PROTOCOL.md)) — no Spring |
+| `harness-cli` | picocli front end (`run`, `coverage`, `diff`, `drive`, `driver check`) |
+| `harness-mcp` | Spring AI MCP server over the core engine; on stdio, also the tools that drive a client |
 | `catalog/` | requirements catalog (Turtle), 6 spec modules, versioned per spec draft |
-| `definitions/` | the tests: YAML-LD definitions (format 0.15.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
+| `driver/` | the driver protocol `touchstone-driver/1` and its schema, and starter kits for adapters in ten languages (`kits/`) |
+| `adapters.yaml` | the registered client adapters and client-session services that `touchstone drive` and the MCP driving tools may use |
+| `definitions/` | the tests: YAML-LD definitions (format 0.16.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
 | `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
 | `targetservers/` | the LWS server implementations Touchstone is run against, each built from source into a container behind one router; `run-all.sh`, which tests them all, and `interop-all.sh`, which tests every lws-client against every one ([targetservers/README.md](targetservers/README.md)) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring and distribution |

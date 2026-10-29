@@ -209,8 +209,8 @@ clean exit after `shutdown`. It exits with `0` when every check passed and `1` w
 
 ## Exit codes
 
-Exit code `1` is always a verdict about the server under test. Exit code `2` always means
-there is no verdict. A CI job can therefore tell "the server does not conform" apart from
+Exit code `1` is always a verdict about what is under test: a server for `run`, a client for
+`drive`, an adapter for `driver check`. Exit code `2` always means there is no verdict. A CI job can therefore tell "the server does not conform" apart from
 "the job is broken" by the exit code alone. Each command's `--help` lists its codes.
 
 | Code | `run` | `coverage` | `diff` |

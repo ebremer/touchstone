@@ -400,7 +400,7 @@ for later terms that need more.
   *cantTell*, rules out a clean verdict, as on the server side (`EXECUTION.md` section 9).
   SHOULD failures are warnings, and MAY rules are information.
 - **EARL.** Each assertion has `earl:mode earl:semiAuto`, since a person drives the client and
-  the service judges. `earl:test` is the rule's IRI, and the test case carries
+  the service judges; in a session Touchstone's driver drives, `earl:automatic` (section 12). `earl:test` is the rule's IRI, and the test case carries
   `touchstone:verifies` for each `requirements` IRI. The subject is the client as the developer
   named it, or the session.
 

@@ -26,6 +26,28 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-29 — driven clients (C8, D-0103 to D-0108)
+
+Touchstone drives clients through adapters (`touchstone-driver/1`); lws-client speaks it since `ff51462`.
+
+- [ ] **Redeploy the client-session service on vulcan.** The deployed one refuses a session marked
+  `driven`, so `touchstone drive` against the public service fails until it runs this version.
+- [ ] **Unknown arguments.** PROTOCOL.md section 8 says an adapter answers an argument it does not
+  know `unsupported`; lws-client's adapters and the starter kits ignore it, and `touchstone driver
+  check` does not test it. Harmless while both drivers check arguments against the schema; it
+  matters as `/1` grows.
+- [ ] **An error without a status.** `allowStatus` cannot name one, so the decoy's drive in
+  `client-token-after-discovery-checks` stops at its last step for every lws-client language (the
+  rule passes). An `allowKinds` would need a format change.
+- [ ] **An empty `links`.** Every adapter sends `links: []` as a combined update with no Link
+  header; decide whether that should mean no combined update.
+- [ ] **Swift's `--build-system native`** is deprecated in SwiftPM 6.4.1;
+  `targetservers/clients/Dockerfile` uses it.
+- [ ] **lws-client's PHP CI** fails on PHP 8.3 and later, before and after the port: its PHPUnit
+  configuration sets `zend.assertions` at run time; set it with `setup-php`'s `ini-values` instead.
+
+---
+
 ## 2026-10-26 — CID URL, not WebID (D-0101)
 
 The LWS drafts never say "WebID"; an agent's identifier is a CID URL. On branch `cid-url-names`.

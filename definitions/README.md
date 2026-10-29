@@ -17,7 +17,8 @@ SAML assertions it presents; 0.13.0 gives the documents a run mints URLs of the 
 follows the 19 October 2026 drafts, whose 401s name protected resource metadata (RFC 9728) and
 whose containers can be asked for in the LWS profile, which is RDF isomorphic to
 application/lws+json; 0.15.0 calls an agent's identifier `cidUrl`, its LWS name, where the
-earlier formats said `webid`. A test that is one
+earlier formats said `webid`; 0.16.0 gives a client rule a `drive`, the steps Touchstone's client
+driver runs so the rule is tried (`OBSERVATION.md` section 12). A test that is one
 request and one response is written as exactly that, and the state a test needs is
 declared in `prereqs` instead of scripted. `COMPARISON.md` sets out, with evidence from
 its files, why the merged format is the stronger design.
@@ -335,6 +336,13 @@ These affect how tests are written, and are worth raising with the WG:
   fixture-level test in `harness-fixtures`.
 
 ## Format version
+
+Format version 0.16.0 (2026-10-29, frozen at Gate D, D-0104) gives a client rule `drive`: the steps
+Touchstone's client driver runs through a client's adapter so the rule is tried, with the
+operations of the driver protocol ([`driver/PROTOCOL.md`](../driver/PROTOCOL.md)), the start of the
+rule's task, and pauses (`OBSERVATION.md` section 12). A drive asserts nothing, and plays a careful
+application: its writes carry an `If-Match` from a read (D-0108). The lints check a drive against
+the frozen protocol. Nothing in server tests changes.
 
 Format version 0.15.0 (2026-10-26, D-0101, awaiting review) changes only names, and nothing an
 older definition or target relies on. The LWS drafts never say "WebID": an agent's identifier is

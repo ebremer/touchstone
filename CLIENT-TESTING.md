@@ -274,7 +274,8 @@ worse within a session; *reset* starts them over.
 
 The client's verdict follows the server side: only MUST rules decide it. The report states
 it as "no MUST failure in the 14 MUST rules exercised, of 19 that apply", never as plain
-"conformant". EARL runs use `earl:mode earl:semiAuto`: a person drives, the harness judges.
+"conformant". EARL runs use `earl:mode earl:semiAuto`: a person drives, the harness judges;
+a session Touchstone's driver drives uses `earl:automatic` (§14).
 
 ### 5.3 Intent
 

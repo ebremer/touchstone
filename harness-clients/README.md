@@ -75,7 +75,7 @@ The session API takes the key as a Bearer token:
 | `PATCH <base>/sessions/{id}` | changes the settings, with a body like the one that starts a session; `clientUnderTest: null` forgets the name. Returns the session |
 | `GET <base>/sessions/{id}/exchanges?after=N&limit=M` | the traffic log after exchange `N`, at most `M` (≤ 500) |
 | `GET <base>/sessions/{id}/results` | each rule's outcome, trials, specification links and first failure with how to fix it, and the verdict |
-| `GET <base>/sessions/{id}/results?format=earl` | the results as EARL, in Turtle: one `earl:Assertion` per rule, in `earl:semiAuto` mode, about the client as named, by its homepage when it has one |
+| `GET <base>/sessions/{id}/results?format=earl` | the results as EARL, in Turtle: one `earl:Assertion` per rule, in `earl:semiAuto` mode (`earl:automatic` in a driven session), about the client as named, by its homepage when it has one |
 | `GET <base>/sessions/{id}/results?format=junit` | the results as JUnit XML, one test case per rule, for CI |
 | `GET <base>/sessions/{id}/results?format=json` | the JSON results, named for saving |
 | `POST <base>/sessions/{id}/reset` | starts the results over, and their date; the storage and the log stay |

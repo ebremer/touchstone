@@ -8,8 +8,9 @@ description: "The rules Touchstone never breaks, and where each one is enforced.
 {: .no_toc }
 
 Touchstone is deliberately an HTTP cannon. It sends malformed, hostile and high-volume
-requests to the servers it tests, it handles credentials, and it can be driven by an AI
-agent. Five rules keep that safe. They are not negotiable, and the code enforces each one.
+requests to the servers it tests, it handles credentials, it can be driven by an AI agent, and it
+runs clients' own code to drive them. Six rules keep that safe. They are not negotiable, and the
+code enforces each one.
 
 1. TOC
 {:toc}
@@ -71,6 +72,25 @@ pull request. No tool writes to `definitions/`.
 Its tools are unauthenticated and can start runs. To host it, set `server.address`
 explicitly, and put an authenticating layer in front of it. The design calls for a Spring
 Security OAuth2 resource server; that does not exist yet.
+
+## 6. A driven client runs only what its operator registered
+
+Touchstone's client driver (`touchstone drive`, and the MCP server's driving tools) starts a
+client's adapter, which is code the client's developers wrote. It runs only the adapters
+`adapters.yaml` registers, with their command line, directory and environment, on the operator's
+machine: the CLI and the tools take an id from the registry, never a command, and nothing a rule,
+a tool argument or an adapter says is ever run. It uses only the client-session services the
+registry names, and drives name only the session's URLs and those the client reported from its
+answers.
+
+- **The driving tools are local.** They exist only when the MCP server runs on stdio; the hosted
+  endpoint never lists them.
+- **An adapter's output is untrusted.** Every line it writes is checked against the protocol's
+  schema, and is bounded in size and time; an adapter that breaks the protocol is stopped, and that
+  is never a finding about the client. What the tools return from an adapter is labelled as data,
+  not instructions.
+- **The session key stays in the driver.** It is never logged, put in a drive's variables or
+  given to an adapter; the read-only client tools read a driven session by its id.
 
 ## Credentials in practice
 

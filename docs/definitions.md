@@ -9,7 +9,7 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 
 {: .important }
 **Format version 0.14.0 (2026-10-19), awaiting review; 0.11.0 was frozen on 2026-10-05.** These are the tests `touchstone run`
-executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`). The engine that runs them implements the format's execution contract, and all 221
+executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`), and 0.16.0 gave them a `drive`, the steps Touchstone's client driver runs so a rule is tried (section 12 there). The engine that runs them implements the format's execution contract, and all 221
 run against the reference deployment in every build.
 
 1. TOC

@@ -69,13 +69,15 @@ As of October 2026:
   the Docker image and the GitHub Action.
 - **Client testing:** a service that tests LWS clients against sessions of their own, judged by
   53 client rules, with EARL, JUnit XML and JSON reports, a proxy mode in front of a real server,
-  and read-only MCP tools for a coding agent. See [Testing a client](testing-a-client.md).
+  and read-only MCP tools for a coding agent. A client's developers can also write a small
+  adapter, from a starter kit in their language, and let Touchstone drive the client through a
+  session unattended (`touchstone drive`). See [Testing a client](testing-a-client.md).
 - **Requirements catalog:** 321 requirements (254 MUST, 29 SHOULD, 38 MAY) from the four
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
 - **Tests:** 221 [YAML-LD definitions](definitions.md) (181 MUST, 29 SHOULD, 11 MAY),
-  format 0.14.0, frozen. They follow the 19 October 2026 Working Draft and the editor's drafts
+  format 0.16.0, frozen. They follow the 19 October 2026 Working Draft and the editor's drafts
   of the webhook notification suite and the search and type index services, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cover 243 of the 272 catalogued requirements
   that bind a server or an authorization server. Run `touchstone coverage` for the current figures.

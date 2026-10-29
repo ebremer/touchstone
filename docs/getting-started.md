@@ -33,7 +33,7 @@ cd touchstone
 java -jar harness-cli/target/touchstone.jar --version
 ```
 
-`verify` compiles all four modules and runs Touchstone's own test suite. That suite
+`verify` compiles all six modules and runs Touchstone's own test suite. That suite
 includes the [self-test loop](how-it-works.md#reference-servers-and-the-self-test-loop),
 which runs every definition against the reference deployment and against its broken
 twins. The last line should print `Touchstone 0.1.0-SNAPSHOT`.
