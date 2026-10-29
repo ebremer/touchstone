@@ -12,6 +12,8 @@
 #   --no-build       use the images already built
 #   --no-cache       build every image from scratch, as on a machine that never built them
 #   --project <p>    the compose project, network and image prefix (default lws-local-interop)
+#   --client-source <dir>  build the clients from this lws-client checkout instead of the commit clients/Dockerfile
+#                    pins: for a change to lws-client that is not pushed yet
 #
 # DOCKER overrides the docker command (for example DOCKER="sudo docker").
 #
@@ -24,8 +26,13 @@
 #
 # Exit status: 0 when every combination works, 1 when one does not, 2 when the run could not be made.
 set -euo pipefail
-HERE=$(cd "$(dirname "$0")" && pwd)
-REPO=$(cd "$HERE/.." && pwd)
+# Git Bash on Windows: Docker needs host paths in Windows form, and container paths such as /tools left alone.
+PWD_FORM=
+case "$(uname -s)" in
+  MINGW*|MSYS*) export MSYS_NO_PATHCONV=1; PWD_FORM=-W ;;
+esac
+HERE=$(cd "$(dirname "$0")" && pwd $PWD_FORM)
+REPO=$(cd "$HERE/.." && pwd $PWD_FORM)
 DOCKER=${DOCKER:-docker}
 PROJECT=lws-local-interop
 KEEP=0
@@ -33,6 +40,7 @@ BUILD=1
 NOCACHE=()
 LANGS=()
 TARGETS=()
+CLIENT_SOURCE=
 while [ $# -gt 0 ]; do
   case "$1" in
     --languages) LANGS=(--languages "$2"); shift 2 ;;
@@ -40,6 +48,7 @@ while [ $# -gt 0 ]; do
     --no-build) BUILD=0; shift ;;
     --no-cache) NOCACHE=(--no-cache --pull); shift ;;
     --project) PROJECT=$2; shift 2 ;;
+    --client-source) CLIENT_SOURCE=$(cd "$2" && pwd $PWD_FORM); shift 2 ;;
     -h|--help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) TARGETS+=("$1"); shift ;;
@@ -58,9 +67,17 @@ STATE=$HERE/.local/$PROJECT
 OUT=$HERE/runs/$(date -u +%Y%m%dT%H%M%SZ)-interop
 mkdir -p "$STATE/interop" "$OUT"
 log() { printf '\n== %s\n' "$*"; }
+# With --client-source, one more compose file gives the clients' build the checkout as its "source" context, which
+# clients/Dockerfile then uses instead of the commit it pins.
+EXTRA=()
+if [ -n "$CLIENT_SOURCE" ]; then
+  printf 'services:\n  clients:\n    build:\n      additional_contexts:\n        source: "%s"\n' "$CLIENT_SOURCE" \
+    > "$STATE/compose.client-source.yaml"
+  EXTRA=(-f "$STATE/compose.client-source.yaml")
+fi
 compose() {
   $DOCKER compose -p "$PROJECT" -f "$HERE/compose.yaml" -f "$HERE/compose.local.yaml" -f "$HERE/compose.interop.yaml" \
-    --env-file "$STATE/local.env" "$@"
+    "${EXTRA[@]}" --env-file "$STATE/local.env" "$@"
 }
 tool() {
   local net=none

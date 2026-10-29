@@ -8,7 +8,7 @@
 #   docker build --build-context source=/path/to/lws-client targetservers/clients
 
 ARG LWS_CLIENT_REPO=https://github.com/ebremer/lws-client.git
-ARG LWS_CLIENT_REF=99b8b10c148af84743b9db9c8e0d61426c7862f7
+ARG LWS_CLIENT_REF=ff51462745c468afe054726e6705c8af218531e1
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone

@@ -4680,3 +4680,106 @@ and every rule passes.
 harness-fixtures' classes. When harness-driver was built alone, a stale copy came first on the test
 classpath, and the kit's adapter compiled against an old `RefAdapter`. harness-driver now lists
 harness-fixtures first, as harness-mcp and harness-cli already did.
+
+### D-0108 — C8.4: lws-client speaks touchstone-driver/1, and the drives play a careful application
+Phase C8.4 (CLIENT-TESTING.md section 13) is done. Erich settled its scope before it began, each question as
+recommended:
+- lws-client's own MCP driver server moves to the protocol together with its adapters. Touchstone's interop runs
+  use it to drive the clients against real servers, which Touchstone's driver, sessions only, cannot do.
+- lws-client's `run-sessions.mjs` is retired: `touchstone drive` does what it did, from Touchstone's side. It
+  was run once before it went, as the baseline the acceptance compares against.
+- Touchstone's interop moves to the ported lws-client now.
+
+**lws-client** (branch `touchstone-driver-1`, commit `ff51462`, one commit past its `main` at `8ccc83b`; **not
+pushed**). The commit holds:
+- the eleven adapters;
+- the driver server: its hello, the catalog of 28 operation tools, `start_client`'s auth types, inbox answers 202
+  or 401, and a setting `lws.driver.insecure-http`;
+- `check.mjs`, which now checks every response and result against the protocol;
+- `driver/PROTOCOL.md`, now a copy of Touchstone's, with the schema;
+- its README, CONTRIBUTING and CI.
+
+Every adapter gives `cid`, `openid`, `saml` and `bearer`, `search` in place of `search_all`, and `update` with
+`links`. Every adapter passes `check.mjs` 41 of 41 and `touchstone driver check` 34 of 34. Insecure HTTP, which
+`configure` can no longer ask for, comes from the adapter's environment, `LWS_DRIVER_INSECURE_HTTP=1`. The
+nine-agent split (one for `check.mjs`, one for the server and docs, four for the adapters) worked from one shared
+statement of the port's decisions.
+
+**The baseline.** lws-client's runner, at `8ccc83b`, drove all eleven languages through a local session, from an
+image built from that commit. Two things happened in it:
+- The runner never asks for insecure HTTP, and a local session is plain HTTP, so its copy was given
+  `allowInsecureHttp` for that run only.
+- Six languages passed 45 rules each. For the other five (C#, Java, Kotlin, Python and Swift) the runner's
+  scenario stopped at a `get_subscription` the session answered 404, so they passed 31.
+
+No rule failed in any language.
+
+**The acceptance:** `touchstone drive`, with each ported adapter run from an image of `ff51462`, against the same
+service. Every one of the eleven languages:
+- passes 52 of 53 rules and fails none;
+- passes every rule the baseline passed, with no regression;
+- gains 7 rules or 21, among them the four forgeries, the genuine delivery, SAML and the combined update. These
+  are the rules the runner's scenario never reached, or reached with no inbox it could deliver to.
+
+The one rule left untested, `client-query-baseline-after-415`, was untested in the baseline too. No lws-client
+library tries a richer query format first, so no 415 ever happens.
+
+One drive stops at its last step, in every language: `client-token-after-discovery-checks` reads the decoy. The
+libraries refuse the decoy with an `authentication` error that has no HTTP status, and `allowStatus` cannot name
+an error without a status. The rule passes; only its note says the drive stopped, and why.
+
+**The drives play a careful application** (OBSERVATION.md section 12, a clarification). The first drive of a
+ported lws-client, Java, failed three rules the baseline passed, and left a fourth untested:
+- `client-put-conditional` and `client-linkset-write-conditional`: the drives gave `update` and `patch_linkset`
+  no `If-Match`.
+- `client-linkset-put-only-when-advertised`: the drive asked `update_linkset` of a container's linkset, which does
+  not allow PUT.
+- `client-restart-after-refused-page`: the drive never searched again after the 410.
+
+The reference adapter had hidden all four, as it added its own `If-Match`, fell back to PATCH and restarted the
+search inside `search`. A thin adapter, as the protocol wants it, does exactly what it is told. So the drives now
+decide what the drafts leave to an application, as a careful one would:
+- every write carries an `If-Match` from a read;
+- a linkset that does not allow PUT is patched;
+- after a refused page, the drive searches again.
+
+The rules are judged as before, on the client's own requests. Behaviour inside an operation stays the client's:
+following pages, not retrying a lost create, not repeating a refused PUT, and the discovery checks.
+
+One twin had to follow. `LINKSET_PUT_UNADVERTISED` makes its mistake inside `patch_linkset`, as a library that
+writes every linkset with PUT would. `DriverSelfTest` passes as before: 58 tests, the reference with every rule
+and every drive to its end, and every twin exactly on its rules.
+
+**Touchstone's interop:**
+- `targetservers/clients/Dockerfile` pins `ff51462`.
+- `interop.mjs` speaks the new tools: `cid`, errors matched by `http` and status, and `search`.
+- `compose.interop.yaml` gives the driver `LWS_DRIVER_INSECURE_HTTP=1`.
+- `interop-all.sh` gains `--client-source <dir>`, which builds the clients from a local lws-client checkout for a
+  change not yet pushed.
+
+**The interop run** (`interop-all.sh --client-source` with `ff51462`, Docker Desktop on Windows, run
+`20261029T192326Z`) put the eleven ported clients against the seven targets, 77 combinations:
+- *66 work fully.* That includes Factoidal, which D-0102 added to the targets after interop last ran: every
+  client passes all eleven steps against it.
+- *The other eleven are the Community Solid Server.* Every client fails there on the same three steps D-0097
+  recorded for the old adapters: JSON Patch (415), the linkset (PATCH 415, then PUT 405), and notifications
+  (`invalid_target`).
+
+The port changed no result. The run needed two fixes to the script in Git Bash:
+- MSYS rewrote the container path `/tools/lws.mjs`.
+- Turned off, it handed Docker POSIX host paths that Docker read as `D:\d\...`.
+
+`interop-all.sh` now detects Git Bash: it sets `MSYS_NO_PATHCONV=1`, and takes its own paths with `pwd -W`.
+
+**For Erich: push lws-client's `touchstone-driver-1`.** Until `ff51462` is on GitHub, a fresh clone of Touchstone
+cannot build the interop clients from the pin, and needs `--client-source` pointing at a checkout.
+
+**Open, for later:**
+- *Unknown arguments.* PROTOCOL.md section 8 says an adapter answers an argument it does not know `unsupported`.
+  Neither lws-client's adapters nor Touchstone's starter kits do; they ignore it, and the checker does not test
+  it. No driver sends one today, since Touchstone's driver and lws-client's server both check arguments against
+  the schema. It matters as `/1` grows.
+- *An empty `links`.* Every adapter treats `links: []` as a combined update with no Link header. No drive sends
+  one.
+- *An error without a status.* `allowStatus` cannot name one, which makes the decoy's drive stop at its last step
+  (above). An `allowKinds` would need a format change.

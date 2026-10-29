@@ -9,8 +9,9 @@
 //   driver     {"url": the driver's MCP endpoint, "token": its bearer token}
 //   key        the private JWK (EC P-256) of the agent that owns every target's storage
 //   assignee   another agent, to whom the scenario grants access (and revokes it at once)
-//   insecure   true when the authorization servers are on plain HTTP (a private network); the clients refuse that
-//              otherwise
+//   insecure   true when the authorization servers are on plain HTTP (a private network), for the reports; the
+//              driver itself must then run with LWS_DRIVER_INSECURE_HTTP=1, which its adapters pass to the clients
+//              (compose.interop.yaml sets it), as the clients refuse plain HTTP otherwise
 //   targets    [{"name", "label", "language", "version", "source", "base", "storage", "issuer", "agent"}]
 //              base: the container the clients work in, made if it is missing; storage: the storage, which access
 //              tokens name as their audience; issuer: its authorization server; agent: the owner, whose
@@ -52,7 +53,7 @@ const STEPS = [
   { id: 'json-patch', label: 'JSON Patch', detail: 'create JSON with a type, PATCH it with If-Match (application/json-patch+json), read it back' },
   { id: 'linkset', label: 'Linkset', detail: 'read the linkset, add a describedby link (PATCH, or PUT where PATCH is refused), read it back' },
   { id: 'listing', label: 'Container listing', detail: 'seven members, read through every page of the listing' },
-  { id: 'type-search', label: 'Type index and search', detail: 'list_types names the type, search_all finds the resource (where the storage offers both services)' },
+  { id: 'type-search', label: 'Type index and search', detail: 'list_types names the type, search finds the resource (where the storage offers both services)' },
   { id: 'notifications', label: 'Notifications', detail: 'subscribe a webhook inbox, update, receive a delivery the client verifies, unsubscribe (where offered)' },
   { id: 'access', label: 'Access requests and grants', detail: 'request access for itself, read it; grant another agent access, read it, revoke it; cancel the request (where the storage offers both services)' },
   { id: 'delete', label: 'Delete recursively', detail: 'delete the container with everything in it; the resource is then gone' },
@@ -184,11 +185,11 @@ async function cell (mcp, target, language) {
   let client, inbox
   try {
     const started = await mcp.call('start_client', {
-      language, authType: 'selfSigned', agent: target.agent, privateJwk: config.key, kid: `${target.agent}#key`,
-      allowInsecureHttp: config.insecure === true, label: `interop ${target.name}`,
+      language, authType: 'cid', agent: target.agent, privateJwk: config.key, kid: `${target.agent}#key`,
+      label: `interop ${target.name}`,
     })
     client = started.client
-    result.library = started.library ?? ''
+    result.library = [started.name, started.version].filter(Boolean).join(' ')
     inbox = (await mcp.call('open_inbox', { client })).inbox
   } catch (e) {
     result.error = `the client did not start: ${e.message}`
@@ -202,15 +203,18 @@ async function cell (mcp, target, language) {
     if (opts.verbose) log(`${name} -> ${r.ok ? 'ok' : `${r.error.kind} ${r.error.status ?? ''}`}`)
     if (!r.ok) {
       const e = r.error
-      throw Object.assign(new Failure(`${name}: ${e.kind}${e.status ? ` ${e.status}` : ''}${e.message ? `: ${e.message}` : ''}`), { kind: e.kind })
+      throw Object.assign(new Failure(`${name}: ${e.kind}${e.status ? ` ${e.status}` : ''}${e.message ? `: ${e.message}` : ''}`),
+        { kind: e.kind, status: e.status })
     }
     return r.result
   }
-  // An operation that must fail with one of the error kinds given.
-  const refused = async (name, args, ...kinds) => {
+  // An operation that must fail with an HTTP error of one of the statuses given (touchstone-driver/1: kind http).
+  const refused = async (name, args, ...statuses) => {
     const r = await mcp.call(name, { client, ...args })
-    if (r.ok) throw new Failure(`${name} succeeded; expected ${kinds.join(' or ')}`)
-    if (!kinds.includes(r.error.kind)) throw new Failure(`${name}: ${r.error.kind} ${r.error.status ?? ''}; expected ${kinds.join(' or ')}`)
+    if (r.ok) throw new Failure(`${name} succeeded; expected ${statuses.join(' or ')}`)
+    if (r.error.kind !== 'http' || !statuses.includes(r.error.status)) {
+      throw new Failure(`${name}: ${r.error.kind} ${r.error.status ?? ''}; expected ${statuses.join(' or ')}`)
+    }
     return r.error
   }
   const check = (ok, message) => { if (!ok) throw new Failure(message) }
@@ -221,7 +225,7 @@ async function cell (mcp, target, language) {
       const detail = await fn()
       steps[id] = { outcome: 'passed', detail: detail ?? '' }
     } catch (e) {
-      const outcome = e instanceof Inapplicable ? 'inapplicable' : e.kind === 'Unsupported' ? 'unsupported' : 'failed'
+      const outcome = e instanceof Inapplicable ? 'inapplicable' : e.kind === 'unsupported' ? 'unsupported' : 'failed'
       steps[id] = { outcome, detail: e.message }
       if (outcome !== 'inapplicable') log(`${id}: ${outcome}: ${e.message}`)
       if (fatal && outcome !== 'inapplicable') stop = true
@@ -255,7 +259,7 @@ async function cell (mcp, target, language) {
     const unchanged = await op('read', { url: hello, ifNoneMatch: etag })
     check(unchanged.notModified, 'If-None-Match with the current ETag did not answer 304')
     await op('update', { url: hello, body: { text: 'Hello again' }, contentType: 'text/plain', ifMatch: etag })
-    await refused('update', { url: hello, body: { text: 'stale' }, contentType: 'text/plain', ifMatch: etag }, 'PreconditionFailedError')
+    await refused('update', { url: hello, body: { text: 'stale' }, contentType: 'text/plain', ifMatch: etag }, 412)
   })
   await step('json-patch', async () => {
     profile = (await op('create', { container, body: { json: { name: 'Alice', age: 30 } }, slug: 'profile.json', types: [PERSON] })).location
@@ -273,7 +277,7 @@ async function cell (mcp, target, language) {
     try {
       await op('patch_linkset', { linksetUrl: linkset.url, patch: add, ifMatch: linkset.etag })
     } catch (e) {
-      if (!['MethodNotAllowedError', 'UnsupportedMediaTypeError'].includes(e.kind)) throw e
+      if (!(e.kind === 'http' && [405, 415].includes(e.status))) throw e
       const doc = structuredClone(linkset.linkset)
       doc.linkset[0].describedby = [{ href: DESCRIBEDBY }]
       try {
@@ -297,8 +301,7 @@ async function cell (mcp, target, language) {
     const names = () => items.map((i) => i.id.slice(container.length) || i.id).join(', ')
     check(ids.size === 7, `${ids.size} members listed, not 7: ${names()}`)
     check(ids.has(hello) && (!profile || ids.has(profile)), 'the listing lacks a resource made earlier')
-    const page = await op('read_container', { url: container })
-    return page.next ? `paged (${page.items.length} on the first page)` : 'one page'
+    return `${ids.size} members`
   })
   await step('type-search', async () => {
     const index = service('TypeIndexService')
@@ -309,12 +312,12 @@ async function cell (mcp, target, language) {
     let found = []
     for (let i = 0; i < 10; i++) {   // an index may take a moment to catch up
       types = (await op('list_types', { serviceUrl: index })).types ?? []
-      found = (await op('search_all', { serviceUrl: search, query: { type: [PERSON] } })).items ?? []
+      found = (await op('search', { serviceUrl: search, query: { type: [PERSON] } })).items ?? []
       if (types.some((t) => (t.type ?? t.id ?? t) === PERSON) && found.some((i) => i.id === profile)) return ''
       await sleep(1000)
     }
     check(types.some((t) => (t.type ?? t.id ?? t) === PERSON), 'list_types does not name the type')
-    check(found.some((i) => i.id === profile), 'search_all does not find the resource')
+    check(found.some((i) => i.id === profile), 'search does not find the resource')
   })
   await step('notifications', async () => {
     const notifications = service('NotificationService')
@@ -357,7 +360,7 @@ async function cell (mcp, target, language) {
   })
   await step('delete', async () => {
     await op('delete', { url: container, recursive: true })
-    await refused('read', { url: hello }, 'NotFoundError', 'GoneError')
+    await refused('read', { url: hello }, 404, 410)
     container = undefined
   })
 

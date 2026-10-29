@@ -63,9 +63,12 @@ entries:
     drive:
       - op: read_linkset
         args: {url: "${drive.container}"}
-        capture: {linksetUrl: /url, linkset: /linkset}
-      - op: update_linkset
-        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        capture: {linksetUrl: /url, etag: /etag}
+      - op: patch_linkset
+        args:
+          linksetUrl: "${linksetUrl}"
+          patch: [{op: add, path: /linkset/0/describedby, value: [{href: "https://schema.org/Collection"}]}]
+          ifMatch: "${etag}"
         allowStatus: [405]
     observe:
       role: linkset
@@ -92,13 +95,17 @@ entries:
       - op: create
         args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
         capture: {note: /location}
+      - op: read
+        args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
       - op: read_linkset
         args: {url: "${note}"}
-        capture: {linksetUrl: /url}
+        capture: {linksetUrl: /url, linksetEtag: /etag}
       - op: patch_linkset
         args:
           linksetUrl: "${linksetUrl}"
           patch: [{op: add, path: /linkset/0/describedby, value: [{href: "https://schema.org/NoteDigitalDocument"}]}]
+          ifMatch: "${linksetEtag}"
     observe:
       role: linkset
       method: PATCH
@@ -125,8 +132,11 @@ entries:
       - op: create
         args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
         capture: {note: /location}
+      - op: read
+        args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
       - op: update
-        args: {url: "${note}", body: {text: "a note, edited"}, contentType: text/plain}
+        args: {url: "${note}", body: {text: "a note, edited"}, contentType: text/plain, ifMatch: "${etag}"}
     observe:
       role: dataResource
       method: PUT
@@ -649,8 +659,11 @@ entries:
       - op: create
         args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
         capture: {note: /location}
-      - op: delete
+      - op: read
         args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
+      - op: delete
+        args: {url: "${note}", ifMatch: "${etag}"}
     observe:
       role: [dataResource, container]
       method: DELETE
@@ -758,9 +771,12 @@ entries:
         capture: {box: /location}
       - op: create
         args: {container: "${box}", body: {text: "inside"}, contentType: text/plain}
+      - op: read
+        args: {url: "${box}", accept: application/lws+json}
+        capture: {etag: /metadata/etag}
       - startTask: true
       - op: delete
-        args: {url: "${box}", recursive: true}
+        args: {url: "${box}", recursive: true, ifMatch: "${etag}"}
     observe:
       method: DELETE
       role: container
@@ -803,12 +819,16 @@ entries:
       - op: create
         args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
         capture: {note: /location}
+      - op: read
+        args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
       - startTask: true
       - op: update
         args:
           url: "${note}"
           body: {text: "a note, edited with its type"}
           contentType: text/plain
+          ifMatch: "${etag}"
           links: [{href: "https://schema.org/NoteDigitalDocument", rel: type}]
     observe:
       role: dataResource
@@ -851,12 +871,15 @@ entries:
       - op: create
         args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
         capture: {note: /location}
+      - op: read
+        args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
       - op: read_linkset
         args: {url: "${note}"}
-        capture: {linksetUrl: /url, linkset: /linkset}
+        capture: {linksetUrl: /url, linkset: /linkset, linksetEtag: /etag}
       - startTask: true
       - op: update_linkset
-        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}", ifMatch: "${linksetEtag}"}
         allowStatus: [405]
       - op: read_linkset
         args: {url: "${note}"}

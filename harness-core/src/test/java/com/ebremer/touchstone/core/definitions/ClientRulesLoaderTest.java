@@ -87,13 +87,15 @@ class ClientRulesLoaderTest {
     void aRulesDriveIsLoadedAsWritten() {
         ClientRules rules = DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG);
         List<DriveStep> drive = rules.find("client-no-repeat-after-405-415").orElseThrow().drive();
+        // A careful application (D-0108): it reads before it writes, and writes with If-Match.
         assertThat(drive).extracting(s -> s.isOperation() ? s.op() : s.startTask() ? "startTask" : "wait")
-                .containsExactly("create", "read_linkset", "startTask", "update_linkset", "read_linkset");
+                .containsExactly("create", "read", "read_linkset", "startTask", "update_linkset", "read_linkset");
         assertThat(drive.get(0).args().path("container").asText()).isEqualTo("${drive.container}");
         assertThat(drive.get(0).capture()).containsEntry("note", "/location");
-        assertThat(drive.get(1).capture()).containsEntry("linksetUrl", "/url").containsEntry("linkset", "/linkset");
-        assertThat(drive.get(3).allows(405)).isTrue();
-        assertThat(drive.get(3).allows(404)).isFalse();
+        assertThat(drive.get(2).capture()).containsEntry("linksetUrl", "/url").containsEntry("linkset", "/linkset");
+        assertThat(drive.get(4).args().path("ifMatch").asText()).isEqualTo("${linksetEtag}");
+        assertThat(drive.get(4).allows(405)).isTrue();
+        assertThat(drive.get(4).allows(404)).isFalse();
         assertThat(rules.find("client-no-blind-retry-of-create").orElseThrow().drive().get(1).allows(503)).isTrue();
         assertThat(rules.find("client-restart-after-refused-page").orElseThrow().drive())
                 .anySatisfy(s -> assertThat(s.waitSeconds()).isEqualTo(4));

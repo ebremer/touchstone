@@ -511,6 +511,10 @@ public final class RefAdapter {
     private JsonNode patchLinkset(JsonNode args) throws Failure, IOException, InterruptedException {
         URI url = url(args, "linksetUrl");
         Reply known = linksets.containsKey(url.toString()) ? linksets.get(url.toString()) : linkset(url);
+        if (flaw == Flaw.LINKSET_PUT_UNADVERTISED) {
+            // The twin updates every linkset with PUT, whatever the linkset advertises.
+            return update(linksetWrite("PUT", url, LINKSET_JSON, known.body(), args, known));
+        }
         if (flaw == Flaw.LINKSET_PATCH_FORMAT_UNADVERTISED) {
             return update(linksetWrite("PATCH", url, "application/merge-patch+json", "{}", args, known));
         }

@@ -764,11 +764,15 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
     *Done:* every kit's stub passes the checker, 34 of 34, built and run in its CI container here;
     the workflow runs the same steps. In `DriverSelfTest`, the Java kit's files, compiled as they
     are around the reference client, pass every rule of the C8.1 drive.
-  - **C8.4: lws-client and the docs.** lws-client's adapters move to `touchstone-driver/1`, in
-    that repository, by the agent working on Touchstone (D-0104). The docs say a client can be driven: the methodology, "Testing a client",
+  - **C8.4: lws-client and the docs. Done 2026-10-29 (D-0108).** lws-client's adapters move to
+    `touchstone-driver/1`, in that repository, by the agent working on Touchstone (D-0104). The docs say a client can be driven: the methodology, "Testing a client",
     and the MCP page.
     *Done when:* `touchstone drive` drives each of lws-client's languages, and every rule that
     lws-client's own runner tries ends with the same outcome.
+    *Done 2026-10-29 (D-0108):* lws-client `ff51462` speaks the protocol: its eleven adapters, its
+    driver server and its adapter check. Driven by `touchstone drive`, every language passes 52 of the
+    53 rules, every rule lws-client's own runner passed among them, and fails none. The docs say a
+    client can be driven. Its drives now play a careful application, which a thin adapter needs.
 
 ## 14. Driven clients (phase C8, D-0103)
 

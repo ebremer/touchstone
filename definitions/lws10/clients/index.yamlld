@@ -101,6 +101,9 @@ entries:
       - startTask: true
       - op: search
         args: {serviceUrl: "${service.TypeSearchService}", query: {}}
+        allowStatus: [404, 410]
+      - op: search
+        args: {serviceUrl: "${service.TypeSearchService}", query: {}}
     observe:
       role: [typeSearch, typeIndex, searchPage]
       after:

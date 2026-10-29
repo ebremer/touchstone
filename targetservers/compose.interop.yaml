@@ -17,6 +17,9 @@ services:
       LWS_DRIVER_TOKEN: ${LWS_DRIVER_TOKEN:?interop-all.sh sets LWS_DRIVER_TOKEN}
       LWS_DRIVER_ALLOWED_TARGETS: http://router:8080/,http://factoidal:8080/   # factoidal: its own origin (compose.local.yaml)
       LWS_DRIVER_PUBLIC_BASE_URL: http://clients:18095
+      # The targets' authorization servers are on plain HTTP, on this private network: every adapter the driver
+      # starts inherits this, and lets its client exchange credentials there (touchstone-driver/1, D-0108).
+      LWS_DRIVER_INSECURE_HTTP: "1"
 
   halcyon:
     environment:

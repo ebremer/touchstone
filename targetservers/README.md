@@ -174,6 +174,11 @@ against the servers, and each step of each), `summary.md` and `results.json`.
 - **Time.** The scenario takes a few minutes for all 66 combinations, the servers' starting a few more. The clients
   image took 3½ minutes to build on a large cloud VM with nothing cached (eleven toolchains).
 - `--keep`, `--no-build`, `--no-cache` and `--project` (default `lws-local-interop`) are as for `run-all.sh`.
+- `--client-source <dir>` builds the clients from a local lws-client checkout instead of the commit
+  `clients/Dockerfile` pins, for a change to lws-client that is not pushed yet.
+- The clients speak `touchstone-driver/1` (`driver/PROTOCOL.md`) since lws-client `ff51462` (D-0108). The targets'
+  authorization servers are on plain HTTP on the compose network, so the driver runs with
+  `LWS_DRIVER_INSECURE_HTTP=1`, which its adapters pass to the clients.
 
 `tools/interop.mjs` also runs against a deployment: its configuration, described at the top of the file, names the
 driver, the agent's key and each target, wherever they are. A set of targets for it can run beside the set Touchstone
