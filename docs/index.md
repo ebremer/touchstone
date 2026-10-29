@@ -56,6 +56,7 @@ A touchstone is the dark stone assayers once used to test gold against a known s
 | Run the suite against every known LWS server implementation | [Every known LWS server](getting-started.md#every-known-lws-server) |
 | Get a conformance report on every push to your server's repository | [Distribution](distribution.md) |
 | Let an AI agent run the suite and fix your server | [MCP server](mcp.md) |
+| Understand how Touchstone tests servers and clients, and what a result claims | [Methodology](methodology.md) |
 | Understand how a run works | [How it works](how-it-works.md) |
 | Write or review tests | [Writing tests](writing-tests.md) and [Requirements catalog](catalog.md) |
 | Understand the YAML-LD test format, and how it relates to the LWS test group's suite | [YAML-LD definitions](definitions.md) |
