@@ -13,8 +13,8 @@ server tests (`EXECUTION.md`). None of those changes anything an earlier rule re
 follows the LWS drafts of 19 October 2026, in which a 401 names protected resource metadata
 (RFC 9728) and links to a storage instead of naming a realm: `discoveryValid` replaces
 `realmContainsRequest` (section 4.10), the decoy's 401 links to a storage of its own, and the
-roles `protectedResourceMetadata` and `decoyStorage` are new (section 4.2). Section 12
-proposes format 0.16.0's `drive`, which waits on Gate D (D-0103) and nothing implements yet. This
+roles `protectedResourceMetadata` and `decoyStorage` are new (section 4.2). Section 12,
+format 0.16.0's `drive`, was frozen at Gate D on 2026-10-29 (D-0104); phase C8.1 implements it. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -658,10 +658,10 @@ In
 the results, such a rule's `inapplicableBecause` is `proxy`; for an area left out it is `area`.
 Starting its task is refused with 409.
 
-## 12. Driving a rule (proposed, format 0.16.0, Gate D)
+## 12. Driving a rule (format 0.16.0)
 
-**Proposed on 2026-10-29 (DECISIONS.md D-0103). Nothing implements it until Gate D freezes it,
-together with the driver protocol, [`driver/PROTOCOL.md`](../driver/PROTOCOL.md).**
+**Frozen on 2026-10-29 at Gate D (DECISIONS.md D-0103, D-0104), together with the driver
+protocol, [`driver/PROTOCOL.md`](../driver/PROTOCOL.md).**
 
 A rule may carry `drive`: the steps that make a client do what the rule judges, run by Touchstone's
 client driver through the client's adapter (CLIENT-TESTING.md section 14). A drive asserts

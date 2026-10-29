@@ -1,7 +1,7 @@
 # The client driver protocol, `touchstone-driver/1`
 
-**Status: Proposed, 2026-10-29 (DECISIONS.md D-0103). Freezing it is Gate D.** Until then
-nothing is built on it.
+**Status: frozen on 2026-10-29, at Gate D (DECISIONS.md D-0103, D-0104).** A change needs a
+DECISIONS.md entry, and only the additions of section 8 stay within `/1`.
 
 Touchstone can drive an LWS client through a client session instead of waiting for a person
 to (CLIENT-TESTING.md section 14). It does this through an **adapter**: a small program, written

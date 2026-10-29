@@ -35,8 +35,8 @@ These follow D-0075. Do not relitigate them without a new decision.
 
 1. **The developer drives the client by default.** The only interface Touchstone judges is
    HTTP, which every LWS client already speaks: the client uses the session's storage, and
-   the developer's own scripts or CI use the session API (§4.4). Since D-0103 (proposed,
-   Gate D) Touchstone may also drive a client, through an adapter the client's own developers
+   the developer's own scripts or CI use the session API (§4.4). Since D-0103 (Gate D
+   closed, D-0104) Touchstone may also drive a client, through an adapter the client's own developers
    write to a protocol Touchstone owns (§14). That is a second way in, never a requirement: a
    client without an adapter is tested as before.
 2. **Touchstone implements the server side itself.** The session deployment grows out of
@@ -666,7 +666,7 @@ The phases run in order, and each has an acceptance criterion. **Gate C:** the
 Gate 2 did for the server-side schema. **Gate D:** the driver protocol
 ([`driver/PROTOCOL.md`](driver/PROTOCOL.md) and its schema) and format 0.16.0's `drive`
 ([OBSERVATION.md](definitions/OBSERVATION.md) section 12) wait for Erich's review before any of
-C8 is built (D-0103).
+C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
 
 - **C0: catalog. Done 2026-10-05 (D-0076).** Every requirement names the roles it binds,
   `touchstone:appliesTo`, one value per role:
@@ -737,7 +737,8 @@ C8 is built (D-0103).
   judge, and each of the 30 twins whose mistake shows without a trap fails exactly its aimed
   rules. For each of the server's requests, the proxy inferred the role the server itself
   gave it. `ClientSessionToolsTest` reads a live session through the three tools.
-- **C8: driven clients** (§14). **Proposed 2026-10-29 (D-0103); waits on Gate D.**
+- **C8: driven clients** (§14). **Proposed 2026-10-29 (D-0103); Gate D closed the same day
+  (D-0104).**
   - **C8.1: the driver and the drives.** `harness-driver`, `touchstone drive`, the reference
     adapter, a `drive` for every rule that other rules' traffic does not try, and
     `DriverSelfTest`.
@@ -752,14 +753,14 @@ C8 is built (D-0103).
     *Done when:* every kit's stub passes `touchstone driver check` in CI, and an adapter built
     from the Java kit over the reference client passes the drive of C8.1.
   - **C8.4: lws-client and the docs.** lws-client's adapters move to `touchstone-driver/1`, in
-    that repository. The docs say a client can be driven: the methodology, "Testing a client",
+    that repository, by the agent working on Touchstone (D-0104). The docs say a client can be driven: the methodology, "Testing a client",
     and the MCP page.
     *Done when:* `touchstone drive` drives each of lws-client's languages, and every rule that
     lws-client's own runner tries ends with the same outcome.
 
 ## 14. Driven clients (phase C8, D-0103)
 
-**Proposed on 2026-10-29. Nothing here is built until Gate D closes.**
+**Proposed on 2026-10-29 (D-0103); Gate D closed the same day (D-0104).**
 
 Touchstone can drive a client instead of waiting for a person to. The client's own developers
 write an **adapter**: a small program in the client's language that runs operations it is sent,

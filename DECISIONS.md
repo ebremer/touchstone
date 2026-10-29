@@ -8,7 +8,7 @@ Gate status:
 - **Gate 1: CLOSED — Erich approved the 15 seed requirements on 2026-07-16; mass extraction authorized (D-0013).**
 - **Gate 2: CLOSED — manifest JSON Schema v1 frozen on 2026-07-16 (D-0013).**
 - **Gate C: CLOSED — Erich approved the client rule format on 2026-10-05; format 0.8.0 frozen (D-0079).**
-- **Gate D: OPEN — the driver protocol `touchstone-driver/1` and format 0.16.0's `drive` wait for Erich's review (D-0103).**
+- **Gate D: CLOSED — Erich approved the driver protocol `touchstone-driver/1` and format 0.16.0's `drive` on 2026-10-29 (D-0104).**
 
 ## 2026-07-16
 
@@ -4425,3 +4425,22 @@ exception.
 
 The documentation changes when C8 is built. Until then the methodology's "Touchstone never drives
 the client" is still true.
+
+### D-0104 — Gate D closed: `touchstone-driver/1` and format 0.16.0's `drive` frozen
+Erich reviewed the questions D-0103 left open and settled each as recommended:
+1. **The operations** of PROTOCOL.md section 5 stand, without the lws-client operations section 7
+   drops. Operations can be added within `/1`; none can be removed.
+2. **The inbox:** the driver hosts it and the adapter verifies each delivery (`verify_notification`).
+   An inbox the client hosts itself can come later, within `/1`.
+3. **A drive's default identity** is alice: with `cid` when the client supports it, otherwise
+   `bearer`.
+4. **Starter kits for all ten languages.** Their runners may start from lws-client's adapters,
+   which already do the framing in each language; lws-client is MIT-licensed, so a kit that does
+   keeps its notice. CI checks them in a container per toolchain when `driver/` changes, outside
+   `./mvnw verify`.
+5. **lws-client's move to `touchstone-driver/1`** is done by the agent working on Touchstone, in
+   the lws-client repository, at C8.4.
+
+Frozen: [`driver/PROTOCOL.md`](driver/PROTOCOL.md), `driver/protocol.schema.json`
+(`$id …/schema/driver/1`) and OBSERVATION.md section 12. Phase C8.1 starts: format 0.16.0 in the
+definitions schema and the lints, `harness-driver`, the reference adapter and `DriverSelfTest`.
