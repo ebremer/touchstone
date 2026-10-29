@@ -20,15 +20,15 @@ below is reachable as soon as it starts. A second set can be published beside th
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `6f3dbe1` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.6` `1999965` | `/targets/lwsd/` | `/data/as-key.json` |
-| `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core) `v0.18.0` `788ee43`, as the npm package `@factoidal/core` 0.18.0 | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
+| `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core) `v0.26.0` `7a58d95`, as the npm package `@factoidal/core` 0.26.0 | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
 (`HarnessIssuedTokens`) reads the key from there, for example with `docker compose exec`.
 
-Factoidal 0.18.0 writes root-relative references (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`), which are
-right only when its storage is at the root of an origin: behind the router at `/targets/factoidal/` they lose the
-prefix, and it answers 404 to a prefixed path, so no `$prefix_mode` helps. `run-all.sh` and `interop-all.sh` test it
-at `http://factoidal:8080/` on their network instead (its `touchstone.env`, `TS_URL`; `compose.local.yaml`), and a
+Factoidal writes root-relative references (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`; 0.26.0 as 0.18.0), which
+are right only when its storage is at the root of an origin: behind the router at `/targets/factoidal/` they lose the
+prefix, and it answers 404 to a prefixed path, so no `$prefix_mode` helps. `run-all.sh` and `interop-all.sh` test it at
+`http://factoidal:8080/` on their network instead (its `touchstone.env`, `TS_URL`; `compose.local.yaml`), and a
 deployment needs an origin of its own for it until it takes a base URL with a path (D-0102). It is in the compose
 profile `own-origin`, so a plain `docker compose up -d` leaves it out; naming it starts it.
 

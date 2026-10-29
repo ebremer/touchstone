@@ -53,7 +53,7 @@ services:
 
   factoidal:
     environment:
-      # At the root of an origin of its own (its touchstone.env, TS_URL): 0.18.0's root-relative references are wrong
+      # At the root of an origin of its own (its touchstone.env, TS_URL): its root-relative references are wrong
       # under the router's path prefix.
       LWS_PUBLIC_URL: http://factoidal:8080
       # Plain HTTP and private addresses for identity documents (--allow-http --allow-private-fetch).
