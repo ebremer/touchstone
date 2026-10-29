@@ -1,13 +1,14 @@
 # syntax=docker/dockerfile:1
 # sparq-lws-core (github.com/sparq-org/sparq, crates/sparq-lws-core) in its W3C LWS 1.0 mode as a target server:
-# one storage at the root, with its embedded authorization server. The LWS mode comes from sparq PR #6650, which
-# SPARQ_REF names. See ../README.md for the contract and entrypoint.sh for the settings.
+# one storage at the root, with its embedded authorization server. The LWS mode is on sparq's main branch (PR #6650
+# and the PRs it was split into, merged by 11 October 2026). See ../README.md for the contract and entrypoint.sh for
+# the settings.
 #
 # The source is the repository at SPARQ_REF. To build a local checkout instead:
 #   docker build --build-context source=/path/to/sparq targetservers/sparq-lws
 
 ARG SPARQ_REPO=https://github.com/sparq-org/sparq.git
-ARG SPARQ_REF=5501efa118ca3ee233fdaf7c550974cf25bb0b20
+ARG SPARQ_REF=01b5ad8cf687dd9329a3f4301e8a314fa0738cc5
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone
