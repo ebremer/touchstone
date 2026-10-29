@@ -13,7 +13,8 @@ server tests (`EXECUTION.md`). None of those changes anything an earlier rule re
 follows the LWS drafts of 19 October 2026, in which a 401 names protected resource metadata
 (RFC 9728) and links to a storage instead of naming a realm: `discoveryValid` replaces
 `realmContainsRequest` (section 4.10), the decoy's 401 links to a storage of its own, and the
-roles `protectedResourceMetadata` and `decoyStorage` are new (section 4.2). This
+roles `protectedResourceMetadata` and `decoyStorage` are new (section 4.2). Section 12
+proposes format 0.16.0's `drive`, which waits on Gate D (D-0103) and nothing implements yet. This
 is the contract the client service (`harness-clients`) must implement to judge a client's
 traffic against the client rules, the `ObservationTest` entries under `lws10/clients/`.
 `EXECUTION.md` is the contract for server tests, where Touchstone plays the client. Here the
@@ -656,3 +657,100 @@ when any of these holds:
 In
 the results, such a rule's `inapplicableBecause` is `proxy`; for an area left out it is `area`.
 Starting its task is refused with 409.
+
+## 12. Driving a rule (proposed, format 0.16.0, Gate D)
+
+**Proposed on 2026-10-29 (DECISIONS.md D-0103). Nothing implements it until Gate D freezes it,
+together with the driver protocol, [`driver/PROTOCOL.md`](../driver/PROTOCOL.md).**
+
+A rule may carry `drive`: the steps that make a client do what the rule judges, run by Touchstone's
+client driver through the client's adapter (CLIENT-TESTING.md section 14). A drive asserts
+nothing. The rule is judged on the session's traffic exactly as when a person drives, and a session
+a person drives ignores `drive` altogether.
+
+`drive` sits beside `task`, not inside it: 42 of the 53 rules have no task, and the passive ones
+need driving too. A rule with a task starts it from its drive (below).
+
+```yaml
+  - id: "#client-no-repeat-after-405-415"
+    # ... the rest of the rule, as in lws10/clients/core.yamlld ...
+    task:
+      prompt: >-
+        Replace a data resource's linkset with PUT. The session will refuse the PUT once with
+        405, as a server that stopped supporting it would.
+      arm: methodNotAllowed
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {json: {name: Alice}}, slug: profile.json}
+        capture: {profile: /location}
+      - op: read_linkset
+        args: {url: "${profile}"}
+        capture: {linksetUrl: /url, linkset: /linkset}
+      - startTask: true
+      - op: update_linkset
+        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        allowStatus: [405]
+      - op: read_linkset
+        args: {url: "${profile}"}
+```
+
+**Steps.** Each step is one of:
+- **an operation:** `op`, a `touchstone-driver/1` operation other than `shutdown`; `args`, its
+  arguments; optionally `capture` and `allowStatus`;
+- **`startTask: true`**, which starts the rule's task, arming its fault if it has one (section 6.1).
+  Only a rule with a task may have it, at most once. A rule with a task and no `startTask` step
+  starts its task before its first step;
+- **`waitSeconds`**, an integer from 1 to 10, for the lagging index (CLIENT-TESTING.md section 6.1).
+
+**Templates.** Strings inside `args` are templates, with the syntax and JSON-value rule of
+`EXECUTION.md` section 3. This is the only place a rule may contain `${`. The variables are:
+
+| Variable | Value |
+|---|---|
+| `storage` | the session's storage URL, the only URL a client is given |
+| `drive.container` | a container the client created for this rule's drive, in the storage root, before the first step |
+| `drive.inbox` | the inbox the driver hosts for the client (`driver/PROTOCOL.md` section 5.2) |
+| `identity.<name>.cidUrl` | the agent of the session identity `alice` or `bob` |
+| `credential.<name>.privateJwk`, `credential.<name>.kid` | the identity's key and its key id, from the session API, for `configure` with `cid` |
+| `credential.<name>.token` | a fresh access token from the session API, for `configure` with `bearer` |
+| `credential.<name>.idToken` | an ID Token from the session's OpenID Provider, the driver signing in as the identity |
+| `credential.<name>.samlAssertion` | an assertion about the identity from the session's SAML identity provider |
+| `uuid` | a fresh random UUID, each time it is evaluated |
+| *captured* | bound by `capture` in an earlier step of the same drive |
+
+**Captures.** `capture` maps a name to a JSON Pointer into the step's result. Names match
+`^[a-z][A-Za-z0-9]*$`, and a capture never rebinds a name. Captures live for one rule's drive.
+
+**Stopping.** A step that ends in an error stops the drive, unless the error has a `status` that
+`allowStatus` lists (an integer, or a class such as `"4xx"`). So does a capture whose pointer
+selects nothing. A drive that stops leaves its rule's outcome to the traffic, as always: the
+driver notes beside the rule where its drive stopped and why (the step, the error's kind and
+status), and the note never decides anything. A drive that needs an operation the client's hello
+does not list never starts, and the note says which.
+
+**Running.** For a driven session, the driver:
+1. starts the client's adapter, takes its hello, and names the session's client under test after
+   its `client`;
+2. configures the client as alice, with `cid` if its hello lists it, otherwise with `bearer` and a
+   token from the session API; and sends `discover_storage` for `storage`;
+3. for each rule in scope, in manifest order: configures the client as in 2 again if the previous
+   drive reconfigured it, creates `drive.container` through the client, and runs the drive;
+4. stops the adapter with `shutdown`, and reads the results.
+
+Every exchange of a driven session is judged by every rule, its setup included, so most passive
+rules are tried by other rules' traffic and need no drive of their own. The self-test shows that
+every rule ends tried (CLIENT-TESTING.md section 14).
+
+**EARL.** A driven session's assertions have `earl:mode earl:automatic`: nobody drives the client
+by hand, and Touchstone drives it and judges.
+
+**Lint.** In addition to section 2:
+- every `op` is an operation of `driver/protocol.schema.json`, other than `shutdown`, and its
+  `args` name only arguments of that operation and every required one;
+- `${` appears only in `drive` steps' `args`, and only with the variables above or names captured
+  by an earlier step;
+- `startTask` appears only in a rule with a task, at most once;
+- `waitSeconds` is from 1 to 10.
+
+A proxy session (section 11) is not driven in format 0.16.0: the session's identities and
+credentials do not exist on the real server behind it.

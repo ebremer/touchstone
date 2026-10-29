@@ -33,10 +33,12 @@ of them show in the requests a server receives. §11 lists them.
 
 These follow D-0075. Do not relitigate them without a new decision.
 
-1. **The developer drives the client; Touchstone never does.** There are no adapters, no
-   per-language bindings, and no MCP-controlled client harness. The only interface is
+1. **The developer drives the client by default.** The only interface Touchstone judges is
    HTTP, which every LWS client already speaks: the client uses the session's storage, and
-   the developer's own scripts or CI use the session API (§4.4).
+   the developer's own scripts or CI use the session API (§4.4). Since D-0103 (proposed,
+   Gate D) Touchstone may also drive a client, through an adapter the client's own developers
+   write to a protocol Touchstone owns (§14). That is a second way in, never a requirement: a
+   client without an adapter is tested as before.
 2. **Touchstone implements the server side itself.** The session deployment grows out of
    `RefLwsServer` and `RefAuthorizationServer` in `harness-fixtures`. Touchstone takes no
    dependency on lws-server, Halcyon or any other implementation. It grades those servers,
@@ -661,7 +663,10 @@ So client sessions judge 64 of the 79: 56 of the 58 MUSTs, 6 of the 8 SHOULDs, 2
 
 The phases run in order, and each has an acceptance criterion. **Gate C:** the
 `ObservationTest` schema waits for Erich's review before the first rule is written, as
-Gate 2 did for the server-side schema.
+Gate 2 did for the server-side schema. **Gate D:** the driver protocol
+([`driver/PROTOCOL.md`](driver/PROTOCOL.md) and its schema) and format 0.16.0's `drive`
+([OBSERVATION.md](definitions/OBSERVATION.md) section 12) wait for Erich's review before any of
+C8 is built (D-0103).
 
 - **C0: catalog. Done 2026-10-05 (D-0076).** Every requirement names the roles it binds,
   `touchstone:appliesTo`, one value per role:
@@ -732,3 +737,142 @@ Gate 2 did for the server-side schema.
   judge, and each of the 30 twins whose mistake shows without a trap fails exactly its aimed
   rules. For each of the server's requests, the proxy inferred the role the server itself
   gave it. `ClientSessionToolsTest` reads a live session through the three tools.
+- **C8: driven clients** (§14). **Proposed 2026-10-29 (D-0103); waits on Gate D.**
+  - **C8.1: the driver and the drives.** `harness-driver`, `touchstone drive`, the reference
+    adapter, a `drive` for every rule that other rules' traffic does not try, and
+    `DriverSelfTest`.
+    *Done when:* the reference adapter, driven with nobody at the page, leaves no rule
+    untested, and every drive runs to its end; behind the same adapter, each of the reference
+    client's twins fails exactly the rules aimed at it.
+  - **C8.2: the MCP tools** (§14.2), in harness-mcp's stdio profile.
+    *Done when:* an MCP client over stdio drives the reference adapter through a session rule by
+    rule, runs one operation, starts a task, arms a fault and reads the findings; the tools refuse
+    an unregistered client or session; and the hosted profile lists none of them.
+  - **C8.3: the checker and the starter kits** (§14.4).
+    *Done when:* every kit's stub passes `touchstone driver check` in CI, and an adapter built
+    from the Java kit over the reference client passes the drive of C8.1.
+  - **C8.4: lws-client and the docs.** lws-client's adapters move to `touchstone-driver/1`, in
+    that repository. The docs say a client can be driven: the methodology, "Testing a client",
+    and the MCP page.
+    *Done when:* `touchstone drive` drives each of lws-client's languages, and every rule that
+    lws-client's own runner tries ends with the same outcome.
+
+## 14. Driven clients (phase C8, D-0103)
+
+**Proposed on 2026-10-29. Nothing here is built until Gate D closes.**
+
+Touchstone can drive a client instead of waiting for a person to. The client's own developers
+write an **adapter**: a small program in the client's language that runs operations it is sent,
+such as "create this resource in that container", with the client, and reports what happened.
+The protocol between Touchstone's driver and an adapter is
+[`driver/PROTOCOL.md`](driver/PROTOCOL.md), `touchstone-driver/1`. Each rule carries the steps
+that make a client do what it judges, its `drive` ([OBSERVATION.md](definitions/OBSERVATION.md)
+section 12). Touchstone then runs a whole session unattended: it starts the adapter, walks the
+client through every rule's drive, starts each task and arms each fault on the way, and judges
+the traffic as it always does.
+
+```mermaid
+flowchart LR
+    AG[Agent, over MCP stdio] --> DRV
+    CI[touchstone drive, in CI] --> DRV
+    subgraph DRV[harness-driver]
+        RUN[Drive runner] --> AD[Adapter process]
+        INB[Inbox]
+    end
+    AD -->|the client's own calls| CL[Client under test]
+    CL -->|LWS, OAuth, OpenID| SES[Client session]
+    RUN -->|session API: create, tasks, faults, results| SES
+    SES -->|signed deliveries| INB
+    INB -->|verify_notification| AD
+```
+
+### 14.1 What changes, and what does not
+
+D-0075 rejected an adapter contract for three reasons. Each has an answer:
+1. *It puts the per-language cost on Touchstone.* The adapter is the client developers' code,
+   in their language. Touchstone owns only the protocol, its schema, a checker and starter
+   kits, which are templates to copy (§14.4).
+2. *Web clients would need browser automation.* Driving is optional. A web client is tested by
+   hand as before, or its developers write an adapter that drives it however they like.
+3. *It tests the adapter as much as the client.* The traffic decides, never the adapter.
+   Adapters are thin by contract, and a drive that stops is a note beside its rule, never a
+   failure.
+
+The rest of D-0075 stands: Touchstone implements the servers itself, HTTP is the only thing
+judged, and the rules, outcomes and reports are the same for a driven session as for one a
+person drives, except that its EARL mode is `earl:automatic`.
+
+### 14.2 Architecture
+
+- **`harness-driver`**, a new module, plain Java and Spring-free like `harness-clients`. It
+  holds the adapter processes, the protocol codec (every line checked against
+  `driver/protocol.schema.json`), the drive runner (templates from `harness-core`), a client
+  for the session API, the inbox it hosts for the client (embedded Jetty), and the checker.
+- **`touchstone drive`**, in `harness-cli`, for CI:
+  `touchstone drive --client <id> [--areas …] [--rule …] [--out <dir>]` creates a session on a
+  registered client-session service, drives the client, writes the JSON, EARL and JUnit
+  results, and exits 1 on a MUST failure.
+- **`touchstone driver check -- <command>`**, the adapter checker (`driver/PROTOCOL.md`
+  section 6).
+- **MCP tools**, in harness-mcp's stdio profile only:
+  - `list_driven_clients`: the registered clients, and each one's hello;
+  - `drive_client(client_id, session?, areas?, rules?)`: drives a whole session, asynchronously
+    with progress, as `start_run` does; `get_drive(drive_id)` reads its state;
+  - `drive_rule(client_id, rule, session?)`: one rule's drive, synchronously, for the
+    fix-and-verify loop;
+  - `client_operation(client_id, op, args, session?)`: one protocol operation, for an agent
+    working both sides itself;
+  - `start_task(rule, session?)` and `arm_fault(fault, session?)`.
+
+  With the read-only tools of C7, one agent can then drive the client and the session and read
+  the findings. The hosted, streamable endpoint keeps only the read-only tools (D-0085).
+
+### 14.3 Security invariants
+
+These hold in addition to DESIGN.md §7 and §8 above.
+
+1. **Registered clients only.** An adapter's command line, working directory and environment
+   come from configuration (`touchstone.driver.clients.<id>`), as server targets do (DESIGN.md
+   §7.1). The CLI and the tools take a client id, never a command, and nothing a rule, a tool
+   argument or an adapter says is ever run.
+2. **Registered sessions only.** The driver uses sessions only of the services
+   `touchstone.clients.services` registers (D-0085). Drives name only the session's URLs and
+   the URLs the client reported from the session's answers.
+3. **Local only.** The driving tools exist only in the stdio profile, and the driver never runs
+   in the hosted service. It runs code its operator registered, on the operator's machine, with
+   the trust they give their own test suite.
+4. **Adapter output is untrusted.** Lines are bounded (16 MiB) and checked against the schema,
+   and each operation times out (60 seconds by default). What the tools return from an adapter
+   is truncated and labelled as untrusted data, never instructions.
+5. **Redaction.** The session key never appears in a tool's answer, a log or an adapter's
+   arguments. Credentials sent to `configure` appear in the driver's log and in tool answers as
+   fingerprints, as in the traffic log (§8.4).
+6. **The inbox.** The inbox the driver hosts binds loopback by default, for a local client
+   service started with `--allow-private-inboxes`. A public service needs it at a public https
+   URL, which the operator configures, as any client's inbox (§7).
+
+### 14.4 Starter kits
+
+`driver/kits/<language>/` holds a kit for each language of lws-client, where the first adapters
+exist: Java, Kotlin, JavaScript (with TypeScript types), Python, Go, Rust, C#, Swift, PHP and
+C++. Each kit has:
+- an interface with one method per operation, its arguments and results in the language's own
+  idiom: an interface, a trait, a protocol or an abstract class;
+- a runner that does the framing, the hello, the dispatch, and the mapping of the interface's
+  errors to the protocol's kinds;
+- a stub implementation that answers every operation `unsupported`, which passes the checker as
+  it is;
+- a README on mapping a client to it.
+
+The kits are templates to copy, not published packages: a client's developers own their
+adapter. CI checks each kit's stub with the checker, in a container per toolchain, when
+`driver/` changes. `./mvnw verify` stays JDK-only.
+
+### 14.5 Proving the driver
+
+`DriverSelfTest` drives the reference client through a session, behind a reference adapter:
+- every rule ends passed, or inapplicable for a reason the session explains; none is left
+  untested, and no drive stops;
+- each of the reference client's broken twins, behind the same adapter, fails exactly the rules
+  aimed at it, as in `ClientRulesSelfTest`. So every drive reaches the mistake its rule exists
+  to catch.

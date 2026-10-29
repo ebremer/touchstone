@@ -22,6 +22,9 @@ STEPS = [
     ("vocab.yamlld " + ("regenerated" if WRITE else "is current"), [sys.executable, "gen_vocab.py", *GEN]),
     ("COVERAGE.md " + ("regenerated" if WRITE else "is current"), [sys.executable, "gen_coverage.py", *GEN]),
     ("JSON-LD export loses nothing", ["node", "export_dryrun.js"]),
+    ("driver protocol schema " + ("regenerated" if WRITE else "is current"),
+     [sys.executable, "../driver/gen_schema.py", *GEN]),
+    ("driver protocol schema accepts and rejects", ["node", "../driver/check_schema.js"]),
 ]
 
 failed, ran = [], 0

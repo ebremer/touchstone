@@ -1,0 +1,771 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/touchstone/schema/driver/1",
+  "title": "Touchstone client driver protocol, touchstone-driver/1",
+  "description": "Validates one line of the protocol between Touchstone's client driver and an adapter (driver/PROTOCOL.md): a hello, a request or a response. A response carries no op, so its result is checked against $defs/result-<op> of the request with its id. Arguments are strict, since the driver writes them; results are open, since an adapter reports what its client exposes and /1 may gain optional members (section 8). PROPOSED on 2026-10-29 (DECISIONS.md D-0103); freezing it is Gate D, and after that any change needs a DECISIONS.md entry.",
+  "oneOf": [{"$ref": "#/$defs/hello"}, {"$ref": "#/$defs/request"}, {"$ref": "#/$defs/response"}],
+  "$defs": {
+    "url": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:[^\\s]*$",
+      "description": "An absolute URL (PROTOCOL.md section 4)."
+    },
+    "urls": {"type": "array", "items": {"$ref": "#/$defs/url"}},
+    "strings": {"type": "array", "items": {"type": "string"}},
+    "count": {"type": "integer", "minimum": 0},
+    "base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]*={0,2}$"},
+    "operationName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z_]*$",
+      "description": "An operation name. A name this version does not define is allowed in a hello: the driver ignores it (section 8)."
+    },
+    "operation": {
+      "enum": [
+        "cancel_access_request",
+        "configure",
+        "create",
+        "create_container",
+        "delete",
+        "discover_storage",
+        "get_access_grant",
+        "get_access_request",
+        "get_subscription",
+        "grant_access",
+        "head",
+        "list_access_grants",
+        "list_access_requests",
+        "list_container",
+        "list_subscriptions",
+        "list_types",
+        "move",
+        "patch",
+        "patch_linkset",
+        "read",
+        "read_linkset",
+        "request_access",
+        "revoke_access_grant",
+        "search",
+        "shutdown",
+        "subscribe",
+        "unsubscribe",
+        "update",
+        "update_linkset",
+        "verify_notification"
+      ]
+    },
+    "hello": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hello"],
+      "properties": {
+        "hello": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["protocol", "client", "auth", "operations"],
+          "properties": {
+            "protocol": {"const": "touchstone-driver/1"},
+            "client": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name"],
+              "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "version": {"type": "string"},
+                "homepage": {"$ref": "#/$defs/url"}
+              }
+            },
+            "language": {"type": "string"},
+            "auth": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"enum": ["none", "bearer", "cid", "openid", "saml"]}
+            },
+            "operations": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/operationName"}}
+          }
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "op", "args"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "op": {"$ref": "#/$defs/operation"},
+        "args": {"type": "object"}
+      },
+      "allOf": [
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "configure"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-configure"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "discover_storage"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-discover_storage"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "head"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-head"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "read"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-read"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "list_container"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-list_container"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "create"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-create"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "create_container"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-create_container"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "update"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-update"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "patch"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-patch"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "delete"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-delete"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "read_linkset"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-read_linkset"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "update_linkset"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-update_linkset"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "patch_linkset"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-patch_linkset"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "move"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-move"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "request_access"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-request_access"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "get_access_request"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-get_access_request"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "list_access_requests"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-list_access_requests"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "cancel_access_request"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-cancel_access_request"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "grant_access"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-grant_access"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "get_access_grant"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-get_access_grant"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "list_access_grants"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-list_access_grants"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "revoke_access_grant"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-revoke_access_grant"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "subscribe"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-subscribe"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "list_subscriptions"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-list_subscriptions"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "get_subscription"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-get_subscription"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "unsubscribe"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-unsubscribe"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "verify_notification"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-verify_notification"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "list_types"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-list_types"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "search"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-search"}}}
+        },
+        {
+          "if": {"type": "object", "required": ["op"], "properties": {"op": {"const": "shutdown"}}},
+          "then": {"type": "object", "properties": {"args": {"$ref": "#/$defs/args-shutdown"}}}
+        }
+      ]
+    },
+    "response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "ok", "result"],
+          "properties": {"id": {"type": "integer", "minimum": 1}, "ok": {"const": true}, "result": {"type": "object"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "ok", "error"],
+          "properties": {
+            "id": {"type": ["integer", "null"], "minimum": 1},
+            "ok": {"const": false},
+            "error": {"$ref": "#/$defs/error"}
+          }
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "required": ["kind", "message"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "http",
+            "authentication",
+            "protocol",
+            "verification",
+            "transport",
+            "invalidArguments",
+            "unsupported",
+            "internal"
+          ]
+        },
+        "message": {"type": "string"},
+        "status": {"type": "integer", "minimum": 100, "maximum": 599},
+        "problem": {"type": "object"}
+      },
+      "if": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "http"}}},
+      "then": {"type": "object", "required": ["status"], "properties": {"status": true}}
+    },
+    "auth": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {"type": {"const": "none"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "token"],
+          "properties": {"type": {"const": "bearer"}, "token": {"type": "string", "minLength": 1}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "agent", "privateJwk"],
+          "properties": {
+            "type": {"const": "cid"},
+            "agent": {"$ref": "#/$defs/url"},
+            "privateJwk": {"type": "object", "required": ["kty"], "properties": {"kty": {"type": "string"}}},
+            "kid": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "idToken"],
+          "properties": {"type": {"const": "openid"}, "idToken": {"type": "string", "minLength": 1}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "assertion"],
+          "properties": {"type": {"const": "saml"}, "assertion": {"type": "string", "pattern": "^[A-Za-z0-9_-]+=*$"}}
+        }
+      ]
+    },
+    "requestBody": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {"text": {"type": "string"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base64"],
+          "properties": {"base64": {"$ref": "#/$defs/base64"}}
+        },
+        {"type": "object", "additionalProperties": false, "required": ["json"], "properties": {"json": {}}}
+      ]
+    },
+    "responseBody": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {"text": {"type": "string"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base64"],
+          "properties": {"base64": {"$ref": "#/$defs/base64"}}
+        }
+      ]
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["href", "rel"],
+        "properties": {"href": {"$ref": "#/$defs/url"}, "rel": {"type": "string", "minLength": 1}}
+      }
+    },
+    "jsonPatch": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op", "path"],
+        "properties": {
+          "op": {"enum": ["add", "remove", "replace", "move", "copy", "test"]},
+          "path": {"type": "string"},
+          "from": {"type": "string"}
+        }
+      }
+    },
+    "typeQuery": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "anyOf": [{"$ref": "#/$defs/url"}, {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/url"}}]
+        }
+      }
+    },
+    "linksetDocument": {"type": "object", "required": ["linkset"], "properties": {"linkset": {"type": "array"}}},
+    "headerFields": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+    "link": {
+      "type": "object",
+      "required": ["href", "rel"],
+      "properties": {
+        "href": {"$ref": "#/$defs/url"},
+        "rel": {"type": "string"},
+        "params": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["url", "status"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "status": {"type": "integer", "minimum": 100, "maximum": 599},
+        "etag": {"type": "string"},
+        "lastModified": {"type": "string"},
+        "contentType": {"type": "string"},
+        "contentLength": {"$ref": "#/$defs/count"},
+        "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
+        "types": {"$ref": "#/$defs/strings"},
+        "allow": {"$ref": "#/$defs/strings"},
+        "acceptPatch": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {"id": {"$ref": "#/$defs/url"}, "types": {"$ref": "#/$defs/strings"}}
+    },
+    "itemsResult": {
+      "type": "object",
+      "required": ["items", "truncated"],
+      "properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/item"}}, "truncated": {"type": "boolean"}}
+    },
+    "created": {
+      "type": "object",
+      "required": ["location"],
+      "properties": {"location": {"$ref": "#/$defs/url"}, "metadata": {"$ref": "#/$defs/metadata"}}
+    },
+    "update": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "integer", "minimum": 200, "maximum": 299},
+        "etag": {"type": "string"},
+        "metadata": {"$ref": "#/$defs/metadata"}
+      }
+    },
+    "moved": {
+      "type": "object",
+      "required": ["status", "location"],
+      "properties": {
+        "status": {"type": "integer", "minimum": 200, "maximum": 299},
+        "location": {"$ref": "#/$defs/url"},
+        "metadata": {"$ref": "#/$defs/metadata"}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "required": ["id", "services"],
+      "properties": {
+        "id": {"$ref": "#/$defs/url"},
+        "storageRoot": {"$ref": "#/$defs/url"},
+        "raw": {"type": "object"},
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["types", "serviceEndpoint"],
+            "properties": {
+              "id": {"type": "string"},
+              "types": {"$ref": "#/$defs/strings"},
+              "serviceEndpoint": {"$ref": "#/$defs/url"}
+            }
+          }
+        }
+      }
+    },
+    "subscription": {
+      "type": "object",
+      "required": ["subscription"],
+      "properties": {"subscription": {"$ref": "#/$defs/url"}, "raw": {"type": "object"}}
+    },
+    "activity": {
+      "type": "object",
+      "required": ["types", "object"],
+      "properties": {
+        "id": {"type": "string"},
+        "types": {"$ref": "#/$defs/strings"},
+        "object": {"$ref": "#/$defs/url"},
+        "objectTypes": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "locationResult": {"type": "object", "required": ["location"], "properties": {"location": {"$ref": "#/$defs/url"}}},
+    "documentResult": {"type": "object", "required": ["document"], "properties": {"document": {"type": "object"}}},
+    "empty": {"type": "object"},
+    "args-configure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auth"],
+      "properties": {
+        "auth": {"$ref": "#/$defs/auth"},
+        "userAgent": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "timeoutSeconds": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]}
+      }
+    },
+    "result-configure": {"type": "object", "properties": {"agent": {"$ref": "#/$defs/url"}}},
+    "args-discover_storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-discover_storage": {"$ref": "#/$defs/storage"},
+    "args-head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-head": {"$ref": "#/$defs/metadata"},
+    "args-read": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "accept": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "ifNoneMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "rangeStart": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]},
+        "rangeEnd": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-read": {
+      "type": "object",
+      "required": ["metadata", "notModified"],
+      "properties": {
+        "metadata": {"$ref": "#/$defs/metadata"},
+        "notModified": {"type": "boolean"},
+        "body": {"$ref": "#/$defs/responseBody"}
+      }
+    },
+    "args-list_container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}, "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}}
+    },
+    "result-list_container": {"$ref": "#/$defs/itemsResult"},
+    "args-create": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["container"],
+      "properties": {
+        "container": {"$ref": "#/$defs/url"},
+        "body": {"anyOf": [{"$ref": "#/$defs/requestBody"}, {"type": "null"}]},
+        "contentType": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "slug": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "types": {"anyOf": [{"$ref": "#/$defs/urls"}, {"type": "null"}]},
+        "links": {"anyOf": [{"$ref": "#/$defs/links"}, {"type": "null"}]}
+      }
+    },
+    "result-create": {"$ref": "#/$defs/created"},
+    "args-create_container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parent"],
+      "properties": {"parent": {"$ref": "#/$defs/url"}, "slug": {"anyOf": [{"type": "string"}, {"type": "null"}]}}
+    },
+    "result-create_container": {"$ref": "#/$defs/created"},
+    "args-update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "body"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "body": {"$ref": "#/$defs/requestBody"},
+        "contentType": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "ifNoneMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "links": {"anyOf": [{"$ref": "#/$defs/links"}, {"type": "null"}]}
+      }
+    },
+    "result-update": {"$ref": "#/$defs/update"},
+    "args-patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "patch"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "patch": {"$ref": "#/$defs/jsonPatch"},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+      }
+    },
+    "result-patch": {"$ref": "#/$defs/update"},
+    "args-delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "recursive": {"anyOf": [{"type": "boolean"}, {"type": "null"}]},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+      }
+    },
+    "result-delete": {"$ref": "#/$defs/empty"},
+    "args-read_linkset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-read_linkset": {
+      "type": "object",
+      "required": ["url", "linkset", "allow", "acceptPatch"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "etag": {"type": "string"},
+        "linkset": {"$ref": "#/$defs/linksetDocument"},
+        "allow": {"$ref": "#/$defs/strings"},
+        "acceptPatch": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "args-update_linkset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["linksetUrl", "linkset"],
+      "properties": {
+        "linksetUrl": {"$ref": "#/$defs/url"},
+        "linkset": {"$ref": "#/$defs/linksetDocument"},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+      }
+    },
+    "result-update_linkset": {"$ref": "#/$defs/update"},
+    "args-patch_linkset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["linksetUrl", "patch"],
+      "properties": {
+        "linksetUrl": {"$ref": "#/$defs/url"},
+        "patch": {"$ref": "#/$defs/jsonPatch"},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+      }
+    },
+    "result-patch_linkset": {"$ref": "#/$defs/update"},
+    "args-move": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "destination"],
+      "properties": {
+        "url": {"$ref": "#/$defs/url"},
+        "destination": {"$ref": "#/$defs/url"},
+        "ifMatch": {"anyOf": [{"type": "string"}, {"type": "null"}]}
+      }
+    },
+    "result-move": {"$ref": "#/$defs/moved"},
+    "args-request_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl", "request"],
+      "properties": {"serviceUrl": {"$ref": "#/$defs/url"}, "request": {"type": "object"}}
+    },
+    "result-request_access": {"$ref": "#/$defs/locationResult"},
+    "args-get_access_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-get_access_request": {"$ref": "#/$defs/documentResult"},
+    "args-list_access_requests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-list_access_requests": {"$ref": "#/$defs/itemsResult"},
+    "args-cancel_access_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-cancel_access_request": {"$ref": "#/$defs/empty"},
+    "args-grant_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl", "grant"],
+      "properties": {"serviceUrl": {"$ref": "#/$defs/url"}, "grant": {"type": "object"}}
+    },
+    "result-grant_access": {"$ref": "#/$defs/locationResult"},
+    "args-get_access_grant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-get_access_grant": {"$ref": "#/$defs/documentResult"},
+    "args-list_access_grants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-list_access_grants": {"$ref": "#/$defs/itemsResult"},
+    "args-revoke_access_grant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-revoke_access_grant": {"$ref": "#/$defs/empty"},
+    "args-subscribe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl", "topics", "inbox"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "topics": {"$ref": "#/$defs/urls"},
+        "inbox": {"$ref": "#/$defs/url"},
+        "expires": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]}
+      }
+    },
+    "result-subscribe": {"$ref": "#/$defs/subscription"},
+    "args-list_subscriptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-list_subscriptions": {"$ref": "#/$defs/itemsResult"},
+    "args-get_subscription": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-get_subscription": {"$ref": "#/$defs/subscription"},
+    "args-unsubscribe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {"url": {"$ref": "#/$defs/url"}}
+    },
+    "result-unsubscribe": {"$ref": "#/$defs/empty"},
+    "args-verify_notification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "url", "headers", "bodyBase64"],
+      "properties": {
+        "method": {"type": "string"},
+        "url": {"$ref": "#/$defs/url"},
+        "headers": {"$ref": "#/$defs/headerFields"},
+        "bodyBase64": {"$ref": "#/$defs/base64"},
+        "trustedStorages": {"anyOf": [{"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/url"}}, {"type": "null"}]}
+      }
+    },
+    "result-verify_notification": {
+      "type": "object",
+      "required": ["storage", "keyid", "activities"],
+      "properties": {
+        "storage": {"$ref": "#/$defs/url"},
+        "keyid": {"type": "string"},
+        "activities": {"type": "array", "items": {"$ref": "#/$defs/activity"}}
+      }
+    },
+    "args-list_types": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-list_types": {
+      "type": "object",
+      "required": ["types", "truncated"],
+      "properties": {"types": {"type": "array"}, "truncated": {"type": "boolean"}}
+    },
+    "args-search": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceUrl", "query"],
+      "properties": {
+        "serviceUrl": {"$ref": "#/$defs/url"},
+        "query": {"$ref": "#/$defs/typeQuery"},
+        "limit": {"anyOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}
+      }
+    },
+    "result-search": {"$ref": "#/$defs/itemsResult"},
+    "args-shutdown": {"type": "object", "additionalProperties": false, "required": [], "properties": {}},
+    "result-shutdown": {"$ref": "#/$defs/empty"}
+  }
+}
