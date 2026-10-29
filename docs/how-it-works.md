@@ -23,7 +23,7 @@ Touchstone is a Java 21 Maven project with six modules, plus the data they opera
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`, `drive`, `driver check`), built as one runnable jar. |
 | `harness-mcp` | A Model Context Protocol server over the same engine, for AI agents; started on stdio, it also drives registered clients. |
 | `catalog/` | The requirements catalog: one Turtle file per specification document. |
-| `driver/` | The driver protocol and its schema, and starter kits for adapters in ten languages. |
+| `driver/` | The driver protocol and its schema, starter kits for adapters in ten languages, and the adapters Touchstone keeps for clients (Factoidal's). |
 | `definitions/` | The tests: [YAML-LD definitions](definitions.md), format 0.16.0, and the contract that says how to run them; and the client rules, judged by client sessions ([`OBSERVATION.md`]({% include src.html path="definitions/OBSERVATION.md" %})). |
 | `tools/` | Python and Node scripts that check the definitions, extract clauses from a draft, and detect drift. |
 | `targets.yaml` | The registry of servers Touchstone is allowed to test. |

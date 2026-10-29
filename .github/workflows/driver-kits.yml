@@ -2,7 +2,8 @@ name: Driver starter kits
 
 # Each starter kit's stub must speak touchstone-driver/1 (CLIENT-TESTING.md section 14.4, D-0107):
 # built in its toolchain's container, then run through `touchstone driver check`, which starts it
-# with `docker run -i` and speaks to it on stdin and stdout. ./mvnw verify stays JDK-only.
+# with `docker run -i` and speaks to it on stdin and stdout. So must each adapter Touchstone keeps
+# for a client (driver/adapters/, D-0109). ./mvnw verify stays JDK-only.
 on:
   push:
     branches: [master]
@@ -85,6 +86,37 @@ jobs:
         run: >-
           java -jar harness-cli/target/touchstone.jar driver check --log adapter-check.log --
           docker run --rm -i -v "$PWD/driver/kits/${{ matrix.kit }}:/kit" -w /kit ${{ matrix.image }} ${{ matrix.run }}
+
+      - name: The adapter's stderr
+        if: failure()
+        run: cat adapter-check.log || true
+
+  # Factoidal's LWS client through its adapter, which is built on the JavaScript kit: the whole of
+  # driver/ is mounted, and the client is the package its package-lock.json pins.
+  factoidal:
+    runs-on: ubuntu-latest
+    name: adapter factoidal
+    env:
+      IMAGE: node:24.21.0-trixie-slim
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build the checker
+        run: ./mvnw -B -ntp -pl harness-cli -am package -Dmaven.test.skip=true
+
+      - name: Install the client
+        run: docker run --rm -v "$PWD/driver:/driver" -w /driver/adapters/factoidal $IMAGE npm ci --no-audit --no-fund
+
+      - name: Check the adapter
+        run: >-
+          java -jar harness-cli/target/touchstone.jar driver check --log adapter-check.log --
+          docker run --rm -i -v "$PWD/driver:/driver" -w /driver/adapters/factoidal $IMAGE node adapter.mjs
 
       - name: The adapter's stderr
         if: failure()

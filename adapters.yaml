@@ -12,7 +12,12 @@
 #   touchstone drive --client my-client
 services:
   local: http://localhost:18090/touchstone/clients
-clients: {}
+clients:
+  # Factoidal's LWS client, through the adapter Touchstone keeps for it (driver/adapters/factoidal,
+  # D-0109). Run `npm ci` there first; it needs Node.js 22.12 or later.
+  factoidal:
+    command: [node, adapter.mjs]
+    directory: driver/adapters/factoidal
   # my-client:
   #   command: [node, adapter.mjs]   # what to run
   #   directory: ../my-client        # where, relative to this file (default: this file's directory)

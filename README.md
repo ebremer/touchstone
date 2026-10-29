@@ -45,7 +45,7 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`, `drive`, `driver check`) |
 | `harness-mcp` | Spring AI MCP server over the core engine; on stdio, also the tools that drive a client |
 | `catalog/` | requirements catalog (Turtle), 6 spec modules, versioned per spec draft |
-| `driver/` | the driver protocol `touchstone-driver/1` and its schema, and starter kits for adapters in ten languages (`kits/`) |
+| `driver/` | the driver protocol `touchstone-driver/1` and its schema, starter kits for adapters in ten languages (`kits/`), and the adapters Touchstone keeps for clients (`adapters/`: Factoidal's) |
 | `adapters.yaml` | the registered client adapters and client-session services that `touchstone drive` and the MCP driving tools may use |
 | `definitions/` | the tests: YAML-LD definitions (format 0.16.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
 | `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |

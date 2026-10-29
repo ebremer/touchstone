@@ -1,0 +1,13 @@
+{
+  "name": "touchstone-factoidal-adapter",
+  "private": true,
+  "description": "The touchstone-driver/1 adapter for Factoidal's LWS client (README.md)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "dependencies": {
+    "@factoidal/core": "0.18.0"
+  }
+}

@@ -37,6 +37,8 @@ driver/kits/*/.build/
 driver/kits/*/node_modules/
 driver/kits/*/vendor/
 driver/kits/rust/Cargo.lock
+# the adapters Touchstone keeps for clients (driver/adapters): installed clients
+driver/adapters/*/node_modules/
 
 # misc
 *.log

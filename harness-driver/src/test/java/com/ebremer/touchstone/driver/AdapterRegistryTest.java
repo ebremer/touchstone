@@ -57,5 +57,8 @@ class AdapterRegistryTest {
     void theRepositorysRegistryLoads() {
         AdapterRegistry r = AdapterRegistry.load(Path.of("..", "adapters.yaml"));
         assertThat(r.services()).containsKey("local");
+        // The adapter Touchstone keeps for Factoidal's client (D-0109), run from its own directory.
+        assertThat(r.clients().get("factoidal").directory())
+                .isEqualTo(Path.of("..", "driver", "adapters", "factoidal").toAbsolutePath().normalize());
     }
 }

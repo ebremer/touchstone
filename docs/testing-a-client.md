@@ -238,6 +238,12 @@ service started with `--allow-private-inboxes` does; a public one needs `--inbox
 [harness-driver README](https://github.com/ebremer/touchstone/blob/master/harness-driver/README.md)
 has the details.
 
+For an example of a whole adapter, see the one Touchstone keeps for
+[Factoidal](https://github.com/danbri/factoidal-core)'s client,
+[`driver/adapters/factoidal`](https://github.com/ebremer/touchstone/tree/master/driver/adapters/factoidal).
+It's built on the JavaScript kit and registered as `factoidal`: after `npm ci` there,
+`touchstone drive --client factoidal` drives it.
+
 ## Read the results from a coding agent
 
 Touchstone's [MCP server](mcp.md) has three read-only tools over a client session, so the

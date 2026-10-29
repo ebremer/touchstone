@@ -899,6 +899,11 @@ adapter. CI checks each kit's stub with the checker, in a container per toolchai
 `driver/` changes (`.github/workflows/driver-kits.yml`). `./mvnw verify` stays JDK-only, and
 `tools/definitions/check.py` checks that every kit names every operation of the protocol.
 
+Touchstone keeps an adapter itself, in `driver/adapters/<client>/`, only for a client whose own
+adapter does not speak the protocol. There is one: Factoidal's LWS client (D-0109), on the
+JavaScript kit, which its adapter imports rather than copies. Factoidal's own adapter speaks
+`lws-driver/1`. The same workflow checks it.
+
 ### 14.5 Proving the driver
 
 `DriverSelfTest` drives the reference client through a session, behind a reference adapter:

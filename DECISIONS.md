@@ -4783,3 +4783,51 @@ cannot build the interop clients from the pin, and needs `--client-source` point
   one.
 - *An error without a status.* `allowStatus` cannot name one, which makes the decoy's drive stop at its last step
   (above). An `allowKinds` would need a format change.
+
+### D-0109 — Factoidal's LWS client is driven through an adapter Touchstone keeps
+2026-10-29. Erich asked for an adapter for the LWS client of Factoidal (D-0102), kept in Touchstone. This entry
+clarifies CLIENT-TESTING.md section 14.4, which assumes a client's developers own its adapter.
+
+**Why Touchstone keeps it.** Factoidal ships an adapter (`deploy/lws-client-adapter/adapter.mjs` in
+factoidal-core), but for `lws-driver/1`, the protocol lws-client spoke until `ff51462` (D-0108). So
+`driver/adapters/factoidal/` holds one for `touchstone-driver/1` until Factoidal's own speaks it; then
+`adapters.yaml` points at theirs and this one goes. `driver/adapters/<client>/` is only for that case.
+
+**What it wraps.** It wraps the library `@factoidal/core/lws/client`, not the `factoidal lws-client` command. The
+command runs one operation per process: it keeps no token between operations, signs no CID credential, and has no
+way to verify a notification. The library does all three: a session that lives as long as the client,
+`selfIssued` credentials, and `verifyNotification`.
+
+The package is 0.18.0, pinned with its integrity in `package-lock.json`: the integrity
+`targetservers/factoidal` checks. The adapter is built on the JavaScript kit, imported from `driver/kits/js`
+rather than copied.
+
+**What it decides.** Very little, because the client reports each result in the shapes of `lws-driver/1`, which
+`touchstone-driver/1` kept (`Report.lean` in Factoidal), and names each error the same way. The adapter:
+- makes those names the protocol's kinds: a status-specific name is `http` with its status;
+- cuts a followed listing at `limit`;
+- gives an access document's one policy to the client as members;
+- answers `unsupported` for what 0.18.0 cannot send: a write's `If-None-Match` other than `*`, `ifMatch` with
+  `ifNoneMatch`, and a document with several policies. A document with no policy is `invalidArguments`.
+
+One mapping follows from 0.18.0's API: `subscribe` is given its first topic as the operation's URL, and the client
+finds the notification service from it through the storage description. The first drive gave it `serviceUrl`.
+0.18.0 read that as a resource of the storage, asked it for its storage link, and stopped (`noStorageLink`), so
+the ten notification rules were untested. A direct test showed 0.18.0 ignores an `endpoint` member, which
+Factoidal's main branch has since added.
+
+**Results.**
+- *Check.* `touchstone driver check` passes 34 of 34, also in `node:24.21.0-trixie-slim` as CI runs it (a new job,
+  `factoidal`, in `.github/workflows/driver-kits.yml`).
+- *Drive.* `touchstone drive --client factoidal`, against the local client-session service, passes 52 of 53 rules
+  and fails none.
+- *As lws-client.* That is lws-client's result. The one untested rule is `client-query-baseline-after-415`, which
+  no drive reaches. The decoy's drive in `client-token-after-discovery-checks` stops at its last step, as for
+  lws-client: an `authentication` error with no status.
+- *Sign-ins.* The drive signed in with `cid`, which the driver prefers. The OpenID and SAML drives pass. `bearer`
+  was checked by hand only.
+
+**Not done** (TODO.md):
+- Factoidal in the interop matrix: lws-client's driver server would need the package and this adapter.
+- Moving to Factoidal's next release.
+- Handing the adapter to Factoidal.
