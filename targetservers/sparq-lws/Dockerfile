@@ -31,7 +31,7 @@ WORKDIR /build
 COPY --from=source / .
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/build/target \
-    cargo build --release --locked -p sparq-lws-core \
+    cargo build --release --locked -p sparq-lws-core --features authn-saml \
  && cp target/release/sparq-lws-core /sparq-lws-core
 
 # ---- runtime ----

@@ -75,6 +75,8 @@ A target container:
    19 October 2026 a 401 names the protected resource metadata of the resource requested (RFC 9728), at
    `<origin>/.well-known/oauth-protected-resource/targets/<name>/<path>`; the router sends it to
    `/.well-known/oauth-protected-resource/<path>` of the target's own root (`strip`), or unchanged (`keep`, `whole`).
+   A target can take that URL in another mode than its paths (the router's `$resource_metadata_mode`): `sparq-lws`
+   strips the prefix from its paths but answers its metadata, unchanged, at the public path it advertises.
 5. **Gives the storage to `LWS_OWNER`**: the agent, or for lws-server the agents, with full control. Where the
    server records its owner only once, at the storage's first start, changing `LWS_OWNER` later changes nothing.
 6. **Keeps its state in `/data`**, a volume, and runs as a user other than root.
