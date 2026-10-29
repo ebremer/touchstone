@@ -4831,3 +4831,57 @@ Factoidal's main branch has since added.
 - Factoidal in the interop matrix: lws-client's driver server would need the package and this adapter.
 - Moving to Factoidal's next release.
 - Handing the adapter to Factoidal.
+
+### D-0110 — the servers and clients Touchstone tests, at their latest versions
+2026-10-29. Erich asked for every LWS server and client Touchstone tests to be moved to its latest version. Each pin
+against its upstream that day:
+
+| Implementation | Was | Now |
+|---|---|---|
+| Halcyon (`next`) | `f173c88` | `e94e4d0`: "CID URL" for "WebID" in its UI, login paths and settings (the old names kept as aliases), and a watcher fix on Windows |
+| lws-server (`master`) | `2bee2c6` | `aef56f2`: "CID URL" in its messages and sign-in page |
+| sparq-lws-core | PR #6650, `5501efa` | `main`, `01b5ad8` (below) |
+| Community Solid Server | PR #126, `311b367` | unchanged: the PR is open and its head has not moved since 7 October |
+| lws-drupal (`main`) | `6f3dbe1` | `4ee4a5c`: "CID URL", and `cidUrl.<name>` in its example registry (D-0101) |
+| lws-client, in lws-drupal | `8ccc83b` | `ff51462`, the commit the clients image builds (D-0108); its PHP library differs only in its README |
+| lwsd | `v0.0.6`, `1999965` | `v0.0.7`, `c7fb260`: CORS for the LWS surface, 409 rather than 500 for a container that just appeared, webhook delivery into one of the storage's own containers, `--browser` |
+| Factoidal, server and client | 0.18.0, `788ee43` | 0.26.0, `7a58d95` (below) |
+| lws-client, the eleven clients | `ff51462` | unchanged: the head of its `main` |
+
+None of the entrypoints needed a change. Halcyon's renamed keys are ones its entrypoint does not write (it writes
+`enabled` and `allowedInternalHosts`); lwsd's launcher change is in `index.js`, and its entrypoint starts `jss` with
+the plugin directly; sparq `main` still reads every `SOLID_SERVER_*` variable the entrypoint and local mode set.
+
+**sparq: from a pull request to its main branch.** The target built the head of PR #6650. That PR was rewritten and
+merged on 11 October as "type index and type search", and the LWS 1.0 mode it had carried reached `main` through
+several PRs, among them #6728 (resources, containers and preconditions), #6730 (access requests and grants), #6731
+(webhook notifications) and #6805 and #6806 (JSON Patch). `5501efa` is not an ancestor of what was merged. So the
+target builds `main`, which since has RFC 9728 discovery (#7212), configurable CORS origins and an optional durable
+store. Its toolchain is still Rust 1.97.1. The storage stays in memory: the entrypoint sets no
+`SOLID_SERVER_DATA_DIR`.
+
+**Factoidal 0.26.0.** Eight releases in three days, mostly XML and XPath. For the target, `lws-serve --authz` takes
+the same options; it now holds a lock file in its storage directory, and says on standard error whether the storage
+is sealed at rest. It still writes root-relative references: served by hand under a base URL with a path, a create
+answered `Location: /probe…` with `</>; rel="up"`, the root linked `</.acl>`, and the prefixed path answered 404. So
+D-0102's origin of its own stays. For the client, 0.26.0 adds what the adapter answered `unsupported` for
+(factoidal issue 1116) and the notification endpoint (issue 1115), as TODO.md expected. The adapter now:
+- gives a write's `ifNoneMatch`, `*` or entity tags, whole as `ifNoneMatchTags`, alone or with the `If-Match`;
+- gives every policy of an access document as `policies`;
+- gives `subscribe` its `serviceUrl` as both its URL and its `endpoint`, so the client POSTs there with no discovery,
+  which is what the protocol's `serviceUrl` means.
+
+It answers `unsupported` for nothing it lists. It does not set 0.26.0's `legacyChallenge`, which follows the 401
+challenge of the drafts before 19 October and skips two discovery checks: a client session sends the current one.
+Factoidal's own adapter still speaks `lws-driver/1`, so D-0109 stands.
+
+**Verified** (2026-10-29), with Touchstone `26dd365` and these changes:
+- *Factoidal's client.* `touchstone driver check` passes 34 of 34. `touchstone drive --client factoidal`, against
+  the local client-session service, passes 52 of 53 rules and fails none; the untested one is
+  `client-query-baseline-after-415`, as with 0.18.0. Only the `cid` sign-in was driven.
+- *Factoidal's server.* Not in its image: the package's `factoidal lws-serve`, with the target's options at an origin
+  of its own, under Node.js 22.23.4, with tokens minted as `run-all.sh` mints them. Run `a2f6df90`: 221 tests, 212
+  passed, 0 failed, 9 inapplicable, conformant; test for test the same as that day's run of 0.18.0 (`run-all.sh`,
+  `20261029T211900Z`).
+- *Not yet.* `run-all.sh` and `interop-all.sh`, which build every image. Docker Desktop's WSL integration was down in
+  this session (no `/var/run/docker.sock`), so no image was built and the other targets were not run.
