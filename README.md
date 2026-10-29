@@ -7,8 +7,9 @@ fixtures (a throwaway OpenID Provider, a SAML identity provider, self-signed key
 hosted agent identity documents) so credential failure paths can be tested
 deterministically.
 
-**Status: Phases 0–6 complete, running the YAML-LD definitions.** The tests are 221
-YAML-LD definitions (`definitions/`, format 0.15.0, frozen; DECISIONS.md D-0101) that mirror
+**Status: Phases 0–6 complete, running the YAML-LD definitions; for clients, phases C0–C8 of
+[CLIENT-TESTING.md](CLIENT-TESTING.md) are built, all but C6's pilot.** The tests are 221
+YAML-LD definitions (`definitions/`, format 0.16.0, frozen at Gate D; DECISIONS.md D-0104) that mirror
 and extend the LWS test group's JSON-LD suite, follow the **19 October 2026** Working
 Draft, and cover the core protocol, all three current authentication suites (OpenID
 Connect, CID with HTTPS and did:key subjects, SAML), the webhook notification suite and the
@@ -23,13 +24,21 @@ script tests them all on one machine with nothing but Docker (D-0094 to D-0096).
 **requirements catalog** spans all four current spec modules, the webhook notification
 suite and the search and type index services (321 requirements, drift-hashed), baselined on
 the 19 October 2026 core Working Draft and the 15 October 2026 authentication suites, the
-latest W3C versions as of 19 October 2026 (D-0057, D-0086, D-0100).
+latest W3C versions as of 19 October 2026 (D-0057, D-0086, D-0100). W3C's core Working Draft
+of 23 October 2026, whose one change is the status a server answers for a create in a missing
+container (w3c/lws-protocol#263), is not yet baselined (TODO.md).
+
+Touchstone tests **LWS clients** too. A client session plays every server a client talks to,
+and judges each request the client sends against 53 client rules. A person or the client's own
+tests drive the client, or `touchstone drive` does, through an adapter that speaks
+`touchstone-driver/1` (D-0103 to D-0108).
 
 Three consumers, CLI, CI and MCP, over one engine: templates and derived variables,
 prerequisites and access grants, RFC 8288 links and RFC 9110 challenges, JSON pointer,
 JWT and content-negotiation expectations, per-test isolation, EARL + HTML + Markdown + PDF
 + JSON + JUnit reports with run diff, and a Spring AI **MCP server** (streamable HTTP +
-stdio) exposing the harness as tools.
+stdio) exposing the harness as tools. On stdio it also drives a client, for a client developer
+working with an AI agent ([docs/mcp-client-development.md](docs/mcp-client-development.md)).
 
 Read `DESIGN.md` (build brief and decision record), `DECISIONS.md` (deviation log),
 and `CLAUDE.md` (session ground rules) before working on this repo.
@@ -43,12 +52,12 @@ and `CLAUDE.md` (session ground rules) before working on this repo.
 | `harness-clients` | client-session service for testing LWS clients ([CLIENT-TESTING.md](CLIENT-TESTING.md)): a reference storage and authorization server per session, every request recorded; `java -jar harness-clients/target/touchstone-clients.jar` |
 | `harness-driver` | the client driver ([harness-driver/README.md](harness-driver/README.md)): drives an LWS client through a client session, through an adapter that speaks `touchstone-driver/1` ([driver/PROTOCOL.md](driver/PROTOCOL.md)) — no Spring |
 | `harness-cli` | picocli front end (`run`, `coverage`, `diff`, `drive`, `driver check`) |
-| `harness-mcp` | Spring AI MCP server over the core engine; on stdio, also the tools that drive a client |
+| `harness-mcp` | Spring AI MCP server over the core engine, with read-only tools over a client session; on stdio, also the tools that drive a client |
 | `catalog/` | requirements catalog (Turtle), 6 spec modules, versioned per spec draft |
 | `driver/` | the driver protocol `touchstone-driver/1` and its schema, starter kits for adapters in ten languages (`kits/`), and the adapters Touchstone keeps for clients (`adapters/`: Factoidal's) |
 | `adapters.yaml` | the registered client adapters and client-session services that `touchstone drive` and the MCP driving tools may use |
 | `definitions/` | the tests: YAML-LD definitions (format 0.16.0, frozen), their execution contract and schema, and the client rules (`lws10/clients/`, `OBSERVATION.md`); mirror and extend lws-test-suite, and export to its JSON-LD (D-0047, D-0051, D-0053) |
-| `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`) |
+| `tools/` | catalog extraction and spec-drift tooling (`extractor/`); checks and generators for `definitions/` (`definitions/`); the driver protocol's schema generator and checks (`driver/`) |
 | `targetservers/` | the LWS server implementations Touchstone is run against, each built from source into a container behind one router; `run-all.sh`, which tests them all, and `interop-all.sh`, which tests every lws-client against every one ([targetservers/README.md](targetservers/README.md)) |
 | `docs/` | documentation site, published with GitHub Pages (Jekyll, just-the-docs): usage, architecture, CLI, reports, MCP, test authoring and distribution |
 
@@ -94,3 +103,19 @@ each, and writes the reports, `summary.md` and a requirements matrix to
 `targetservers/interop-all.sh` does the same for clients: it drives each of the eleven
 [lws-client](https://github.com/ebremer/lws-client) libraries through one scenario against
 each of those servers, and writes which combinations work (D-0097).
+
+## Test an LWS client
+
+```
+java -jar harness-clients/target/touchstone-clients.jar --port 18090 \
+    --definitions definitions --catalog catalog --allow-private-inboxes   # terminal 1: a local client-session service
+java -jar harness-cli/target/touchstone.jar driver check -- node adapter.mjs   # does an adapter speak touchstone-driver/1?
+java -jar harness-cli/target/touchstone.jar drive --client my-client          # drive a client registered in adapters.yaml
+```
+
+A session's page and API let a person, or the client's own tests, drive the client instead
+([harness-clients/README.md](harness-clients/README.md)). An adapter starts from a kit in
+`driver/kits/`. The local service is plain http, which the protocol leaves to the client: lws-client's
+adapters allow it when their environment sets `LWS_DRIVER_INSECURE_HTTP=1`, which an `adapters.yaml`
+entry gives with `environment:`. An AI agent drives a client through the MCP server's stdio profile
+([docs/mcp-client-development.md](docs/mcp-client-development.md)).

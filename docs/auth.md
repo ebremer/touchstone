@@ -26,11 +26,11 @@ says what each defect is.
 
 | Area | Tests | What they exercise |
 |---|---|---|
-| Storage authorization (`core/storage_authorization`) | 17 | The 401 challenge, the owner's access, a non-owner refused, and the access-token negative matrix: expired, not yet valid, issued in the future, wrong audience, two audiences, wrong issuer, corrupted signature, unknown key, `alg: none`. |
-| Authorization server (`core/authorization_server`) | 8 | RFC 8414 metadata at `/.well-known/lws-configuration`, and RFC 8693 token exchange: a valid exchange, an unknown or missing resource, a missing subject token, and the storage accepting the token it issued. |
-| Access grants (`core/access_grants`) | 7 | The access grant service, public and per-agent grants, revocation, access requests. |
+| Storage authorization (`core/storage_authorization`) | 19 | The 401 challenge and the protected resource metadata it names (RFC 9728), the owner's access, a non-owner refused, and the access-token negative matrix: expired, not yet valid, issued in the future, wrong audience, wrong issuer, corrupted signature, unknown key, `alg: none`. |
+| Authorization server (`core/authorization_server`) | 9 | RFC 8414 metadata at `/.well-known/lws-configuration`, with the subject token and identifier types it lists, and RFC 8693 token exchange: a valid exchange, an unknown or missing resource, a missing subject token, and the storage accepting the token it issued. |
+| Access grants (`core/access_grants`) | 17 | The access grant service, public and per-agent grants, the grant document and its constraints, an incomplete grant refused, revocation, a grant announced in its inbox, access requests. |
 | OpenID Connect (`auth/oidc`) | 6 | Token exchange with an ID Token from the harness's OpenID Provider, which the subject's controlled identifier document names, and five defects, including a provider the subject never named. |
-| Controlled Identifiers (`auth/cid`) | 14 | Two kinds of subject. With an HTTPS subject (`authn-cid-*`): token exchange with a self-issued credential whose key the verifier finds in a CID document the harness hosts, and five defects, including a `kid` that names no key. With a did:key subject (`authn-cid-didkey-*`), whose DID document the verifier derives from the identifier: token exchange and seven defects: signature, `alg: none`, expired, mismatched claims, an audience without the authorization server, no `exp`, no `iat`. |
+| Controlled Identifiers (`auth/cid`) | 22 | Two kinds of subject. With an HTTPS subject (`authn-cid-*`): token exchange with a self-issued credential whose key the verifier finds in a CID document the harness hosts, embedded or referenced by id, and nine defects, including a `kid` that names no key, a revoked key and a key another identifier controls. With a did:key subject (`authn-cid-didkey-*`), whose DID document the verifier derives from the identifier: token exchange and ten defects: signature, `alg: none`, expired, mismatched claims, an audience without the authorization server, no `exp`, no `iat`, no `sub`, no `iss`, no `client_id`. |
 | SAML 2.0 (`auth/saml`) | 3 | Token exchange with a signed assertion from the harness identity provider, an altered one, and an unsigned one. |
 
 All of them pass against the secured reference deployment, and the self-test loop shows
@@ -99,7 +99,7 @@ touchstone run --target secured-ref --targets targets-secured.yaml --module auth
 ...
 [passed      ] MUST   auth/cid/manifest#authn-cid-didkey-valid-credential (300 ms)
 ...
-23 passed, 0 failed, 0 cantTell, 0 inapplicable  (target secured-ref, run 9144936a)
+31 passed, 0 failed, 0 cantTell, 0 inapplicable  (target secured-ref, run 5759ac9a)
 conformant: no MUST test failed or ended cantTell
 ```
 

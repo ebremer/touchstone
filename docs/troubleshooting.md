@@ -10,6 +10,9 @@ description: "Common errors, what they mean, and what to do about them."
 1. TOC
 {:toc}
 
+This page is about server runs. For client sessions and drives, see
+[Testing a client](testing-a-client.md#troubleshooting).
+
 ## The run refuses to start (exit code 2)
 
 Exit code `2` means there is no verdict: nothing about the server was concluded, and no
@@ -104,13 +107,14 @@ the draft makes optional. When a server refuses it, the harness deletes the cont
 members one by one, and warns only if that fails too. The run's results are unaffected.
 Delete the container by hand, or ignore it.
 
-## A conneg test reports different bytes
+## A conneg test reports different RDF
 
-`connegEquivalent` wants byte-identical bodies for every media type it asks for. When
-they differ, the report says whether their JSON-LD graphs are still the same: "isomorphic"
-means the server re-serialised one graph, "not isomorphic" that it returned different
-content. Touchstone parses JSON-LD offline, and knows only the LWS and CID contexts; a
-response naming any other context cannot be compared. This is deliberate; see
+`rdfIsomorphicWith` fetches the URL again as `application/lws+json` and wants the two
+representations to encode the same RDF, each read by its own `Content-Type` (JSON-LD,
+Turtle, TriG, N-Triples or N-Quads). When they differ, the report says "not isomorphic",
+how many quads each holds, and a quad one has that the other lacks. Touchstone parses
+JSON-LD offline, and knows only the LWS and CID contexts; a response naming any other
+context cannot be compared. This is deliberate; see
 [Security model](security.md#3-responses-from-the-server-under-test-are-untrusted).
 
 ## An MCP client gets no answer over stdio

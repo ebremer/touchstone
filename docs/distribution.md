@@ -87,8 +87,9 @@ and bob's tokens as secrets in `TOUCHSTONE_TOKEN_ALICE` and `TOUCHSTONE_TOKEN_BO
           capabilities: Authentication
 ```
 
-The action passes the two variables to the harness by name, so their values never appear
-in the log. The fault tests that need the authorization server's signing key
+For the tests that grant an agent access, also give alice's and bob's CID URLs in
+`TOUCHSTONE_CID_URL_ALICE` and `TOUCHSTONE_CID_URL_BOB`. The action passes these variables to the harness by name, so their
+values never appear in the log. The fault tests that need the authorization server's signing key
 (`HarnessIssuedTokens`) and the suites that need the server to reach the harness or trust
 its identity provider apply only to a deployment arranged for them; the harness's own
 self-test loop exercises them against the reference deployment. See

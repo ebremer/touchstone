@@ -14,7 +14,7 @@ description: "The files a run writes, what each is for, and how Touchstone decid
 
 Every run writes one directory, `<report-dir>/<stamp>-<runId>/`. The stamp is the run's
 start time in UTC, written in ISO 8601 basic form, for example
-`2026-09-23T200806Z-9d5148bb`. Listing the directory therefore shows runs in the order
+`2026-10-29T224839Z-bdeb9fbe`. Listing the directory therefore shows runs in the order
 they happened. The format has no colons, so the name is valid on every filesystem,
 Windows included.
 
@@ -85,7 +85,8 @@ test is recorded as an `earl:Assertion`, with:
   as its JSON-LD export. The test case carries its label as `dcterms:title`, and links to
   the catalog requirements it covers through `touchstone:verifies`;
 - `earl:assertedBy`: the harness, with its name and version;
-- `earl:result`: the outcome and the run's start time.
+- `earl:result`: the outcome and the run's start time, and, for a test that did not pass, why
+  (`earl:info`).
 
 This assertion and test case are taken from a real run against the broken twin:
 
@@ -94,7 +95,8 @@ This assertion and test case are taken from a real run against the broken twin:
   earl:assertedBy  <https://example.org/touchstone/harness>;
   earl:mode        earl:automatic;
   earl:result      [ a             earl:TestResult;
-                     dcterms:date  "2026-09-23T20:08:06.388438600Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;
+                     dcterms:date  "2026-10-29T22:48:39.449070875Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;
+                     earl:info     "core/storage_authorization#getContainer-private-unauthorized - failed [MUST] (1863 ms)\n  step 'An anonymous request for a protected container is refused with 401 and a conforming challenge':\n    FAILED status code\n      expected: 401\n      actual:   200\n    exchange: GET http://localhost:4712/touchstone-run-bdeb9fbe/getcontainer-private-unauthorized/ -> 200\n    response body: {\"@context\":\"https://www.w3.org/ns/lws/v1\",\"id\":\"http://localhost:4712/touchstone-run-bdeb9fbe/getcontainer-private-unauthorized/\",\"type\":\"Container\",\"totalItems\":0,\"items\":[]}";
                      earl:outcome  earl:failed
                    ];
   earl:subject     <http://localhost:4712/>;

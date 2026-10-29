@@ -9,7 +9,7 @@ description: "Build Touchstone, run the test definitions against the bundled ref
 
 This page builds Touchstone and runs its test definitions against the bundled reference
 servers: first an open one, then a secured deployment with an authorization server, where
-every definition applies. Then it shows you where the reports are. It takes about five
+all but three definitions apply. Then it shows you where the reports are. It takes about five
 minutes, most of them spent in the first build.
 
 1. TOC
@@ -73,22 +73,23 @@ then the verdict and the location of the report bundle (abridged):
 [passed      ] MUST   core/discovery#discovery-link-storage-on-data-resource (44 ms)
 ...
 [inapplicable] MUST   core/storage_authorization#getContainer-private-unauthorized (0 ms)
-    core/storage_authorization#getContainer-private-unauthorized - inapplicable [MUST] (0 ms)
+    core/storage_authorization#getContainer-private-unauthorized - inapplicable [MUST]
       inapplicable: the target does not declare Authentication
 ...
-45 passed, 0 failed, 0 cantTell, 56 inapplicable  (target ref, run d0b828c6)
+78 passed, 0 failed, 0 cantTell, 143 inapplicable  (target ref, run 71e346ce)
 conformant: no MUST test failed or ended cantTell
-reports: runs/2026-09-23T200803Z-d0b828c6 (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)
+reports: runs/2026-10-29T224506Z-71e346ce (run.json, report.json, report.md, report.html, report.pdf, earl.ttl, junit.xml)
 ```
 
-This server authenticates nobody, so every test about authentication, authorization and
-the authentication suites is inapplicable, and says why. The rest pass.
+This server authenticates nobody and cannot reach the harness's fixture host, so every test
+that needs either is inapplicable, and says why. So are three tests for a storage that does
+less than this one. The rest pass.
 
 ## Run every definition
 
 The secured reference deployment adds a reference authorization server, and configures the
 harness to hold its signing key and to host the identity documents it dereferences. Every
-capability a definition can require is declared, so every definition applies. Start it,
+capability a definition can require is declared, so no test lacks one. Start it,
 and give it a file to write its target registry to:
 
 ```sh
@@ -106,17 +107,17 @@ touchstone run --target secured-ref --targets targets-secured.yaml
 ```text
 [passed      ] MUST   core/discovery#discovery-get-links-storageDescription (68 ms)
 ...
-[inapplicable] MUST   core/notifications#notification-service-advertised (16 ms)
-    core/notifications#notification-service-advertised - inapplicable [MUST] (16 ms)
-      inapplicable: precondition 'the storage advertises notifications (otherwise this test does not apply)' does not hold: ...
+[inapplicable] MUST   core/pagination#pagination-single-page (64 ms)
+    core/pagination#pagination-single-page - inapplicable [MUST] (64 ms)
+      inapplicable: precondition 'the listing is paginated and holds all five members on its page (otherwise this test does not apply)' does not hold: ...
 ...
-100 passed, 0 failed, 0 cantTell, 1 inapplicable  (target secured-ref, run c915cfee)
+218 passed, 0 failed, 0 cantTell, 3 inapplicable  (target secured-ref, run 8dcb3ffc)
 conformant: no MUST test failed or ended cantTell
 ```
 
-The one inapplicable test checks the advertisement of a notification service, and the
-reference server has none to advertise. `targets-secured.yaml` holds throwaway keys for
-these local servers, and is git-ignored.
+The three inapplicable tests are for a storage that does less than the reference: one that
+shows a small container on a single page, and two that move less than it does.
+`targets-secured.yaml` holds throwaway keys for these local servers, and is git-ignored.
 
 The exit code is `0` when no MUST test failed or ended cantTell, and `1` when one did. It
 is `2` when there is no verdict, for example when the target id is unknown or the server

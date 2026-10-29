@@ -2,8 +2,9 @@
 
 The YAML-LD test definitions are data, so they are checked as data. This directory holds
 the checks listed in `definitions/README.md` ("Validating"), and the generators for the two
-generated files, `definitions/lws10/vocab.yamlld` and `definitions/COVERAGE.md`. CI runs
-them on every push and pull request.
+generated files, `definitions/lws10/vocab.yamlld` and `definitions/COVERAGE.md`. `check.py`
+also runs the driver protocol's checks in `tools/driver/`. CI runs them on every push and pull
+request.
 
 ## Running them
 
@@ -12,7 +13,7 @@ cd tools/definitions
 npm ci                               # Node 22 or newer
 pip install -r requirements.txt      # Python 3.12 or newer
 python check.py                      # every check; exit 1 if any fails
-python check.py --write              # the same, but regenerate the two generated files
+python check.py --write              # the same, but regenerate the generated files
 ```
 
 `check.py` runs these in order:
@@ -21,11 +22,14 @@ python check.py --write              # the same, but regenerate the two generate
 |---|---|---|
 | 1 | `validate_ld.js` | Every `.yamlld` parses as YAML 1.2 (Core Schema), with no tabs, anchors or duplicate keys. Each converts to RDF with JSON-LD in safe mode, using only the repository's own contexts. It writes the JSON form to `build/json/` for the later checks. |
 | 2 | `portable_yaml.py` | A YAML 1.1 parser reads every file the same way. |
-| 3 | `validate_schema.js` | Every document validates against `definitions/schema/definitions.schema.json` in strict mode. 20 negative controls, real tests each with one deliberate defect, must all be rejected. |
+| 3 | `validate_schema.js` | Every document validates against `definitions/schema/definitions.schema.json` in strict mode. 55 negative controls, real tests each with one deliberate defect, must all be rejected. |
 | 4 | `lint_definitions.py` | The lint of `EXECUTION.md` section 2.5. |
 | 5 | `gen_vocab.py --check` | `vocab.yamlld` is what the term table in the script generates, and it defines exactly the `lwst:` terms of `context.jsonld`. |
 | 6 | `gen_coverage.py --check` | `COVERAGE.md` is what the definitions generate, and every requirement that binds a client or a receiver is cited by a client rule or has a reason in `NOT_JUDGED`, never both. |
 | 7 | `export_dryrun.js` | The JSON-LD export loses nothing: each exported document gives the same canonical RDF as its YAML-LD source, minus the Touchstone-only terms. |
+| 8 | `../driver/gen_schema.py --check` | `driver/protocol.schema.json`, and harness-core's copy of it, are what the operation table of `driver/PROTOCOL.md` section 5 generates. |
+| 9 | `../driver/check_schema.js` | The driver protocol's schema compiles in strict mode, accepts the protocol's example lines and rejects the broken ones. |
+| 10 | `../driver/check_kits.py` | Every starter kit in `driver/kits/` has a README and names every operation of the protocol. |
 
 The lint covers what the schema cannot:
 - unique names, and bound variables;
@@ -34,7 +38,11 @@ The lint covers what the schema cannot:
 - `source` anchors that exist in their dated snapshots;
 - fixtures that exist, and no example hosts in executable values;
 - `mirrors` and `supersedes` targets that exist. `supersedes` names a retired manifests/
-  test, listed in `retired-manifests.txt` (D-0055).
+  test, listed in `retired-manifests.txt` (D-0055);
+- client rules that cite a requirement binding a client or a receiver, and judge with no
+  variables or captures;
+- drives (format 0.16.0) that name operations and arguments of the frozen driver protocol, use
+  only its variables and earlier captures, and start a task only in a rule with one.
 
 Two of the files are generated, so edit their sources rather than the files:
 - **`vocab.yamlld`:** edit the table in `gen_vocab.py`, then run `python check.py --write`

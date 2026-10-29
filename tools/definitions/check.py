@@ -1,7 +1,7 @@
 """Run every check on definitions/, in order (definitions/README.md, "Validating").
 
     python tools/definitions/check.py            check everything; exit 1 if anything fails
-    python tools/definitions/check.py --write    also regenerate vocab.yamlld and COVERAGE.md
+    python tools/definitions/check.py --write    also regenerate vocab.yamlld, COVERAGE.md and the driver protocol's schema
 
 Needs Node with this directory's packages (npm ci) and the Python packages in
 requirements.txt. The lws-test-suite checks need a checkout of that repository (README.md).

@@ -44,7 +44,7 @@ A touchstone is the dark stone assayers once used to test gold against a known s
 - **One engine, three front ends.** The same engine runs behind a
   [command-line tool](cli.md), a [Docker image and GitHub Action](distribution.md) for CI,
   and an [MCP server](mcp.md). The MCP server lets an AI agent start runs, read failures
-  and iterate on a server implementation.
+  and iterate on a server implementation, or drive a client through a session.
 
 ## Where to start
 
@@ -56,6 +56,7 @@ A touchstone is the dark stone assayers once used to test gold against a known s
 | Run the suite against every known LWS server implementation | [Every known LWS server](getting-started.md#every-known-lws-server) |
 | Get a conformance report on every push to your server's repository | [Distribution](distribution.md) |
 | Let an AI agent run the suite and fix your server | [MCP server](mcp.md) |
+| Let an AI agent drive your client and fix it | [Developing a client with an agent](mcp-client-development.md) |
 | Understand how Touchstone tests servers and clients, and what a result claims | [Methodology](methodology.md) |
 | Understand how a run works | [How it works](how-it-works.md) |
 | Write or review tests | [Writing tests](writing-tests.md) and [Requirements catalog](catalog.md) |
@@ -69,9 +70,11 @@ As of October 2026:
   the Docker image and the GitHub Action.
 - **Client testing:** a service that tests LWS clients against sessions of their own, judged by
   53 client rules, with EARL, JUnit XML and JSON reports, a proxy mode in front of a real server,
-  and read-only MCP tools for a coding agent. A client's developers can also write a small
+  and MCP tools for a coding agent. A client's developers can also write a small
   adapter, from a starter kit in their language, and let Touchstone drive the client through a
-  session unattended (`touchstone drive`). See [Testing a client](testing-a-client.md).
+  session unattended (`touchstone drive`), or let an agent drive it through the MCP server run
+  locally. See [Testing a client](testing-a-client.md) and
+  [Developing a client with an agent](mcp-client-development.md).
 - **Requirements catalog:** 321 requirements (254 MUST, 29 SHOULD, 38 MAY) from the four
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
@@ -94,7 +97,9 @@ As of October 2026:
 - **Catalog baseline:** the catalog and the definitions follow the drafts W3C published as
   of 19 October 2026: the 19 October core Working Draft and the 15 October OpenID Connect,
   SAML and CID ones. A weekly CI job fails when W3C publishes a newer version
-  (see [Requirements catalog](catalog.md#tracking-the-draft)). The did:key suite, which
+  (see [Requirements catalog](catalog.md#tracking-the-draft)). W3C has since published a core
+  Working Draft of 23 October 2026, with one change, on creating a resource in a container that
+  does not exist; Touchstone has not moved to it yet. The did:key suite, which
   W3C discontinued on 29 September 2026 in favour of the CID suite, is retired (D-0058).
 
 {: .note }

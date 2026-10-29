@@ -23,6 +23,8 @@ links are all computed from those citations.
 | `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 15 October 2026 | 8 |
 | `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 15 October 2026 | 14 |
 | `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 15 October 2026 | 7 |
+| `catalog/lws10-notifications-webhook.ttl` | Webhook notification suite, editor's draft as of 2 October 2026 | 20 |
+| `catalog/lws10-index.ttl` | Search and type index services, editor's draft as of 2 October 2026 | 57 |
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
@@ -70,14 +72,14 @@ can break the clause, one value per role (D-0076):
 
 | Role | Who | Requirements |
 |---|---|---:|
-| `Server` | The LWS server: the storage and the services its storage description advertises | 223 |
+| `Server` | The LWS server: the storage and the services its storage description advertises | 247 |
 | `AuthorizationServer` | The storage's authorization server: metadata, token exchange, access tokens, credential validation | 26 |
-| `Client` | The client application, including the credentials it issues for itself under the CID suite | 75 |
+| `Client` | The client application, including the credentials it issues for itself under the CID suite | 81 |
 | `IdentityProvider` | An OpenID Provider or SAML identity provider that issues credentials for an end user | 16 |
 | `Receiver` | A webhook inbox | 4 |
 | `Specification` | Another specification, such as an authentication suite, which no implementation can break | 2 |
 
-A clause that obliges more than one role names each: 39 bind both servers and clients, such
+A clause that obliges more than one role names each: 44 bind both servers and clients, such
 as `linkset-precondition-failed-412` ("servers and clients SHOULD use conditional
 requests"). A clause that defines a message binds whoever produces it, so "the ID Token MUST
 NOT use none" is the identity provider's, and the authorization server's duty to refuse such
@@ -86,8 +88,8 @@ a token is its own requirement.
 The roles decide two things.
 
 - **Coverage.** A server run answers for `Server` and `AuthorizationServer` requirements,
-  so `touchstone coverage`, the MCP `coverage` tool and the reports count only those (248
-  of 296). The others are for [client testing]({% include src.html path="CLIENT-TESTING.md" %});
+  so `touchstone coverage`, the MCP `coverage` tool and the reports count only those (272
+  of 321). The others are for [client testing]({% include src.html path="CLIENT-TESTING.md" %});
   `definitions/COVERAGE.md` lists the client and receiver requirements separately.
 - **The lint.** A test that cites requirements must cite one that binds a server or an
   authorization server. A negative test may instead rest on the clause of the client or
@@ -138,7 +140,7 @@ no drift: every catalog clause still appears in the spec, and every section anch
 ```
 
 A scheduled CI job, `Spec drift` (`.github/workflows/spec-drift.yml`), does this every
-week for all four documents. `tools/extractor/check_published.py` fetches each document's
+week for all six documents. `tools/extractor/check_published.py` fetches each document's
 latest version from `/TR/`, and fails when W3C serves a newer dated version than the one
 the catalog is baselined on, or when a catalogued clause has changed:
 
@@ -154,7 +156,9 @@ Because re-baselining rewrites Approved entries, it is a reviewed change.
 {: .note }
 The catalog is based on the **19 October 2026** core draft and the **15 October 2026** OpenID
 Connect, SAML and CID drafts, the versions W3C published as of 19 October 2026 (D-0057,
-D-0086, D-0100). The 19 October core draft has a 401 name the requested resource's
+D-0086, D-0100). W3C's core Working Draft of 23 October 2026, whose one change is the status a
+server answers for a create in a missing container (w3c/lws-protocol#263), is not yet taken in.
+The 19 October core draft has a 401 name the requested resource's
 **protected resource metadata** (RFC 9728) instead of the authorization server and a realm,
 and link to the storage a token is for, which a client checks before it asks for one. It
 requires only `application/lws+json` of a container, and a representation asked for in the

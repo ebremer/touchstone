@@ -7,7 +7,9 @@ request it sends on the session's page. Every request is judged against the clie
 Phases C1 to C7 are built: sessions, the traffic log, the rules, the tasks and faults that let a
 developer try every rule on purpose, four ways for a client to authenticate, signed
 notifications to the client's inbox, the guided page and the EARL, JUnit XML and JSON
-exports, and proxy mode, in which a session fronts a real server. The guide for client developers is the docs site's
+exports, and proxy mode, in which a session fronts a real server. Phase C8 adds driven sessions:
+Touchstone's client driver ([harness-driver](../harness-driver/README.md)) can drive a client
+through a session instead of a person. The guide for client developers is the docs site's
 [Testing a client](../docs/testing-a-client.md).
 
 ## Running it
@@ -220,7 +222,7 @@ with no session holding it is answered `503`, and forwarded nowhere. In a proxy 
   `proxy.issuer`, the provider's ID Tokens name that authorization server in `aud`;
 - the server delivers its notifications itself, not through the proxy.
 
-The public service registers no proxy target: a stranger's session should not reach a real
+A public service registers no proxy target: a stranger's session should not reach a real
 server. `GET <base>/proxies` lists the targets and whether a session holds each; the start page
 offers them.
 

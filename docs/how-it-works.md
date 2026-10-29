@@ -17,7 +17,7 @@ Touchstone is a Java 21 Maven project with six modules, plus the data they opera
 | Path | What it holds |
 |---|---|
 | `harness-core` | The engine: catalog loading, the definitions loader and lint, the engine that runs them, identities and credentials, and every report writer. It has no Spring dependency, so every front end can use it. |
-| `harness-fixtures` | Servers Touchstone controls: the reference LWS server, the reference authorization server, and broken twins of both; and a scripted reference client with broken twins of its own, for the client rules. |
+| `harness-fixtures` | Servers Touchstone controls: the reference LWS server, the reference authorization server, and broken twins of both; and a scripted reference client with broken twins of its own, for the client rules, and the reference adapter that drives them. |
 | `harness-clients` | The client-session service, for testing LWS clients: each session is a reference storage and authorization server of its own, with every request recorded and judged against the client rules ([CLIENT-TESTING.md]({% include src.html path="CLIENT-TESTING.md" %})). |
 | `harness-driver` | The client driver: it drives an LWS client through a client session, through an adapter its developers write to [`touchstone-driver/1`]({% include src.html path="driver/PROTOCOL.md" %}) ([Let Touchstone drive your client](testing-a-client.md#let-touchstone-drive-your-client)). |
 | `harness-cli` | The `touchstone` command (`run`, `coverage`, `diff`, `drive`, `driver check`), built as one runnable jar. |
@@ -191,9 +191,10 @@ A test suite needs testing too. Touchstone checks that each test passes against 
 that does the right thing, and fails against one that does not. `harness-fixtures`
 provides both.
 
-- **`RefLwsServer`** is an in-memory LWS server on embedded Jetty that follows the 5
+- **`RefLwsServer`** is an in-memory LWS server on embedded Jetty that follows the 19
   October 2026 Working Draft: containers, data resources, conditional requests, byte
-  ranges, linksets, the storage description, access grants and access requests. It has
+  ranges, linksets, moves, the storage description, protected resource metadata, access
+  grants, access requests and webhook notifications. It has
   three modes:
   - `OPEN`: no authentication;
   - `SECURED`: validates access tokens against the reference authorization server, answers
@@ -203,8 +204,9 @@ provides both.
 
   It can also set traps: behaviour the drafts allow but a client must not assume away. Page
   and linkset URLs are opaque, resource URLs do not nest under their container's, binary
-  resources refuse PUT, a decoy in the root links its challenge to a storage on another
-  origin, only data resources move, and the index lags behind writes. Client sessions set them all; the server self-test sets them once, to
+  resources refuse PUT, a PUT never makes a combined update, a decoy in the root links its
+  challenge to a storage on another origin, only data resources move, and the index lags
+  behind writes. Client sessions set them all; the server self-test sets them once, to
   prove they are legal.
 - **`RefAuthorizationServer`** publishes RFC 8414 metadata and a JWKS, and exchanges
   CID (HTTPS and did:key subjects), OpenID Connect and SAML subject tokens for access
@@ -222,17 +224,20 @@ provides both.
   needs a combined update, which one trap takes away, and the move tests that need containers
   to move or URIs to be kept are inapplicable: a definition that failed there would assume
   something the drafts leave open;
-- against an open storage, which moves nothing, exactly the tests that need authentication or
-  a MoveResource capability are inapplicable;
+- against an open storage, which moves nothing, exactly the tests that need authentication,
+  the fixture host or a MoveResource capability are inapplicable, as is the single-page
+  pagination test;
 - against the broken authorization server, the 26 negative tests of the three
   authentication suites fail, and so does the unknown-storage test;
-- against the broken storage, its 24 access-control tests fail;
+- against the broken storage, its 29 access-control tests fail;
 - against a storage that leaks notifications, the two delivery-authorization tests and the
   signature test fail.
 
 `ClientRulesSelfTest` does the same for the client rules. In client sessions of their own,
 `RefLwsClient`, a scripted client that does what the rules ask and starts every task, passes all
 53. Each of its 54 broken twins gets one thing wrong and fails exactly the rules aimed at it.
+`DriverSelfTest` drives the same client and twins through the reference adapter, with the same
+result.
 
 Each broken twin fails exactly the tests that exist to catch it, which is what shows those
 tests can fail.
@@ -249,8 +254,8 @@ specification shows up as a failing check rather than as silently stale tests. S
 
 The engine expands the definitions with their own two contexts, and parses JSON-LD
 responses, when it compares negotiated representations, with an offline document loader.
-The response contexts Touchstone understands are bundled with it: the LWS context, copied
-verbatim from the draft, and the CID context. A response that names any other context
+The response contexts Touchstone understands are bundled with it: the LWS context, as the
+Working Group publishes it with the draft's vocabulary, unmodified, and the CID context. A response that names any other context
 cannot be parsed rather than triggering a network fetch. The context IRI comes from the
 server's response, which is untrusted input. And `https://www.w3.org/ns/lws/v1` is not yet
 published, so a verdict must not depend on fetching it.

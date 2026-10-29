@@ -26,9 +26,24 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-10-29 — the core draft of 23 October 2026
+
+W3C published a core Working Draft dated 23 October 2026. Its one change is w3c/lws-protocol
+PR #263: a create in a container that does not exist is answered from a status table (404 Target
+Not Found, 403 Not Permitted, 401 Unknown Requester; a server MAY answer 404 instead of 403), where
+the 19 October draft said the server "MUST return a 404 error status unless another status code is
+more appropriate". A note adds that creating several container levels in one request is undefined.
+
+- [ ] **Re-baseline the core catalog onto the 23 October WD.** `create-post-missing-container-404`
+  still quotes the removed clause. Replace it from the new table, and check the test that cites it
+  (`definitions/lws10/core/data_resources.yamlld`) against the new statuses.
+
+---
+
 ## 2026-10-29 — Factoidal's client, driven (D-0109)
 
-`driver/adapters/factoidal` drives `@factoidal/core` 0.18.0: 52 of 53 rules pass, none fail.
+`driver/adapters/factoidal` drives `@factoidal/core` 0.26.0 (0.18.0 until D-0110): 52 of 53 rules
+pass, none fail.
 
 - [x] **Factoidal's next release.** Its main branch, past 0.18.0, takes `subscribe`'s endpoint
   (`endpoint`), a write's whole `If-None-Match` (`ifNoneMatchTags`) and access documents with several
@@ -40,7 +55,12 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
   at it and `driver/adapters/factoidal` goes.
 - [ ] **Factoidal in the interop matrix.** `interop-all.sh` drives clients through lws-client's driver
   server; `targetservers/clients` would need the package and this adapter, and a `factoidal` language
-  in its `application.yaml`.
+  in its `application.yaml`. Shown to work on 2026-10-29 without changing the image: one more compose
+  file for the `clients` service that mounts `driver/` read-only and adds the language,
+  `--lws.driver.languages.factoidal.command[0]=node` and `[1]=/opt/touchstone-driver/adapters/factoidal/adapter.mjs`
+  (the driver speaks `touchstone-driver/1` since lws-client `ff51462`). Twelve clients against the
+  seven targets, 71 of 84 work; Factoidal's client works with every target but the Community Solid
+  Server (0 of 11: its 401 has no `resource_metadata`) and sparq-lws-core (10 of 11).
 
 ---
 
@@ -48,8 +68,9 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 Touchstone drives clients through adapters (`touchstone-driver/1`); lws-client speaks it since `ff51462`.
 
-- [ ] **Redeploy the client-session service on vulcan.** The deployed one refuses a session marked
-  `driven`, so `touchstone drive` against the public service fails until it runs this version.
+- [x] **Redeploy the client-session service.** The deployed one refused a session marked
+  `driven`, so `touchstone drive` against it failed until it ran this version.
+  → **Done: the deployed client-session service runs this version.**
 - [ ] **Unknown arguments.** PROTOCOL.md section 8 says an adapter answers an argument it does not
   know `unsupported`; lws-client's adapters and the starter kits ignore it, and `touchstone driver
   check` does not test it. Harmless while both drivers check arguments against the schema; it
@@ -97,13 +118,15 @@ lets clients move resources between containers. On branch `spec/wd-2026-10-19`.
   → **Done (D-0100).**
 - [ ] **Erich: review D-0100's five points** (the seed's successor left Draft, the fallback and
   the breaking format change, the retired test, the readings in the new tests, the decoy).
-- [ ] **Deployment:** the vulcan front proxy must forward
-  `/.well-known/oauth-protected-resource/touchstone/clients/` to the client-session service, as it
+- [x] **Deployment:** the deployed client-session service's front proxy must forward
+  `/.well-known/oauth-protected-resource/touchstone/clients/` to the service, as it
   forwards `/.well-known/lws-configuration/touchstone/clients/`, before sessions of this version
-  can hand out tokens there.
-- [ ] **Target servers:** each still answers with `as_uri` and `realm`. Their runs go ahead on the
-  fallback, and fail the challenge and protected-resource-metadata tests until they follow the
-  draft.
+  can hand out tokens there. → **Done.**
+- [ ] **Target servers:** the Community Solid Server (PR #126, unchanged since 7 October) still
+  answers with `as_uri` and `realm`. Its runs go ahead on the fallback, and fail the challenge and
+  protected-resource-metadata tests until it follows the draft. Every other target sends the RFC 9728
+  challenge (D-0110). sparq-lws-core (`main`, `01b5ad8`) still fails two metadata tests: the metadata
+  its 401 names is the storage's, never the resource's that was asked for.
 - [ ] **Later, if wanted:** a reference variant that does not preserve identifiers, so that
   `move-new-identifier-response` (200, the new anchor, `Content-Location`, 301 at the old URI) can
   be tested and validated.

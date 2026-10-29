@@ -8,7 +8,7 @@ description: "The YAML-LD test format: it mirrors and extends the LWS test group
 {: .no_toc }
 
 {: .important }
-**Format version 0.14.0 (2026-10-19), awaiting review; 0.11.0 was frozen on 2026-10-05.** These are the tests `touchstone run`
+**Format version 0.16.0 (2026-10-29), frozen at Gate D; 0.15.0 and 0.14.0 await review; 0.11.0 was frozen on 2026-10-05.** These are the tests `touchstone run`
 executes; 0.8.0 added client rules, which client sessions judge instead (`definitions/OBSERVATION.md`), and 0.16.0 gave them a `drive`, the steps Touchstone's client driver runs so a rule is tried (section 12 there). The engine that runs them implements the format's execution contract, and all 221
 run against the reference deployment in every build.
 
@@ -42,6 +42,7 @@ serve that effort in three ways:
 definitions/
   README.md                 why the definitions exist, authoring rules, validation, export
   EXECUTION.md              the contract an engine must implement
+  OBSERVATION.md            the contract for judging client rules, and for driving them
   COVERAGE.md               mapping to lws-test-suite and to the retired manifests, test by test
   COMPARISON.md             this format against lws-test-suite's, and why it is stronger
   schema/
@@ -53,8 +54,12 @@ definitions/
     identities.yamlld       abstract identities and how their credentials are made
     manifest.yamlld         the root manifest, which includes the modules below
     core/                   discovery, containers, data_resources, conditional_requests, linksets,
-                            storage_authorization, authorization_server, access_grants, notifications
+                            moving, pagination, storage_authorization, authorization_server,
+                            access_grants, notifications
     auth/                   oidc, cid, saml
+    index/                  the search and type index services
+    notifications/webhook/  the webhook notification suite
+    clients/                client rules, which client sessions judge
     fixtures/               request and expected-body files
 ```
 
@@ -161,9 +166,10 @@ reference does. The trapped and open deployments run them instead. Against broke
 tests that exist to catch each defect fail.
 
 The definitions replaced the YAML test manifests Touchstone ran before, which followed the
-21 August 2026 draft. 32 of those 33 tests have a successor among the definitions. The
-other, `core/put-unconditional-428`, tested a requirement the September draft removed, so
-it has none. [COVERAGE.md]({% include src.html path="definitions/COVERAGE.md" %}), table 2,
+21 August 2026 draft. 31 of those 33 tests have a successor among the definitions. The
+other two have none: `core/put-unconditional-428` tested a requirement the September draft
+removed, and `core/patch-merge-patch-baseline` the JSON Merge Patch baseline that the 5 October
+draft replaced with JSON Patch. [COVERAGE.md]({% include src.html path="definitions/COVERAGE.md" %}), table 2,
 maps each to its successor.
 
 ## Validating the definitions
@@ -180,13 +186,14 @@ The definitions are data, so they are checked as data:
 5. the vocabulary defines exactly the context's terms;
 6. `COVERAGE.md` regenerates without changes.
 
-All six pass for version 0.14.0, as does the JSON-LD export trial below. One command runs
-them all, and CI runs it on every push and pull request. The engine applies the same
+All six pass for version 0.16.0, as does the JSON-LD export trial below. One command runs
+them all, and CI runs it on every push and pull request; it also checks the driver protocol's
+schema and the starter kits. The engine applies the same
 checks, bar the anchor and lws-test-suite ones, before every run:
 
 ```sh
 cd tools/definitions && npm ci && pip install -r requirements.txt
-python check.py              # add --write to regenerate vocab.yamlld and COVERAGE.md
+python check.py              # add --write to regenerate vocab.yamlld, COVERAGE.md and the driver protocol's schema
 ```
 
 See [tools/definitions/README.md]({% include src.html path="tools/definitions/README.md" %})
@@ -203,8 +210,8 @@ Export is mechanical:
 4. Write each document as JSON, at the same relative path, with a `.jsonld` extension.
 
 The result must convert to RDF using only `context.jsonld`. Its graph must equal the
-YAML-LD graph minus the Touchstone-only triples. A trial export produced identical
-canonical RDF for all 16 documents.
+YAML-LD graph minus the Touchstone-only triples. The export trial, which `check.py` runs,
+produces identical canonical RDF for every document.
 
 ## Read more
 

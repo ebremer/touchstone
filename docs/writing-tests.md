@@ -10,7 +10,7 @@ description: "How to write a Touchstone test definition in YAML-LD: structure, p
 A Touchstone test is a **definition**: an entry in a YAML-LD manifest under
 `definitions/lws10/`. It describes one request and its response, or a flow of steps, with
 declarative expectations. Definitions are data, so a new test needs no Java code. The format
-is version 0.14.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
+is version 0.16.0, frozen: [`definitions/EXECUTION.md`]({% include src.html path="definitions/EXECUTION.md" %})
 says exactly what every key means, and an engine that does anything else is wrong.
 
 Before a run sends a single request, every definition is parsed as YAML 1.2, validated
@@ -26,8 +26,12 @@ fails any of these stops the run with exit code `2`.
 definitions/lws10/
   manifest.yamlld        the root manifest; it includes the others
   core/                  discovery, containers, data_resources, conditional_requests, linksets,
-                         storage_authorization, authorization_server, access_grants, notifications
+                         moving, pagination, storage_authorization, authorization_server,
+                         access_grants, notifications
   auth/<suite>/          oidc, cid and saml, each a manifest.yamlld
+  index/                 the search and type index services, a manifest.yamlld
+  notifications/webhook/ the webhook notification suite, a manifest.yamlld
+  clients/               client rules, judged by client sessions, not by a run (definitions/OBSERVATION.md)
   identities.yamlld      the identities tests act as, and how their credentials are made
   fixtures/              request and expected-body files
 ```

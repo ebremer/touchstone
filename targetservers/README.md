@@ -16,7 +16,7 @@ below is reachable as soon as it starts. A second set can be published beside th
 |---|---|---|---|---|
 | `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `e94e4d0` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
 | `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `aef56f2` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
-| `sparq-lws` | sparq-lws-core, LWS 1.0 mode | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `01b5ad8` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
+| `sparq-lws` | sparq-lws-core, LWS 1.0 mode, built with the SAML suite (`--features authn-saml`) | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `01b5ad8` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `4ee4a5c` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.7` `c7fb260` | `/targets/lwsd/` | `/data/as-key.json` |
@@ -75,8 +75,9 @@ A target container:
    19 October 2026 a 401 names the protected resource metadata of the resource requested (RFC 9728), at
    `<origin>/.well-known/oauth-protected-resource/targets/<name>/<path>`; the router sends it to
    `/.well-known/oauth-protected-resource/<path>` of the target's own root (`strip`), or unchanged (`keep`, `whole`).
-   A target can take that URL in another mode than its paths (the router's `$resource_metadata_mode`): `sparq-lws`
-   strips the prefix from its paths but answers its metadata, unchanged, at the public path it advertises.
+   A target can take that URL in a mode other than its paths': the router's `$resource_metadata_mode`, which is
+   `$prefix_mode` unless set, sends `sparq-lws`'s whole, since it strips the prefix from its paths but answers its
+   metadata at the public path it advertises.
 5. **Gives the storage to `LWS_OWNER`**: the agent, or for lws-server the agents, with full control. Where the
    server records its owner only once, at the storage's first start, changing `LWS_OWNER` later changes nothing.
 6. **Keeps its state in `/data`**, a volume, and runs as a user other than root.
@@ -138,10 +139,11 @@ no account, key or public address: everything a run needs is made for it.
   its storage URL, and Touchstone finds the root in the storage description as a client would; the others are
   registered by the container (`baseUrl`).
 - `--keep` leaves the servers running; `--project <name>` runs a second set beside another (a deployment's, say);
-  `--module <m>` runs part of the suite. Halcyon and lws-server take longest: without a way to mint an expired token,
+  `--module <m>` runs part of the suite; `--no-build` uses the images already built, and `--no-cache` builds them all
+  from scratch. Halcyon and lws-server take longest: without a way to mint an expired token,
   the expired-token test waits for a real one to expire.
 - **Exit status:** `0` when every target is conformant, `1` when every target was tested and one is not (the
-  Community Solid Server, at its pinned commit), and `2` when a target could not be tested.
+  Community Solid Server and sparq-lws-core, at their pinned commits), and `2` when a target could not be tested.
 - **Time and space.** From a fresh clone, with nothing cached, it took 17 minutes on a large cloud VM (D-0096). The
   images take about 5 GB, and building them takes several times that again for base images and build cache.
 
@@ -173,7 +175,7 @@ against the servers, and each step of each), `summary.md` and `results.json`.
 - **What counts.** A combination works when every step the server offers passes. A step for a service the storage
   does not advertise (notifications, type search, access requests and grants) is not applicable, and does not count.
 - **Exit status:** `0` when every combination works, `1` when one does not, `2` when the run could not be made.
-- **Time.** The scenario takes a few minutes for all 66 combinations, the servers' starting a few more. The clients
+- **Time.** The scenario takes a few minutes for all 77 combinations, the servers' starting a few more. The clients
   image took 3½ minutes to build on a large cloud VM with nothing cached (eleven toolchains).
 - `--keep`, `--no-build`, `--no-cache` and `--project` (default `lws-local-interop`) are as for `run-all.sh`.
 - `--client-source <dir>` builds the clients from a local lws-client checkout instead of the commit
@@ -230,7 +232,8 @@ containers at the URL the run gives it, as from anywhere else.
 2. Add a service `<name>` to `compose.yaml` on the network `lws-targets`, with `LWS_PUBLIC_URL` set to
    `${LWS_ORIGIN}/targets/<name>`, `LWS_OWNER`, and a volume for `/data`. Anything else it needs, such as a
    database, goes on a network of its own that the router is not on, as `lws-drupal-db` does.
-3. If it needs its path prefix kept (`keep` or `whole`), add it to `$prefix_mode` in `router/nginx.conf` and
+3. If it needs its path prefix kept (`keep` or `whole`), add it to `$prefix_mode` in `router/nginx.conf`; if it
+   answers its RFC 9728 metadata in another mode than its paths, add it to `$resource_metadata_mode` too. Then
    rebuild the router.
 4. `docker compose up -d --build <name>`. It answers at `<origin>/targets/<name>/` at once.
 5. Register a Touchstone target for it in your own registry (`targets.yaml`, see

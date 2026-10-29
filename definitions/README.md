@@ -1,7 +1,7 @@
 # LWS test definitions (YAML-LD)
 
-**Status: format version 0.15.0 (2026-10-26, DECISIONS.md D-0101), awaiting review; 0.11.0 was
-frozen on 2026-10-05 (D-0083).** The
+**Status: format version 0.16.0 (2026-10-29, DECISIONS.md D-0104, D-0105), frozen at Gate D;
+0.15.0 (D-0101) and 0.14.0 (D-0100) await review; 0.11.0 was frozen on 2026-10-05 (D-0083).** The
 context, vocabulary, schema and `EXECUTION.md` are fixed: changing any of them bumps the
 schema `$id` (see "Format version"). The tests themselves are content, not format, and
 every test is `status: Proposed`.
@@ -51,8 +51,9 @@ exist for three reasons:
 definitions/
   README.md                 this file
   EXECUTION.md              the contract an engine must implement (variables, matching, outcomes)
+  OBSERVATION.md            the contract for judging client rules, and for driving them (section 12)
   COMPARISON.md             this format against lws-test-suite's: what was merged, and why it is stronger
-  COVERAGE.md               generated: lws-test-suite and retired-manifest mapping, every test by module
+  COVERAGE.md               generated: lws-test-suite and retired-manifest mapping, every test and client rule by module
   schema/
     definitions.schema.json JSON Schema (2020-12) for manifests and the identity registry
   lws10/                    mirrors lws-test-suite's lws10/ tree, so export is file-for-file
@@ -62,8 +63,12 @@ definitions/
     identities.yamlld       the abstract identities tests name, and how their credentials are made
     manifest.yamlld         root manifest; includes the modules below
     core/                   discovery, containers, data_resources, conditional_requests, linksets,
-                            storage_authorization, authorization_server, access_grants, notifications
+                            moving, pagination, storage_authorization, authorization_server,
+                            access_grants, notifications
     auth/                   oidc, cid, saml — one manifest per authentication suite
+    index/                  the search and type index services
+    notifications/webhook/  the webhook notification suite
+    clients/                client rules (OBSERVATION.md); the root manifest does not include them
     fixtures/               request and expected-body fixtures (byte-exact; .gitattributes keeps LF)
 ```
 
@@ -203,11 +208,16 @@ them all, and CI runs it on every push and pull request (`tools/definitions/READ
      may instead rest on the clause of the client or identity provider whose message it
      forges (D-0076);
    - `source` anchors resolve;
-   - fixtures exist.
+   - fixtures exist;
+   - client rules pass the checks of `OBSERVATION.md` section 2, and their drives those of
+     section 12, against the frozen driver protocol.
 5. `vocab.yamlld` defines exactly the `lwst:` terms of `context.jsonld`.
 6. `COVERAGE.md` regenerates without a diff.
 
-For this version all six passed:
+The same command also checks the driver protocol's schema (`driver/protocol.schema.json`,
+D-0104) and that every starter kit names every operation (D-0107).
+
+For 0.2.0 (D-0053) all six passed:
 - 16 documents and 5,933 triples;
 - 101 tests with no lint errors, and all 20 schema negative controls rejected;
 - all 27 lws-test-suite tests accounted for;

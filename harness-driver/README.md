@@ -32,6 +32,14 @@ client-session service started with `--allow-private-inboxes` that works as it i
 needs the inbox at a public https URL: bind it with `--inbox-host`/`--inbox-port` and give that URL as
 `--inbox-public-base`.
 
+A local client-session service is plain http. The protocol leaves allowing that to the client
+(PROTOCOL.md section 7): lws-client's adapters allow it when their environment sets
+`LWS_DRIVER_INSECURE_HTTP=1`, which a client's `environment:` in `adapters.yaml` gives.
+
+`touchstone driver check -- <command>` (`AdapterChecker`) checks that an adapter speaks the protocol,
+with no session (PROTOCOL.md section 6); a correct adapter passes 34 of 34 checks. harness-mcp's
+driving tools, in its stdio profile only, drive through this module too (`DriveSession`, D-0106).
+
 ## What it guarantees
 
 - **Only registered adapters run** (section 14.3): the CLI and the tools take an id from the

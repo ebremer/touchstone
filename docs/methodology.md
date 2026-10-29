@@ -29,7 +29,7 @@ flowchart LR
         SUT -.->|dereferences| FIX[Touchstone's identity providers and documents]
     end
     subgraph client[Testing a client]
-        CUT[Client under test, driven by its developer] -->|its own requests| SES[Touchstone session, as the servers]
+        CUT[Client under test, driven by its developer or an adapter] -->|its own requests| SES[Touchstone session, as the servers]
         SES -->|signed notifications| INBOX[Client's inbox]
     end
     CAT --> ENG
@@ -152,15 +152,17 @@ write: a small program in the client's language that speaks
 [`touchstone-driver/1`]({% include src.html path="driver/PROTOCOL.md" %}), runs operations it is
 sent, such as "create this resource in that container", with the client, and reports what
 happened. Touchstone owns the protocol, a checker for it, and starter kits in ten languages, but
-no adapter: the per-language code stays with the client. Each rule says how to make a client do
-what it judges, its `drive`, so a session runs unattended: Touchstone walks the client through every
-rule's drive, starts each task and arms each fault on the way. Driving changes nothing about the
+not the adapters: the per-language code stays with the client. The one exception is Factoidal's,
+which Touchstone keeps until Factoidal's own adapter speaks the protocol. Each rule says how to
+make a client do what it judges, its `drive`, so a session runs unattended: Touchstone walks the
+client through every rule's drive, starts each task and arms each fault on the way. Driving changes nothing about the
 judging: the same rules judge the same traffic, and what an adapter reports never decides an
 outcome.
 
 Either way, whatever drives the client can drive the session too. The session API starts tasks,
 arms faults and reads results; Touchstone's MCP server reads the findings and, run locally, drives
-a registered client as well. So a single agent can work both sides.
+a registered client as well. So a single agent can work both sides
+([Developing a client with an agent](mcp-client-development.md)).
 
 ### Facts only the server knows
 
@@ -205,10 +207,10 @@ matching request. A rule that needs intent is never tried until its task starts.
 
 A client that follows the specification must cope with everything the drafts allow a server to do,
 not only with what most servers do. The session's storage therefore sets **traps**, legal behaviour
-that a client relying on unspecified behaviour trips over: opaque page URLs, resource URLs that do
-not nest under their container's, binary resources that refuse PUT, a decoy that links its
-challenge to a storage on another origin, and an index that lags behind writes. A conformant client
-never notices them.
+that a client relying on unspecified behaviour trips over: opaque page and linkset URLs, resource
+URLs that do not nest under their container's, binary resources that refuse PUT, a PUT that never
+makes a combined update, a decoy that links its challenge to a storage on another origin, moves of
+data resources only, and an index that lags behind writes. A conformant client never notices them.
 
 Some behaviour is legal but rare: a refused method, a lost response, an expired page, an expired
 token. A task can arm a **fault**, which makes the session answer one request that way. Rules do
@@ -267,7 +269,8 @@ rules ask and starts every task, in a session of its own. It passes every rule. 
 twins gets one thing wrong, such as building a page URL or sending its token in the query string,
 and fails exactly the rules aimed at it and nothing else. Every rule has a twin aimed at it, since a
 rule that no twin fails could never fail. `ProxyRulesSelfTest` repeats this through the proxy, for
-the rules a proxy session can judge.
+the rules a proxy session can judge, and `DriverSelfTest` through the reference adapter, with every
+rule's drive.
 
 **Real implementations.** Beyond the reference, Touchstone is run against every known LWS server
 implementation, each built from source (see

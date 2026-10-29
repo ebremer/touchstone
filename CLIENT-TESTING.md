@@ -2,9 +2,10 @@
 
 **Status: phases C0 to C7 are built ([D-0076](DECISIONS.md), D-0077, D-0080, D-0081, D-0082,
 D-0083, D-0084, D-0085), except C6's pilot with real clients, and the rule format passed Gate C
-(D-0079). D-0087 closes the gaps in what the rules judge, on a branch awaiting review. The service ran publicly at
-`https://vulcan.bmi.stonybrook.edu/touchstone/clients/` from 2026-10-05 to 2026-10-15; that deployment now answers only
-its owner's test hosts (D-0098), so anyone else runs the service themselves.**
+(D-0079). D-0087 closes the gaps in what the rules judge, awaiting review. Phase C8, driven clients,
+is built (D-0103 to D-0108), past Gate D (D-0104). The service ran publicly from 2026-10-05 to
+2026-10-15; that deployment now answers only its owner's test hosts (D-0098), so anyone else runs the
+service themselves.**
 This brief extends [DESIGN.md](DESIGN.md), whose rules still hold: the catalog is the source
 of truth, tests are data, the harness is tested against reference and broken twins, and
 every deviation gets a DECISIONS.md entry.
@@ -231,7 +232,9 @@ window planned as `followedBy` turned out unnecessary. Format 0.10.0 (phase C4, 
 what the recorder knows of a token request: where its credential came from
 (`credentialSource`), the credential's header and claims (`credential`), `audienceIncludesAs`,
 `identifiersAgree` and `realmContainsRequest` (since 0.14.0 `discoveryValid`, D-0100); and `form`,
-for form bodies.
+for form bodies. Format 0.16.0 (phase C8, D-0104) adds a rule's `drive`, the steps that make a
+driven client do what the rule judges (§14); its steps' arguments are the only place a rule takes
+variables.
 
 ```yaml
   - id: "#client-linkset-put-only-when-advertised"
@@ -454,8 +457,8 @@ URLs, and authentication does not survive that:
 So the target is deployed behind the service, configured with `{base}/p/{id}/` as the start
 of its public URLs. Nothing is rewritten, and every authentication suite works as it would
 without the proxy. Because a target's URLs are its own, not a session's, one session holds a
-target at a time. The service is started with `--proxy-targets`, and the public service on
-vulcan registers none (D-0085): a stranger's session should not reach a real server.
+target at a time. The service is started with `--proxy-targets`, and a public service registers
+none (D-0085): a stranger's session should not reach a real server.
 
 With the proxy:
 - the recorder infers each exchange's role from what the server handed out (OBSERVATION.md
@@ -644,10 +647,10 @@ So client sessions judge 64 of the 79: 56 of the 58 MUSTs, 6 of the 8 SHOULDs, 2
 
 ## 12. Open questions (for Erich)
 
-1. **Hosting. Decided 2026-10-05 (D-0084): vulcan.** The service runs there as its own process
-   and user, behind the nginx that fronts Halcyon, at `/touchstone/clients/`. It never talks to
-   Halcyon. ebremer.com was the other candidate, but it has 3 GB of memory for everything and
-   shares Apache with regalbait.
+1. **Hosting. Decided 2026-10-05 (D-0084).** The service runs on its owner's server as its own
+   process and user, behind a front proxy, at `/touchstone/clients/`. Since 2026-10-15 that
+   deployment answers only its owner's test hosts (D-0098); anyone else runs the service
+   themselves.
 2. **Session creation. Decided 2026-10-05 (D-0084): open and rate-limited**, as built: 10 sessions
    per address per hour (20 since 2026-10-07, D-0088) and 100 live at once. A sign-in can come later if it is abused.
 3. **OpenID client registration. Decided 2026-10-05 (D-0082):** per-session redirect URIs,
@@ -722,7 +725,7 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
   - The live page with guidance: a getting-started guide, the client's name and areas, a
     checklist grouped by area, failures with their specification links, and export.
   - EARL, JUnit XML and JSON export, and a docs-site page, "Testing a client".
-  - Deployment on vulcan (§12.1). The pilot with one or two real clients waits for Erich to
+  - Deployment (§12.1). The pilot with one or two real clients waits for Erich to
     choose them.
 
   *Done when:* a developer who has never seen Touchstone gets from the start page to an
@@ -740,7 +743,7 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
   rules. For each of the server's requests, the proxy inferred the role the server itself
   gave it. `ClientSessionToolsTest` reads a live session through the three tools.
 - **C8: driven clients** (§14). **Proposed 2026-10-29 (D-0103); Gate D closed the same day
-  (D-0104).**
+  (D-0104). Done the same day (D-0105 to D-0108).**
   - **C8.1: the driver and the drives. Done 2026-10-29 (D-0105).** `harness-driver`,
     `touchstone drive`, the reference adapter, a `drive` for every rule that other rules' traffic
     does not try, and `DriverSelfTest`.
@@ -777,7 +780,8 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
 
 ## 14. Driven clients (phase C8, D-0103)
 
-**Proposed on 2026-10-29 (D-0103); Gate D closed the same day (D-0104).**
+**Proposed on 2026-10-29 (D-0103); Gate D closed the same day (D-0104). Built the same day
+(D-0105 to D-0108).**
 
 Touchstone can drive a client instead of waiting for a person to. The client's own developers
 write an **adapter**: a small program in the client's language that runs operations it is sent,
@@ -856,9 +860,9 @@ person drives, except that its EARL mode is `earl:automatic`.
 These hold in addition to DESIGN.md §7 and §8 above.
 
 1. **Registered clients only.** An adapter's command line, working directory and environment
-   come from configuration (`touchstone.driver.clients.<id>`), as server targets do (DESIGN.md
-   §7.1). The CLI and the tools take a client id, never a command, and nothing a rule, a tool
-   argument or an adapter says is ever run.
+   come from the adapter registry, `adapters.yaml` (`clients.<id>`), as server targets come from
+   `targets.yaml` (DESIGN.md §7.1). The CLI and the tools take a client id, never a command, and
+   nothing a rule, a tool argument or an adapter says is ever run.
 2. **Registered sessions only.** The driver uses sessions only of the services the adapter
    registry names, the same registry as its clients (D-0106). Drives name only the session's URLs
    and the URLs the client reported from the session's answers.

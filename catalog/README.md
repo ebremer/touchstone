@@ -66,3 +66,7 @@ containers by changing their up link, as a MoveResource capability describes (#2
 entries are retired, among them the Approved seed `conneg-media-type-equivalence`, and 31
 are new. The three authentication suites changed words only: every entry keeps its slug.
 The editor's drafts of the webhook and index suites did not change.
+
+**Not yet re-baselined** onto the core WD of 23 October 2026. Its one change
+(w3c/lws-protocol#263) gives a create in a missing container a table of statuses, so
+`create-post-missing-container-404` quotes a clause that draft removed (TODO.md).

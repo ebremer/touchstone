@@ -263,11 +263,13 @@ that no test creates.
 
 ### 9. It is larger and current
 
-There are 101 tests against 27, and the 27 counterparts follow the 5 October 2026 draft:
+There are 221 tests against 27 (101 in format 0.2.0), and the 27 counterparts follow the 19
+October 2026 draft:
 - DELETE answers 204, where lws-test-suite expects 200;
 - PUT may answer 200 or 204;
 - discovery uses `rel="https://www.w3.org/ns/lws#storage"` and `application/lws+cid`;
-- the did:key suite uses the `jwt` token type.
+- a did:key subject is tested under the CID suite, with its `jwt` token type, since W3C
+  discontinued the did:key suite.
 
 ## What it costs
 
@@ -282,11 +284,13 @@ There are 101 tests against 27, and the 27 counterparts follow the 5 October 202
   grant service, or the target's adapter. Without either, those tests are inapplicable.
   Their format is silent about how to set up access at all, so it never faces this, but it
   cannot run either.
-- **No RDF graph assertions yet.** Neither format has them. Both wait for W3C to publish the
-  LWS JSON-LD context (`README.md`, open question 7).
-- **Not yet executed.** No engine runs these definitions yet. Nothing in lws-test-suite's
-  repository runs its manifests either: `manifest.html` displays them. Until an engine runs
-  these, some choices here have not met a real server.
+- **Few RDF graph assertions.** lws-test-suite's format has none. Here only
+  `rdfIsomorphicWith` (format 0.14.0) compares graphs, and it reads JSON with the Working
+  Group's build of the LWS JSON-LD context, bundled, because W3C has not published it
+  (`README.md`, open question 7).
+- **One engine so far.** Touchstone's (`harness-core`, D-0054) runs these definitions, against
+  the reference deployment and real servers; no second, independent engine does yet. Nothing in
+  lws-test-suite's repository runs its manifests: `manifest.html` displays them.
 
 ## What would change in lws-test-suite's files
 

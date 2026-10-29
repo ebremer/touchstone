@@ -55,7 +55,8 @@ none, and a rule's `guidance` is advice that never decides anything.
    - a rule cites at least one requirement that binds a `Client` or a `Receiver`
      (`touchstone:appliesTo`, D-0076), the mirror image of the server-side check;
    - a rule's level is no stronger than the strongest level of the requirements it cites;
-   - no value contains `${`, because rules have no variables;
+   - no value outside a drive's `args` (section 12) contains `${`, because rules have no
+     variables;
    - no expectation has `capture`, because nothing passes from one trial to another.
 
 ## 3. The exchange
@@ -681,18 +682,27 @@ need driving too. A rule with a task starts it from its drive (below).
       arm: methodNotAllowed
     drive:
       - op: create
-        args: {container: "${drive.container}", body: {json: {name: Alice}}, slug: profile.json}
-        capture: {profile: /location}
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - op: read
+        args: {url: "${note}"}
+        capture: {etag: /metadata/etag}
       - op: read_linkset
-        args: {url: "${profile}"}
-        capture: {linksetUrl: /url, linkset: /linkset}
+        args: {url: "${note}"}
+        capture: {linksetUrl: /url, linkset: /linkset, linksetEtag: /etag}
       - startTask: true
       - op: update_linkset
-        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}", ifMatch: "${linksetEtag}"}
         allowStatus: [405]
       - op: read_linkset
-        args: {url: "${profile}"}
+        args: {url: "${note}"}
 ```
+
+**A careful application** (D-0108, a clarification). A thin adapter does exactly what it is told,
+so a drive decides what the drafts leave to an application, as a careful one would: every write
+carries an `If-Match` from a read, a linkset that does not allow PUT is patched, and after a
+refused page the drive searches again. Behaviour inside an operation stays the client's: following
+pages, not retrying a lost create, not repeating a refused PUT, and the discovery checks.
 
 **Steps.** Each step is one of:
 - **an operation:** `op`, a `touchstone-driver/1` operation other than `shutdown`; `args`, its
