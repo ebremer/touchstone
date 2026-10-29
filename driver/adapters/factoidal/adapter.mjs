@@ -92,22 +92,20 @@ function jsonBytes(value) {
   return new TextEncoder().encode(JSON.stringify(value));
 }
 
-/** A write's precondition, in the client's members: it has If-Match with a tag, and If-None-Match: *. */
+/**
+ * A write's precondition, in the client's members: If-Match with a tag, and the whole If-None-Match
+ * (`*`, or entity tags) in `ifNoneMatchTags`, alone or with the If-Match.
+ */
 function precondition(args) {
   const { ifMatch, ifNoneMatch } = args;
-  if (ifMatch != null && ifNoneMatch != null) {
-    throw AdapterError.unsupported("ifMatch with ifNoneMatch");
-  }
+  const members = {};
   if (ifMatch != null) {
-    return { precondition: "ifMatch", tag: ifMatch };
+    Object.assign(members, { precondition: "ifMatch", tag: ifMatch });
   }
   if (ifNoneMatch != null) {
-    if (ifNoneMatch !== "*") {
-      throw AdapterError.unsupported("ifNoneMatch other than *");
-    }
-    return { precondition: "ifNoneMatchStar" };
+    members.ifNoneMatchTags = [ifNoneMatch];
   }
-  return {};
+  return members;
 }
 
 /** A sequence the client followed to its end, cut at `limit` (section 4). */
@@ -116,25 +114,26 @@ function limited(items, limit) {
   return { items: items.slice(0, most), truncated: items.length > most };
 }
 
-/** An access document's one policy, as the client's members: the client writes the document itself. */
+/** An access document's policies, as the client's members: the client writes the document itself. */
 function accessMembers(doc) {
   const policies = [].concat(doc.access ?? []);
   if (policies.length === 0) {
     throw AdapterError.invalidArguments("an access document has a policy in access");
   }
-  if (policies.length > 1) {
-    throw AdapterError.unsupported(`an access document with ${policies.length} policies`);
-  }
-  const policy = policies[0] ?? {};
-  const target = policy.target;
   const members = {
-    actions: [].concat(policy.action ?? []),
-    assignee: policy.assignee,
-    targets: [].concat(target?.value ?? target ?? []).filter((t) => typeof t === "string"),
+    policies: policies.map((policy) => {
+      const target = policy?.target;
+      const one = {
+        actions: [].concat(policy?.action ?? []),
+        assignee: policy?.assignee,
+        targets: [].concat(target?.value ?? target ?? []).filter((t) => typeof t === "string"),
+      };
+      if (policy?.constraint != null) {
+        one.constraint = policy.constraint;
+      }
+      return one;
+    }),
   };
-  if (policy.constraint != null) {
-    members.constraint = policy.constraint;
-  }
   if (typeof doc.inbox === "string") {
     members.inbox = doc.inbox;
   }
@@ -339,14 +338,13 @@ class FactoidalAdapter extends LwsDriverAdapter {
   // ---- notifications ----
 
   subscribe(args) {
-    // 0.18.0 subscribes from a resource of the storage: it reads the resource, finds the storage
-    // description and POSTs to the notification service that names, the one serviceUrl is. So it is
-    // given the first topic (README.md, "What the adapter decides").
-    const members = { topics: args.topics, inbox: args.inbox };
+    // serviceUrl is the notification service endpoint: with `endpoint` the client POSTs the
+    // subscription to it, with no discovery.
+    const members = { topics: args.topics, inbox: args.inbox, endpoint: args.serviceUrl };
     if (args.expires != null) {
       members.expires = args.expires;
     }
-    return this.#report("subscribe", args.topics[0] ?? args.serviceUrl, members);
+    return this.#report("subscribe", args.serviceUrl, members);
   }
 
   async listSubscriptions(args) {

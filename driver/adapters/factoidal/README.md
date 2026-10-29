@@ -7,7 +7,7 @@ client session. It speaks [`touchstone-driver/1`](../../PROTOCOL.md), and is bui
 because Factoidal's own adapter (`deploy/lws-client-adapter` in its repository) speaks lws-client's
 earlier protocol, `lws-driver/1` (D-0109).
 
-The client is the package `@factoidal/core` 0.18.0 (factoidal-core `v0.18.0`, `788ee43`), pinned with
+The client is the package `@factoidal/core` 0.26.0 (factoidal-core `v0.26.0`, `7a58d95`), pinned with
 its integrity in `package-lock.json`, the same package as the Factoidal target server
 (`targetservers/factoidal`). Its module `@factoidal/core/lws/client` is a socket around a Lean state
 machine (`formal/lean4/L4Factoidal/LWS/Client/` there), which chooses and builds every request: the
@@ -33,7 +33,7 @@ touchstone drive --client factoidal
 `FACTOIDAL_CLIENT_MODULE` names another copy of `lws/client.mjs`, a local build of Factoidal's
 `npm/factoidal` for one; the version in the hello is read from the `package.json` above it.
 
-Results on 2026-10-29, against the local client-session service:
+Results on 2026-10-29, with 0.26.0, against the local client-session service (the same as 0.18.0's):
 - `touchstone driver check`: 34 of 34;
 - `touchstone drive --client factoidal`: 52 rules passed, none failed, one untested,
   `client-query-baseline-after-415`, which has no drive (a client that sends only the baseline
@@ -52,13 +52,14 @@ adapter only:
    `transport`, and a status-specific error (`NotFoundError`, `ConflictError`, …) is `http` with
    its status;
 3. cuts a listing or search the client followed to its end at `limit`, and says `truncated`;
-4. gives `request_access` and `grant_access` their document's policy as the client's members
-   (actions, assignee, targets, constraint, inbox): the client writes the document itself;
-5. gives `subscribe` its first topic as the operation's URL. Factoidal 0.18.0 subscribes from a
-   resource of the storage: it finds the storage description from the resource, and POSTs to the
-   notification service that names, which is `serviceUrl`. Factoidal's main branch takes the
-   endpoint itself (`endpoint`);
-6. gives the client's `fetch` the `userAgent` and `timeoutSeconds` of `configure`, nothing else.
+4. gives `request_access` and `grant_access` their document's policies as the client's `policies`
+   (each with actions, assignee, targets and constraint), and its inbox: the client writes the
+   document itself;
+5. gives a write's `ifMatch` as the client's `precondition` and `tag`, and its `ifNoneMatch`, `*` or
+   entity tags, whole as `ifNoneMatchTags`, alone or with the `If-Match`;
+6. gives `subscribe` its `serviceUrl` as the notification service endpoint (`endpoint`): the client
+   POSTs the subscription there, with no discovery;
+7. gives the client's `fetch` the `userAgent` and `timeoutSeconds` of `configure`, nothing else.
 
 | Operation | The client's operation |
 |---|---|
@@ -88,11 +89,7 @@ adapter only:
 
 ## What it answers `unsupported`
 
-- a write's `ifNoneMatch` other than `*`, and `ifMatch` with `ifNoneMatch`: 0.18.0 sends one
-  precondition, `If-Match` with a tag or `If-None-Match: *`;
-- an access document with more than one policy: 0.18.0 writes one. A document with none is
-  `invalidArguments`.
-
-Factoidal's main branch, past 0.18.0, lifts all three (`ifNoneMatchTags`, `policies`) and takes
-`subscribe`'s endpoint. Moving to a release with them is `package.json`, `package-lock.json` and
-those three places in `adapter.mjs`.
+Nothing it lists. Up to 0.18.0 it was a write's `ifNoneMatch` other than `*`, `ifMatch` with
+`ifNoneMatch`, and an access document with more than one policy; 0.26.0 sends any `If-None-Match`,
+with or without `If-Match`, and writes any number of policies. An access document with none is
+`invalidArguments`.

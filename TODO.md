@@ -30,10 +30,11 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 `driver/adapters/factoidal` drives `@factoidal/core` 0.18.0: 52 of 53 rules pass, none fail.
 
-- [ ] **Factoidal's next release.** Its main branch, past 0.18.0, takes `subscribe`'s endpoint
+- [x] **Factoidal's next release.** Its main branch, past 0.18.0, takes `subscribe`'s endpoint
   (`endpoint`), a write's whole `If-None-Match` (`ifNoneMatchTags`) and access documents with several
   policies (`policies`). Move to it when it is published: `package.json`, `package-lock.json`, and
   those three places in `adapter.mjs` (its README says which). Bump `targetservers/factoidal` too.
+  → **Done (D-0110): 0.26.0, 52 of 53 rules, none failed.**
 - [ ] **Hand the adapter to Factoidal.** Its own adapter (`deploy/lws-client-adapter` in
   factoidal-core) speaks `lws-driver/1`. If it moves to `touchstone-driver/1`, `adapters.yaml` points
   at it and `driver/adapters/factoidal` goes.
