@@ -3990,7 +3990,8 @@ clients as rows.
 
 The clients are the eleven of [lws-client](https://github.com/ebremer/lws-client) (Java, JavaScript, Python, Go, Rust,
 C++, C#, Swift, PHP, Kotlin, and the Rust one as a WebAssembly component), driven through the MCP tools of its
-driver, as Touchstone's client sessions already drive them. `targetservers/clients/` builds that driver with every
+driver, as the driver's own runner already drives them through Touchstone's client sessions (D-0088). Touchstone
+itself still drives no client (D-0075). `targetservers/clients/` builds that driver with every
 adapter from source, at the commit the deployed driver runs (`99b8b10`), in one image: a stage per toolchain and a
 Debian runtime. `tools/interop.mjs` is the runner. For each target it makes the container the clients work in, then
 drives each client in turn through one scenario, adapted from lws-client's own interop scenario (written for its mock

@@ -144,9 +144,16 @@ that calls the client's inbox. Each session gets servers of its own.
 ### The developer drives, Touchstone observes
 
 Touchstone never drives the client. It has no adapters and no per-language bindings. The developer
-uses the client as they normally would, by hand or from its own test suite, and every request
-reaches a real server that answers it for real. Touchstone records each exchange and judges it.
-The only interface is HTTP, which every LWS client already speaks.
+uses the client as they normally would: by hand, from its own test suite, or through an agent.
+Every request reaches a real server that answers it for real, and Touchstone records each exchange
+and judges it. The only interface is HTTP, which every LWS client already speaks.
+
+Whatever drives the client can drive the session too. The session API starts tasks, arms faults
+and reads results, and three read-only MCP tools let a coding agent read the findings and the
+exchanges behind them. So a single agent can work both sides. The
+[lws-client](https://github.com/ebremer/lws-client) project does this: its driver, an MCP server
+with an adapter for each of its eleven clients, walks each client through a Touchstone session and
+starts every task and arms every fault along the way.
 
 ### Facts only the server knows
 
