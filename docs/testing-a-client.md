@@ -14,8 +14,9 @@ You run your own client against a session of its own. Touchstone serves every re
 records it, judges it against the client requirements of the LWS drafts, and explains each
 failure: what your client sent, which clause it breaks, and what to change.
 
-Touchstone never drives your client. You use it as you normally would, by hand or from its own
-test suite, and the session page shows the results as the requests arrive.
+You drive your client as you normally would, by hand or from its own test suite, and the session
+page shows the results as the requests arrive. Or you write a small adapter, and Touchstone drives
+your client itself (see [Let Touchstone drive your client](#let-touchstone-drive-your-client)).
 
 {: .note }
 > There is no public instance: run the service yourself, as
@@ -168,7 +169,7 @@ three come from the same results, so they agree:
 
 | Format | For | API |
 |---|---|---|
-| EARL, in Turtle | W3C implementation reports. One `earl:Assertion` per rule, in `earl:semiAuto` mode, since you drive the client and Touchstone judges. The subject is your client, a `doap:Project` with its name, release and homepage. | `results?format=earl` |
+| EARL, in Turtle | W3C implementation reports. One `earl:Assertion` per rule, in `earl:semiAuto` mode when you drive the client and Touchstone judges, `earl:automatic` when Touchstone drives it. The subject is your client, a `doap:Project` with its name, release and homepage. | `results?format=earl` |
 | JUnit XML | CI. One test case per rule; failures of any level are JUnit failures, and untested or inapplicable rules are skipped. | `results?format=junit` |
 | JSON | dashboards and scripts. Each rule's outcome, trials, evidence, guidance and specification links, the verdict, the client and when the results began. | `results?format=json` |
 
@@ -201,6 +202,42 @@ curl -sf -X DELETE -H "Authorization: Bearer $KEY" "$API"
 The [harness-clients README](https://github.com/ebremer/touchstone/blob/master/harness-clients/README.md)
 lists the whole session API. A fault can be armed alone with `POST $API/faults/{fault}`.
 
+## Let Touchstone drive your client
+
+Instead of driving your client yourself, you can let Touchstone do it. You write an **adapter**: a
+small program in your client's language that speaks
+[`touchstone-driver/1`](https://github.com/ebremer/touchstone/blob/master/driver/PROTOCOL.md) on
+its standard input and output. Touchstone sends it operations, such as `create` or
+`update_linkset`, and it runs each with your client and reports what happened. Touchstone then
+walks your client through every rule, starting each task and arming each fault on the way, and the
+session judges your client's requests exactly as when you drive it.
+
+1. **Start from a kit.** [`driver/kits/`](https://github.com/ebremer/touchstone/tree/master/driver/kits)
+   has a starter kit for Java, Kotlin, JavaScript, Python, Go, Rust, C#, Swift, PHP and C++: an
+   interface with one method per operation, a runner that handles the protocol, and a stub. Copy
+   it, and implement the operations your client has. The ones it lacks leave their rules untested,
+   never failed.
+2. **Check it.** `touchstone driver check -- <your adapter's command>` says whether your adapter
+   speaks the protocol. It needs no session.
+3. **Register it** in Touchstone's `adapters.yaml`, with the client-session service to use:
+
+   ```yaml
+   services:
+     local: http://localhost:18090/touchstone/clients
+   clients:
+     my-client:
+       command: [node, adapter.mjs]
+       directory: ../my-client
+   ```
+4. **Drive it.** `touchstone drive --client my-client` starts a session, drives your client through
+   it, writes `results.json` (each rule with a note on how its drive went), `earl.ttl` and
+   `junit.xml`, and exits `1` on a MUST failure, so it fits CI as it is.
+
+The webhook rules need the session to reach the inbox Touchstone hosts for your client: a local
+service started with `--allow-private-inboxes` does; a public one needs `--inbox-public-base`. The
+[harness-driver README](https://github.com/ebremer/touchstone/blob/master/harness-driver/README.md)
+has the details.
+
 ## Read the results from a coding agent
 
 Touchstone's [MCP server](mcp.md) has three read-only tools over a client session, so the
@@ -212,6 +249,12 @@ coding agent working on your client can read the same feedback you see:
 Give the tools the session page's address with its key. Or set `TOUCHSTONE_CLIENTS_SESSION` to
 it when you start the MCP server, so the key never passes through the agent. The tools only
 read: they never drive your client, start a task or reset the results.
+
+Started locally on stdio, the MCP server also has driving tools for a client registered in
+`adapters.yaml`: `drive_rule` to drive one rule and see its outcome, `client_operation` to run one
+operation, `start_task` and `arm_fault`, and `drive_client` for a whole session. An agent working on
+your client can then fix it and drive the rule again, and read the findings by the session's id.
+See [MCP server](mcp.md#driving-a-client).
 
 ## Proxy mode: test against a real server
 

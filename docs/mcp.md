@@ -131,6 +131,31 @@ Every tool carries MCP annotations that tell a client whether to ask before call
 - **The other nine** are marked read-only, idempotent and closed-world. They only read
   the catalog, the definitions and recorded runs.
 
+### Driving a client
+
+Started on stdio, and only then, the server has eight more tools, which drive a client registered
+in `adapters.yaml` through a client session ([Let Touchstone drive your
+client](testing-a-client.md#let-touchstone-drive-your-client)). They run the adapter's command on
+this machine, so the hosted endpoint never lists them.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_driven_clients` | | The clients and client-session services `adapters.yaml` names, and the sessions this server drives, with their storage and inbox. |
+| `drive_client` | `clientId`, *`session`*, *`areas`*, *`rules`* | Drives every rule in scope in the background and returns a drive id at once, with progress notifications. |
+| `get_drive` | `driveId` | A background drive as it stands: rules driven, a count of the drives' notes, each drive that stopped or never started and why, and the session's verdict. |
+| `drive_rule` | `clientId`, `rule`, *`session`* | Runs one rule's drive and returns how it went and the rule's outcome so far: the loop for fixing a client and seeing it pass. |
+| `client_operation` | `clientId`, `op`, *`args`*, *`session`* | Runs one operation of the protocol with the client, such as `read` or `create`, and returns what the client reported. |
+| `start_task` | `rule`, `session` | Starts a rule's task, arming its fault if it has one. |
+| `arm_fault` | `fault`, `session` | Arms a fault on its own. |
+| `stop_driven_client` | `session` | Stops the client's adapters; the session stays readable. |
+
+`session` is the id of a session this server drives, or a session page's address with its key, of
+a service `adapters.yaml` names; without one, a tool uses the session it last drove the client in,
+or starts one. The three client tools read a driven session by its id, and the key stays with the
+server. `touchstone.driver.registry` names the adapter registry (default `adapters.yaml`). The
+tools are marked open-world and not read-only; `client_operation` is also marked destructive, since
+an operation may delete what it names.
+
 ### Prompts
 
 | Prompt | Argument | Purpose |

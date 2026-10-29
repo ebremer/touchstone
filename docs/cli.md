@@ -180,6 +180,33 @@ other outcome changes:
 `diff` exits with `1` when there is at least one regression, so a CI job can gate on it,
 and with `2` when it cannot read one of the runs.
 
+## `touchstone drive`
+
+Drives a client through a client session, through the adapter its developers wrote
+([Let Touchstone drive your client](testing-a-client.md#let-touchstone-drive-your-client)).
+
+```text
+touchstone drive --client <id> [--service <id>] [--areas core,index] [--rule <name>]... [--out <dir>]
+```
+
+The client and the service are ids in the adapter registry, `adapters.yaml` (`--registry`),
+never a command or a URL. It writes `results.json` (the session's results, each rule with a note
+on how its drive went), `earl.ttl` and `junit.xml`, and keeps the adapter's stderr in
+`adapter-logs/`. `--show-page` prints the session page with its key. It exits with `0` when no MUST
+rule failed, `1` when one failed or could not be decided, and `2` when there is no verdict.
+
+## `touchstone driver check`
+
+Checks that an adapter speaks `touchstone-driver/1`, without a session.
+
+```text
+touchstone driver check [--operation-timeout <s>] [--log <file>] -- <the adapter's command line>
+```
+
+It prints one line per check: the hello, `configure`, an answer to every operation the adapter
+lists, `unsupported` for the rest, `invalidArguments` for a line that is not a JSON object, and a
+clean exit after `shutdown`. It exits with `0` when every check passed and `1` when one failed.
+
 ## Exit codes
 
 Exit code `1` is always a verdict about the server under test. Exit code `2` always means

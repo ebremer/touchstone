@@ -141,19 +141,26 @@ Touchstone plays everything a client talks to: the storage, its authorization se
 Provider, a SAML identity provider, the hosts of identity documents, and the notification service
 that calls the client's inbox. Each session gets servers of its own.
 
-### The developer drives, Touchstone observes
+### Who drives the client
 
-Touchstone never drives the client. It has no adapters and no per-language bindings. The developer
-uses the client as they normally would: by hand, from its own test suite, or through an agent.
+By default the developer does: by hand, from the client's own test suite, or through an agent.
 Every request reaches a real server that answers it for real, and Touchstone records each exchange
-and judges it. The only interface is HTTP, which every LWS client already speaks.
+and judges it. The only interface Touchstone judges is HTTP, which every LWS client already speaks.
 
-Whatever drives the client can drive the session too. The session API starts tasks, arms faults
-and reads results, and three read-only MCP tools let a coding agent read the findings and the
-exchanges behind them. So a single agent can work both sides. The
-[lws-client](https://github.com/ebremer/lws-client) project does this: its driver, an MCP server
-with an adapter for each of its eleven clients, walks each client through a Touchstone session and
-starts every task and arms every fault along the way.
+Touchstone can also drive the client itself, through an **adapter** the client's own developers
+write: a small program in the client's language that speaks
+[`touchstone-driver/1`]({% include src.html path="driver/PROTOCOL.md" %}), runs operations it is
+sent, such as "create this resource in that container", with the client, and reports what
+happened. Touchstone owns the protocol, a checker for it, and starter kits in ten languages, but
+no adapter: the per-language code stays with the client. Each rule says how to make a client do
+what it judges, its `drive`, so a session runs unattended: Touchstone walks the client through every
+rule's drive, starts each task and arms each fault on the way. Driving changes nothing about the
+judging: the same rules judge the same traffic, and what an adapter reports never decides an
+outcome.
+
+Either way, whatever drives the client can drive the session too. The session API starts tasks,
+arms faults and reads results; Touchstone's MCP server reads the findings and, run locally, drives
+a registered client as well. So a single agent can work both sides.
 
 ### Facts only the server knows
 
@@ -224,7 +231,8 @@ A session judges only what the client did. A rule the client never triggered is 
 is coverage the session did not have, not evidence either way. So the verdict reads, for example,
 "no MUST failure in 12 MUST rules exercised, of 30 that apply", and never plain "conformant". The
 checklist of tasks makes every rule reachable on purpose, and the client's own test suite can drive
-a session from CI to make that coverage repeatable.
+a session from CI to make that coverage repeatable. A driven session tries every rule whose drive
+needs only operations the client has: one it lacks leaves those rules untested, never failed.
 
 ### Against a real server
 
@@ -291,5 +299,6 @@ the tests that cite the affected requirements are reviewed with it. See
 - **A client verdict** covers only what the client exercised in that session, and says how much
   that was. Touchstone gives client developers feedback, not certification.
 - **Both** are reported in W3C [EARL](https://www.w3.org/TR/EARL10-Schema/), with each assertion
-  linked to the requirements its test verifies. A server run is `earl:automatic`; a client session
-  is `earl:semiAuto`, since a person drives the client and Touchstone judges.
+  linked to the requirements its test verifies. A server run is `earl:automatic`. A client session
+  is `earl:semiAuto` when a person drives the client and Touchstone judges, and `earl:automatic`
+  when Touchstone drives it through its adapter.
