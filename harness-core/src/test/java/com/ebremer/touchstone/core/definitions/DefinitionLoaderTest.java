@@ -176,6 +176,14 @@ class DefinitionLoaderTest {
         }
     }
 
+    @Test
+    void theBundledDriverSchemaIsTheProtocolSchema() throws IOException {
+        assertThat(DriverProtocol.schemaText())
+                .isEqualTo(Files.readString(DEFINITIONS.resolve("../driver/protocol.schema.json")));
+        assertThat(DriverProtocol.operations()).contains("configure", "update_linkset", "shutdown").hasSize(30);
+        assertThat(DriverProtocol.required("update_linkset")).containsExactly("linksetUrl", "linkset");
+    }
+
     static String first(String s, String target, String replacement) {
         int i = s.indexOf(target);
         assertThat(i).as("fixture text " + target).isNotNegative();

@@ -14,7 +14,9 @@ what the schema cannot:
 - `mirrors` and `supersedes` name real lws-test-suite tests and retired manifests/ tests;
 - client rules (ObservationTest, OBSERVATION.md section 2) live only under clients/, cite a
   requirement that binds a Client or Receiver, are no stronger than what they cite, and have
-  no variables and no captures.
+  no variables and no captures where they judge;
+- a rule's drive (OBSERVATION.md section 12) names operations and arguments of the frozen driver
+  protocol, uses only its variables and earlier captures, and starts a task only if it has one.
 """
 import glob
 import json
@@ -127,6 +129,50 @@ def captures_of(resp):
     return caps
 
 
+# A rule's drive (OBSERVATION.md section 12, format 0.16.0): its operations' arguments are those of
+# the frozen driver protocol, and its templates use the drive's variables or earlier captures.
+PROTOCOL = json.load(open(os.path.join(TS, "driver", "protocol.schema.json"), encoding="utf-8"))["$defs"]
+DRIVE_VARS = {"storage", "drive.container", "drive.inbox", "uuid"}
+DRIVE_VAR = re.compile(r"^(identity\.(alice|bob)\.cidUrl|credential\.(alice|bob)\.(privateJwk|kid|token|idToken|samlAssertion))$")
+
+
+def lint_drive(t, where):
+    bound = set()
+    started = 0
+    for i, step in enumerate(t.get("drive", []), 1):
+        sw = f"{where} drive step {i}"
+        if "startTask" in step:
+            started += 1
+            if "task" not in t:
+                E(f"{sw}: startTask in a rule without a task")
+            elif started > 1:
+                E(f"{sw}: the task is started twice")
+            continue
+        if "op" not in step:
+            continue
+        args = step.get("args", {})
+        spec = PROTOCOL.get(f"args-{step['op']}")
+        if spec is None:
+            E(f"{sw}: {step['op']} is not an operation of driver/protocol.schema.json")
+            continue
+        for a in sorted(set(args) - set(spec["properties"])):
+            E(f"{sw}: {step['op']} has no argument {a}")
+        for a in spec["required"]:
+            if a not in args:
+                E(f"{sw}: {step['op']} needs the argument {a}")
+        for sv in strings(args):
+            for v in VAR.findall(sv):
+                if v not in DRIVE_VARS and not DRIVE_VAR.match(v) and v not in bound:
+                    E(f"{sw}: unbound variable ${{{v}}}")
+            for host in EXAMPLE_HOST.findall(sv):
+                if example_host(host):
+                    E(f"{sw}: names the example host {host}")
+        for c in step.get("capture", {}):
+            if c in bound or c in DRIVE_VARS or "." in c:
+                E(f"{sw}: capture {c} rebinds an existing variable")
+            bound.add(c)
+
+
 names = Counter()
 levels = Counter()
 per_manifest = {}
@@ -191,6 +237,7 @@ for path in sorted(glob.glob(os.path.join(OUT, "**", "*.json"), recursive=True))
                             E(f"{where}: {key} names the example host {host}, which no live server can match")
                 if captures_of(t.get(key, {})):
                     E(f"{where}: {key} captures a value, but nothing passes between trials")
+            lint_drive(t, where)
             continue
         if t.get("requirements") and not bound & SERVER_SIDE \
                 and not (t.get("type") == "NegativeTest" and bound & FORGEABLE):

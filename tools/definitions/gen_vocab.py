@@ -216,6 +216,7 @@ V = [
     ("task", P, None, "task", "What the developer is asked to do so that the rule can be tried. Without after, each start of the task selects the next exchange observe holds of as a trial (format 0.9.0).", "lwst:ObservationTest", "lwst:Task"),
     ("prompt", P, None, "prompt", "The task as the developer reads it.", "lwst:Task", "xsd:string"),
     ("arm", P, None, "arm", "A fault the session arms when the task starts: methodNotAllowed, lostCreateResponse, pageGone, tokenExpired, or a forged notification (OBSERVATION.md section 6.2).", "lwst:Task", "xsd:string"),
+    ("drive", P, None, "drive", "The steps Touchstone's client driver runs through the client's adapter so that the rule is tried: operations of driver/PROTOCOL.md, the start of the rule's task, and pauses. It asserts nothing (format 0.16.0, OBSERVATION.md section 12).", "lwst:ObservationTest", "rdf:JSON"),
 
     ("form", P, None, "form", "A condition on an application/x-www-form-urlencoded request body, seen as a JSON object of each parameter's first value (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JsonExpectation"),
     ("credential", P, None, "credential", "Conditions on the header and claims of the JWT a token request presents as its subject token (format 0.10.0).", "lwst:ExchangeCondition", "lwst:JwtExpectation"),

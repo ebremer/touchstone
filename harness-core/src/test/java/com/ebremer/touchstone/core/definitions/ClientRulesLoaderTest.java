@@ -83,6 +83,62 @@ class ClientRulesLoaderTest {
                 .hasMessageContaining("the name deleteDataResource is a server test's too");
     }
 
+    /** The drive of OBSERVATION.md section 12's example, on the rule it was written for. */
+    static final String DRIVE = """
+                  arm: methodNotAllowed
+                drive:
+                  - op: create
+                    args: {container: "${drive.container}", body: {json: {name: Alice}}, slug: profile.json}
+                    capture: {profile: /location}
+                  - op: read_linkset
+                    args: {url: "${profile}"}
+                    capture: {linksetUrl: /url, linkset: /linkset}
+                  - startTask: true
+                  - op: update_linkset
+                    args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+                    allowStatus: [405]
+                  - waitSeconds: 2
+            """;
+
+    @Test
+    void aDriveIsLoaded(@TempDir Path tmp) throws IOException {
+        Path copy = edit(tmp, "      arm: methodNotAllowed\n", DRIVE);
+        List<DriveStep> drive = DefinitionLoader.loadClientRules(copy, CATALOG)
+                .find("client-no-repeat-after-405-415").orElseThrow().drive();
+        assertThat(drive).hasSize(5);
+        assertThat(drive.get(0).op()).isEqualTo("create");
+        assertThat(drive.get(0).args().path("body").path("json").path("name").asText()).isEqualTo("Alice");
+        assertThat(drive.get(1).capture()).containsEntry("linksetUrl", "/url").containsEntry("linkset", "/linkset");
+        assertThat(drive.get(2).startTask()).isTrue();
+        assertThat(drive.get(2).isOperation()).isFalse();
+        assertThat(drive.get(3).allows(405)).isTrue();
+        assertThat(drive.get(3).allows(404)).isFalse();
+        assertThat(drive.get(4).waitSeconds()).isEqualTo(2);
+        assertThat(DefinitionLoader.loadClientRules(DEFINITIONS, CATALOG)
+                .find("client-put-conditional").orElseThrow().drive()).isEmpty();
+    }
+
+    @Test
+    void aDriveOutsideTheProtocolIsRefused(@TempDir Path tmp) throws IOException {
+        Path copy = edit(tmp, "    level: MAY\n", """
+                    level: MAY
+                    drive:
+                      - startTask: true
+                      - op: create
+                        args: {body: {text: x}, prefer: return=minimal}
+                        capture: {made: /location}
+                      - op: delete
+                        args: {url: "${made}", ifMatch: "${etag}"}
+                        capture: {made: /status}
+                """);
+        assertThatThrownBy(() -> DefinitionLoader.loadClientRules(copy, CATALOG))
+                .hasMessageContaining("client-delete-conditional drive step 1: startTask in a rule without a task")
+                .hasMessageContaining("client-delete-conditional drive step 2: create has no argument prefer")
+                .hasMessageContaining("client-delete-conditional drive step 2: create needs the argument container")
+                .hasMessageContaining("client-delete-conditional drive step 3: unbound variable ${etag}")
+                .hasMessageContaining("client-delete-conditional drive step 3: capture made rebinds an existing variable");
+    }
+
     /** A copy of the definitions with one edit, everywhere, in the client core manifest. */
     private static Path edit(Path tmp, String target, String replacement) throws IOException {
         Path copy = DefinitionLoaderTest.copy(tmp);

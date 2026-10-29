@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/touchstone/schema/definitions/0-15-0",
-  "title": "Touchstone LWS test definitions (YAML-LD), format 0.15.0",
-  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). 0.11.0 adds deliveries, the session's requests to a client's inbox: the roles delivery and keyDocument, the conditions deliverySignature and inboxShared, and the four forgery faults (D-0083). 0.12.0 adds the credential source samlIdentityProvider, for the assertions of a client session's SAML identity provider (D-0087). 0.13.0 adds a step's pages, which reads a paged result whole (D-0093), and the variable run.id, which templates are not checked for here (D-0091). 0.14.0 adds sameOrigin to parameter and JSON expectations and a response's rdfIsomorphicWith, for the LWS drafts of 19 October 2026; the variables as.resource and as.uri now come from the RFC 9728 challenge, and as.realm is gone; the condition discoveryValid replaces realmContainsRequest (D-0100). 0.15.0 adds an identity's cidUrl, the LWS name for what was its webid, which is still accepted but not beside cidUrl (D-0101). The vocabulary document vocab.yamlld is checked as JSON-LD only.",
+  "$id": "https://example.org/touchstone/schema/definitions/0-16-0",
+  "title": "Touchstone LWS test definitions (YAML-LD), format 0.16.0",
+  "description": "Validates the JSON form of a definitions/lws10 document (a test manifest or the identity registry) after YAML 1.2 Core Schema parsing. Strict everywhere: an unknown key is an error, never a silently ignored assertion. FROZEN on 2026-09-23 (DECISIONS.md D-0053): any change bumps $id and needs a DECISIONS.md entry. 0.8.0 adds client rules (observationTest, definitions/OBSERVATION.md); FROZEN on 2026-10-05 after Gate C (D-0079). 0.9.0 adds a rule's task and the conditions repeat and containerEmpty (D-0081). 0.10.0 adds the conditions on token requests, form, credential, credentialSource, audienceIncludesAs, identifiersAgree and realmContainsRequest, the servers openidProvider and identityHost, their roles, and the fault tokenExpired (D-0082). 0.11.0 adds deliveries, the session's requests to a client's inbox: the roles delivery and keyDocument, the conditions deliverySignature and inboxShared, and the four forgery faults (D-0083). 0.12.0 adds the credential source samlIdentityProvider, for the assertions of a client session's SAML identity provider (D-0087). 0.13.0 adds a step's pages, which reads a paged result whole (D-0093), and the variable run.id, which templates are not checked for here (D-0091). 0.14.0 adds sameOrigin to parameter and JSON expectations and a response's rdfIsomorphicWith, for the LWS drafts of 19 October 2026; the variables as.resource and as.uri now come from the RFC 9728 challenge, and as.realm is gone; the condition discoveryValid replaces realmContainsRequest (D-0100). 0.15.0 adds an identity's cidUrl, the LWS name for what was its webid, which is still accepted but not beside cidUrl (D-0101). 0.16.0 adds a client rule's drive, the steps Touchstone's client driver runs through a client's adapter to make it do what the rule judges (OBSERVATION.md section 12, driver/PROTOCOL.md); FROZEN on 2026-10-29 at Gate D (D-0104). The arguments of an operation are checked against driver/protocol.schema.json by the lint, since templates stand in their values. The vocabulary document vocab.yamlld is checked as JSON-LD only.",
   "oneOf": [
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/identityRegistry"}
@@ -404,8 +404,55 @@
             "prompt": {"type": "string", "minLength": 1},
             "arm": {"$ref": "#/$defs/faultName"}
           }
+        },
+        "drive": {
+          "description": "since 0.16.0: the steps Touchstone's client driver runs through the client's adapter so the rule is tried (OBSERVATION.md section 12); it asserts nothing, and a session a person drives ignores it",
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/driveStep"}
         }
       }
+    },
+
+    "driveStep": {
+      "description": "One step of a drive (OBSERVATION.md section 12): an operation of driver/PROTOCOL.md, the start of the rule's task, or a pause for the lagging index.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op"],
+          "properties": {
+            "op": {"enum": ["configure", "discover_storage", "head", "read", "list_container", "create", "create_container", "update", "patch", "delete", "read_linkset", "update_linkset", "patch_linkset", "move", "request_access", "get_access_request", "list_access_requests", "cancel_access_request", "grant_access", "get_access_grant", "list_access_grants", "revoke_access_grant", "subscribe", "list_subscriptions", "get_subscription", "unsubscribe", "verify_notification", "list_types", "search"]},
+            "args": {"description": "the operation's arguments; strings are templates (EXECUTION.md section 3)", "type": "object"},
+            "capture": {
+              "description": "binds names to JSON Pointers into the operation's result",
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": {"pattern": "^[a-z][A-Za-z0-9]*$"},
+              "additionalProperties": {"type": "string", "pattern": "^(/([^~/]|~[01])*)*$"}
+            },
+            "allowStatus": {
+              "description": "statuses the operation may end with, in an error, without stopping the drive",
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/status"}
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["startTask"],
+          "properties": {"startTask": {"const": true}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["waitSeconds"],
+          "properties": {"waitSeconds": {"type": "integer", "minimum": 1, "maximum": 10}}
+        }
+      ]
     },
 
     "conditionTerms": {

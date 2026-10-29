@@ -108,6 +108,17 @@ const controls = {
   // Paged steps (format 0.13.0).
   'pages of one': [flow, t => { t.steps[0].pages = 1; }],
   'pages that is not a number': [flow, t => { t.steps[0].pages = 'all'; }],
+  // A rule's drive (format 0.16.0, OBSERVATION.md section 12).
+  'empty drive': [rule, t => { t.drive = []; }],
+  'drive step with an operation of lws-driver/1': [rule, t => { t.drive = [{ op: 'linkset_url', args: { url: '${storage}' } }]; }],
+  'drive step that shuts the adapter down': [rule, t => { t.drive = [{ op: 'shutdown' }]; }],
+  'drive step of two kinds': [rule, t => { t.drive = [{ op: 'read', args: { url: '${storage}' }, startTask: true }]; }],
+  'drive step with an unknown key': [rule, t => { t.drive = [{ op: 'read', args: { url: '${storage}' }, expect: { status: 200 } }]; }],
+  'startTask that is false': [rule, t => { t.drive = [{ startTask: false }]; }],
+  'waitSeconds of a minute': [rule, t => { t.drive = [{ waitSeconds: 60 }]; }],
+  'drive capture with a dotted name': [rule, t => { t.drive = [{ op: 'create_container', args: { parent: '${storage}' }, capture: { 'drive.container': '/location' } }]; }],
+  'drive capture that is not a JSON Pointer': [rule, t => { t.drive = [{ op: 'create_container', args: { parent: '${storage}' }, capture: { box: 'location' } }]; }],
+  'allowStatus with a reason phrase': [rule, t => { t.drive = [{ op: 'read', args: { url: '${storage}' }, allowStatus: ['Not Found'] }]; }],
 };
 let accepted = 0;
 for (const [label, [pred, mutate]] of Object.entries(controls)) {

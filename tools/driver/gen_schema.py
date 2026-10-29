@@ -9,7 +9,10 @@ import json
 import sys
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[2] / "driver" / "protocol.schema.json"
+REPO = Path(__file__).resolve().parents[2]
+OUT = REPO / "driver" / "protocol.schema.json"
+# harness-core bundles a copy for the lint of drives and the driver's checks (DriverProtocol.java).
+COPY = REPO / "harness-core" / "src" / "main" / "resources" / "touchstone" / "driver" / "protocol.schema.json"
 
 R = lambda name: {"$ref": f"#/$defs/{name}"}
 STR = {"type": "string"}
@@ -219,11 +222,13 @@ def compact(value, indent=0, width=110):
 
 text = compact(schema) + "\n"
 if "--check" in sys.argv:
-    current = OUT.read_text(encoding="utf-8") if OUT.exists() else None
-    if current != text:
-        print(f"{OUT.name} is not current: run python tools/driver/gen_schema.py")
-        sys.exit(1)
-    print(f"{OUT.name} is current")
+    for path in (OUT, COPY):
+        current = path.read_text(encoding="utf-8") if path.exists() else None
+        if current != text:
+            print(f"{path.relative_to(REPO)} is not current: run python tools/driver/gen_schema.py")
+            sys.exit(1)
+    print(f"{OUT.name} and its copy in harness-core are current")
 else:
-    OUT.write_text(text, encoding="utf-8", newline="\n")
-    print(f"wrote {OUT}")
+    for path in (OUT, COPY):
+        path.write_text(text, encoding="utf-8", newline="\n")
+        print(f"wrote {path.relative_to(REPO)}")

@@ -16,11 +16,11 @@ import com.fasterxml.jackson.databind.node.TextNode;
  * expression takes the expression's JSON value, so {@code "${now+300}"} becomes a number and
  * {@code "${self.publicJwk}"} an object.
  */
-final class Templates {
+public final class Templates {
 
     /** Resolves one expression, such as {@code test.container} or {@code now+300}, to its JSON value. */
     @FunctionalInterface
-    interface Resolver {
+    public interface Resolver {
         JsonNode resolve(String expression);
     }
 
@@ -31,7 +31,7 @@ final class Templates {
     private Templates() {
     }
 
-    static String expand(String template, Resolver resolver) {
+    public static String expand(String template, Resolver resolver) {
         if (template == null) {
             return null;
         }
@@ -44,7 +44,7 @@ final class Templates {
         return out.toString();
     }
 
-    static JsonNode expandJson(JsonNode value, Resolver resolver) {
+    public static JsonNode expandJson(JsonNode value, Resolver resolver) {
         if (value == null) {
             return null;
         }
@@ -71,7 +71,7 @@ final class Templates {
     }
 
     /** A JSON value as text: a string as it is, anything else as its compact JSON. */
-    static String text(JsonNode value) {
+    public static String text(JsonNode value) {
         if (value == null || value.isNull()) {
             return "null";
         }

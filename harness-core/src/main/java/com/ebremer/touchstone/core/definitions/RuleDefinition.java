@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @param expect       the condition each trial must satisfy
  * @param guidance     how a client fixes a failure
  * @param task         what the developer is asked to do so the rule can be tried, or null (since 0.9.0)
+ * @param drive        the steps Touchstone's client driver runs so the rule is tried, possibly none
+ *                     (since 0.16.0, OBSERVATION.md section 12)
  */
 public record RuleDefinition(
         String id,
@@ -35,7 +37,12 @@ public record RuleDefinition(
         JsonNode observe,
         JsonNode expect,
         String guidance,
-        Task task) {
+        Task task,
+        List<DriveStep> drive) {
+
+    public RuleDefinition {
+        drive = List.copyOf(drive);
+    }
 
     /**
      * A rule's task (OBSERVATION.md section 6.1).

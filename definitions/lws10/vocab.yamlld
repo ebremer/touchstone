@@ -1348,6 +1348,16 @@
     domain: lwst:Task
     range: xsd:string
     isDefinedBy: https://www.w3.org/ns/lws-tests/v1
+  - id: lwst:drive
+    type: rdf:Property
+    label: "drive"
+    comment: >-
+      The steps Touchstone's client driver runs through the client's adapter so that the
+      rule is tried: operations of driver/PROTOCOL.md, the start of the rule's task, and
+      pauses. It asserts nothing (format 0.16.0, OBSERVATION.md section 12).
+    domain: lwst:ObservationTest
+    range: rdf:JSON
+    isDefinedBy: https://www.w3.org/ns/lws-tests/v1
   - id: lwst:form
     type: rdf:Property
     label: "form"

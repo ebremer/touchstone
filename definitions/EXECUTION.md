@@ -1,11 +1,12 @@
 # Executing the LWS test definitions
 
-**Status: frozen, format 0.15.0 (2026-10-26, DECISIONS.md D-0101, awaiting review; 0.14.0 on 2026-10-19, D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
+**Status: frozen, format 0.16.0 (2026-10-29, DECISIONS.md D-0104; 0.15.0 on 2026-10-26, D-0101, awaiting review; 0.14.0 on 2026-10-19, D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05, D-0083; 0.10.0 the same day, D-0082; 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079; 0.7.0 on 2026-10-02, D-0070; 0.6.0, 0.5.0 and 0.4.0 were
 frozen the same day, D-0067, D-0066 and D-0065; 0.3.0 on 2026-09-30, D-0058; 0.2.0 on
 2026-09-23, D-0053).** This is the contract an engine that runs `definitions/` must implement.
 0.8.0 added client rules, which `OBSERVATION.md` governs, 0.9.0 gave them tasks and faults, and
 0.10.0 let them judge token requests, 0.11.0 the notifications a client's inbox receives, and
-0.12.0 the assertions of a session's SAML identity provider; none changes anything in this document.
+0.12.0 the assertions of a session's SAML identity provider, and 0.16.0 gave them a drive
+(`OBSERVATION.md` section 12); none changes anything in this document.
 0.14.0 follows the LWS drafts of 19 October 2026, and is the first format to change what an
 older definition relies on: a 401's challenge now names protected resource metadata (RFC 9728)
 instead of the authorization server and a realm, so `${as.uri}` is derived from that metadata,

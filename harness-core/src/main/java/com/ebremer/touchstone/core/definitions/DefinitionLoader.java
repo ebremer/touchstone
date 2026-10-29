@@ -162,8 +162,15 @@ public final class DefinitionLoader {
                     r.get("expect"),
                     r.path("guidance").asText(),
                     r.has("task") ? new RuleDefinition.Task(r.path("task").path("prompt").asText(),
-                            text(r.path("task"), "arm")) : null));
+                            text(r.path("task"), "arm")) : null,
+                    drive(r.path("drive"))));
         }
+    }
+
+    private static List<DriveStep> drive(JsonNode steps) {
+        List<DriveStep> out = new ArrayList<>();
+        steps.forEach(step -> out.add(DriveStep.of(step)));
+        return out;
     }
 
     /** The definitions must be written in the format this engine implements. */

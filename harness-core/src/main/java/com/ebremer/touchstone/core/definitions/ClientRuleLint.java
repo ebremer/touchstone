@@ -2,10 +2,13 @@ package com.ebremer.touchstone.core.definitions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.ebremer.touchstone.core.catalog.Requirement;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +23,10 @@ final class ClientRuleLint {
     private static final List<String> LEVELS = List.of("MAY", "SHOULD", "MUST");
     /** The roles a client session answers for (D-0076). */
     private static final Set<String> CLIENT_SIDE = Set.of("Client", "Receiver");
+    /** The variables of a drive (OBSERVATION.md section 12), besides earlier captures. */
+    static final Set<String> DRIVE_VARIABLES = Set.of("storage", "drive.container", "drive.inbox", "uuid");
+    static final Pattern DRIVE_VARIABLE = Pattern.compile(
+            "identity\\.(alice|bob)\\.cidUrl|credential\\.(alice|bob)\\.(privateJwk|kid|token|idToken|samlAssertion)");
 
     private ClientRuleLint() {
     }
@@ -49,6 +56,7 @@ final class ClientRuleLint {
                     errors.add(where + ": the " + part + " captures a value, but nothing passes between trials");
                 }
             }
+            checkDrive(r, errors);
             if (catalog != null) {
                 checkRequirements(r, catalog, errors);
             }
@@ -79,6 +87,61 @@ final class ClientRuleLint {
         if (strongest >= 0 && LEVELS.indexOf(r.level()) > strongest) {
             errors.add(r.id() + ": is " + r.level() + ", stronger than any requirement it cites ("
                     + LEVELS.get(strongest) + ")");
+        }
+    }
+
+    /**
+     * A drive (OBSERVATION.md section 12) names operations and arguments of the frozen driver
+     * protocol, uses only the drive's variables and earlier captures, and starts a task only if the
+     * rule has one, at most once.
+     */
+    private static void checkDrive(RuleDefinition r, List<String> errors) {
+        Set<String> bound = new HashSet<>();
+        int started = 0;
+        int i = 0;
+        for (DriveStep step : r.drive()) {
+            String where = r.id() + " drive step " + ++i;
+            if (step.startTask()) {
+                if (r.task() == null) {
+                    errors.add(where + ": startTask in a rule without a task");
+                } else if (++started > 1) {
+                    errors.add(where + ": the task is started twice");
+                }
+                continue;
+            }
+            if (!step.isOperation()) {
+                continue;
+            }
+            Set<String> arguments = DriverProtocol.arguments(step.op());
+            if (!DriverProtocol.operations().contains(step.op()) || step.op().equals("shutdown")) {
+                errors.add(where + ": " + step.op() + " is not an operation a drive may name");
+                continue;
+            }
+            step.args().fieldNames().forEachRemaining(a -> {
+                if (!arguments.contains(a)) {
+                    errors.add(where + ": " + step.op() + " has no argument " + a);
+                }
+            });
+            for (String a : DriverProtocol.required(step.op())) {
+                if (!step.args().has(a)) {
+                    errors.add(where + ": " + step.op() + " needs the argument " + a);
+                }
+            }
+            DefinitionLint.exampleHosts(where, "drive", step.args(), errors);
+            for (String s : DefinitionLint.strings(step.args())) {
+                Matcher m = DefinitionLint.VARIABLE.matcher(s);
+                while (m.find()) {
+                    String v = m.group(1);
+                    if (!DRIVE_VARIABLES.contains(v) && !DRIVE_VARIABLE.matcher(v).matches() && !bound.contains(v)) {
+                        errors.add(where + ": unbound variable ${" + v + "}");
+                    }
+                }
+            }
+            for (String c : step.capture().keySet()) {
+                if (!bound.add(c) || DRIVE_VARIABLES.contains(c)) {
+                    errors.add(where + ": capture " + c + " rebinds an existing variable");
+                }
+            }
         }
     }
 

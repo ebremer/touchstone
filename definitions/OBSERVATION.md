@@ -1,6 +1,6 @@
 # Judging the LWS client rules
 
-**Status: frozen, format 0.15.0 (2026-10-26, DECISIONS.md D-0101, awaiting review; 0.14.0 on 2026-10-19, D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05,
+**Status: frozen, format 0.16.0 (2026-10-29, DECISIONS.md D-0104; 0.15.0 on 2026-10-26, D-0101, awaiting review; 0.14.0 on 2026-10-19, D-0100, awaiting review; 0.13.0 on 2026-10-08, D-0091; 0.12.0 on 2026-10-07, D-0087; 0.11.0 on 2026-10-05,
 D-0083; 0.10.0 the same day, D-0082;
 0.9.0 the same day, D-0081; 0.8.0 the same day, D-0079, after Gate C).** 0.9.0 adds tasks and
 faults (section 6) and two annotations, `repeat` and `containerEmpty` (sections 4.6 and 4.7).

@@ -168,6 +168,7 @@
     "task":                  {"@id": "lwst:task"},
     "prompt":                {"@id": "lwst:prompt"},
     "arm":                   {"@id": "lwst:arm"},
+    "drive":                 {"@id": "lwst:drive", "@type": "@json"},
     "form":                  {"@id": "lwst:form", "@container": "@set"},
     "credential":            {"@id": "lwst:credential"},
     "credentialSource":      {"@id": "lwst:credentialSource", "@container": "@set"},
