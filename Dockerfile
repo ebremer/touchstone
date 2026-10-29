@@ -6,8 +6,9 @@
 # ---- build ----
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src
-# All four module POMs are needed for the aggregator to parse; warm the dependency cache
-# on them first, then bring in only the sources the CLI build reaches (core + cli).
+# Every module POM is needed for the aggregator to parse; warm the dependency cache on them
+# first, then bring in only the sources the CLI build reaches (core, driver and cli: the CLI's
+# `drive` and `driver check` commands are harness-driver's).
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 COPY harness-core/pom.xml harness-core/
@@ -15,8 +16,10 @@ COPY harness-fixtures/pom.xml harness-fixtures/
 COPY harness-cli/pom.xml harness-cli/
 COPY harness-mcp/pom.xml harness-mcp/
 COPY harness-clients/pom.xml harness-clients/
+COPY harness-driver/pom.xml harness-driver/
 RUN ./mvnw -q -B -ntp -pl harness-cli -am dependency:go-offline || true
 COPY harness-core/ harness-core/
+COPY harness-driver/ harness-driver/
 COPY harness-cli/ harness-cli/
 # maven.test.skip (not skipTests) so the CLI's test sources — which reference the
 # fixtures module, deliberately left out of this reactor — are not even compiled.
