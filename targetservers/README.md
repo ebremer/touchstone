@@ -19,7 +19,7 @@ below is reachable as soon as it starts. A second set can be published beside th
 | `sparq-lws` | sparq-lws-core, LWS 1.0 mode | [sparq-org/sparq PR #6650](https://github.com/sparq-org/sparq/pull/6650) `5501efa` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `4ee4a5c` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
-| `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.6` `1999965` | `/targets/lwsd/` | `/data/as-key.json` |
+| `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.7` `c7fb260` | `/targets/lwsd/` | `/data/as-key.json` |
 | `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core) `v0.26.0` `7a58d95`, as the npm package `@factoidal/core` 0.26.0 | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
