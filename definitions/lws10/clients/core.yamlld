@@ -60,6 +60,13 @@ entries:
     requirements:
       - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
       - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
+    drive:
+      - op: read_linkset
+        args: {url: "${drive.container}"}
+        capture: {linksetUrl: /url, linkset: /linkset}
+      - op: update_linkset
+        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        allowStatus: [405]
     observe:
       role: linkset
       method: PUT
@@ -81,6 +88,17 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/client-no-assumed-methods-405-415
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - op: read_linkset
+        args: {url: "${note}"}
+        capture: {linksetUrl: /url}
+      - op: patch_linkset
+        args:
+          linksetUrl: "${linksetUrl}"
+          patch: [{op: add, path: /linkset/0/describedby, value: [{href: "https://schema.org/NoteDigitalDocument"}]}]
     observe:
       role: linkset
       method: PATCH
@@ -103,6 +121,12 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/put-clients-use-conditional-requests
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - op: update
+        args: {url: "${note}", body: {text: "a note, edited"}, contentType: text/plain}
     observe:
       role: dataResource
       method: PUT
@@ -167,6 +191,19 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/pagination-uris-opaque
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 1"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 2"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 3"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 4"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 5"}, contentType: text/plain}
+      - op: list_container
+        args: {url: "${drive.container}"}
     observe:
       anyOf:
         - role: page
@@ -218,6 +255,33 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/access-jsonld-context-lws-v1
+    drive:
+      - op: request_access
+        args:
+          serviceUrl: "${service.AccessRequestService}"
+          request:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessRequest]
+            storage: "${storage}"
+            access:
+              - type: [AccessPolicy]
+                action: [modify]
+                assignee: "${identity.bob.cidUrl}"
+                target: {type: StorageResource, value: ["${drive.container}"]}
+      - op: grant_access
+        args:
+          serviceUrl: "${service.AccessGrantService}"
+          grant:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: [AccessGrant]
+            storage: "${storage}"
+            inbox: "https://inbox.invalid/grants"
+            access:
+              - type: [AccessPolicy]
+                action: [read]
+                assignee: "${identity.bob.cidUrl}"
+                target: {type: StorageResource, value: ["${drive.container}"]}
+                constraint: [{leftOperand: dateTime, operator: lt, rightOperand: "2099-01-01T00:00:00Z"}]
     observe:
       role: [accessRequests, accessGrants]
       method: POST
@@ -581,6 +645,12 @@ entries:
     area: core
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-if-match-optional
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - op: delete
+        args: {url: "${note}"}
     observe:
       role: [dataResource, container]
       method: DELETE
@@ -649,6 +719,10 @@ entries:
       - https://example.org/touchstone/req/lws10-core/create-container-type-link
     task:
       prompt: Create a container, in any container you like.
+    drive:
+      - startTask: true
+      - op: create_container
+        args: {parent: "${drive.container}", slug: box}
     observe:
       method: POST
       role: container
@@ -678,6 +752,15 @@ entries:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
     task:
       prompt: Delete a container that still has something in it, together with everything in it.
+    drive:
+      - op: create_container
+        args: {parent: "${drive.container}", slug: box}
+        capture: {box: /location}
+      - op: create
+        args: {container: "${box}", body: {text: "inside"}, contentType: text/plain}
+      - startTask: true
+      - op: delete
+        args: {url: "${box}", recursive: true}
     observe:
       method: DELETE
       role: container
@@ -716,6 +799,17 @@ entries:
         Update a data resource's content and its metadata in one request: a PUT or PATCH whose Link
         headers carry the new metadata. The session's storage does not do combined updates, which
         are optional for servers, so it changes only the content.
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - startTask: true
+      - op: update
+        args:
+          url: "${note}"
+          body: {text: "a note, edited with its type"}
+          contentType: text/plain
+          links: [{href: "https://schema.org/NoteDigitalDocument", rel: type}]
     observe:
       role: dataResource
       method: [PUT, PATCH]
@@ -753,6 +847,19 @@ entries:
         Replace a data resource's linkset with PUT. The session will refuse the PUT once with
         405, as a server that stopped supporting it would.
       arm: methodNotAllowed
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "a note"}, contentType: text/plain, slug: note.txt}
+        capture: {note: /location}
+      - op: read_linkset
+        args: {url: "${note}"}
+        capture: {linksetUrl: /url, linkset: /linkset}
+      - startTask: true
+      - op: update_linkset
+        args: {linksetUrl: "${linksetUrl}", linkset: "${linkset}"}
+        allowStatus: [405]
+      - op: read_linkset
+        args: {url: "${note}"}
     observe:
       role: linkset
       after:
@@ -788,6 +895,13 @@ entries:
         Create a data resource. The session will create it and then answer 503, as if the answer
         had been lost.
       arm: lostCreateResponse
+    drive:
+      - startTask: true
+      - op: create
+        args: {container: "${drive.container}", body: {text: "maybe"}, contentType: text/plain, slug: lost.txt}
+        allowStatus: [5xx]
+      - op: list_container
+        args: {url: "${drive.container}"}
     observe:
       server: storage
       after:

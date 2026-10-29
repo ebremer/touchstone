@@ -21,6 +21,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-driver</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
     </dependency>
@@ -44,6 +49,13 @@
     <dependency>
       <groupId>com.ebremer.touchstone</groupId>
       <artifactId>harness-fixtures</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- touchstone drive's test: a client-session service in process (CLIENT-TESTING.md section 14). -->
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-clients</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

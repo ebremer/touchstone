@@ -1,0 +1,19 @@
+# Registered client adapters and client-session services (CLIENT-TESTING.md section 14.3):
+# `touchstone drive` takes only these ids, never a command or a URL. It is to driving clients what
+# targets.yaml is to server runs; an adapter runs with your trust, on your machine.
+#
+# An adapter speaks touchstone-driver/1 (driver/PROTOCOL.md) on its standard streams: written by the
+# client's developers, in the client's language. driver/kits/ has a starter kit for ten languages.
+#
+# Start a client-session service first, for example the local one:
+#   java -jar harness-clients/target/touchstone-clients.jar --port 18090 \
+#       --definitions definitions --catalog catalog --allow-private-inboxes
+# then:
+#   touchstone drive --client my-client
+services:
+  local: http://localhost:18090/touchstone/clients
+clients: {}
+  # my-client:
+  #   command: [node, adapter.mjs]   # what to run
+  #   directory: ../my-client        # where, relative to this file (default: this file's directory)
+  #   environment: {}                # extra environment variables

@@ -111,6 +111,14 @@ entries:
         session answers that request once with 401, as if your access token had expired: get a
         new token and try again.
       arm: tokenExpired
+    drive:
+      - startTask: true
+      - op: list_container
+        args: {url: "${storage}"}
+        capture: {decoy: /items/0/id}
+      - op: read
+        args: {url: "${decoy}"}
+        allowStatus: [401]
     observe:
       role: asToken
       method: POST
@@ -411,6 +419,11 @@ entries:
     area: authentication
     requirements:
       - https://example.org/touchstone/req/lws10-authn-openid/id-token-token-type-uri
+    drive:
+      - op: configure
+        args: {auth: {type: openid, idToken: "${credential.alice.idToken}"}}
+      - op: read
+        args: {url: "${drive.container}"}
     observe:
       role: asToken
       method: POST
@@ -442,6 +455,11 @@ entries:
     area: authentication
     requirements:
       - https://example.org/touchstone/req/lws10-authn-saml/token-type-saml2
+    drive:
+      - op: configure
+        args: {auth: {type: saml, assertion: "${credential.alice.samlAssertion}"}}
+      - op: read
+        args: {url: "${drive.container}"}
     observe:
       role: asToken
       method: POST

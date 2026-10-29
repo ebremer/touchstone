@@ -55,7 +55,10 @@ subject of the EARL report, and the areas in scope; both are optional, and an em
 ```
 
 The name is at most 100 characters, the version 50, and the homepage an absolute http or https
-URL. A rule whose area is left out is *inapplicable*. Settings that do not check out are refused
+URL. A rule whose area is left out is *inapplicable*. `"driven": true` says that Touchstone's
+client driver drives the client rather than a person (CLIENT-TESTING.md section 14), which makes
+the EARL report's mode `earl:automatic`; like `proxy`, it is said when the session starts and never
+changed. Settings that do not check out are refused
 with `400` before the session counts against the address's limit. The answer, `201`, holds:
 
 - `storage`: the storage URL, the one URL a client needs;

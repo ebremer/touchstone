@@ -32,6 +32,14 @@ entries:
     area: notifications
     requirements:
       - https://example.org/touchstone/req/lws10-core/subscription-create-post-lws-json
+    drive:
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${drive.container}"], inbox: "${drive.inbox}container"}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "news"}, contentType: text/plain}
+        capture: {note: /location}
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${note}"], inbox: "${drive.inbox}note"}
     observe:
       role: subscriptions
       method: POST
@@ -208,6 +216,12 @@ entries:
         Change a resource one of your subscriptions covers. The session signs that notification
         with a key its storage description does not publish.
       arm: forgedUnpublishedKey
+    drive:
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${drive.container}"], inbox: "${drive.inbox}"}
+      - startTask: true
+      - op: create
+        args: {container: "${drive.container}", body: {text: "news"}, contentType: text/plain}
     observe:
       role: delivery
       deliverySignature: unpublishedKey
@@ -240,6 +254,12 @@ entries:
         Change a resource one of your subscriptions covers. The session signs that notification,
         then alters its body.
       arm: forgedAlteredBody
+    drive:
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${drive.container}"], inbox: "${drive.inbox}"}
+      - startTask: true
+      - op: create
+        args: {container: "${drive.container}", body: {text: "news"}, contentType: text/plain}
     observe:
       role: delivery
       deliverySignature: alteredBody
@@ -272,6 +292,12 @@ entries:
         Change a resource one of your subscriptions covers. The session gives that notification a
         keyid without a fragment.
       arm: forgedKeyidWithoutFragment
+    drive:
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${drive.container}"], inbox: "${drive.inbox}"}
+      - startTask: true
+      - op: create
+        args: {container: "${drive.container}", body: {text: "news"}, contentType: text/plain}
     observe:
       role: delivery
       deliverySignature: keyidWithoutFragment
@@ -306,6 +332,12 @@ entries:
         Change a resource one of your subscriptions covers. The session signs that notification
         with a key from a document that only claims to be the storage description.
       arm: forgedForeignKeyDocument
+    drive:
+      - op: subscribe
+        args: {serviceUrl: "${service.NotificationService}", topics: ["${drive.container}"], inbox: "${drive.inbox}"}
+      - startTask: true
+      - op: create
+        args: {container: "${drive.container}", body: {text: "news"}, contentType: text/plain}
     observe:
       role: delivery
       deliverySignature: foreignKeyDocument

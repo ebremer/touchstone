@@ -18,7 +18,7 @@ const BASE = 'https://lws-tests.example/lws10/';
 const TOUCHSTONE_ONLY = new Set(['requirements', 'mirrors', 'supersedes', 'note']);
 // Values that are JSON literals, copied as they are.
 const OPAQUE = new Set(['bodyJSON', 'bodyForm', 'equals', 'hasValue', 'credentialHeader', 'credentialClaims',
-  'identityDocument', 'samlAssertion']);
+  'identityDocument', 'samlAssertion', 'drive']);
 
 const files = [];
 (function walk(d) {

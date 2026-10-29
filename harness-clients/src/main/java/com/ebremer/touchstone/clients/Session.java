@@ -82,6 +82,8 @@ final class Session {
     private volatile Instant lastActive;
     /** The client under test, as its developer last named it. */
     volatile ClientUnderTest clientUnderTest = ClientUnderTest.UNNAMED;
+    /** Whether Touchstone's client driver drives the client, rather than a person (CLIENT-TESTING.md section 14). */
+    volatile boolean driven;
     /** When the results began: the session's start, or the latest reset. */
     private volatile Instant resultsSince;
     /** Notifications sent to inboxes, and those still awaiting an answer. */

@@ -709,7 +709,8 @@ need driving too. A rule with a task starts it from its drive (below).
 |---|---|
 | `storage` | the session's storage URL, the only URL a client is given |
 | `drive.container` | a container the client created for this rule's drive, in the storage root, before the first step |
-| `drive.inbox` | the inbox the driver hosts for the client (`driver/PROTOCOL.md` section 5.2) |
+| `drive.inbox` | an inbox the driver hosts for the client (`driver/PROTOCOL.md` section 5.2), a URL of this rule's own ending in `/`; every URL under it is an inbox too, so a drive that subscribes twice gives each subscription its own (since D-0105) |
+| `service.<Type>` | the `serviceEndpoint` of the first service of type `<Type>` in the storage description the client found in step 2 of *Running*; a drive that names a service the storage does not describe never starts (since D-0105) |
 | `identity.<name>.cidUrl` | the agent of the session identity `alice` or `bob` |
 | `credential.<name>.privateJwk`, `credential.<name>.kid` | the identity's key and its key id, from the session API, for `configure` with `cid` |
 | `credential.<name>.token` | a fresh access token from the session API, for `configure` with `bearer` |
@@ -734,7 +735,9 @@ does not list never starts, and the note says which.
 2. configures the client as alice, with `cid` if its hello lists it, otherwise with `bearer` and a
    token from the session API; and sends `discover_storage` for `storage`;
 3. for each rule in scope, in manifest order: configures the client as in 2 again if the previous
-   drive reconfigured it, creates `drive.container` through the client, and runs the drive;
+   drive reconfigured it, creates `drive.container` through the client, runs the drive, and waits
+   until the session has no notification awaiting an inbox's answer, so that a fault a drive arms
+   applies to that drive's own traffic;
 4. stops the adapter with `shutdown`, and reads the results.
 
 Every exchange of a driven session is judged by every rule, its setup included, so most passive

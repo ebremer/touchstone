@@ -245,6 +245,10 @@ sees the client's own verdict as the inbox's answer.
 `trustedStorages`, when present, is never empty; absent, any storage is accepted. An activity is
 `{"id"?, "types", "object", "objectTypes"}`.
 
+The driver verifies deliveries in a second process of the same adapter, configured as the first,
+so that a delivery never waits for an operation in progress (D-0105). An adapter does not assume it
+is the only process of its kind.
+
 ## 6. Checking an adapter
 
 `touchstone driver check -- <the adapter's command line>` starts the adapter and checks it against

@@ -4444,3 +4444,109 @@ Erich reviewed the questions D-0103 left open and settled each as recommended:
 Frozen: [`driver/PROTOCOL.md`](driver/PROTOCOL.md), `driver/protocol.schema.json`
 (`$id …/schema/driver/1`) and OBSERVATION.md section 12. Phase C8.1 starts: format 0.16.0 in the
 definitions schema and the lints, `harness-driver`, the reference adapter and `DriverSelfTest`.
+
+### D-0105 — C8.1: the driver, the reference adapter and the drives
+Phase C8.1 (CLIENT-TESTING.md section 13) is built, on branch `clients/driver`.
+
+**Format 0.16.0** (OBSERVATION.md section 12, frozen at Gate D, D-0104). The definitions schema
+(`$id …/0-16-0`) gives a client rule `drive`, a list of steps of three kinds: an operation of the
+driver protocol, `startTask`, or `waitSeconds`. The context makes `drive` a JSON literal (`@json`),
+so its steps need no terms of their own, and the export check copies it as it is. The Java lint
+(`ClientRuleLint`) and the Python lint check a drive against the frozen protocol:
+- its operations and their arguments, read from `driver/protocol.schema.json`, which harness-core
+  bundles (`DriverProtocol`; `gen_schema.py` writes both copies, and a test keeps them identical);
+- its variables and earlier captures;
+- `startTask` only in a rule with a task, and only once.
+
+Ten schema negative controls cover drives. `Templates` is public, for the driver.
+
+**Three clarifications of section 12, found while writing the drives.** None changes a rule.
+- *`service.<Type>`*, a variable section 12 lacked. Access requests, subscriptions and searches
+  need the storage's service endpoints. The protocol's `services` is an array, and a JSON Pointer
+  cannot pick an entry by type. The value is the first service of that type in the description the
+  client found when it was set up, and a drive naming a service the storage does not describe
+  never starts. It is the drives' counterpart of `EXECUTION.md`'s `service.<Type>`.
+- *`drive.inbox` is a URL of each rule's own*, and every URL under it is an inbox too. One URL for
+  the whole session would fail the reference client on `client-subscription-own-inbox`. A drive
+  that subscribes twice uses `${drive.inbox}container` and `${drive.inbox}note`.
+- *The driver waits for deliveries after each drive*, until the session has none awaiting an
+  inbox's answer, so a forgery a drive arms applies to that drive's notification.
+
+PROTOCOL.md section 5.2 now also says what the driver has always needed: it verifies deliveries
+in a second process of the same adapter, so a delivery never waits for an operation in progress.
+An adapter must not assume it is the only process of its kind.
+
+**`harness-driver`**, a new module (plain Java, Jetty for the inbox, no Spring):
+- `AdapterConnection` speaks the protocol and checks every line against the schema (networknt,
+  string API, D-0016). A line over 16 MiB, a line that is not JSON, a response to another request,
+  a result that breaks the schema, or silence past the timeout makes the adapter broken. That ends
+  its drive and is never a finding.
+- `AdapterLauncher` runs a registered command, its stderr to a log of its own.
+- `SessionClient` drives the session API. It signs in at the session's OpenID Provider for
+  `credential.<name>.idToken`, as the reference client does, and the session key stays inside it.
+- `Inbox` passes each delivery to `verify_notification` and answers 202 or 401.
+- `DriveRunner` and `Driver` set up the client as alice (CID when its hello lists it, otherwise
+  bearer, D-0104), find the storage through the client, and run each drive in a container of its
+  own. Each rule gets a note, which never decides its outcome.
+- `AdapterRegistry` reads `adapters.yaml`, the registry of commands and services
+  (CLIENT-TESTING.md section 14.3). The repository's copy registers the local service and no client.
+
+**`touchstone drive`** (harness-cli):
+- It takes a client id and a service id from the registry, and writes `results.json` (the results
+  with each rule's note), `earl.ttl` and `junit.xml`.
+- It exits 0, 1 on a MUST failure, or 2 when there is no verdict.
+- It prints the session page with its key only with `--show-page`.
+
+**The session API** takes `"driven": true` when a session starts. It is said once, like `proxy`,
+and makes the EARL mode `earl:automatic` (OBSERVATION.md section 12). A person-driven session
+stays `earl:semiAuto`.
+
+**The reference adapter** (`RefAdapter`, harness-fixtures). The reference client was one script,
+with its twins' mistakes as branches in it. Its HTTP, discovery and token exchange move unchanged
+into `RefHttp`, which the script and the adapter share. `RefInbox`'s checks become a static
+`verify` that the adapter's `verify_notification` calls too. Each twin makes its mistake inside the
+operation it concerns: `PUT_UNCONDITIONAL` in `update`, `SHARES_INBOX` in `subscribe`, and so on.
+Where the protocol leaves a choice to the client, the adapter chooses as a careful library would:
+- it makes a write conditional on what it reads first, when the drive gives no `If-Match`;
+- it updates a linkset that does not allow PUT with JSON Patch;
+- it tries a richer query format first, and falls back to the baseline when refused;
+- it starts a search whose page was refused again;
+- it never sends a lost create again.
+
+The map of which rules each twin is aimed at moved from `ClientRulesSelfTest` into
+`fixtures.client.Twins`, which both self-tests use. `ClientRulesSelfTest` and
+`ProxyRulesSelfTest` pass unchanged after the move (91 tests).
+
+**Drives.** 20 of the 53 rules have one. The other 33 are tried by the setup's traffic (every
+token request and every storage request) or by other drives:
+- the linkset writes;
+- paging;
+- one access request and one grant;
+- the four tasks of core;
+- the decoy and the expired token;
+- switching to OpenID and to SAML;
+- subscriptions and the four forgeries;
+- the expired search page.
+
+**Verified** (`DriverSelfTest`, CLIENT-TESTING.md section 14.5), with the reference adapter in
+process:
+- the reference client passes all 53 rules ("no MUST failure in 41 MUST rules exercised, of 41 that
+  apply"), every drive runs to its end, and the EARL mode is automatic;
+- each of the 54 twins fails exactly the rules `Twins` aims it at;
+- the same adapter in a process of its own is driven the same way;
+- a session of one area drives only that area's rules.
+
+`DriveCommandTest` runs `touchstone drive` against a registry naming the reference adapter as a
+command, and `AdapterConnectionTest` covers the adapters that break the protocol.
+
+The self-test's session has an index without lag, as `ClientRulesSelfTest`'s does, so the twins
+skip the drives' pauses (`Options.withoutPauses`). The reference client keeps them. That brings the
+57 sessions from 316 to about 65 seconds. `tools/definitions/check.py` passes 9 of 9 (the export
+check copies `drive` as a JSON literal).
+
+**Not done:**
+- the MCP tools (C8.2);
+- the checker and the starter kits (C8.3);
+- lws-client's move to the protocol, and the docs (C8.4).
+
+Until C8.4, the docs still say that Touchstone never drives a client.

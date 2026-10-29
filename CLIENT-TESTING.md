@@ -175,7 +175,8 @@ built all of it; [harness-clients/README.md](harness-clients/README.md) document
 - `POST {base}/sessions` creates a session and returns its id, key and URLs, and access
   tokens for alice and bob. It is rate-limited and open, without sign-in (§12.2). Its optional
   body names the client under test and the areas in scope; `PATCH {base}/sessions/{sid}`
-  changes them later (C6). With `"proxy": "<id>"` it starts a proxy session (§10, C7), and
+  changes them later (C6). With `"driven": true` its EARL mode is `earl:automatic` (§14, C8).
+  With `"proxy": "<id>"` it starts a proxy session (§10, C7), and
   `GET {base}/proxies` lists the targets.
 - `GET {base}/sessions/{sid}` describes the session; `POST {base}/sessions/{sid}/tokens/{name}`
   hands out a fresh token; `GET {base}/sessions/{sid}/page` is the session page, which reads
@@ -739,12 +740,17 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
   gave it. `ClientSessionToolsTest` reads a live session through the three tools.
 - **C8: driven clients** (§14). **Proposed 2026-10-29 (D-0103); Gate D closed the same day
   (D-0104).**
-  - **C8.1: the driver and the drives.** `harness-driver`, `touchstone drive`, the reference
-    adapter, a `drive` for every rule that other rules' traffic does not try, and
-    `DriverSelfTest`.
+  - **C8.1: the driver and the drives. Done 2026-10-29 (D-0105).** `harness-driver`,
+    `touchstone drive`, the reference adapter, a `drive` for every rule that other rules' traffic
+    does not try, and `DriverSelfTest`.
     *Done when:* the reference adapter, driven with nobody at the page, leaves no rule
     untested, and every drive runs to its end; behind the same adapter, each of the reference
     client's twins fails exactly the rules aimed at it.
+    *Done:* 20 rules have a drive, and the setup's traffic and the other drives try the other 33.
+    Driven in process, the reference adapter passes all 53 rules ("no MUST failure in 41 MUST rules
+    exercised, of 41 that apply"), every drive runs to its end, and the EARL mode is automatic.
+    Each of the 54 twins fails exactly the rules aimed at it. The same adapter in a process of its
+    own, and `touchstone drive` with a registry naming it, are driven the same way.
   - **C8.2: the MCP tools** (§14.2), in harness-mcp's stdio profile.
     *Done when:* an MCP client over stdio drives the reference adapter through a session rule by
     rule, runs one operation, starts a task, arms a fault and reads the findings; the tools refuse
@@ -810,9 +816,10 @@ person drives, except that its EARL mode is `earl:automatic`.
   `driver/protocol.schema.json`), the drive runner (templates from `harness-core`), a client
   for the session API, the inbox it hosts for the client (embedded Jetty), and the checker.
 - **`touchstone drive`**, in `harness-cli`, for CI:
-  `touchstone drive --client <id> [--areas …] [--rule …] [--out <dir>]` creates a session on a
-  registered client-session service, drives the client, writes the JSON, EARL and JUnit
-  results, and exits 1 on a MUST failure.
+  `touchstone drive --client <id> [--service <id>] [--areas …] [--rule …] [--out <dir>]` creates a
+  session on a client-session service registered in `adapters.yaml`, drives the client registered
+  there, writes the JSON results (each rule with its drive's note), EARL and JUnit, and exits 1 on
+  a MUST failure.
 - **`touchstone driver check -- <command>`**, the adapter checker (`driver/PROTOCOL.md`
   section 6).
 - **MCP tools**, in harness-mcp's stdio profile only:

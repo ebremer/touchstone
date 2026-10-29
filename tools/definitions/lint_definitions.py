@@ -133,7 +133,7 @@ def captures_of(resp):
 # the frozen driver protocol, and its templates use the drive's variables or earlier captures.
 PROTOCOL = json.load(open(os.path.join(TS, "driver", "protocol.schema.json"), encoding="utf-8"))["$defs"]
 DRIVE_VARS = {"storage", "drive.container", "drive.inbox", "uuid"}
-DRIVE_VAR = re.compile(r"^(identity\.(alice|bob)\.cidUrl|credential\.(alice|bob)\.(privateJwk|kid|token|idToken|samlAssertion))$")
+DRIVE_VAR = re.compile(r"^(identity\.(alice|bob)\.cidUrl|credential\.(alice|bob)\.(privateJwk|kid|token|idToken|samlAssertion)|service\.[A-Za-z]+)$")
 
 
 def lint_drive(t, where):

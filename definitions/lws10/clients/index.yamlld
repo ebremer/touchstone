@@ -86,6 +86,21 @@ entries:
         Search, and follow the results to their next page. The session will refuse that page
         once with 410, as if it had expired.
       arm: pageGone
+    drive:
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 1"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 2"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 3"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 4"}, contentType: text/plain}
+      - op: create
+        args: {container: "${drive.container}", body: {text: "note 5"}, contentType: text/plain}
+      - waitSeconds: 4
+      - startTask: true
+      - op: search
+        args: {serviceUrl: "${service.TypeSearchService}", query: {}}
     observe:
       role: [typeSearch, typeIndex, searchPage]
       after:

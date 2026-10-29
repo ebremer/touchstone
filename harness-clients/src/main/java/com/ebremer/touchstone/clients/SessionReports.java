@@ -57,9 +57,12 @@ final class SessionReports {
         return node;
     }
 
-    /** The EARL report, in Turtle (OBSERVATION.md section 8). */
+    /**
+     * The EARL report, in Turtle (OBSERVATION.md section 8): automatic when Touchstone's client driver
+     * drove the client (section 12), semiAuto when a person did.
+     */
     static String earl(Session s, ObjectNode results) {
-        return EarlReport.turtle(run(s, results), subject(s), "semiAuto");
+        return EarlReport.turtle(run(s, results), subject(s), s.driven ? "automatic" : "semiAuto");
     }
 
     /** The JUnit XML report, for a developer's CI. */

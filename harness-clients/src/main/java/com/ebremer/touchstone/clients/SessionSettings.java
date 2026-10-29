@@ -16,16 +16,19 @@ import com.fasterxml.jackson.databind.JsonNode;
  * or later: the client under test, which becomes the subject of the EARL report, and the areas
  * in scope. The document is untrusted input, so it is checked whole before anything applies:
  * {@code {"clientUnderTest": {"name": ..., "version": ..., "homepage": ...}, "areas": [...]}},
- * both members optional.
+ * both members optional, and when it starts, {@code proxy} and {@code driven}.
  *
  * @param client the client under test, or null to leave it as it is
  * @param areas the areas in scope, or null to leave them as they are
  * @param proxy the proxy target a session fronts (CLIENT-TESTING.md section 10), or null: chosen when
  *     the session starts, never later
+ * @param driven whether Touchstone's client driver drives the client (CLIENT-TESTING.md section 14),
+ *     which makes the EARL report's mode automatic; null when not said. Said when the session
+ *     starts, never later
  */
-record SessionSettings(Session.ClientUnderTest client, List<String> areas, String proxy) {
+record SessionSettings(Session.ClientUnderTest client, List<String> areas, String proxy, Boolean driven) {
 
-    static final SessionSettings NONE = new SessionSettings(null, null, null);
+    static final SessionSettings NONE = new SessionSettings(null, null, null, null);
     private static final int MAX_NAME = 100;
     private static final int MAX_VERSION = 50;
     private static final int MAX_HOMEPAGE = 500;
@@ -40,8 +43,10 @@ record SessionSettings(Session.ClientUnderTest client, List<String> areas, Strin
         }
         for (Iterator<String> it = doc.fieldNames(); it.hasNext(); ) {
             String member = it.next();
-            if (!member.equals("clientUnderTest") && !member.equals("areas") && !member.equals("proxy")) {
-                throw new IllegalArgumentException("unknown member " + clip(member) + "; use clientUnderTest, areas and proxy");
+            if (!member.equals("clientUnderTest") && !member.equals("areas") && !member.equals("proxy")
+                    && !member.equals("driven")) {
+                throw new IllegalArgumentException("unknown member " + clip(member)
+                        + "; use clientUnderTest, areas, proxy and driven");
             }
         }
         Session.ClientUnderTest client = null;
@@ -84,13 +89,24 @@ record SessionSettings(Session.ClientUnderTest client, List<String> areas, Strin
             }
             proxy = p.asText();
         }
-        return new SessionSettings(client, areas, proxy);
+        Boolean driven = null;
+        JsonNode d = doc.get("driven");
+        if (d != null && !d.isNull()) {
+            if (!d.isBoolean()) {
+                throw new IllegalArgumentException("driven is true or false");
+            }
+            driven = d.asBoolean();
+        }
+        return new SessionSettings(client, areas, proxy, driven);
     }
 
     /** Applies the settings to {@code s}: what they leave null stays as it is. */
     void applyTo(Session s) {
         if (client != null) {
             s.clientUnderTest = client;
+        }
+        if (driven != null) {
+            s.driven = driven;
         }
         if (areas != null) {
             List<String> out = new ArrayList<>(Session.AREAS);

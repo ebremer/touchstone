@@ -652,6 +652,9 @@ public final class ClientLab implements AutoCloseable {
                         if (settings != null && settings.proxy() != null) {
                             error(response, callback, 400, "invalid_settings",
                                     "a session's proxy target is chosen when it starts");
+                        } else if (settings != null && settings.driven() != null) {
+                            error(response, callback, 400, "invalid_settings",
+                                    "whether a session is driven is said when it starts");
                         } else if (settings != null) {
                             settings.applyTo(s);
                             LOG.info("session {}: settings changed", s.id);
@@ -966,6 +969,7 @@ public final class ClientLab implements AutoCloseable {
             }
             body.put("client", s.clientId);
             body.set("clientUnderTest", SessionReports.clientUnderTest(s.clientUnderTest));
+            body.put("driven", s.driven);
             ArrayNode areas = body.putArray("areas");
             s.areas().forEach(areas::add);
             ObjectNode exports = body.putObject("exports");

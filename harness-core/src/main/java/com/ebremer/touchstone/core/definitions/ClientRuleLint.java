@@ -26,7 +26,8 @@ final class ClientRuleLint {
     /** The variables of a drive (OBSERVATION.md section 12), besides earlier captures. */
     static final Set<String> DRIVE_VARIABLES = Set.of("storage", "drive.container", "drive.inbox", "uuid");
     static final Pattern DRIVE_VARIABLE = Pattern.compile(
-            "identity\\.(alice|bob)\\.cidUrl|credential\\.(alice|bob)\\.(privateJwk|kid|token|idToken|samlAssertion)");
+            "identity\\.(alice|bob)\\.cidUrl|credential\\.(alice|bob)\\.(privateJwk|kid|token|idToken|samlAssertion)"
+                    + "|service\\.[A-Za-z]+");
 
     private ClientRuleLint() {
     }
