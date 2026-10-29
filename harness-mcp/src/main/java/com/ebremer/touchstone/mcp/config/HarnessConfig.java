@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 /** Wires the harness-core services the MCP tools sit on top of. */
 @Configuration
-@EnableConfigurationProperties({TouchstoneProperties.class, ClientSessionProperties.class})
+@EnableConfigurationProperties({TouchstoneProperties.class, ClientSessionProperties.class, DriverProperties.class})
 public class HarnessConfig {
 
     @Bean

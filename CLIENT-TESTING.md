@@ -751,10 +751,13 @@ C8 is built (D-0103). Closed on 2026-10-29 (D-0104).
     exercised, of 41 that apply"), every drive runs to its end, and the EARL mode is automatic.
     Each of the 54 twins fails exactly the rules aimed at it. The same adapter in a process of its
     own, and `touchstone drive` with a registry naming it, are driven the same way.
-  - **C8.2: the MCP tools** (§14.2), in harness-mcp's stdio profile.
+  - **C8.2: the MCP tools** (§14.2), in harness-mcp's stdio profile. **Done 2026-10-29 (D-0106).**
     *Done when:* an MCP client over stdio drives the reference adapter through a session rule by
     rule, runs one operation, starts a task, arms a fault and reads the findings; the tools refuse
     an unregistered client or session; and the hosted profile lists none of them.
+    *Done:* `TouchstoneMcpStdioTest` does all of it over stdio against the reference adapter
+    registered as a command, `DriverToolsTest` covers each tool and the refusals, and
+    `TouchstoneMcpEndToEndTest` finds none of the driving tools on the hosted endpoint.
   - **C8.3: the checker and the starter kits** (§14.4).
     *Done when:* every kit's stub passes `touchstone driver check` in CI, and an adapter built
     from the Java kit over the reference client passes the drive of C8.1.
@@ -822,18 +825,23 @@ person drives, except that its EARL mode is `earl:automatic`.
   a MUST failure.
 - **`touchstone driver check -- <command>`**, the adapter checker (`driver/PROTOCOL.md`
   section 6).
-- **MCP tools**, in harness-mcp's stdio profile only:
-  - `list_driven_clients`: the registered clients, and each one's hello;
-  - `drive_client(client_id, session?, areas?, rules?)`: drives a whole session, asynchronously
-    with progress, as `start_run` does; `get_drive(drive_id)` reads its state;
-  - `drive_rule(client_id, rule, session?)`: one rule's drive, synchronously, for the
-    fix-and-verify loop;
-  - `client_operation(client_id, op, args, session?)`: one protocol operation, for an agent
+- **MCP tools**, in harness-mcp's stdio profile only (C8.2, D-0106):
+  - `list_driven_clients`: the clients and services the adapter registry names, and the
+    sessions this server drives, with their storage and inbox;
+  - `drive_client(clientId, session?, areas?, rules?)`: drives a whole session in the
+    background, with progress, as `start_run` does; `get_drive(driveId)` reads its state;
+  - `drive_rule(clientId, rule, session?)`: one rule's drive, and the rule's outcome so far, for
+    the fix-and-verify loop;
+  - `client_operation(clientId, op, args, session?)`: one protocol operation, for an agent
     working both sides itself;
-  - `start_task(rule, session?)` and `arm_fault(fault, session?)`.
+  - `start_task(rule, session)` and `arm_fault(fault, session)`;
+  - `stop_driven_client(session)`: stops the client's adapters.
 
-  With the read-only tools of C7, one agent can then drive the client and the session and read
-  the findings. The hosted, streamable endpoint keeps only the read-only tools (D-0085).
+  A session is the id of one this server drives, or a session page's address with its key, which
+  the driver attaches to. Without one, a tool uses the session it last drove the client in, or
+  starts one. The read-only tools of C7 read a driven session by its id, the key staying with the
+  driver, so one agent can drive the client and the session and read the findings. The hosted,
+  streamable endpoint keeps only the read-only tools (D-0085).
 
 ### 14.3 Security invariants
 
@@ -843,9 +851,9 @@ These hold in addition to DESIGN.md §7 and §8 above.
    come from configuration (`touchstone.driver.clients.<id>`), as server targets do (DESIGN.md
    §7.1). The CLI and the tools take a client id, never a command, and nothing a rule, a tool
    argument or an adapter says is ever run.
-2. **Registered sessions only.** The driver uses sessions only of the services
-   `touchstone.clients.services` registers (D-0085). Drives name only the session's URLs and
-   the URLs the client reported from the session's answers.
+2. **Registered sessions only.** The driver uses sessions only of the services the adapter
+   registry names, the same registry as its clients (D-0106). Drives name only the session's URLs
+   and the URLs the client reported from the session's answers.
 3. **Local only.** The driving tools exist only in the stdio profile, and the driver never runs
    in the hosted service. It runs code its operator registered, on the operator's machine, with
    the trust they give their own test suite.

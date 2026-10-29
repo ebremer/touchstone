@@ -95,6 +95,8 @@ public final class RefAdapter {
 
     public static void main(String[] args) {
         serve(System.in, System.out, args.length == 0 ? Flaw.NONE : Flaw.valueOf(args[0]));
+        // End of input or shutdown: exit, whatever threads the HTTP clients keep (PROTOCOL.md section 2).
+        System.exit(0);
     }
 
     /** Runs the adapter on these streams until end of input or {@code shutdown} (PROTOCOL.md section 2). */

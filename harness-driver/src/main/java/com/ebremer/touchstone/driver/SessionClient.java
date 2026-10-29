@@ -38,6 +38,7 @@ public final class SessionClient {
     private final HttpClient http = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER)
             .connectTimeout(Duration.ofSeconds(10)).build();
     private final SecureRandom random = new SecureRandom();
+    private final URI service;
     private final URI api;
     private final String key;
     private final String id;
@@ -45,7 +46,8 @@ public final class SessionClient {
     private final URI page;
     private String openidClient;
 
-    private SessionClient(URI api, String key, String id, URI storage, URI page) {
+    private SessionClient(URI service, URI api, String key, String id, URI storage, URI page) {
+        this.service = service;
         this.api = api;
         this.key = key;
         this.id = id;
@@ -60,15 +62,32 @@ public final class SessionClient {
      * @param settings the session's settings: the client under test, the areas, and that it is driven
      */
     public static SessionClient start(URI service, ObjectNode settings) throws IOException, InterruptedException {
-        SessionClient bootstrap = new SessionClient(null, null, null, null, null);
+        SessionClient bootstrap = new SessionClient(null, null, null, null, null, null);
         HttpResponse<String> r = bootstrap.send("POST", URI.create(service + "/sessions"), null, settings.toString(),
                 "application/json");
         if (r.statusCode() != 201) {
             throw new IOException("the client-session service refused the session: " + r.statusCode() + " " + r.body());
         }
         JsonNode s = JSON.readTree(r.body());
-        return new SessionClient(URI.create(s.path("api").asText()), s.path("key").asText(), s.path("id").asText(),
+        return new SessionClient(service, URI.create(s.path("api").asText()), s.path("key").asText(), s.path("id").asText(),
                 URI.create(s.path("storage").asText()), URI.create(s.path("page").asText()));
+    }
+
+    /**
+     * A session that already exists, such as one a developer opened on the session page: its
+     * service, its id and its key, as the page's address carries them.
+     */
+    public static SessionClient attach(URI service, String id, String key) throws IOException, InterruptedException {
+        URI api = URI.create(service + "/sessions/" + id);
+        SessionClient probe = new SessionClient(service, api, key, id, null, null);
+        JsonNode s = probe.get("");
+        return new SessionClient(service, api, key, id, URI.create(s.path("storage").asText()),
+                URI.create(s.path("page").asText()));
+    }
+
+    /** The client-session service the session belongs to. */
+    public URI service() {
+        return service;
     }
 
     public String id() {
@@ -118,6 +137,26 @@ public final class SessionClient {
 
     public JsonNode results() throws IOException, InterruptedException {
         return get("/results");
+    }
+
+    /** Arms a fault (OBSERVATION.md section 6.2), as starting a task that arms it would. */
+    public void armFault(String fault) throws IOException, InterruptedException {
+        HttpResponse<String> r = send("POST", URI.create(api + "/faults/" + fault), key, null, null);
+        if (r.statusCode() != 204) {
+            throw new IOException("arming " + fault + " was answered " + r.statusCode());
+        }
+    }
+
+    /**
+     * Reads part of the session API, the key staying here: the description ({@code ""}), the results
+     * ({@code /results}), or a page of the traffic log ({@code /exchanges?...}), redacted as the API
+     * gives them.
+     */
+    public JsonNode read(String path) throws IOException, InterruptedException {
+        if (!(path.isEmpty() || path.equals("/results") || path.startsWith("/exchanges?"))) {
+            throw new IllegalArgumentException("not a part of the session the driver reads: " + path);
+        }
+        return get(path);
     }
 
     /** One of the session's exports: earl or junit. */

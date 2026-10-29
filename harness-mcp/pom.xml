@@ -62,6 +62,12 @@
       <artifactId>harness-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- The driving tools, stdio profile only (CLIENT-TESTING.md section 14.2). -->
+    <dependency>
+      <groupId>com.ebremer.touchstone</groupId>
+      <artifactId>harness-driver</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Servlet stack is REQUIRED (DESIGN.md paragraph 4): the WebFlux starter would pull Netty. -->
     <dependency>

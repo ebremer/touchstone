@@ -119,6 +119,9 @@ class TouchstoneMcpEndToEndTest {
                     .collect(Collectors.toMap(Tool::name, Tool::annotations));
 
             assertThat(hints).hasSize(14);
+            // The driving tools exist in the stdio profile only (CLIENT-TESTING.md section 14.3).
+            assertThat(hints.keySet()).doesNotContainAnyElementsOf(Set.of("list_driven_clients", "drive_client",
+                    "get_drive", "drive_rule", "client_operation", "start_task", "arm_fault", "stop_driven_client"));
             Set<String> drivesTheTarget = Set.of("start_run", "run_one");
             Set<String> readsAClientSession = Set.of("get_client_session", "get_client_findings", "get_client_exchange");
             hints.forEach((tool, a) -> {

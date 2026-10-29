@@ -4550,3 +4550,51 @@ check copies `drive` as a JSON literal).
 - lws-client's move to the protocol, and the docs (C8.4).
 
 Until C8.4, the docs still say that Touchstone never drives a client.
+
+### D-0106 — C8.2: the MCP driving tools, stdio profile only
+Phase C8.2 (CLIENT-TESTING.md section 13) is built, on branch `clients/driver`.
+
+**The tools.** Eight tools in harness-mcp, in a `@Profile("stdio")` bean, so the hosted
+streamable endpoint never lists them:
+- `list_driven_clients`;
+- `drive_client` (in the background, with progress) and `get_drive`;
+- `drive_rule` (one rule's drive, and the rule's outcome so far);
+- `client_operation` (one protocol operation);
+- `start_task` and `arm_fault`;
+- `stop_driven_client`.
+
+**An open session, not a run.** An agent working both sides needs a driven session that outlives one
+call: drive a rule, run an operation, start a task, read the findings, drive again. So
+`harness-driver` gains `DriveSession`: an open client session with its running adapters and inbox.
+`Driver.drive` is now a loop over one. A session the driver did not start can be attached to,
+given its page's address with the key.
+
+**Keys stay with the driver.** A tool names a session by the id of one this server drives, or by a
+session page's address with its key. The read-only client tools of C7 read a driven session by its
+id: `ClientSessionTools` asks the driver's registry, and `SessionClient.read` fetches only the
+description, the results and the traffic log. No answer carries a key, and an error never repeats an
+address that holds one.
+
+**One registry for clients and services.** The driving tools use the services `adapters.yaml`
+names, as `touchstone drive` does, not `touchstone.clients.services`, which still governs the
+read-only tools. Section 14.3 said the latter; it now says the former. Two lists of services for one
+driver would differ sooner or later.
+
+**Found by the stdio test:**
+- *A tool answer cannot carry a Jackson 2 `JsonNode`.* Spring AI's serializer does not write it as
+  JSON, so `parent` came back empty to the agent. Results and evidence now leave as maps, as the C7
+  tools' already do. A test that calls the tools in process would never have shown this.
+- *A killed server left its adapters running.* On Windows, `Process.destroy` kills the server
+  without its shutdown hooks. Its adapters then lived on long enough to hold their logs open. The
+  protocol already says an adapter exits at the end of input. `RefAdapter` now does so even while
+  its HTTP clients keep threads, and the test waits for the server's children.
+
+**Verified:**
+- `TouchstoneMcpStdioTest` runs the server as an agent does, a process on stdio, with the reference
+  adapter registered as a command. It drives a rule, runs `discover_storage` and `create_container`
+  through `client_operation`, starts a task and does what it asks, arms a fault, and reads the
+  findings by the session's id. It also sees `drive_rule` refuse an unregistered client.
+- `DriverToolsTest` covers each tool, a background drive to completion, and the refusals: an
+  unregistered client, a session of an unregistered service (without repeating its key), an unknown
+  session, and an unknown rule.
+- `TouchstoneMcpEndToEndTest` finds none of the eight on the hosted endpoint.

@@ -5,23 +5,15 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.ebremer.touchstone.core.definitions.ClientRules;
-import com.ebremer.touchstone.core.definitions.DriveStep;
 import com.ebremer.touchstone.core.definitions.RuleDefinition;
-import com.ebremer.touchstone.driver.AdapterLauncher.Adapter;
-import com.ebremer.touchstone.driver.protocol.AdapterConnection;
-import com.ebremer.touchstone.driver.protocol.BrokenAdapterException;
 import com.ebremer.touchstone.driver.protocol.Hello;
-import com.ebremer.touchstone.driver.protocol.Reply;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +27,6 @@ import org.slf4j.LoggerFactory;
 public final class Driver {
 
     private static final Logger LOG = LoggerFactory.getLogger(Driver.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
     /** The areas of a session (CLIENT-TESTING.md section 3). */
     public static final List<String> AREAS = List.of("core", "authentication", "notifications", "index");
 
@@ -115,7 +106,8 @@ public final class Driver {
     }
 
     /**
-     * Drives one client through one new session.
+     * Drives one client through one new session: every rule in scope, in manifest order, then the
+     * session's results.
      *
      * @param launcher starts the client's adapter, as configuration registers it
      * @param service  the client-session service's base
@@ -123,199 +115,27 @@ public final class Driver {
     public static Report drive(AdapterLauncher launcher, URI service, ClientRules rules, Options options)
             throws IOException, InterruptedException {
         List<DriveNote> notes = new ArrayList<>();
-        Adapter main = launcher.start();
-        Adapter verifier = null;
-        Inbox inbox = null;
-        SessionClient session;
+        DriveSession driven = DriveSession.open(launcher, service, options);
         try {
-            AdapterConnection client = main.connection();
-            Hello hello = client.hello();
-            session = SessionClient.start(service, settings(hello, options));
-            LOG.info("driving {} through session {}", hello.client().name(), session.id());
-            ObjectNode auth = defaultAuth(hello, session);
-            String problem = configure(client, auth, options);
-            if (problem == null && options.areas().contains("notifications") && hello.implementsOperation("verify_notification")) {
-                verifier = launcher.start();
-                problem = configure(verifier.connection(), auth, options);
-                inbox = new Inbox(options.inboxHost(), options.inboxPort(), options.inboxPublicBase(), verifier.connection(),
-                        options.operationTimeout());
-            }
-            Reply found = problem != null ? null : client.call("discover_storage",
-                    JSON.createObjectNode().put("url", session.storage().toString()), options.operationTimeout());
-            if (problem == null && !found.ok()) {
-                problem = "discover_storage ended in " + found.error().describe();
-            }
-            if (problem != null) {
-                for (RuleDefinition rule : inScope(rules, options)) {
-                    notes.add(DriveNote.notStarted(rule.name(), "the client could not be set up: " + problem));
-                }
-            } else {
-                runDrives(client, hello, session, auth, found.result(), inbox, rules, options, notes);
+            LOG.info("driving {} through session {}", driven.hello().client().name(), driven.session().id());
+            for (RuleDefinition rule : inScope(rules, options)) {
+                DriveNote note = driven.drive(rule);
+                LOG.debug("{}: {}", rule.name(), note);
+                notes.add(note);
             }
         } finally {
-            main.close();
-            if (verifier != null) {
-                verifier.close();
-            }
-            if (inbox != null) {
-                inbox.close();
-            }
+            driven.close();
         }
-        return new Report(main.connection().hello().client(), session.id(), session.pageWithKey(), session.results(), notes,
+        SessionClient session = driven.session();
+        return new Report(driven.hello().client(), session.id(), session.pageWithKey(), session.results(), notes,
                 session.export("earl"), session.export("junit"));
     }
 
-    private static void runDrives(AdapterConnection client, Hello hello, SessionClient session, ObjectNode auth,
-            JsonNode storage, Inbox inbox, ClientRules rules, Options options, List<DriveNote> notes)
-            throws IOException, InterruptedException {
-        Map<String, String> services = new LinkedHashMap<>();
-        storage.path("services").forEach(s -> s.path("types")
-                .forEach(t -> services.putIfAbsent(t.asText(), s.path("serviceEndpoint").asText())));
-        String root = storage.path("storageRoot").asText(session.storage().toString());
-        DriveRunner runner = new DriveRunner(client, session, variables(session, services), options.operationTimeout(),
-                options.pauses());
-        boolean reconfigured = false;
-        String broken = null;
-        for (RuleDefinition rule : inScope(rules, options)) {
-            if (broken != null) {
-                notes.add(DriveNote.notStarted(rule.name(), broken));
-                continue;
-            }
-            if (rule.drive().isEmpty()) {
-                notes.add(DriveNote.noDrive(rule.name()));
-                continue;
-            }
-            String cannot = runner.cannotStart(rule, hello);
-            if (cannot == null && inbox == null && mentions(rule, "${drive.inbox")) {
-                cannot = "the driver hosts no inbox: the notifications area is out of scope, or the client does not verify notifications";
-            }
-            if (cannot != null) {
-                notes.add(DriveNote.notStarted(rule.name(), cannot));
-                continue;
-            }
-            try {
-                if (reconfigured) {
-                    String problem = configure(client, auth, options);
-                    if (problem != null) {
-                        notes.add(DriveNote.notStarted(rule.name(), "configuring the client again failed: " + problem));
-                        continue;
-                    }
-                    reconfigured = false;
-                }
-                ObjectNode made = JSON.createObjectNode().put("parent", root).put("slug", "drive-" + rule.name());
-                Reply container = client.call("create_container", made, options.operationTimeout());
-                if (!container.ok()) {
-                    notes.add(DriveNote.stopped(rule.name(), 0,
-                            "creating the drive's container ended in " + container.error().describe()));
-                    continue;
-                }
-                String inboxUrl = inbox == null ? "" : inbox.base() + rule.name() + "/";
-                DriveNote note = runner.run(rule, container.result().path("location").asText(), inboxUrl);
-                notes.add(note);
-                reconfigured = rule.drive().stream().anyMatch(s -> "configure".equals(s.op()));
-                LOG.debug("{}: {}", rule.name(), note);
-                session.settleDeliveries(Duration.ofSeconds(10));
-            } catch (BrokenAdapterException e) {
-                notes.add(DriveNote.stopped(rule.name(), 0, e.getMessage()));
-                broken = e.getMessage();
-            }
-        }
-    }
-
-    private static List<RuleDefinition> inScope(ClientRules rules, Options options) {
+    /** The rules of the areas in scope, and of the names chosen when some are, in manifest order. */
+    public static List<RuleDefinition> inScope(ClientRules rules, Options options) {
         return rules.rules().stream()
                 .filter(r -> options.areas().contains(r.area()))
                 .filter(r -> options.rules() == null || options.rules().contains(r.name()))
                 .toList();
-    }
-
-    private static boolean mentions(RuleDefinition rule, String text) {
-        for (DriveStep step : rule.drive()) {
-            if (step.args().toString().contains(text)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static ObjectNode settings(Hello hello, Options options) {
-        ObjectNode settings = JSON.createObjectNode();
-        ObjectNode client = settings.putObject("clientUnderTest");
-        client.put("name", hello.client().name());
-        if (hello.client().version() != null) {
-            client.put("version", hello.client().version());
-        }
-        if (hello.client().homepage() != null) {
-            client.put("homepage", hello.client().homepage());
-        }
-        options.areas().forEach(settings.withArray("areas")::add);
-        settings.put("driven", true);
-        return settings;
-    }
-
-    /** alice: with credentials the client signs itself when it can, otherwise with a token (D-0104). */
-    private static ObjectNode defaultAuth(Hello hello, SessionClient session) throws IOException, InterruptedException {
-        ObjectNode auth = JSON.createObjectNode();
-        if (hello.auth().contains("cid")) {
-            JsonNode alice = session.credentials("alice");
-            auth.put("type", "cid").put("agent", alice.path("cidUrl").asText());
-            auth.set("privateJwk", alice.path("privateKeyJwk"));
-            auth.put("kid", alice.path("verificationMethod").asText());
-        } else if (hello.auth().contains("bearer")) {
-            auth.put("type", "bearer").put("token", session.token("alice"));
-        } else {
-            auth.put("type", "none");
-        }
-        return auth;
-    }
-
-    private static String configure(AdapterConnection client, ObjectNode auth, Options options) {
-        ObjectNode args = JSON.createObjectNode();
-        args.set("auth", auth);
-        Reply r = client.call("configure", args, options.operationTimeout());
-        return r.ok() ? null : "configure ended in " + r.error().describe();
-    }
-
-    /** The variables of OBSERVATION.md section 12 that every drive of the session shares. */
-    private static DriveRunner.Variables variables(SessionClient session, Map<String, String> services) {
-        Map<String, JsonNode> credentials = new HashMap<>();
-        return name -> {
-            if (name.equals("storage")) {
-                return TextNode.valueOf(session.storage().toString());
-            }
-            if (name.startsWith("service.")) {
-                String endpoint = services.get(name.substring("service.".length()));
-                return endpoint == null ? null : TextNode.valueOf(endpoint);
-            }
-            String[] parts = name.split("\\.");
-            if (parts.length != 3 || !(parts[1].equals("alice") || parts[1].equals("bob"))) {
-                return null;
-            }
-            String who = parts[1];
-            if (parts[0].equals("identity") && parts[2].equals("cidUrl")) {
-                return secrets(session, credentials, who).path("cidUrl");
-            }
-            if (!parts[0].equals("credential")) {
-                return null;
-            }
-            return switch (parts[2]) {
-                case "privateJwk" -> secrets(session, credentials, who).path("privateKeyJwk");
-                case "kid" -> secrets(session, credentials, who).path("verificationMethod");
-                case "token" -> TextNode.valueOf(session.token(who));
-                case "idToken" -> TextNode.valueOf(session.idToken(who));
-                case "samlAssertion" -> TextNode.valueOf(session.samlAssertion(who));
-                default -> null;
-            };
-        };
-    }
-
-    private static JsonNode secrets(SessionClient session, Map<String, JsonNode> cache, String who)
-            throws IOException, InterruptedException {
-        JsonNode known = cache.get(who);
-        if (known == null) {
-            known = session.credentials(who);
-            cache.put(who, known);
-        }
-        return known;
     }
 }

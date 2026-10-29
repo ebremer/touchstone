@@ -15,6 +15,8 @@ spring:
     mcp:
       server:
         stdio: true
+        # Only this profile has the driving tools (CLIENT-TESTING.md section 14.2).
+        instructions: "LWS conformance harness. Start with list_requirements or coverage. For a client session, start with get_client_findings. To drive a registered client, start with list_driven_clients, then drive_rule or drive_client."
 
 logging:
   pattern:
