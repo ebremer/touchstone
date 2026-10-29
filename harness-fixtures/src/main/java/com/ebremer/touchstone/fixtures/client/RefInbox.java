@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 
 import com.ebremer.touchstone.fixtures.client.RefLwsClient.Flaw;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -125,14 +126,8 @@ public final class RefInbox implements AutoCloseable {
             try (InputStream in = Content.Source.asInputStream(request)) {
                 body = in.readNBytes(1 << 20);
             }
-            String problem;
-            try {
-                problem = flaw == Flaw.INBOX_ACCEPTS_EVERYTHING ? null
-                        : flaw == Flaw.INBOX_REFUSES_EVERYTHING ? "this inbox refuses everything"
-                        : verify(uri(path.substring("/inbox/".length())), request, body);
-            } catch (Exception e) {
-                problem = "cannot verify: " + e.getMessage();
-            }
+            String problem = verify(uri(path.substring("/inbox/".length())), request.getMethod(),
+                    name -> request.getHeaders().get(name), body, flaw, http);
             arrived();
             if (problem == null) {
                 response.setStatus(204);
@@ -146,10 +141,32 @@ public final class RefInbox implements AutoCloseable {
         }
     }
 
-    /** Why the notification fails verification, or null when it passes. */
-    private String verify(URI inbox, Request request, byte[] body) throws Exception {
-        String input = request.getHeaders().get("Signature-Input");
-        String signature = request.getHeaders().get("Signature");
+    /**
+     * Why a notification fails verification, or null when it passes, as an inbox with this flaw
+     * judges it; the reference adapter's {@code verify_notification} judges the same way.
+     *
+     * @param inbox  the inbox URL as subscribed, from which the signature base is rebuilt
+     * @param header the first value of a header field, by name in any case, or null
+     */
+    static String verify(URI inbox, String method, Function<String, String> header, byte[] body, Flaw flaw,
+                         HttpClient http) {
+        if (flaw == Flaw.INBOX_ACCEPTS_EVERYTHING) {
+            return null;
+        }
+        if (flaw == Flaw.INBOX_REFUSES_EVERYTHING) {
+            return "this inbox refuses everything";
+        }
+        try {
+            return check(inbox, method, header, body, flaw, http);
+        } catch (Exception e) {
+            return "cannot verify: " + e.getMessage();
+        }
+    }
+
+    private static String check(URI inbox, String httpMethod, Function<String, String> header, byte[] body, Flaw flaw,
+                                HttpClient http) throws Exception {
+        String input = header.apply("Signature-Input");
+        String signature = header.apply("Signature");
         if (input == null || signature == null) {
             return "the notification is not signed";
         }
@@ -199,7 +216,7 @@ public final class RefInbox implements AutoCloseable {
             return "no verification method " + keyid;
         }
         // The body has the digest the signature covers.
-        String digest = request.getHeaders().get("Content-Digest");
+        String digest = header.apply("Content-Digest");
         String expected = "sha-256=:" + Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(body)) + ":";
         if (!expected.equals(digest == null ? null : digest.trim()) && flaw != Flaw.INBOX_SKIPS_DIGEST_CHECK) {
             return "the body does not have the Content-Digest the signature covers";
@@ -211,16 +228,16 @@ public final class RefInbox implements AutoCloseable {
         StringBuilder base = new StringBuilder();
         for (String component : components(params)) {
             String value = switch (component) {
-                case "@method" -> request.getMethod();
+                case "@method" -> httpMethod;
                 case "@scheme" -> inbox.getScheme();
                 case "@authority" -> inbox.getRawAuthority().toLowerCase(Locale.ROOT);
                 case "@path" -> inbox.getRawPath();
                 default -> {
-                    String header = request.getHeaders().get(component);
-                    if (header == null) {
+                    String field = header.apply(component);
+                    if (field == null) {
                         throw new IllegalArgumentException("the covered field " + component + " is missing");
                     }
-                    yield header.trim();
+                    yield field.trim();
                 }
             };
             base.append('"').append(component).append("\": ").append(value).append('\n');
