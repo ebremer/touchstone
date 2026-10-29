@@ -149,10 +149,16 @@ this machine, so the hosted endpoint never lists them.
 | `arm_fault` | `fault`, `session` | Arms a fault on its own. |
 | `stop_driven_client` | `session` | Stops the client's adapters; the session stays readable. |
 
+[Developing a client with an agent](mcp-client-development.md) walks through the whole workflow: the
+adapter, the registry, connecting an agent, and the loop of driving a rule, reading the findings and
+driving it again. On stdio your MCP client chooses the working directory, so give
+`--touchstone.driver.registry` the registry's absolute path.
+
 `session` is the id of a session this server drives, or a session page's address with its key, of
 a service `adapters.yaml` names; without one, a tool uses the session it last drove the client in,
-or starts one. The three client tools read a driven session by its id, and the key stays with the
-server. `touchstone.driver.registry` names the adapter registry (default `adapters.yaml`). The
+or starts one on the registry's only service. The three client tools read a driven session by its
+id, and the key stays with the server. `touchstone.driver.registry` names the adapter registry
+(default `adapters.yaml`). The
 tools are marked open-world and not read-only; `client_operation` is also marked destructive, since
 an operation may delete what it names.
 

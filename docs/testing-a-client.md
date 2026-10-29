@@ -229,6 +229,11 @@ session judges your client's requests exactly as when you drive it.
        command: [node, adapter.mjs]
        directory: ../my-client
    ```
+
+   A local service is plain `http`. The protocol leaves insecure HTTP to each client, so if yours
+   refuses an `http` authorization server, have your adapter allow it from an environment variable
+   and set that under the client's `environment:` (lws-client's adapters read
+   `LWS_DRIVER_INSECURE_HTTP=1`).
 4. **Drive it.** `touchstone drive --client my-client` starts a session, drives your client through
    it, writes `results.json` (each rule with a note on how its drive went), `earl.ttl` and
    `junit.xml`, and exits `1` on a MUST failure, so it fits CI as it is.
@@ -260,7 +265,8 @@ Started locally on stdio, the MCP server also has driving tools for a client reg
 `adapters.yaml`: `drive_rule` to drive one rule and see its outcome, `client_operation` to run one
 operation, `start_task` and `arm_fault`, and `drive_client` for a whole session. An agent working on
 your client can then fix it and drive the rule again, and read the findings by the session's id.
-See [MCP server](mcp.md#driving-a-client).
+[Developing a client with an agent](mcp-client-development.md) is the guide to that workflow; the
+tools themselves are in [MCP server](mcp.md#driving-a-client).
 
 ## Proxy mode: test against a real server
 
