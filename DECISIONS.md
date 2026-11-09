@@ -5013,5 +5013,16 @@ nothing in the adapter changed.
   the first time (it was 116/40/63).
 - *Not run here.* Halcyon and lws-drupal, whose new commits change no behaviour (tests, comments, docs), and the
   clients image. lwsd did not move.
-- *Not deployed.* vulcan's target servers still run the previous pins: `deploy-targetservers.sh halcyon lws-server
-  sparq-lws css lws-drupal` (deploy repository) rebuilds them, and the interop set with them.
+- *Deployed* (2026-11-09 evening): vulcan's halcyon, lws-server, sparq-lws, css and lws-drupal rebuilt from this branch
+  (`deploy-targetservers.sh halcyon lws-server sparq-lws css lws-drupal`, deploy repository; 240 s, the interop set with
+  them), and every target run there with Touchstone `14f315e` (harness, definitions and catalog as this branch's):
+  docker-halcyon `782752d9` 202/0/17 (a first run, `6a7c7705`, ended `type-search-next-page` cantTell: a prerequisite
+  create refused 401, "the LWS credential could not be verified", nine minutes in; the re-run was clean),
+  docker-lws-server `8c85f283` 204/0/15, docker-sparq-lws `7223d7c2` 201/4/14 (the same four), docker-css `6b80088d`
+  160/0/59, conformant, docker-lws-drupal `606b6d38` 208/0/11, docker-lwsd `26ba32bc` 207/0/12: test for test as
+  today's earlier runs for all but the Community Solid Server. `touchstone drive` of all twelve clients: 52/0/1 each.
+  `interop-all.sh` (local, the new target images, the clients image of `ff51462`): 72 of 84, where it was 71; the
+  Community Solid Server fails only notifications for the eleven lws-clients: its notification endpoint is outside its
+  storage root, so a client subscribes without a token, and the 401 names the protected resource metadata of the topic
+  container, not of the endpoint asked, which every lws-client refuses (RFC 9728 section 3.3). The conformance pages
+  (`/lws/conformance` revision 738, `/lws/conformance/clients` 739, `/lws/interop` 740) show these runs.
