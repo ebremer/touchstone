@@ -38,8 +38,10 @@ references (#281); SAML corrects its example (#298). On branch `spec/wd-2026-11-
   the non-owner tests cite the new MAY. 219 server tests. → **Done (D-0111).**
 - [ ] **Erich: review D-0111's three points** (the retired seed, the retired tests and whether to
   ask upstream for a keyword on the status table, which tests cite the MAY).
-- [ ] **Deployment:** the Touchstone instances (vulcan, ebremer.com) and `targetservers/` still run
+- [x] **Deployment:** the Touchstone instances (vulcan, ebremer.com) and `targetservers/` still run
   the 19 October definitions; redeploy once D-0111 is merged.
+  → **Done:** both instances run master `14f315e` (2026-11-09). `targetservers/` did not change, so
+  the target servers were not rebuilt.
 
 ---
 
