@@ -14,18 +14,18 @@ below is reachable as soon as it starts. A second set can be published beside th
 
 | Target | Implementation | Built from (default) | Storage | Authorization server key |
 |---|---|---|---|---|
-| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `e94e4d0` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
-| `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `aef56f2` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
-| `sparq-lws` | sparq-lws-core, LWS 1.0 mode, built with the SAML suite (`--features authn-saml`) | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `01b5ad8` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
-| `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `311b367` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
-| `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `4ee4a5c` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
+| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `9dddc0a` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
+| `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `97e8ace` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
+| `sparq-lws` | sparq-lws-core, LWS 1.0 mode, built with the SAML suite (`--features authn-saml`) | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `8fde60b` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
+| `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `6d7e9df` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
+| `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `41d3ff8` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.7` `c7fb260` | `/targets/lwsd/` | `/data/as-key.json` |
-| `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core) `v0.26.0` `7a58d95`, as the npm package `@factoidal/core` 0.26.0 | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
+| `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core), as the npm package `@factoidal/core` 0.34.0 (no git tag; the newest is `v0.31.1`) | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
 
 The key paths are inside each container's `/data` volume. A deployment that lets Touchstone mint its own tokens
 (`HarnessIssuedTokens`) reads the key from there, for example with `docker compose exec`.
 
-Factoidal writes root-relative references (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`; 0.26.0 as 0.18.0), which
+Factoidal writes root-relative references (`Location: /x/`, `Link: </>; rel="up"`, `</x/.acl>`; 0.18.0 and 0.26.0 did, and 0.34.0's changelog names no change to it), which
 are right only when its storage is at the root of an origin: behind the router at `/targets/factoidal/` they lose the
 prefix, and it answers 404 to a prefixed path, so no `$prefix_mode` helps. `run-all.sh` and `interop-all.sh` test it at
 `http://factoidal:8080/` on their network instead (its `touchstone.env`, `TS_URL`; `compose.local.yaml`), and a

@@ -7,7 +7,7 @@ client session. It speaks [`touchstone-driver/1`](../../PROTOCOL.md), and is bui
 because Factoidal's own adapter (`deploy/lws-client-adapter` in its repository) speaks lws-client's
 earlier protocol, `lws-driver/1` (D-0109).
 
-The client is the package `@factoidal/core` 0.26.0 (factoidal-core `v0.26.0`, `7a58d95`), pinned with
+The client is the package `@factoidal/core` 0.34.0 (published with no git tag; factoidal-core's newest is `v0.31.1`), pinned with
 its integrity in `package-lock.json`, the same package as the Factoidal target server
 (`targetservers/factoidal`). Its module `@factoidal/core/lws/client` is a socket around a Lean state
 machine (`formal/lean4/L4Factoidal/LWS/Client/` there), which chooses and builds every request: the
@@ -33,7 +33,8 @@ touchstone drive --client factoidal
 `FACTOIDAL_CLIENT_MODULE` names another copy of `lws/client.mjs`, a local build of Factoidal's
 `npm/factoidal` for one; the version in the hello is read from the `package.json` above it.
 
-Results on 2026-10-29, with 0.26.0, against the local client-session service (the same as 0.18.0's):
+Results on 2026-11-09, with 0.34.0, against the local client-session service (the same as 0.26.0's on 2026-10-29
+and 0.18.0's):
 - `touchstone driver check`: 34 of 34;
 - `touchstone drive --client factoidal`: 52 rules passed, none failed, one untested,
   `client-query-baseline-after-415`, which has no drive (a client that sends only the baseline

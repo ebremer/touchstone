@@ -8,7 +8,7 @@
 #   docker build --build-context source=/path/to/sparq targetservers/sparq-lws
 
 ARG SPARQ_REPO=https://github.com/sparq-org/sparq.git
-ARG SPARQ_REF=01b5ad8cf687dd9329a3f4301e8a314fa0738cc5
+ARG SPARQ_REF=8fde60b96869ca2ae1bae8a09e1ce372d3397e14
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone

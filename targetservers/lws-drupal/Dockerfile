@@ -8,7 +8,7 @@
 #   docker build --build-context source=/path/to/lws-drupal targetservers/lws-drupal
 
 ARG LWS_DRUPAL_REPO=https://github.com/ebremer/lws-drupal.git
-ARG LWS_DRUPAL_REF=4ee4a5cfb1c19a700d32e3c95303aa8d2de9557f
+ARG LWS_DRUPAL_REF=41d3ff87199f2a44c35377ddc7c5eefed34aba5c
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone
@@ -25,7 +25,7 @@ COPY --from=clone /src/ /
 # path repository (copied, not linked), with ebremer/lws-client at LWS_CLIENT_REF and Drush.
 FROM drupal:11.4.9-php8.4-fpm-trixie
 ARG LWS_DRUPAL_REF
-ARG LWS_CLIENT_REF=ff51462745c468afe054726e6705c8af218531e1
+ARG LWS_CLIENT_REF=4d4d5628c44fc7e69c8900466c6abf98321204bf
 LABEL org.opencontainers.image.title="lws-drupal (LWS target server)" \
       org.opencontainers.image.source="https://github.com/ebremer/lws-drupal" \
       org.opencontainers.image.revision="${LWS_DRUPAL_REF}"
