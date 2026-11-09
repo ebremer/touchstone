@@ -1,8 +1,8 @@
 # Requirements catalog — LWS 1.0 Authentication Suite: SAML 2.0.
 #
-# Source: "LWS 1.0 Authentication Suite: SAML 2.0", W3C Working Draft 15 October 2026
-#   this-version: https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
-#   snapshot:     catalog/sources/WD-lws10-authn-saml-20261015.html
+# Source: "LWS 1.0 Authentication Suite: SAML 2.0", W3C Working Draft 9 November 2026
+#   this-version: https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/
+#   snapshot:     catalog/sources/WD-lws10-authn-saml-20261109.html
 # Hashes:         tools/extractor/clause_hash.py, rule per DECISIONS.md D-0008.
 #
 # Re-based 2026-09-02 from the editor's draft onto the published Recommendation-track
@@ -15,6 +15,10 @@
 # words only: saml:NameID, saml:Issuer, saml:SubjectConfirmationData and saml:Audience are
 # called elements and Recipient an attribute, where the draft called them all assertions
 # (w3c/lws-protocol#270). Every entry keeps its slug.
+#
+# Moved 2026-11-09 onto the 9 November 2026 WD (DECISIONS.md D-0111). Its one change is to its
+# example, whose outer </ds:Signature> closing tag had been printed as a second </ds:SignedInfo>
+# (w3c/lws-protocol#298); no clause changed, and only the snapshot and sourceDraft IRIs move.
 
 @prefix touchstone: <https://example.org/touchstone/vocab#> .
 @prefix req:     <https://example.org/touchstone/req/lws10-authn-saml/> .
@@ -25,7 +29,7 @@ req:signed-and-required-assertions
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization> ;
     touchstone:summary "A SAML authentication credential is signed and includes the required elements and attributes." ;
     touchstone:clauseText """SAML tokens used as authentication credentials MUST be signed. In addition, a valid SAML token MUST include the following elements and attributes:""" ;
     touchstone:clauseHash "sha256-0b3e16906b831e848c23e381374e861e6cd9df5c6ad6f966743b78b5e6755d91" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -34,7 +38,7 @@ req:nameid-subject
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization> ;
     touchstone:summary "The saml:NameID element carries the LWS subject identifier." ;
     touchstone:clauseText """The SAML token MUST use the saml:NameID element for the LWS subject identifier.""" ;
     touchstone:clauseHash "sha256-218606cd758e1fde4ab89d186aa7190d3b59e4e5e323d6ff05c1da14cb819794" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -43,7 +47,7 @@ req:issuer-assertion
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization> ;
     touchstone:summary "The saml:Issuer element carries the LWS issuer identifier." ;
     touchstone:clauseText """The SAML token MUST use the saml:Issuer element for the LWS issuer identifier.""" ;
     touchstone:clauseHash "sha256-dd405088469aad4243bcf14e1e7eceb1cca261fbc862498d5d30ee35c8e297c5" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -52,7 +56,7 @@ req:recipient-client-id
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization> ;
     touchstone:summary "The Recipient attribute of saml:SubjectConfirmationData carries the LWS client identifier." ;
     touchstone:clauseText """The SAML token MUST use the Recipient attribute within a saml:SubjectConfirmationData element for the LWS client identifier.""" ;
     touchstone:clauseHash "sha256-24d04632bc7bd430a4e966bc2be8711cb736e9569857f9b01dd85a2e2bd11a34" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -61,7 +65,7 @@ req:audience-restriction
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:IdentityProvider ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#serialization> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization> ;
     touchstone:summary "Any audience restriction uses the saml:Audience element (which should include the client and AS)." ;
     touchstone:clauseText """Any audience restriction in the SAML token MUST use the saml:Audience element. The saml:Audience element SHOULD include a client identifier and any additional target audience such as an authorization server.""" ;
     touchstone:clauseHash "sha256-0a630e5ad3764106d8ee078ee6ffcadd426718d0d42c498fd5551d6adea964dd" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -70,7 +74,7 @@ req:validation-signature
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:AuthorizationServer ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#validation> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#validation> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#validation> ;
     touchstone:summary "Using a trust relationship with the issuer, the credential signature is validated per SAML Core section 5." ;
     touchstone:clauseText """Using a trust relationship with an issuer, the signature of the credential MUST be validated as described in SAML Core, section 5 [SAML2-CORE].""" ;
     touchstone:clauseHash "sha256-f6b124821ad719bbbb977ca1f3f453d66902cffd0c8ecebd70e0e5353eaa8e61" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .
@@ -79,7 +83,7 @@ req:token-type-saml2
     a touchstone:Requirement ; touchstone:level "MUST" ; touchstone:specModule "lws10-authn-saml" ;
     touchstone:appliesTo touchstone:Client ;
     touchstone:section <https://www.w3.org/TR/lws10-authn-saml/#token-type> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#token-type> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#token-type> ;
     touchstone:summary "A SAML 2.0 assertion credential uses the saml2 token-type URI at the authorization server." ;
     touchstone:clauseText """A SAML 2.0 assertion used as an authentication credential MUST use the urn:ietf:params:oauth:token-type:saml2 URI when interacting with an authorization server.""" ;
     touchstone:clauseHash "sha256-c2e56e3d2967fb0d3d70995a680e39b080a302e40f0a445acac3b9b540d13e6a" ; touchstone:status touchstone:Draft ; dcterms:created "2026-07-17"^^xsd:date .

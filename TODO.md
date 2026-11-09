@@ -26,6 +26,23 @@ python check_drift.py --spec /tmp/WD-lws10-core-20260821.html ../../catalog/lws1
 
 ---
 
+## 2026-11-09 — the drafts of 9 November 2026 (D-0111)
+
+W3C published core and SAML Working Drafts dated 9 November 2026. Core takes in #263 (the 23 October
+WD's create in a missing container, and a server MAY answer 404 for 403) and ReSpec section
+references (#281); SAML corrects its example (#298). On branch `spec/wd-2026-11-09`.
+
+- [x] **Re-baseline** the core and SAML catalogs onto the 9 November WDs: core still 215
+  requirements, one Approved seed retired, one new MAY. → **Done (D-0111).**
+- [x] **Definitions:** every citation on the new drafts; the two missing-container tests retired;
+  the non-owner tests cite the new MAY. 219 server tests. → **Done (D-0111).**
+- [ ] **Erich: review D-0111's three points** (the retired seed, the retired tests and whether to
+  ask upstream for a keyword on the status table, which tests cite the MAY).
+- [ ] **Deployment:** the Touchstone instances (vulcan, ebremer.com) and `targetservers/` still run
+  the 19 October definitions; redeploy once D-0111 is merged.
+
+---
+
 ## 2026-10-29 — the core draft of 23 October 2026
 
 W3C published a core Working Draft dated 23 October 2026. Its one change is w3c/lws-protocol
@@ -34,9 +51,11 @@ Not Found, 403 Not Permitted, 401 Unknown Requester; a server MAY answer 404 ins
 the 19 October draft said the server "MUST return a 404 error status unless another status code is
 more appropriate". A note adds that creating several container levels in one request is undefined.
 
-- [ ] **Re-baseline the core catalog onto the 23 October WD.** `create-post-missing-container-404`
+- [x] **Re-baseline the core catalog onto the 23 October WD.** `create-post-missing-container-404`
   still quotes the removed clause. Replace it from the new table, and check the test that cites it
   (`definitions/lws10/core/data_resources.yamlld`) against the new statuses.
+  → **Done with the 9 November WD (D-0111):** the seed and both missing-container tests are retired,
+  since the table carries no keyword; the table's MAY (404 for 403) is a new entry.
 
 ---
 

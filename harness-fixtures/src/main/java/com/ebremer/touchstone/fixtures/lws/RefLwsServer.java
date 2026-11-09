@@ -36,7 +36,7 @@ import org.eclipse.jetty.util.Callback;
 
 /**
  * In-memory reference LWS server: the target of the conformance self-test loop (DECISIONS.md
- * D-0015). It implements the WD-20261019 behaviour the definitions test:
+ * D-0015). It implements the WD-20261109 behaviour the definitions test:
  * <ul>
  *   <li>containers with {@code items}/{@code totalItems} listings, each member's {@code format},
  *       {@code size} and {@code modified}, served as lws+json, as ld+json and json (the same

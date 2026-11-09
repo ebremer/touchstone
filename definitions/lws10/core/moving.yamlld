@@ -6,7 +6,7 @@ id: "#manifest"
 type: Manifest
 label: "LWS 1.0 core: moving resources between containers"
 comment: >-
-  The 19 October 2026 draft lets a client move a resource to another container by changing the
+  Since the 19 October 2026 draft a client may move a resource to another container by changing the
   up link in its linkset with JSON Patch (w3c/lws-protocol#237). A storage that allows it says
   so with a MoveResource capability in its storage description, whose appliesTo says whether
   containers move too and whose preservesIdentifier says whether a moved resource keeps its
@@ -17,7 +17,7 @@ comment: >-
   linkset is laid out otherwise does not apply. Every patch is conditional on the linkset's
   current ETag, as clients SHOULD make it.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
 entries:
 
   - id: "#discovery-move-capability"
@@ -33,7 +33,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-capabilities
     traits: [Get, Discovery, StorageDescription]
     requirements:
       - https://example.org/touchstone/req/lws10-core/capability-move-applies-to
@@ -92,8 +92,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
     traits: [Patch, Get, Linkset, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-server-support
@@ -206,7 +206,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
     traits: [Patch, Get, Linkset, Container, Conditional]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-containment-atomic
@@ -322,8 +322,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-capabilities
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-identifier-preserved
@@ -454,7 +454,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-destination-existing-container
@@ -562,8 +562,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-capabilities
     traits: [Patch, Get, Linkset, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-containers-applies-to
@@ -680,8 +680,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#security-moving-resources
     traits: [Patch, Get, Linkset, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-containment-integrity-cycles
@@ -791,8 +791,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-capabilities
     traits: [Patch, Get, Linkset, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-containers-applies-to
@@ -878,8 +878,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-capabilities
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-capabilities
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-server-support
@@ -959,8 +959,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#security-moving-resources
     traits: [Patch, Get, Linkset, DataResource, Authz, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -1051,8 +1051,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#security-moving-resources
     traits: [Patch, Get, Linkset, DataResource, Authz, AccessGrants]
     requires: [Authentication]
     requirements:
@@ -1143,8 +1143,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#activity-types
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#activity-types
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
     traits: [Patch, Get, Linkset, Notifications]
     requires: [ReachableFixtures]
     requirements:

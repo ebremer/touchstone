@@ -50,7 +50,7 @@ The examples call the CLI as `touchstone`. Either define an alias, for example
 
 ## Run against the open reference server
 
-Touchstone includes an in-memory LWS server that follows the 19 October 2026 Working
+Touchstone includes an in-memory LWS server that follows the 9 November 2026 Working
 Draft. Start it in its own terminal:
 
 ```sh
@@ -111,7 +111,7 @@ touchstone run --target secured-ref --targets targets-secured.yaml
     core/pagination#pagination-single-page - inapplicable [MUST] (64 ms)
       inapplicable: precondition 'the listing is paginated and holds all five members on its page (otherwise this test does not apply)' does not hold: ...
 ...
-218 passed, 0 failed, 0 cantTell, 3 inapplicable  (target secured-ref, run 8dcb3ffc)
+216 passed, 0 failed, 0 cantTell, 3 inapplicable  (target secured-ref, run 8dcb3ffc)
 conformant: no MUST test failed or ended cantTell
 ```
 
@@ -147,15 +147,15 @@ or an authorization server) at least one test cites:
 
 ```text
 $ touchstone coverage
-Requirements coverage: 243 of 272 covered by 221 test(s)
+Requirements coverage: 243 of 272 covered by 219 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     2/2
 lws10-authn-saml         MUST     1/1
 lws10-authn-ssi-cid      MUST     5/5
-lws10-core               MUST     148/155
+lws10-core               MUST     147/154
 lws10-core               SHOULD   15/20
-lws10-core               MAY      8/19
+lws10-core               MAY      9/20
 lws10-index              MUST     37/39
 lws10-index              SHOULD   4/4
 lws10-index              MAY      6/10

@@ -8,14 +8,14 @@ hosted agent identity documents) so credential failure paths can be tested
 deterministically.
 
 **Status: Phases 0–6 complete, running the YAML-LD definitions; for clients, phases C0–C8 of
-[CLIENT-TESTING.md](CLIENT-TESTING.md) are built, all but C6's pilot.** The tests are 221
+[CLIENT-TESTING.md](CLIENT-TESTING.md) are built, all but C6's pilot.** The tests are 219
 YAML-LD definitions (`definitions/`, format 0.16.0, frozen at Gate D; DECISIONS.md D-0104) that mirror
-and extend the LWS test group's JSON-LD suite, follow the **19 October 2026** Working
+and extend the LWS test group's JSON-LD suite, follow the **9 November 2026** Working
 Draft, and cover the core protocol, all three current authentication suites (OpenID
 Connect, CID with HTTPS and did:key subjects, SAML), the webhook notification suite and the
 search and type index services end to end. The engine that runs them implements
 `definitions/EXECUTION.md` (D-0054); the YAML manifests it replaced are retired (D-0055).
-Every build runs all 221 against a reference deployment, a storage server and an
+Every build runs all 219 against a reference deployment, a storage server and an
 authorization server, and against broken twins of both. Touchstone ships as a **Docker
 image + GitHub Action**, so a third-party LWS server gets a conformance report by adding
 one workflow file (`docs/distribution.md`). The LWS server implementations it is run
@@ -23,10 +23,8 @@ against are in **`targetservers/`**, each built from source into a container, an
 script tests them all on one machine with nothing but Docker (D-0094 to D-0096). The
 **requirements catalog** spans all four current spec modules, the webhook notification
 suite and the search and type index services (321 requirements, drift-hashed), baselined on
-the 19 October 2026 core Working Draft and the 15 October 2026 authentication suites, the
-latest W3C versions as of 19 October 2026 (D-0057, D-0086, D-0100). W3C's core Working Draft
-of 23 October 2026, whose one change is the status a server answers for a create in a missing
-container (w3c/lws-protocol#263), is not yet baselined (TODO.md).
+the 9 November 2026 core and SAML Working Drafts and the 15 October 2026 OpenID Connect and CID
+suites, the latest W3C versions as of 9 November 2026 (D-0057, D-0086, D-0100, D-0111).
 
 Touchstone tests **LWS clients** too. A client session plays every server a client talks to,
 and judges each request the client sends against 53 client rules. A person or the client's own

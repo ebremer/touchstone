@@ -14,10 +14,10 @@ comment: >-
   authored in YAML-LD for Touchstone and intended for contribution to lws-test-suite as
   JSON-LD. Each included manifest covers one area of the specification.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/
   - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/
   - https://w3c.github.io/lws-protocol/lws10-index/
 include:

@@ -15,10 +15,10 @@ comment: >-
   assertions about them through the session API. The session's authorization server trusts those
   and nothing else.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
   - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/
   - https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/
-  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/
 entries:
 
   # ---- every token request ----
@@ -30,7 +30,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -58,7 +58,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-request
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-exchange-request
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -98,8 +98,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#security-resource-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#security-resource-discovery
     traits: [Post, TokenExchange, Authz]
     area: authentication
     requirements:
@@ -172,7 +172,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -200,7 +200,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -228,7 +228,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -255,7 +255,7 @@ entries:
     level: MUST
     source:
       - https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -337,7 +337,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authentication-data-model
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authentication-data-model
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:
@@ -450,7 +450,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#token-type
     traits: [Post, TokenExchange, Authn]
     area: authentication
     requirements:

@@ -10,7 +10,7 @@ comment: >-
   saml2 token type. The suite leaves trust to out-of-band configuration, so these tests
   apply only to a target whose authorization server already trusts the harness IdP.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/
+  - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/
 entries:
 
   - id: "#authn-saml-valid-assertion"
@@ -23,9 +23,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#validation
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#token-type
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#token-type
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]
     as: anonymous
@@ -85,7 +85,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#validation
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#validation
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]
@@ -132,7 +132,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/#serialization
+      - https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/#serialization
       - https://www.rfc-editor.org/rfc/rfc8693#section-2.2.2
     traits: [Post, TokenExchange, Authn]
     requires: [Authentication, SamlTrust]

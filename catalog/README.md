@@ -10,15 +10,15 @@ coverage = requirements × tests, counted over the requirements a server run ans
 | File | Content |
 |---|---|
 | `vocab/touchstone-vocab.ttl` | the catalog vocabulary (subclass of EARL's TestRequirement) |
-| `lws10-core.ttl` | requirements for LWS Protocol 1.0 core (WD 2026-10-19) — 215 |
+| `lws10-core.ttl` | requirements for LWS Protocol 1.0 core (WD 2026-11-09) — 215 |
 | `lws10-authn-openid.ttl` | OpenID Connect authentication suite (WD 2026-10-15) — 8 |
 | `lws10-authn-ssi-cid.ttl` | Self-signed Identity using Controlled Identifiers (WD 2026-10-15) — 14 |
-| `lws10-authn-saml.ttl` | SAML 2.0 authentication suite (WD 2026-10-15) — 7 |
+| `lws10-authn-saml.ttl` | SAML 2.0 authentication suite (WD 2026-11-09) — 7 |
 | `lws10-notifications-webhook.ttl` | Webhook notification suite (editor's draft, not on /TR; snapshot rendered 2026-10-02) — 20 |
 | `lws10-index.ttl` | Search and Type Index Services (editor's draft, not on /TR; snapshot rendered 2026-10-02) — 57 |
 | `sources/` | archived spec snapshots + raw extraction output (provenance) |
 
-321 requirements across six spec modules: 254 MUST, 29 SHOULD, 38 MAY. By the roles they
+321 requirements across six spec modules: 253 MUST, 29 SHOULD, 39 MAY. By the roles they
 bind: Server 247, Client 81, AuthorizationServer 26, IdentityProvider 16, Receiver 4,
 Specification 2 (a clause binding several roles counts in each); 272 bind a server or an
 authorization server. The webhook
@@ -67,6 +67,12 @@ entries are retired, among them the Approved seed `conneg-media-type-equivalence
 are new. The three authentication suites changed words only: every entry keeps its slug.
 The editor's drafts of the webhook and index suites did not change.
 
-**Not yet re-baselined** onto the core WD of 23 October 2026. Its one change
-(w3c/lws-protocol#263) gives a create in a missing container a table of statuses, so
-`create-post-missing-container-404` quotes a clause that draft removed (TODO.md).
+**Re-baselined 2026-11-09** onto the 9 November 2026 core and SAML WDs, the latest versions
+W3C had published that day (DECISIONS.md D-0111); the OpenID Connect and CID WDs of 15
+October are still the latest. The core draft takes in the 23 October WD's one change
+(w3c/lws-protocol#263): a create in a container that does not exist reports the Target Not
+Found outcome, which a status table maps to 404, in text with no BCP 14 keyword, so the
+Approved seed `create-post-missing-container-404` is retired without successor; the table's
+new MAY, to answer 404 instead of 403, is the Draft entry `status-404-instead-of-403`. Two
+blocks changed only their section references (#281). The module still holds 215
+requirements. The SAML draft's one change is to its example (#298): no clause changed.

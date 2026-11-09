@@ -64,7 +64,7 @@ The merged format:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
       - https://www.rfc-editor.org/rfc/rfc6750#section-3
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
@@ -263,8 +263,8 @@ that no test creates.
 
 ### 9. It is larger and current
 
-There are 221 tests against 27 (101 in format 0.2.0), and the 27 counterparts follow the 19
-October 2026 draft:
+There are 219 tests against 27 (101 in format 0.2.0), and the 27 counterparts follow the 9
+November 2026 draft:
 - DELETE answers 204, where lws-test-suite expects 200;
 - PUT may answer 200 or 204;
 - discovery uses `rel="https://www.w3.org/ns/lws#storage"` and `application/lws+cid`;

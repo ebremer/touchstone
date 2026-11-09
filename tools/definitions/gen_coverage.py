@@ -168,7 +168,7 @@ L = []
 L.append("# Coverage of the LWS 1.0 test definitions")
 L.append("")
 L.append("Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD")
-L.append("2026-10-19, and the OpenID Connect, SAML and CID suites of 2026-10-15. The did:key suite was")
+L.append("2026-11-09, the OpenID Connect and CID suites of 2026-10-15 and the SAML suite of 2026-11-09. The did:key suite was")
 L.append("discontinued on 2026-09-29; its tests run under the CID suite.")
 L.append("")
 L.append("## Summary")
@@ -204,7 +204,7 @@ L.append(f"- **{len(cited)} catalog requirements** cited, {len(cited & server_si
 covered = sum(1 for k, _ in lts_order if k in mirrors_of)
 L.append(f"- **lws-test-suite:** all {covered} of {len(lts_order)} tests are accounted for "
          "(table 1). The definitions change what those tests assert wherever it contradicts the "
-         "19 October draft.")
+         "9 November draft.")
 sup = sum(1 for m in ts_manifests if m in superseded_by)
 L.append(f"- **manifests/ (retired, D-0055):** {sup} of its {len(ts_manifests)} tests have a successor; the "
          f"other {len(ts_manifests) - sup} were dropped because the specification no longer says what "

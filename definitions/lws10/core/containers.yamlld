@@ -12,7 +12,7 @@ comment: >-
   matched by content (`some`, `none`), never by position, because the draft does not
   order items.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
 entries:
 
   - id: "#getContainer"
@@ -28,10 +28,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-binding
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-binding
     traits: [Get, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/read-container-etag-type-links
@@ -81,8 +81,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#container-properties
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-container-type-link
@@ -131,7 +131,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource
     traits: [Post, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/create-post-201-location-links
@@ -161,10 +161,10 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-membership-and-authorization
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#container-membership-and-authorization
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#container-properties
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/containment-create-atomic-items
@@ -224,8 +224,8 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#container-properties
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#container-properties
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
     traits: [Get, Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/container-totalitems-accuracy
@@ -287,7 +287,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#contained-resource-description
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-resource-type-values
@@ -354,8 +354,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#read-resource
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-format-for-dataresources
@@ -397,7 +397,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#contained-resource-description
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#contained-resource-description
     traits: [Get, Post, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/contained-description-recommended-members
@@ -442,8 +442,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-media-type-0
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#lws-media-type-0
     traits: [Get, Container, Conneg]
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-lws-json-honored
@@ -474,7 +474,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#content-negotiation
     traits: [Get, Container, Conneg]
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-vary-accept
@@ -514,7 +514,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#content-negotiation
       - https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
     traits: [Get, Container, Conneg]
     requirements:
@@ -540,7 +540,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#read-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#read-resource
     traits: [Get, Head, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/head-parity-with-get
@@ -586,8 +586,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-success-204-conditional
@@ -640,8 +640,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -700,7 +700,7 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
     traits: [Post, Delete, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -766,8 +766,8 @@ entries:
     status: Proposed
     level: MAY
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Post, Delete, Get, Container, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/delete-non-empty-container-409-depth
@@ -849,7 +849,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
     traits: [Get, Container, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/containment-integrity
@@ -932,8 +932,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-profile
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#lws-profile
     traits: [Get, Container, Conneg]
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-lws-profile-isomorphic
@@ -978,8 +978,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#content-negotiation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#lws-profile
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#content-negotiation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#lws-profile
     traits: [Get, Container, Conneg]
     requirements:
       - https://example.org/touchstone/req/lws10-core/conneg-lws-profile-isomorphic

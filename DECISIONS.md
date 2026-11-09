@@ -4885,3 +4885,88 @@ Factoidal's own adapter still speaks `lws-driver/1`, so D-0109 stands.
   `20261029T211900Z`).
 - *Not yet.* `run-all.sh` and `interop-all.sh`, which build every image. Docker Desktop's WSL integration was down in
   this session (no `/var/run/docker.sock`), so no image was built and the other targets were not run.
+
+## 2026-11-09
+
+### D-0111 — the drafts of 9 November 2026: a create in a missing container, and 404 for 403
+Erich asked for Touchstone to be compliant with the 9 November 2026 edition of the W3C LWS specifications.
+`check_published.py` found new versions of two of the six documents:
+
+| Document | Latest version on 9 November 2026 | Touchstone was on |
+|---|---|---|
+| LWS Protocol 1.0 | **WD 9 November 2026** (after a WD of 23 October) | WD 19 October 2026 |
+| Authentication suite: SAML 2.0 | **WD 9 November 2026** | WD 15 October 2026 |
+| Authentication suites: OpenID Connect, CID | WD 15 October 2026 | the same |
+| Webhook notifications, search and type index | editor's drafts, not on `/TR/` | renders of 2 October, the same text |
+
+The w3c/lws-protocol commits after 9a08ff6 (D-0100) to db64f56 (9 November) are five:
+- **#263** (181ed0d, in the WD of 23 October), on a create in a container that does not exist. The sentence "If the
+  target container /alice/notes/ does not exist, the server MUST return a 404 error status unless another status
+  code is more appropriate" is gone. The create resource operation now "adds a new served resource to an existing
+  container", a POST to one that does not exist is an example the server answers with the *Target Not Found*
+  outcome, and the status table maps *Unknown Requester*, *Not Permitted* and *Target Not Found* to 401, 403 and
+  404. None of that carries a BCP 14 keyword. The table gains one that does: "A server that does not want to reveal
+  whether a resource exists to a client that is not permitted to access it MAY respond with 404 Not Found instead of
+  403 Forbidden, as described in [RFC9110]." A note says the specification does not define creating several levels
+  of containers in one operation.
+- **#281** (bf85b7b): section references are ReSpec's, so two catalogued blocks say "Section 9.1 Resource metadata"
+  where they said "Section 8.1" and "Section 9.3.2"; the IANA registrations cite core's own *Authorization* section.
+- **#298** (cec4067): the SAML example's outer `</ds:Signature>` closing tag had been printed as a second
+  `</ds:SignedInfo>`. No SAML clause changed.
+- #300 and #302: the editors' preview and CI.
+
+**The core catalog moves to WD-lws10-core-20261109** and still holds **215 requirements** (169 MUST, 23 SHOULD,
+23 MAY; was 170, 23, 22). The 213 blocks whose text did not change keep their entries, aligned by position (the
+draft repeats a few short sentences, "This property is REQUIRED." among them, so text alone does not align them).
+- *The Approved seed `create-post-missing-container-404` is retired without successor.* Its sentence is gone, and
+  what replaced it, the outcome and the table row, has no keyword; D-0057's rule retires an entry whose clause lost
+  every keyword, and no definition may assert a clause the draft removed.
+- *Two entries keep their slug with the new words:* `read-type-distinction-metadata-links` and
+  `update-content-vs-metadata-prefer-set-linkset`, whose only change is the section reference.
+- *One is new:* `status-404-instead-of-403` (MAY, Server), the table's sentence above.
+
+**The SAML catalog moves to WD-lws10-authn-saml-20261109**: its extraction is byte for byte the 15 October one, so
+only the snapshot, the header and the `sourceDraft` IRIs change. The whole catalog holds **321 requirements** (253
+MUST, 29 SHOULD, 39 MAY).
+
+**The definitions follow the draft**, 219 server tests (180 MUST, 28 SHOULD, 11 MAY; was 221), covering 243 of the
+272 requirements that bind a server or an authorization server, as before:
+- Every `source` and `specification` that named the 19 October core or the 15 October SAML draft names its
+  9 November successor. Both snapshots have exactly their predecessors' section anchors, so `anchors.json` changes
+  only its two keys (rebuilt from the archived snapshots, keeping the editor's-draft entries).
+- **`create-in-missing-container-rejected` (MUST) and `create-in-missing-container-404` (SHOULD) are retired.**
+  Both cited only the retired seed: the first held a server to a 4xx and no side effect, the second to the 404.
+  Neither survives as a requirement: the 404 is now the table's, without a keyword, and the one keyword left nearby,
+  containment integrity's "No orphans", is satisfied by a server that creates the missing container on the way,
+  which the first test failed. The retired manifest `core/create-in-missing-container-404` they superseded is
+  now one of three that "the specification no longer says" (COVERAGE.md table 2).
+- **The status-for-denial tests cite the new MAY.** Every test that expects 403 already accepted 404 as well, so
+  none had to change what it accepts. `authz-non-owner-read-rejected` and `authz-non-owner-write-rejected`, whose
+  comments justified the 404 by RFC 9110, now cite `status-404-instead-of-403` and the status table section; the
+  read test's comment quotes it. The other tests that accept 404 for a denial (access grants, notifications, the
+  index) are about their own subject and do not cite it.
+
+Nothing else moves. The reference deployment already answers a create in a missing container with 404, a denied
+request with 403, and an unauthenticated one with 401; its javadoc names the new draft. No client rule cites the
+retired requirement, and the client sessions' storage answers the same. Four Java tests that pin the number of
+definitions (221) and the reference run (218 passed, 3 inapplicable) pin 219 and 216.
+
+Verified:
+- `clause_hash.py --check` passes on all six catalogs; `check_drift.py` reports no drift and no dead anchor against
+  the 9 November core and SAML snapshots; `check_published.py` reports every catalog current;
+- `tools/definitions/check.py` passes 10 of 10 (lint: 0 errors, the 13 standing warnings);
+- `./mvnw -B clean verify` is green in all six modules (122, 24, 114, 76, 17 and 10 tests). That includes
+  `DefinitionsSelfTest`, where the secured reference deployment passes 216 of the 219 definitions and the other
+  three are inapplicable to it, as before (`pagination-single-page`, `move-refused-without-capability`,
+  `move-container-refused-without-container-support`), and `ClientRulesSelfTest`;
+- `touchstone coverage`: 243 of 272 covered by 219 tests (core MUST 147 of 154, MAY 9 of 20).
+
+**Needs Erich's review before merge:**
+1. Retiring the Approved seed `create-post-missing-container-404` with no successor.
+2. Retiring both missing-container tests. #263 meant the table to say which status goes with which outcome, but
+   the catalog holds BCP 14 clauses only (DESIGN.md section 5.1), so Touchstone can hold no server to it. If the
+   404 should be tested, the cleanest route is a keyword upstream ("a server MUST use the status code the table
+   gives for each response"); cataloguing keyword-less text would change DESIGN.md section 5.1 itself.
+3. Citing `status-404-instead-of-403` from the two non-owner tests and no others.
+
+Drafted by an agent; waits on branch `spec/wd-2026-11-09`.

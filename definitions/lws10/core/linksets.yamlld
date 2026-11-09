@@ -11,7 +11,7 @@ comment: >-
   follows the relation the server advertises. Section 9.1 then fixes how the linkset
   is served, advertised, edited and retired.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
 entries:
 
   - id: "#getLinkset"
@@ -25,7 +25,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Get, Linkset, DataResource, Container]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-standalone-rfc9264
@@ -94,7 +94,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Get, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-allow-get-patch
@@ -139,7 +139,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#update-resource
     traits: [Patch, Linkset, Conditional]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-precondition-failed-412
@@ -183,7 +183,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Put, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-put-405-if-unsupported
@@ -241,8 +241,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
     traits: [Delete, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-lifecycle-tied-to-resource
@@ -298,8 +298,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource
     traits: [Post, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-server-managed-atomic
@@ -346,9 +346,9 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#moving-resources
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#containment-integrity
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#moving-resources
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#containment-integrity
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/move-server-support
@@ -406,7 +406,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
       - https://www.rfc-editor.org/rfc/rfc9264#section-4.2
     traits: [Patch, Get, Linkset]
     requirements:
@@ -463,7 +463,7 @@ entries:
     status: Proposed
     level: SHOULD
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Patch, Linkset]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-patch-json-patch
@@ -523,7 +523,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#metadata
     traits: [Patch, Get, Linkset, DataResource]
     requirements:
       - https://example.org/touchstone/req/lws10-core/linkset-restricted-links-preserved

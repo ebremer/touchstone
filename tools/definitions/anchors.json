@@ -105,7 +105,7 @@
   "x7-security-considerations",
   "x8-privacy-considerations"
  ],
- "https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/": [
+ "https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/": [
   "a-1-normative-references",
   "a-2-informative-references",
   "a-references",
@@ -161,7 +161,7 @@
   "x7-security-considerations",
   "x8-privacy-considerations"
  ],
- "https://www.w3.org/TR/2026/WD-lws10-core-20261019/": [
+ "https://www.w3.org/TR/2026/WD-lws10-core-20261109/": [
   "a-acknowledgements",
   "abstract",
   "access-data-model",

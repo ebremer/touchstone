@@ -13,17 +13,18 @@ this directory would leave it ambiguous which one a hash was derived from. The
 WD and the four editor's-draft auth snapshots; the 2026-09-30 one (D-0057) retired the
 21 August core and CID WDs; the 2026-10-05 one (D-0086) retired the 21 September core WD;
 the 2026-10-19 one (D-0100) retired the 5 October core WD, the 3 August OpenID Connect and
-SAML WDs and the 21 September CID WD.
+SAML WDs and the 21 September CID WD; the 2026-11-09 one (D-0111) retired the 19 October core
+WD and the 15 October SAML WD.
 
 | File | Source | Fetched |
 |---|---|---|
-| `WD-lws10-core-20261019.html` | https://www.w3.org/TR/2026/WD-lws10-core-20261019/ | 2026-10-19 |
-| `WD-lws10-core-20261019.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-19 |
-| `WD-lws10-core-20261019.curation.json` | human review record: slug + summary per extracted block | 2026-10-19 |
+| `WD-lws10-core-20261109.html` | https://www.w3.org/TR/2026/WD-lws10-core-20261109/ | 2026-11-09 |
+| `WD-lws10-core-20261109.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-11-09 |
+| `WD-lws10-core-20261109.curation.json` | human review record: slug + summary per extracted block | 2026-11-09 |
 | `WD-lws10-authn-openid-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-openid-20261015/ | 2026-10-19 |
-| `WD-lws10-authn-saml-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261015/ | 2026-10-19 |
+| `WD-lws10-authn-saml-20261109.html` | https://www.w3.org/TR/2026/WD-lws10-authn-saml-20261109/ | 2026-11-09 |
 | `WD-lws10-authn-ssi-cid-20261015.html` | https://www.w3.org/TR/2026/WD-lws10-authn-ssi-cid-20261015/ | 2026-10-19 |
-| `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-19 |
+| `WD-lws10-authn-*.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-19 (SAML 2026-11-09) |
 | `ED-lws10-notifications-webhook-20261002.html` | https://w3c.github.io/lws-protocol/lws10-notifications-webhook/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `4e9481c`) | 2026-10-02 |
 | `ED-lws10-notifications-webhook-20261002.clauses.json` | `tools/extractor/extract_clauses.py` over the above | 2026-10-02 |
 | `ED-lws10-index-20261002.html` | https://w3c.github.io/lws-protocol/lws10-index/, rendered by https://www.w3.org/publications/spec-generator/ (not published on /TR; normative text = w3c/lws-protocol `3039b37`) | 2026-10-02 |

@@ -1,16 +1,16 @@
 # Coverage of the LWS 1.0 test definitions
 
 Generated from the definitions; do not edit by hand. Baseline: LWS Protocol 1.0 WD
-2026-10-19, and the OpenID Connect, SAML and CID suites of 2026-10-15. The did:key suite was
+2026-11-09, the OpenID Connect and CID suites of 2026-10-15 and the SAML suite of 2026-11-09. The did:key suite was
 discontinued on 2026-09-29; its tests run under the CID suite.
 
 ## Summary
 
-- **221 tests**: 181 MUST, 29 SHOULD, 11 MAY; 140 validation tests, 81 negative tests.
+- **219 tests**: 180 MUST, 28 SHOULD, 11 MAY; 140 validation tests, 79 negative tests.
 - **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 66 of the 85 requirements that bind a client or a receiver; the other 19 are not judged, each for a reason section 4 gives: 11 permissions a client cannot break, 5 obligations that do not show in what a client sends, 2 checks the session's one origin never puts to the test, and the conformance class itself (sections 4 and 5).
 - **282 catalog requirements** cited, 243 of the 272 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
-- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 19 October draft.
-- **manifests/ (retired, D-0055):** 31 of its 33 tests have a successor; the other 2 were dropped because the specification no longer says what they tested (table 2).
+- **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 9 November draft.
+- **manifests/ (retired, D-0055):** 30 of its 33 tests have a successor; the other 3 were dropped because the specification no longer says what they tested (table 2).
 
 | Module | Tests | MUST | SHOULD | MAY |
 |---|---:|---:|---:|---:|
@@ -21,7 +21,7 @@ discontinued on 2026-09-29; its tests run under the CID suite.
 | `core/authorization_server` | 9 | 7 | 2 | 0 |
 | `core/conditional_requests` | 9 | 4 | 5 | 0 |
 | `core/containers` | 19 | 13 | 4 | 2 |
-| `core/data_resources` | 17 | 10 | 6 | 1 |
+| `core/data_resources` | 15 | 9 | 5 | 1 |
 | `core/discovery` | 7 | 7 | 0 | 0 |
 | `core/linksets` | 10 | 9 | 1 | 0 |
 | `core/moving` | 12 | 12 | 0 | 0 |
@@ -89,7 +89,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `core/container-containment-after-post` | `core/containers#getContainer-containmentIntegrity` |
 | `core/container-create-basic` | `core/containers#createContainer` |
 | `core/create-advertises-linkset-link` | `core/containers#createContainer`, `core/data_resources#createDataResource` |
-| `core/create-in-missing-container-404` | `core/data_resources#create-in-missing-container-rejected`, `core/data_resources#create-in-missing-container-404` |
+| `core/create-in-missing-container-404` |  |
 | `core/data-resource-get` | `core/data_resources#readDataResource` |
 | `core/data-resource-range-request` | `core/data_resources#data-resource-range-request`, `core/data_resources#data-resource-range-unsatisfiable`, `core/data_resources#data-resource-accept-ranges` |
 | `core/delete-non-empty-container-409` | `core/containers#delete-non-empty-container-409`, `core/containers#delete-container-recursive` |
@@ -234,8 +234,6 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `createDataResource` | Validation | MUST |  | createDataResource |
 | `createDataResource-type-link` | Validation | SHOULD |  |  |
 | `create-post-twice-distinct` | Validation | SHOULD |  |  |
-| `create-in-missing-container-rejected` | Negative | MUST |  |  |
-| `create-in-missing-container-404` | Negative | SHOULD |  |  |
 | `create-server-managed-links-protected` | Validation | MUST |  |  |
 | `readDataResource` | Validation | MUST |  | readDataResource |
 | `data-resource-head-parity` | Validation | MUST |  |  |
@@ -416,7 +414,7 @@ client sessions ([CLIENT-TESTING.md](../CLIENT-TESTING.md)) answer for the Clien
 
 | Role | Requirements | MUST | SHOULD | MAY | Cited by a test | Cited by a client rule |
 |---|---:|---:|---:|---:|---:|---:|
-| Server | 247 | 192 | 23 | 32 | 219 | 32 |
+| Server | 247 | 191 | 23 | 33 | 219 | 32 |
 | AuthorizationServer | 26 | 22 | 2 | 2 | 24 | 2 |
 | Client | 81 | 62 | 6 | 13 | 69 | 62 |
 | IdentityProvider | 16 | 15 | 1 | 0 | 16 | 6 |

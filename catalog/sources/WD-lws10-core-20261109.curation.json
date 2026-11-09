@@ -1,17 +1,16 @@
 {
- "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported). Re-baselined onto WD-lws10-core-20261005 (D-0086): the 188 blocks whose text did not change keep their entries; the three that changed are the patch-format MUSTs, which name JSON Patch (RFC 6902) where they named JSON Merge Patch (w3c/lws-protocol#255). Two were Approved seeds (blocks 76 and 101) and now have Draft successors; the linkset PATCH entry is renamed for the new format. Re-baselined onto WD-lws10-core-20261019 (D-0100): the 178 blocks whose text did not change keep their entries, aligned by text; fifteen of them, one a seed, moved from section metadata to metadata-0, the id the draft now gives 9.1.1 Metadata. Of the old blocks that changed, six keep their slug with the new words (the 401 challenge, the resource parameter, aud, the 401 on failed validation, the container listing, Vary: Accept), the linkset restrictions entry is renamed because it is now a MUST, and six are retired: as_uri, realm and the 401 discoverability SHOULD (w3c/lws-protocol#256, RFC 9728 resource_metadata), the two profile equivalence SHOULDs and the Approved seed conneg-media-type-equivalence (#253). Thirty-one blocks are new: seven for protected resource metadata and the client's discovery checks (#256), two for content negotiation and the LWS profile (#253), of which conneg-lws-json-honored succeeds the retired seed as a Draft entry, and twenty-two for moving resources between containers (#237).",
- "created": "2026-10-19",
+ "comment": "Human review record for the mass extraction (DESIGN.md 5.1, DECISIONS.md D-0014). Every extracted block is seeded, skipped, or curated with a slug + summary. Re-baselined onto WD-lws10-core-20260821 (D-0037/D-0040): entries carried over by matching their stored clause text into the new draft; 20 clauses that no longer appear were retired or replaced; 49 new blocks curated, 29 of them Notifications. Re-baselined onto WD-lws10-core-20260921 (D-0057): the 178 blocks whose text did not change kept their entries, aligned by position. Of the 13 blocks that changed, five kept their slug with the new words, two were renamed for what they now require, two succeed retired Approved seeds as Draft entries, three are seeds (two unchanged in substance, one narrowed under a new slug), and one is new (subject_identifier_types_supported). Re-baselined onto WD-lws10-core-20261005 (D-0086): the 188 blocks whose text did not change keep their entries; the three that changed are the patch-format MUSTs, which name JSON Patch (RFC 6902) where they named JSON Merge Patch (w3c/lws-protocol#255). Two were Approved seeds (blocks 76 and 101) and now have Draft successors; the linkset PATCH entry is renamed for the new format. Re-baselined onto WD-lws10-core-20261019 (D-0100): the 178 blocks whose text did not change keep their entries, aligned by text; fifteen of them, one a seed, moved from section metadata to metadata-0, the id the draft now gives 9.1.1 Metadata. Of the old blocks that changed, six keep their slug with the new words (the 401 challenge, the resource parameter, aud, the 401 on failed validation, the container listing, Vary: Accept), the linkset restrictions entry is renamed because it is now a MUST, and six are retired: as_uri, realm and the 401 discoverability SHOULD (w3c/lws-protocol#256, RFC 9728 resource_metadata), the two profile equivalence SHOULDs and the Approved seed conneg-media-type-equivalence (#253). Thirty-one blocks are new: seven for protected resource metadata and the client's discovery checks (#256), two for content negotiation and the LWS profile (#253), of which conneg-lws-json-honored succeeds the retired seed as a Draft entry, and twenty-two for moving resources between containers (#237). Re-baselined onto WD-lws10-core-20261109 (D-0111): the 213 blocks whose text did not change keep their entries, aligned by position. The block that held the Approved seed create-post-missing-container-404 is gone: w3c/lws-protocol#263 replaced its \"MUST return a 404 error status unless another status code is more appropriate\" with a Target Not Found outcome and a status table, neither with a BCP 14 keyword, so the seed is retired without successor. Two blocks changed only their section references (#281) and keep their slugs (read-type-distinction-metadata-links, update-content-vs-metadata-prefer-set-linkset). One block is new: a server MAY answer 404 instead of 403 to hide a resource's existence (#263), status-404-instead-of-403.",
+ "created": "2026-11-09",
  "seeded": [
   71,
   73,
   81,
   94,
   95,
-  96,
-  102,
-  105,
-  112,
-  113
+  101,
+  104,
+  111,
+  112
  ],
  "skip": {
   "1": "BCP 14 boilerplate - defines keyword interpretation, not a conformance clause"
@@ -837,7 +836,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 97,
+   "i": 96,
    "slug": "create-post-not-idempotent",
    "summary": "POST is not idempotent; clients should avoid unintentional retries or use unique identifiers.",
    "appliesTo": [
@@ -846,7 +845,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 98,
+   "i": 97,
    "slug": "create-linkset-before-success",
    "summary": "The linkset resource is created and populated with mandatory server-managed fields before creation success is returned.",
    "appliesTo": [
@@ -855,7 +854,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 99,
+   "i": 98,
    "slug": "create-401-storage-link",
    "summary": "401 responses should include a Link header with rel=https://www.w3.org/ns/lws#storage so clients can discover the storage without hardcoded URIs.",
    "appliesTo": [
@@ -864,7 +863,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 100,
+   "i": 99,
    "slug": "read-container-listing-authz-filtered",
    "summary": "A container GET returns a member listing that may be authorization-filtered, with core metadata per member.",
    "appliesTo": [
@@ -873,7 +872,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 101,
+   "i": 100,
    "slug": "read-type-distinction-metadata-links",
    "summary": "Servers distinguish resource types via metadata; all read responses integrate Link headers rel=linkset, rel=up and rel=type, atomically with resource state.",
    "appliesTo": [
@@ -882,7 +881,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 103,
+   "i": 102,
    "slug": "read-container-listing-member-metadata",
    "summary": "An application/lws+json container listing includes member identifiers and types (required), media types for DataResources (required), and sizes and timestamps (recommended).",
    "appliesTo": [
@@ -891,7 +890,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 104,
+   "i": 103,
    "slug": "read-container-etag-type-links",
    "summary": "Container responses carry an ETag plus Link headers rel=linkset, rel=up and rel=type indicating a container.",
    "appliesTo": [
@@ -900,7 +899,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 106,
+   "i": 105,
    "slug": "conditional-requests-supported",
    "summary": "Servers SHOULD support RFC 9110 conditional requests (entity tags, date validators) and answer 304 Not Modified when nothing changed.",
    "appliesTo": [
@@ -909,7 +908,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 107,
+   "i": 106,
    "slug": "update-content-vs-metadata-prefer-set-linkset",
    "summary": "PUT/PATCH on a resource URI modify content only; combined content+metadata updates are opt-in via Prefer: set-linkset (optional for servers; otherwise ignored or 501).",
    "appliesTo": [
@@ -919,7 +918,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 108,
+   "i": 107,
    "slug": "put-clients-use-conditional-requests",
    "summary": "Clients SHOULD make PUT conditional (RFC 9110) to avoid overwriting concurrent changes; PUT is idempotent for existing resources.",
    "appliesTo": [
@@ -929,7 +928,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 109,
+   "i": 108,
    "slug": "patch-json-patch-baseline",
    "summary": "PATCH minimally supports JSON Patch (application/json-patch+json, RFC 6902).",
    "text": "LWS server MUST minimally support JSON Patch (application/json-patch+json) as defined in [RFC6902].",
@@ -939,7 +938,7 @@
    "created": "2026-10-05"
   },
   {
-   "i": 110,
+   "i": 109,
    "slug": "linkset-precondition-failed-412",
    "summary": "A conditional PUT or PATCH on a linkset whose precondition fails is rejected with 412 Precondition Failed; servers and clients SHOULD use conditional requests there.",
    "appliesTo": [
@@ -949,7 +948,7 @@
    "created": "2026-09-30"
   },
   {
-   "i": 111,
+   "i": 110,
    "slug": "delete-if-match-optional",
    "summary": "DELETE targets the resource URI; clients may include If-Match for concurrency checks.",
    "appliesTo": [
@@ -958,7 +957,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 114,
+   "i": 113,
    "slug": "delete-success-204-conditional",
    "summary": "Successful DELETE responds 204 No Content; conditional requests should be supported.",
    "appliesTo": [
@@ -967,7 +966,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 115,
+   "i": 114,
    "slug": "delete-401-403-404-semantics",
    "summary": "Unauthorized deletes yield 403 for a known identity with insufficient permission or 401 without valid authentication; 404 may hide existence.",
    "appliesTo": [
@@ -976,7 +975,7 @@
    "created": "2026-09-02"
   },
   {
-   "i": 116,
+   "i": 115,
    "slug": "move-server-support",
    "summary": "A server that lets clients modify the up link describes a MoveResource capability and meets the moving requirements; one that does not rejects the change with a 4xx and describes no MoveResource capability.",
    "appliesTo": [
@@ -985,7 +984,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 117,
+   "i": 116,
    "slug": "move-request-json-patch",
    "summary": "A move is a JSON Patch of the resource's linkset replacing the up target, which servers must accept; clients should send If-Match, and servers may answer an unconditional one with 428.",
    "appliesTo": [
@@ -995,7 +994,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 118,
+   "i": 117,
    "slug": "move-destination-existing-container",
    "summary": "A move's destination must be an existing container; a patch setting up to anything else, or removing the up link, is rejected with a 4xx.",
    "appliesTo": [
@@ -1004,7 +1003,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 119,
+   "i": 118,
    "slug": "move-cross-storage-may-reject",
    "summary": "Servers may reject, with a 4xx, a move into a container in a different storage; one that accepts it still meets the other moving requirements.",
    "appliesTo": [
@@ -1013,7 +1012,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 120,
+   "i": 119,
    "slug": "move-containment-atomic",
    "summary": "A successful move atomically removes the resource from the former parent's items and adds it to the destination's; both containers' ETags change, and their totalItems should.",
    "appliesTo": [
@@ -1022,7 +1021,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 121,
+   "i": 120,
    "slug": "move-preserves-content-and-links",
    "summary": "A move leaves the resource's content and user-defined metadata unaffected, preserves the linkset links the client may not modify, and keeps auxiliary resources bound to it.",
    "appliesTo": [
@@ -1031,7 +1030,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 122,
+   "i": 121,
    "slug": "move-containment-integrity-cycles",
    "summary": "A move that would violate containment integrity is rejected with a 4xx; a container is never moved into itself or one of its descendants.",
    "appliesTo": [
@@ -1040,7 +1039,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 123,
+   "i": 122,
    "slug": "move-identifier-preserved",
    "summary": "Servers should preserve the identifier of a moved resource and should declare whether they do with preservesIdentifier; absent it, clients do not assume they do.",
    "appliesTo": [
@@ -1050,7 +1049,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 124,
+   "i": 123,
    "slug": "move-new-identifier-response",
    "summary": "A server that does not preserve a moved resource's identifier answers 200 with the updated linkset anchored at the new identifier and a Content-Location naming the linkset's new URI; it should answer 301 at the old identifiers.",
    "appliesTo": [
@@ -1059,7 +1058,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 125,
+   "i": 124,
    "slug": "move-containers-applies-to",
    "summary": "Servers may let clients move containers and then list Container in the MoveResource appliesTo; otherwise they reject a container move with a 4xx and do not list Container.",
    "appliesTo": [
@@ -1068,7 +1067,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 126,
+   "i": 125,
    "slug": "move-authorization-delete-and-create",
    "summary": "A server applies a change to an up link only when the agent may delete the moved resource and create in the destination container.",
    "appliesTo": [
@@ -1077,7 +1076,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 127,
+   "i": 126,
    "slug": "move-container-subtree-authorization",
    "summary": "Moving a container requires the authorization to delete it recursively plus to create in the destination, evaluated for the whole subtree before the change, which is never applied partially.",
    "appliesTo": [
@@ -1086,7 +1085,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 128,
+   "i": 127,
    "slug": "move-notification-single-activity",
    "summary": "A server that supports moves and emits notifications should describe a successful move with a single Move activity, not a Delete and a Create.",
    "appliesTo": [
@@ -1095,7 +1094,7 @@
    "created": "2026-10-19"
   },
   {
-   "i": 129,
+   "i": 128,
    "slug": "status-204-410-deletions",
    "summary": "204 indicates success without a body; servers may use 410 Gone for permanent deletions.",
    "appliesTo": [
@@ -1104,13 +1103,22 @@
    "created": "2026-09-30"
   },
   {
-   "i": 130,
+   "i": 129,
    "slug": "error-rfc9457-problem-details",
    "summary": "Error responses should use the RFC 9457 problem-details format.",
    "appliesTo": [
     "Server"
    ],
    "created": "2026-09-02"
+  },
+  {
+   "i": 130,
+   "slug": "status-404-instead-of-403",
+   "summary": "A server that does not want to reveal whether a resource exists to a client not permitted to access it may answer 404 Not Found instead of 403 Forbidden (RFC 9110).",
+   "appliesTo": [
+    "Server"
+   ],
+   "created": "2026-11-09"
   },
   {
    "i": 131,

@@ -19,16 +19,16 @@ links are all computed from those citations.
 
 | File | Source document | Requirements |
 |---|---|---:|
-| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 19 October 2026 | 215 |
+| `catalog/lws10-core.ttl` | LWS Protocol 1.0, Working Draft of 9 November 2026 | 215 |
 | `catalog/lws10-authn-openid.ttl` | OpenID Connect authentication suite, WD 15 October 2026 | 8 |
 | `catalog/lws10-authn-ssi-cid.ttl` | Self-signed identity using Controlled Identifiers, WD 15 October 2026 | 14 |
-| `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 15 October 2026 | 7 |
+| `catalog/lws10-authn-saml.ttl` | SAML 2.0 authentication suite, WD 9 November 2026 | 7 |
 | `catalog/lws10-notifications-webhook.ttl` | Webhook notification suite, editor's draft as of 2 October 2026 | 20 |
 | `catalog/lws10-index.ttl` | Search and type index services, editor's draft as of 2 October 2026 | 57 |
 | `catalog/vocab/touchstone-vocab.ttl` | The catalog vocabulary | |
 | `catalog/sources/` | The archived draft snapshots and raw extraction output | |
 
-The catalog holds 321 requirements in total: 254 MUST, 29 SHOULD and 38 MAY. Twenty of them are from the webhook notification suite (D-0066) and 57 from the search and type index services (D-0067), both editor's drafts.
+The catalog holds 321 requirements in total: 253 MUST, 29 SHOULD and 39 MAY. Twenty of them are from the webhook notification suite (D-0066) and 57 from the search and type index services (D-0067), both editor's drafts.
 
 ## A requirement
 
@@ -39,7 +39,7 @@ req:create-post-201-location-links
     touchstone:specModule "lws10-core" ;
     touchstone:appliesTo touchstone:Server ;
     touchstone:section <https://www.w3.org/TR/lws10-core/#create-resource> ;
-    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource> ;
+    touchstone:sourceDraft <https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource> ;
     touchstone:summary "POST create returns 201 with Location and atomic server-managed Link metadata (rel=up, rel=linkset)." ;
     touchstone:clauseText """On success, the server MUST return the 201 status code with the new URI in the Location header. ...""" ;
     touchstone:clauseHash "sha256-6808523b25cc42196caf104571dd803d918e6237c1778147d809e65ace11dd87" ;
@@ -154,11 +154,13 @@ ones are removed or deprecated. Definitions that cite affected requirements are 
 Because re-baselining rewrites Approved entries, it is a reviewed change.
 
 {: .note }
-The catalog is based on the **19 October 2026** core draft and the **15 October 2026** OpenID
-Connect, SAML and CID drafts, the versions W3C published as of 19 October 2026 (D-0057,
-D-0086, D-0100). W3C's core Working Draft of 23 October 2026, whose one change is the status a
-server answers for a create in a missing container (w3c/lws-protocol#263), is not yet taken in.
-The 19 October core draft has a 401 name the requested resource's
+The catalog is based on the **9 November 2026** core and SAML drafts and the **15 October 2026**
+OpenID Connect and CID drafts, the versions W3C published as of 9 November 2026 (D-0057,
+D-0086, D-0100, D-0111). Since the 23 October core draft, a create in a container that does
+not exist reports the *Target Not Found* outcome, and a status table maps it to `404`, *Not
+Permitted* to `403` and *Unknown Requester* to `401`, with no BCP 14 keyword; a server MAY
+answer `404` instead of `403` so as not to reveal that a resource exists. The 9 November SAML
+draft corrects its example only. The 19 October core draft has a 401 name the requested resource's
 **protected resource metadata** (RFC 9728) instead of the authorization server and a realm,
 and link to the storage a token is for, which a client checks before it asks for one. It
 requires only `application/lws+json` of a container, and a representation asked for in the

@@ -9,13 +9,13 @@ label: "LWS 1.0 core: storage server authorization"
 comment: >-
   What a storage server does with the requests it must refuse. Every 401 carries a Bearer
   challenge whose resource_metadata names the requested resource's protected resource
-  metadata (RFC 9728), as section 5.2.1 of the 19 October 2026 draft requires of a conforming
-  challenge, and that metadata names the authorization server. Every failed token validation
+  metadata (RFC 9728), as section 5.2.1 has required of a conforming challenge since the 19
+  October 2026 draft, and that metadata names the authorization server. Every failed token validation
   also names an error, and a valid token without permission is refused without being mistaken
   for no token at all. The challenge is parsed per RFC 9110 section 11.6.1, so parameter order
   and quoting do not matter. All tests need a target that enforces authentication.
 specification:
-  - https://www.w3.org/TR/2026/WD-lws10-core-20261019/
+  - https://www.w3.org/TR/2026/WD-lws10-core-20261109/
 entries:
 
   - id: "#getContainer-private-unauthorized"
@@ -33,7 +33,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
       - https://www.rfc-editor.org/rfc/rfc6750#section-3
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
@@ -73,8 +73,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#protected-resource-metadata
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#protected-resource-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-discovery-validation
       - https://www.rfc-editor.org/rfc/rfc9728#section-3.2
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]
@@ -124,8 +124,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-discovery-validation
     traits: [Get, DataResource, Private, Authn]
     requires: [Authentication]
     as: anonymous
@@ -176,8 +176,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-discovery-validation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#storage-description-services
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-discovery-validation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#storage-description-services
     traits: [Get, Discovery, StorageDescription, Authn]
     requires: [Authentication]
     as: anonymous
@@ -227,8 +227,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-presentation
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-presentation
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authn, Authz]
     requires: [Authentication]
     as: alice
@@ -257,8 +257,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource
     traits: [Post, Container, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -300,8 +300,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#update-resource
     traits: [Put, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -343,8 +343,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
     traits: [Delete, DataResource, Private, Authn]
     requires: [Authentication]
     requirements:
@@ -383,18 +383,21 @@ entries:
     comment: >-
       "If the token is otherwise valid but an authorization policy does not allow the
       requested operation, the storage server MUST reject the request." The expected
-      status is 403; 404 is accepted because the draft lets a server hide a resource's
-      existence. A 401 here would tell bob his valid token is not one.
+      status is 403, which the status table gives Not Permitted; 404 is accepted because
+      "a server that does not want to reveal whether a resource exists to a client that is
+      not permitted to access it MAY respond with 404 Not Found instead of 403 Forbidden".
+      A 401 here would tell bob his valid token is not one.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#summary-of-http-status-mappings
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: bob
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+      - https://example.org/touchstone/req/lws10-core/status-404-instead-of-403
     supersedes: [auth-oidc/non-owner-403]
     request:
       method: GET
@@ -408,17 +411,20 @@ entries:
     name: authz-non-owner-write-rejected
     label: A valid token without write permission can neither replace nor create
     comment: >-
-      Policy denial on the write paths, with the state checked afterwards.
+      Policy denial on the write paths, with the state checked afterwards. As on the read
+      path, 403 or the 404 a server MAY answer instead so as not to reveal the resource.
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#update-resource
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#update-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#create-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#summary-of-http-status-mappings
     traits: [Put, Post, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
       - https://example.org/touchstone/req/lws10-core/authz-policy-denial-rejected
+      - https://example.org/touchstone/req/lws10-core/status-404-instead-of-403
     steps:
       - label: alice creates a data resource
         request:
@@ -476,7 +482,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#delete-resource
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#delete-resource
     traits: [Delete, DataResource, Private, Authz]
     requires: [Authentication]
     requirements:
@@ -513,7 +519,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
       - https://www.rfc-editor.org/rfc/rfc6750#section-3.1
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
@@ -547,7 +553,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-bad-signature
@@ -579,7 +585,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-alg-none
@@ -615,7 +621,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-unknown-key
@@ -647,8 +653,8 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-exchange-response
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-exchange-response
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-audience
@@ -682,7 +688,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-wrong-issuer
@@ -713,7 +719,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-not-yet-valid
@@ -742,7 +748,7 @@ entries:
     status: Proposed
     level: MUST
     source:
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-token-validation-verification
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-token-validation-verification
     traits: [Get, Container, Private, Authz]
     requires: [Authentication]
     as: alice-issued-in-future

@@ -1670,22 +1670,6 @@
    "operations",
    "create-resource"
   ],
-  "tag": "p",
-  "rfc2119_markup": true,
-  "in_note": false,
-  "keywords": [
-   "MUST"
-  ],
-  "text": "On success, return 201 Created with the new URI in the Location header. The body may be empty or a minimal representation. If the target container /alice/notes/ does not exist, the server MUST return a 404 error status unless another status code is more appropriate."
- },
- {
-  "i": 97,
-  "section": "create-resource",
-  "heading": "9.2 Create resource",
-  "path": [
-   "operations",
-   "create-resource"
-  ],
   "tag": "li",
   "rfc2119_markup": true,
   "in_note": false,
@@ -1695,7 +1679,7 @@
   "text": "POST is not idempotent. Repeating it may create duplicates; clients SHOULD avoid unintentional retries or use unique identifiers/checks to prevent this."
  },
  {
-  "i": 98,
+  "i": 97,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1711,7 +1695,7 @@
   "text": "Metadata updates are atomic; servers MUST ensure the linkset resource is created and populated with mandatory server-managed fields before returning success."
  },
  {
-  "i": 99,
+  "i": 98,
   "section": "create-resource",
   "heading": "9.2 Create resource",
   "path": [
@@ -1727,7 +1711,7 @@
   "text": "For discoverability, servers SHOULD include a Link header with rel=\"https://www.w3.org/ns/lws#storage\" on 401 responses to guide clients without hardcoded URIs."
  },
  {
-  "i": 100,
+  "i": 99,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1743,7 +1727,7 @@
   "text": "For containers, the server returns a listing of member resources which MAY be filtered based on authorization. Listings must include core metadata for each member."
  },
  {
-  "i": 101,
+  "i": 100,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1756,10 +1740,10 @@
   "keywords": [
    "MUST"
   ],
-  "text": "The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a container or a non-container resource (data resource). Servers MUST distinguish resource types via metadata. All responses MUST integrate with metadata as defined in Section 8.1, including Link headers for key relations such as rel=\"linkset\", rel=\"up\", and rel=\"type\". Servers MUST ensure atomicity between the resource state and its metadata during reads."
+  "text": "The read resource operation requests a resource representation with HTTP GET requests (and HEAD for header-only requests). The behavior differs depending on whether the target URL is a container or a non-container resource (data resource). Servers MUST distinguish resource types via metadata. All responses MUST integrate with metadata as defined in Section 9.1 Resource metadata, including Link headers for key relations such as rel=\"linkset\", rel=\"up\", and rel=\"type\". Servers MUST ensure atomicity between the resource state and its metadata during reads."
  },
  {
-  "i": 102,
+  "i": 101,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1775,7 +1759,7 @@
   "text": "GET (non-container resource) – Retrieve a resource's content: Send GET to the resource URI for full content (if authorized). Respond with 200 OK, body containing the data, and Content-Type matching the stored media type. Servers MUST support range requests per [RFC7233] for partial retrieval. Responses MUST include an ETag header as defined in [RFC9110]."
  },
  {
-  "i": 103,
+  "i": 102,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1792,7 +1776,7 @@
   "text": "GET (container resource) – List a container's contents: When the target URI corresponds to a container (determined via metadata type), a GET request returns a listing of the container's members. A response with Content-Type: application/lws+json is a container representation as defined in the Container Representation section; for this representation, the listing includes metadata for each member: resource identifiers (MUST), types (MUST), media types (MUST for DataResources), sizes (SHOULD), and modification timestamps (SHOULD)."
  },
  {
-  "i": 104,
+  "i": 103,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1808,7 +1792,7 @@
   "text": "In all cases, the server MUST include the following metadata in the response headers: an ETag header as defined in [RFC9110], and Link headers with rel=\"linkset\", rel=\"up\", and rel=\"type\" indicating it is a container."
  },
  {
-  "i": 105,
+  "i": 104,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1824,7 +1808,7 @@
   "text": "HEAD (any resource or container) – Headers/metadata only: The LWS server MUST support HEAD [RFC9110] for both containers and non-containers, returning the same headers as GET (including Content-Type, Link for metadata) but without a body. This enables metadata retrieval without transferring content."
  },
  {
-  "i": 106,
+  "i": 105,
   "section": "read-resource",
   "heading": "9.3 Read resource",
   "path": [
@@ -1840,7 +1824,7 @@
   "text": "Caching and Conditional Requests: LWS leverages HTTP caching semantics. Servers SHOULD support conditional requests as defined in [RFC9110], including mechanisms such as entity tags (ETags) and date-based validators (like If-Modified-Since headers). If the resource or container listing has not changed, respond with 304 Not Modified to avoid redundant transfers."
  },
  {
-  "i": 107,
+  "i": 106,
   "section": "update-resource",
   "heading": "9.4 Update resource",
   "path": [
@@ -1855,10 +1839,10 @@
    "MUST",
    "OPTIONAL"
   ],
-  "text": "The update resource modifies the contents of an existing served resource by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource's URL to perform these operations. Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.3.2. LWS servers MUST handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated linkset resource. To optionally update both content and metadata in a single atomic operation, clients MAY include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in [RFC7240]). In this case, the server MUST interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is OPTIONAL for servers but, if supported, MUST be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates MUST ignore the preference or respond with 501 Not Implemented."
+  "text": "The update resource modifies the contents of an existing served resource by a PUT request (to replace the entire resource) or a PATCH request (to apply a partial modification). The client must have write access to the resource's URL to perform these operations. Note: This section describes updating a resource's primary content. To update its metadata, see Section 9.1 Resource metadata. LWS servers MUST handle PUT and PATCH requests on resource URIs as modifications to the resource content only, with no default impact on the associated linkset resource. To optionally update both content and metadata in a single atomic operation, clients MAY include Link headers in the PUT/PATCH request to the resource URI and specify the preference 'Prefer: set-linkset' (as defined in [RFC7240]). In this case, the server MUST interpret the provided Link headers as a replacement (for PUT) or partial update (for PATCH) to the linkset, in addition to applying the content changes. This behavior is OPTIONAL for servers but, if supported, MUST be invoked explicitly via the Prefer header to prevent unintentional metadata overwrites. Servers that do not support combined updates MUST ignore the preference or respond with 501 Not Implemented."
  },
  {
-  "i": 108,
+  "i": 107,
   "section": "update-resource",
   "heading": "9.4 Update resource",
   "path": [
@@ -1874,7 +1858,7 @@
   "text": "PUT (replace full resource) – Send PUT to the resource URI with new full content in the body and matching Content-Type (generally consistent with existing type). PUT is idempotent for existing resources. Clients SHOULD use conditional requests as defined in [RFC9110] to avoid overwriting concurrent changes."
  },
  {
-  "i": 109,
+  "i": 108,
   "section": "update-resource",
   "heading": "9.4 Update resource",
   "path": [
@@ -1890,7 +1874,7 @@
   "text": "PATCH (partial update) – The HTTP PATCH method [RFC5789] allows a client to specify partial modifications to a resource, rather than sending the whole new content. This is useful for large resources where sending the entire content would be inefficient if only a small part changed, or for concurrent editing where you want to apply specific changes. LWS server MUST minimally support JSON Patch (application/json-patch+json) as defined in [RFC6902]."
  },
  {
-  "i": 110,
+  "i": 109,
   "section": "update-resource",
   "heading": "9.4 Update resource",
   "path": [
@@ -1907,7 +1891,7 @@
   "text": "Conditional Requests for Metadata Because a resource's metadata can be modified by multiple actors, preventing concurrent overwrites is important. Servers and clients SHOULD use conditional requests as defined in [RFC9110] for PUT and PATCH operations on a linkset resource. When a server receives a conditional request for which the precondition fails, it MUST reject the request with a 412 Precondition Failed status code. Example (PUT to replace a linkset): A client first fetches the linkset."
  },
  {
-  "i": 111,
+  "i": 110,
   "section": "delete-resource",
   "heading": "9.5 Delete resource",
   "path": [
@@ -1923,7 +1907,7 @@
   "text": "The DELETE request targets the URI of the resource or container to remove. Clients MAY include an If-Match header with an ETag for concurrency checks."
  },
  {
-  "i": 112,
+  "i": 111,
   "section": "delete-resource",
   "heading": "9.5 Delete resource",
   "path": [
@@ -1940,7 +1924,7 @@
   "text": "Deletion and Containment: When a resource is deleted, the server MUST atomically remove it from its parent container's items list. The parent container's totalItems count SHOULD be updated accordingly."
  },
  {
-  "i": 113,
+  "i": 112,
   "section": "delete-resource",
   "heading": "9.5 Delete resource",
   "path": [
@@ -1957,7 +1941,7 @@
   "text": "For container resources, the server defaults to non-recursive deletion. If the container is not empty and recursion is not requested, the server MUST reject the request with 409 Conflict. Servers MAY support recursive deletion of all contained resources within the container that is being deleted. Clients MUST use the Depth: infinity header to request for a recursive delete, as defined in [RFC4918]."
  },
  {
-  "i": 114,
+  "i": 113,
   "section": "delete-resource",
   "heading": "9.5 Delete resource",
   "path": [
@@ -1974,7 +1958,7 @@
   "text": "On success, the server MUST respond with 204 No Content. Servers SHOULD support conditional requests, as defined in [RFC9110]."
  },
  {
-  "i": 115,
+  "i": 114,
   "section": "delete-resource",
   "heading": "9.5 Delete resource",
   "path": [
@@ -1991,7 +1975,7 @@
   "text": "If the client lacks authorization, the server MUST return 403 Forbidden (if the client's identity is known but permissions are insufficient) or 401 Unauthorized (if no valid authentication is provided). In cases where revealing resource existence poses a security risk, the server MAY return 404 Not Found instead."
  },
  {
-  "i": 116,
+  "i": 115,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2008,7 +1992,7 @@
   "text": "Server support: The up link is managed by the server, and servers are not required to allow clients to modify it, as described in 9.1 Resource metadata. A server that allows clients to modify the up link of a resource, and thereby to move resources between containers, MUST describe a MoveResource capability in its storage description, as described in 6.1.3 Storage Capabilities, and MUST implement the requirements in this section. A server that does not allow it MUST reject the request with an appropriate 4xx status code, such as 409 Conflict, and MUST NOT describe a MoveResource capability."
  },
  {
-  "i": 117,
+  "i": 116,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2026,7 +2010,7 @@
   "text": "Requesting a move: A client moves a resource by applying a partial update to the resource's linkset resource, replacing the target of the up link with the identifier of the destination container. As required by 9.1 Resource metadata, servers MUST support application/json-patch+json [RFC6902] for this update. As for any modification of a linkset resource, clients SHOULD make the request conditional by including an If-Match header field carrying the current ETag of the linkset resource, as described in 9.4 Update resource; servers MAY require a conditional request and reject an unconditional one with 428 Precondition Required."
  },
  {
-  "i": 118,
+  "i": 117,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2042,7 +2026,7 @@
   "text": "The destination MUST be an existing container. Servers MUST reject a patch that would set the target of the up link to anything other than an existing container with an appropriate 4xx status code, such as 409 Conflict. Servers MUST likewise reject a patch that would leave the resource without an up link, as every non-root resource is reachable from the storage root."
  },
  {
-  "i": 119,
+  "i": 118,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2058,7 +2042,7 @@
   "text": "This specification does not restrict the destination to the storage that holds the resource being moved. However, servers are not required to support moving a resource to a container in a different storage, and MAY reject such a patch with an appropriate 4xx status code, such as 409 Conflict. A server that accepts such a patch remains subject to the other requirements in this section, including the requirement to apply the change atomically."
  },
  {
-  "i": 120,
+  "i": 119,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2075,7 +2059,7 @@
   "text": "Effect on containment: On a successful update, the server MUST atomically remove the resource from the items list of its former parent container and add it to the items list of the destination container. The totalItems count of both containers SHOULD be updated accordingly, and the ETag of both containers MUST be updated to reflect the change."
  },
  {
-  "i": 121,
+  "i": 120,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2091,7 +2075,7 @@
   "text": "The content of the moved resource and its user-defined metadata are unaffected by the move. Servers MUST preserve the links in the linkset resource that the client is not permitted to modify, including server-managed links such as linkset and type. Auxiliary resources whose lifetime is bound to the moved resource remain bound to it after the move."
  },
  {
-  "i": 122,
+  "i": 121,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2108,7 +2092,7 @@
   "text": "Servers MUST reject an update that would violate the containment integrity requirements in 7. Logical Resource Organization with an appropriate 4xx status code, such as 409 Conflict. In particular, a container MUST NOT be moved into itself or into one of its own descendants, as this would introduce a cycle in the containment hierarchy."
  },
  {
-  "i": 123,
+  "i": 122,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2125,7 +2109,7 @@
   "text": "Identity of the moved resource: The URI of a resource is independent of its position in the containment hierarchy, as described in 7. Logical Resource Organization. Servers SHOULD therefore preserve the identifier of a moved resource, so that existing links to it remain valid, and SHOULD declare whether they do so with the preservesIdentifier property of the MoveResource capability. In the absence of that property, clients MUST NOT assume that identifiers are preserved."
  },
  {
-  "i": 124,
+  "i": 123,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2142,7 +2126,7 @@
   "text": "A server that does not preserve the identifier of a moved resource MUST respond with 200 OK and a representation of the updated linkset resource whose anchor is the new identifier of the resource, and MUST include a Content-Location header field carrying the new identifier of the linkset resource itself. Such a server SHOULD respond to subsequent requests on the previous identifiers of the resource and of its auxiliary resources with 301 Moved Permanently, including a Location header field pointing at the new identifier."
  },
  {
-  "i": 125,
+  "i": 124,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2160,7 +2144,7 @@
   "text": "Moving containers: Servers MAY support changing the up link of a container, and MUST indicate that they do so by including Container in the appliesTo property of the MoveResource capability. When a container is moved, its descendants move with it, and their identifiers are subject to the same requirements as the identifier of the moved container. A server that supports moving data resources but not containers MUST reject such a request with an appropriate 4xx status code, such as 409 Conflict, and MUST NOT include Container in the appliesTo property."
  },
  {
-  "i": 126,
+  "i": 125,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2176,7 +2160,7 @@
   "text": "Authorization: A server MUST NOT apply a change to an up link unless the requesting agent is authorized both to perform the delete resource operation on the resource being moved and to perform the create resource operation in the destination container."
  },
  {
-  "i": 127,
+  "i": 126,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2193,7 +2177,7 @@
   "text": "When a container is moved, the container is the only resource whose parent changes: its descendants keep their position relative to one another, and, where the server preserves identifiers, keep their identifiers as well. The agent is therefore not required to be authorized to recreate each descendant in the destination. The policies that apply to those descendants may nevertheless change, because access is frequently governed in terms of position in the containment hierarchy. For this reason, the authorization required to move a container is the authorization required to delete it recursively, as described in 9.5 Delete resource, together with the authorization to create in the destination container. A server MUST evaluate that authorization for the whole subtree before applying the change, and MUST NOT apply the change partially."
  },
  {
-  "i": 128,
+  "i": 127,
   "section": "moving-resources",
   "heading": "9.6 Moving resources between containers",
   "path": [
@@ -2209,7 +2193,7 @@
   "text": "Notifications: A server that advertises support for moving resources and emits notifications SHOULD describe a successful move with a single Move activity, as described in 10.2.3 Activity Types, rather than with a separate Delete and Create activity."
  },
  {
-  "i": 129,
+  "i": 128,
   "section": "summary-of-http-status-mappings",
   "heading": "9.7 Summary of HTTP Status Mappings",
   "path": [
@@ -2225,7 +2209,7 @@
   "text": "No response body. Indicates the resource was deleted or the request succeeded and there's nothing else to say. Servers MAY use 410 Gone for permanent deletions."
  },
  {
-  "i": 130,
+  "i": 129,
   "section": "summary-of-http-status-mappings",
   "heading": "9.7 Summary of HTTP Status Mappings",
   "path": [
@@ -2239,6 +2223,22 @@
    "SHOULD"
   ],
   "text": "Error details explaining what was wrong. Servers SHOULD use the standard format defined in [RFC9457] for structured error responses, such as a JSON object with fields like \"type\", \"title\", \"status\", \"detail\", and \"instance\"."
+ },
+ {
+  "i": 130,
+  "section": "summary-of-http-status-mappings",
+  "heading": "9.7 Summary of HTTP Status Mappings",
+  "path": [
+   "operations",
+   "summary-of-http-status-mappings"
+  ],
+  "tag": "p",
+  "rfc2119_markup": true,
+  "in_note": false,
+  "keywords": [
+   "MAY"
+  ],
+  "text": "A server that does not want to reveal whether a resource exists to a client that is not permitted to access it MAY respond with 404 Not Found instead of 403 Forbidden, as described in [RFC9110]."
  },
  {
   "i": 131,

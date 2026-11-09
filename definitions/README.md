@@ -32,7 +32,7 @@ exist for three reasons:
    Every one of its 27 tests has a counterpart here. Where one of its tests contradicts
    the current draft, the counterpart is corrected rather than copied (COVERAGE.md,
    table 1).
-2. **Go further than it.** There are 221 definitions against its 27, covering the
+2. **Go further than it.** There are 219 definitions against its 27, covering the
    authorization server, access grants, conditional requests, linksets, moving resources
    between containers, byte ranges, pagination, the access-token negative matrix, notifications (discovery and the webhook
    suite), the search and type index services, and the OpenID Connect, CID (HTTPS and
@@ -42,7 +42,7 @@ exist for three reasons:
    contributed yet; that is a later, deliberate step.
 
 `touchstone run` executes them. Its engine (`harness-core`, D-0054) implements
-`EXECUTION.md`, and every build runs all 221 against the reference deployment in
+`EXECUTION.md`, and every build runs all 219 against the reference deployment in
 `harness-fixtures` and against its broken twins.
 
 ## Layout
@@ -89,7 +89,7 @@ test, which is lws-test-suite's shape.
     status: Proposed
     level: MUST                 # one level per test; SHOULD/MAY checks get their own test
     source:                     # dated spec snapshot + anchor (or an RFC section)
-      - https://www.w3.org/TR/2026/WD-lws10-core-20261019/#authorization-server-discovery
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-server-discovery
     traits: [Get, Container, Private, Authn]
     requires: [Authentication]  # on an open target the test is inapplicable, not failed
     as: anonymous               # who sends the request; never a credential
@@ -281,8 +281,8 @@ lws-test-suite's context in ways its test group must agree to:
   following the 21 August draft) were retired when the engine replaced them (D-0055).
   COVERAGE.md table 2 maps each to its successor; `supersedes` names them, and
   `tools/definitions/retired-manifests.txt` keeps their ids.
-- **`catalog/`** is baselined on the same 19 October 2026 core draft and 15 October 2026
-  authentication suites as the definitions (D-0057, D-0086, D-0100).
+- **`catalog/`** is baselined on the same 9 November 2026 core and SAML drafts and 15 October
+  2026 OpenID Connect and CID suites as the definitions (D-0057, D-0086, D-0100, D-0111).
 
 ## Open questions
 
