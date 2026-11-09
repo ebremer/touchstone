@@ -4970,3 +4970,48 @@ Verified:
 3. Citing `status-404-instead-of-403` from the two non-owner tests and no others.
 
 Drafted by an agent; waits on branch `spec/wd-2026-11-09`.
+
+### D-0112 — the servers and clients Touchstone tests, at their latest versions (9 November)
+2026-11-09. Erich asked again for every server and client Touchstone tests to be at its latest version. Each pin
+against its upstream that evening:
+
+| Implementation | Was | Now |
+|---|---|---|
+| Halcyon (`next`) | `e94e4d0` | `9dddc0a`: a test of a create in a missing container, the disk mirror's creating `PUT` documented (no change on the wire) |
+| lws-server (`master`) | `aef56f2` | `97e8ace`: a write into a missing container is refused as absent, so a create there is `404` in every posture (it was `401` in open mode and `403` to an owner with masking off) |
+| sparq-lws-core (`main`) | `01b5ad8` | `8fde60b` (v0.1.8): 30 commits, among them per-pod envelope encryption, an object-store adapter and Yjs sync, all opt-in features; `authn-saml` and the defaults unchanged, Rust 1.97.1 still |
+| Community Solid Server | PR #126, `311b367` | PR #126, `6d7e9df`: eight commits of 6 November, among them RFC 9728 discovery, JSON Patch on LWS JSON and linksets, the LWS profile, and storage tokens at the subscription endpoint |
+| lws-drupal (`main`) | `4ee4a5c` | `41d3ff8`: a test of a create in a missing container, citations (no change on the wire) |
+| lws-client, in lws-drupal and the clients image | `ff51462` | `4d4d562`: `check.mjs` checks the core's create-in-a-missing-container example; its PHP library, driver and adapters are unchanged |
+| lwsd | `v0.0.7`, `c7fb260` | unchanged: still its newest tag and npm release |
+| Factoidal, server and client | 0.26.0, `7a58d95` | 0.34.0 (published 2026-11-08 with no git tag; the newest tag is `v0.31.1`) |
+
+**Factoidal 0.34.0, one change to the target.** Mostly XMPP and XML. For the LWS server, issue 1126 put every outbound
+request whose URL a remote party chooses under one decision, and added `--delivery-dest-limit`: at most 10 webhook
+deliveries a minute to one destination (an inbox's host and port) for all subscriptions together, the rest held to
+the window's end and batched. Every inbox of a Touchstone run is on its one fixture host, and a notification test
+waits 30 seconds for its delivery, so under the default four MUST tests failed
+(`notification-not-delivered-for-unreadable-resource`, `notification-stops-after-revocation`,
+`webhook-signing-key-published`, `webhook-signature-verifies`) and the MAY `webhook-delivery-retried`: run `781f9ce1`,
+205/5/9, every inbox empty. The deliveries were not refused (`--allow-private-fetch` still covers them), only held.
+`entrypoint.sh` now passes `--delivery-dest-limit ${LWS_DELIVERY_DEST_LIMIT:-0}`, no limit unless set, as it passes
+`--page-size 4`: a setting for a test deployment, not a change to what is judged. `lws-serve` takes every other option
+it did. Its storage lock (0.26.0's) refuses a lock left by a process on another host, so a container killed without
+its volume being removed will not start again on that volume: `run-all.sh`'s teardown, which leaves the
+`own-origin` profile running, makes that easy to meet. The client: `createLwsClient` and `LwsClientError` as before,
+nothing in the adapter changed.
+
+**Verified** (2026-11-09, this PC, Docker Desktop through Git Bash, Touchstone `a6dbffd`, local mode):
+- *Factoidal's client.* `touchstone driver check` 34 of 34; `touchstone drive --client factoidal` against the local
+  client-session service: 52 passed, none failed, `client-query-baseline-after-415` untested, as with 0.26.0.
+- *Factoidal's server.* `run-all.sh factoidal`: run `b23b9b96`, 219 tests, 210 passed, 0 failed, 9 inapplicable,
+  conformant, as 0.26.0's runs today.
+- *lws-server, sparq-lws, css.* `run-all.sh lws-server sparq-lws css` (each image built from its new pin):
+  lws-server `c15cee30` 205/0/14, conformant; sparq-lws `4a037565` 201/4/14, not conformant, the same four MUST
+  failures as `01b5ad8`'s (an `up` change accepted without `MoveResource`, two tests; the storage's protected resource
+  metadata named for every resource, two tests); **the Community Solid Server `18e5e094` 160/0/59, conformant** for
+  the first time (it was 116/40/63).
+- *Not run here.* Halcyon and lws-drupal, whose new commits change no behaviour (tests, comments, docs), and the
+  clients image. lwsd did not move.
+- *Not deployed.* vulcan's target servers still run the previous pins: `deploy-targetservers.sh halcyon lws-server
+  sparq-lws css lws-drupal` (deploy repository) rebuilds them, and the interop set with them.

@@ -63,8 +63,8 @@ more appropriate". A note adds that creating several container levels in one req
 
 ## 2026-10-29 — Factoidal's client, driven (D-0109)
 
-`driver/adapters/factoidal` drives `@factoidal/core` 0.26.0 (0.18.0 until D-0110): 52 of 53 rules
-pass, none fail.
+`driver/adapters/factoidal` drives `@factoidal/core` 0.34.0 (0.26.0 until D-0112, 0.18.0 until D-0110): 52 of 53
+rules pass, none fail.
 
 - [x] **Factoidal's next release.** Its main branch, past 0.18.0, takes `subscribe`'s endpoint
   (`endpoint`), a write's whole `If-None-Match` (`ifNoneMatchTags`) and access documents with several
@@ -143,11 +143,11 @@ lets clients move resources between containers. On branch `spec/wd-2026-10-19`.
   `/.well-known/oauth-protected-resource/touchstone/clients/` to the service, as it
   forwards `/.well-known/lws-configuration/touchstone/clients/`, before sessions of this version
   can hand out tokens there. → **Done.**
-- [ ] **Target servers:** the Community Solid Server (PR #126, unchanged since 7 October) still
-  answers with `as_uri` and `realm`. Its runs go ahead on the fallback, and fail the challenge and
-  protected-resource-metadata tests until it follows the draft. Every other target sends the RFC 9728
-  challenge (D-0110). sparq-lws-core (`main`, `01b5ad8`) still fails two metadata tests: the metadata
-  its 401 names is the storage's, never the resource's that was asked for.
+- [ ] **Target servers:** the Community Solid Server follows the draft since PR #126's `6d7e9df` (D-0112: 160/0/59,
+  conformant; it answered with `as_uri` and `realm` until then). Every target sends the RFC 9728 challenge.
+  sparq-lws-core (`main`, `8fde60b`, v0.1.8) still fails two metadata tests (the metadata its 401 names is the
+  storage's, never the resource's that was asked for) and two move tests (an `up` change accepted without
+  `MoveResource`).
 - [ ] **Later, if wanted:** a reference variant that does not preserve identifiers, so that
   `move-new-identifier-response` (200, the new anchor, `Content-Location`, 301 at the old URI) can
   be tested and validated.
