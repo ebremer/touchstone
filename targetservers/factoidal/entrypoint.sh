@@ -9,6 +9,11 @@
 #   LWS_OWNER        the agent (CID URL or WebID) with full control of the storage.
 #   LWS_PAGE_SIZE    members per page of a container listing (default 4, so that small containers span pages).
 #   LWS_STORAGE      files (default) or snapshot.
+#   LWS_DELIVERY_DEST_LIMIT
+#                    the most webhook deliveries one destination (an inbox's host and port) gets in a window, for all
+#                    subscriptions together (`--delivery-dest-limit`, Factoidal 0.34.0 and later; its default is 10 a
+#                    minute, and the rest wait for the window's end). Default here 0, no limit: every inbox of a
+#                    Touchstone run is on its one fixture host, and a test waits 30 seconds for its delivery (D-0112).
 #   LWS_ALLOW_PRIVATE_FETCH=1
 #                    the authorization server may fetch identity documents over http and from private addresses (a
 #                    test network only: compose.local.yaml).
@@ -19,6 +24,7 @@ set -eu
 : "${LWS_OWNER:?LWS_OWNER must name the agent that owns the storage}"
 set -- /data/storage --host 0.0.0.0 --port 8080 --base "${LWS_PUBLIC_URL%/}/" \
   --page-size "${LWS_PAGE_SIZE:-4}" --storage "${LWS_STORAGE:-files}" \
+  --delivery-dest-limit "${LWS_DELIVERY_DEST_LIMIT:-0}" \
   --authz /data/as --owner "$LWS_OWNER"
 [ "${LWS_ALLOW_PRIVATE_FETCH:-0}" = 1 ] && set -- "$@" --allow-http --allow-private-fetch
 mkdir -p /data/storage
