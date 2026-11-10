@@ -14,7 +14,7 @@ below is reachable as soon as it starts. A second set can be published beside th
 
 | Target | Implementation | Built from (default) | Storage | Authorization server key |
 |---|---|---|---|---|
-| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `e99bede` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
+| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `40f74b6` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
 | `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `97e8ace` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
 | `sparq-lws` | sparq-lws-core, LWS 1.0 mode, built with the SAML suite (`--features authn-saml`) | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `8fde60b` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
 | `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `904e0c5` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |

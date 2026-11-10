@@ -6,7 +6,7 @@
 #   docker build --build-context source=/path/to/Halcyon targetservers/halcyon
 
 ARG HALCYON_REPO=https://github.com/halcyon-project/Halcyon.git
-ARG HALCYON_REF=e99bede0a4d17aa5955a683355d87ea809246c98
+ARG HALCYON_REF=40f74b6fcc25c8785e1f4f77e7032ed1748ee5ce
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone
