@@ -8,7 +8,7 @@
 #   docker build --build-context source=/path/to/CommunitySolidServer targetservers/css
 
 ARG CSS_REPO=https://github.com/jeswr/CommunitySolidServer.git
-ARG CSS_REF=6d7e9df190d34e63526ff47a6b0dd48ca1fec029
+ARG CSS_REF=904e0c5425c141e58ab2b0423130686e19ade760
 
 # ---- source ----
 FROM alpine/git:2.52.0 AS clone

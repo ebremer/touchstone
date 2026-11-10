@@ -14,10 +14,10 @@ below is reachable as soon as it starts. A second set can be published beside th
 
 | Target | Implementation | Built from (default) | Storage | Authorization server key |
 |---|---|---|---|---|
-| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `9dddc0a` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
+| `halcyon` | Halcyon, module HalcyonLWS | [halcyon-project/Halcyon](https://github.com/halcyon-project/Halcyon) `next` `e99bede` | `/targets/halcyon/lws/` | in its LWS store (TDB2), not a file |
 | `lws-server` | lws-server | [ebremer/lws-server](https://github.com/ebremer/lws-server) `master` `97e8ace` | `/targets/lws-server/` | `/data/lws-data/keys/oauth-es256.jwk` |
 | `sparq-lws` | sparq-lws-core, LWS 1.0 mode, built with the SAML suite (`--features authn-saml`) | [sparq-org/sparq](https://github.com/sparq-org/sparq) `main` `8fde60b` | `/targets/sparq-lws/` (in memory) | `/data/as-key.json` |
-| `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `6d7e9df` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
+| `css` | Community Solid Server with LWS | [jeswr/CommunitySolidServer PR #126](https://github.com/jeswr/CommunitySolidServer/pull/126) `904e0c5` | `/targets/css/touchstone/` | `/data/files/.internal/lws/keys/lws-jwks$.json` |
 | `lws-drupal` | lws-drupal (Drupal 11) | [ebremer/lws-drupal](https://github.com/ebremer/lws-drupal) `main` `41d3ff8` | `/targets/lws-drupal/lws/touchstone/` | the newest `/data/private/lws_authz/keys/*.jwk` |
 | `lwsd` | lwsd (JavaScriptSolidServer with lwsd's lws plugin) | [linkedwebstorage/lwsd](https://github.com/linkedwebstorage/lwsd) `v0.0.7` `c7fb260` | `/targets/lwsd/` | `/data/as-key.json` |
 | `factoidal` | Factoidal, `factoidal lws-serve --authz` (Lean 4 compiled to wasm, in Node.js) | [danbri/factoidal-core](https://github.com/danbri/factoidal-core), as the npm package `@factoidal/core` 0.34.0 (no git tag; the newest is `v0.31.1`) | `/` of its own origin (see below) | a JWK Set: `factoidal authz-keys /data/as --private` |
