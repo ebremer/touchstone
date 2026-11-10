@@ -5070,4 +5070,5 @@ the stdio server to start while another build loaded the machine (load average 2
 1. The test itself, and that it is MUST: it judges three of the seven servers non-conformant, Halcyon among them.
 2. Not checking which storage the 401 links (the judgment call above).
 
-Drafted by an agent; waits on branch `tests/notification-endpoint-challenge`.
+Drafted by an agent on branch `tests/notification-endpoint-challenge`; Erich asked for it to be merged into `master`
+(2026-11-10), as it stands: MUST, and the linked storage not checked.
