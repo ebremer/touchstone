@@ -5026,3 +5026,48 @@ nothing in the adapter changed.
   storage root, so a client subscribes without a token, and the 401 names the protected resource metadata of the topic
   container, not of the endpoint asked, which every lws-client refuses (RFC 9728 section 3.3). The conformance pages
   (`/lws/conformance` revision 738, `/lws/conformance/clients` 739, `/lws/interop` 740) show these runs.
+
+## 2026-11-10
+
+### D-0113 — the notification service's own challenge (a new server test)
+2026-11-10. Erich asked for a test of what the interop run of D-0112 found: against the Community Solid Server
+(PR #126, `6d7e9df`) every lws-client failed to subscribe, while Touchstone judged the server conformant. Its
+subscription endpoint, `/.notifications/lws/`, lies outside every storage, so a client that keeps its token to the
+storage subscribes without one; the 401 then named the protected resource metadata of the *topic* (CSS `ef6d664f`
+does so on purpose), and every client refused it, as RFC 9728 section 3.3 has it: the metadata's `resource` "MUST be
+identical to the requested URI". No test saw it: every subscription test sends a token, and the protected resource
+metadata tests ask about resources in the storage.
+
+**The test**, `core/storage_authorization#notification-service-challenge` (MUST, Proposed), applies requirements the
+catalog already has to the notification service endpoint, a protected resource like any other: an anonymous
+subscription is answered `401` with a `Bearer` challenge naming `resource_metadata` and a `Link` to a storage
+(`authz-401-www-authenticate-challenge`, `authz-401-storage-link`); that metadata's `resource` is the endpoint,
+character for character, and it names an authorization server (`authz-prm-conforms-rfc9728`,
+`authz-prm-authorization-servers`, `authz-client-prm-resource-matches`); and with an access token for the storage
+the same subscription is accepted. It needs `Authentication` and `ReachableFixtures` and applies only where the
+storage offers webhook subscriptions. **A judgment call:** the core does not say which storage the 401 of an endpoint
+that serves several should link, so the test does not check the linked storage, only that a token for the storage
+then subscribes.
+
+**Results** (2026-11-10, this PC, `run-all.sh --module core/storage_authorization`, the D-0112 images): passed by
+lws-server, lws-drupal, lwsd and Factoidal, and by the reference deployment; failed by
+- the Community Solid Server: the metadata's `resource` is the test container, the topic, not the endpoint;
+- sparq-lws-core (`8fde60b`): the metadata is the storage's, `resource` the storage root, its known fault
+  (D-0112) met once more;
+- Halcyon (`9dddc0a`): `403` "a subscription must be made by an authenticated agent", not `401`: an anonymous
+  request that needs authentication is the core's *Unknown Requester*, answered `401` with `WWW-Authenticate`;
+  `403` is *Not Permitted*, for a known identity. lws-client never met it, as Halcyon's endpoint is inside the
+  storage and so gets the client's token.
+
+**Counts:** 220 definitions (181 MUST), coverage 243 of 272 unchanged (every requirement it cites was covered);
+the reference run 217 passed, 3 inapplicable; `DefinitionsSelfTest`'s broken storage now fails this test too (it
+accepts the anonymous subscription), and its list says so. `check.py --write`: 10 of 10. `./mvnw -B -o clean
+verify`: every module green but `harness-mcp`'s `TouchstoneMcpStdioTest`, whose two tests timed out waiting 30 s for
+the stdio server to start while another build loaded the machine (load average 23 on 16 cores); re-run at load
+5, the module is green (`TouchstoneMcp*`, 5 tests).
+
+**Needs Erich's review before merge** (DESIGN.md section 7, the human gate on test authoring):
+1. The test itself, and that it is MUST: it judges three of the seven servers non-conformant, Halcyon among them.
+2. Not checking which storage the 401 links (the judgment call above).
+
+Drafted by an agent; waits on branch `tests/notification-endpoint-challenge`.

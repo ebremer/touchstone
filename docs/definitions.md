@@ -25,7 +25,7 @@ serve that effort in three ways:
    contradicts the current draft, the counterpart follows the draft. For example, DELETE
    expects `204`, and discovery uses `rel="https://www.w3.org/ns/lws#storage"` and
    `application/lws+cid`.
-2. **They go further.** There are 219 definitions (180 MUST, 28 SHOULD, 11 MAY). They cover
+2. **They go further.** There are 220 definitions (181 MUST, 28 SHOULD, 11 MAY). They cover
    storage discovery, containers, data resources, conditional requests, linksets, moving
    resources between containers, pagination,
    the access-token negative matrix, the authorization server, access grants, notification
@@ -159,7 +159,7 @@ prerequisites and expectations the contract defines. The CLI, the MCP server, th
 image and the GitHub Action all run the definitions through it. [How it
 works](how-it-works.md) follows a run step by step.
 
-Every build runs all 219 against the reference deployment, where 216 pass and three are
+Every build runs all 220 against the reference deployment, where 217 pass and three are
 inapplicable: the single-page pagination test (the reference splits that container into
 pages), and the two move tests for a storage that moves fewer kinds of resource than the
 reference does. The trapped and open deployments run them instead. Against broken twins the

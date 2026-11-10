@@ -79,14 +79,14 @@ As of October 2026:
   current LWS 1.0 documents (the core protocol and the OpenID Connect, SAML 2.0 and
   Controlled Identifier authentication suites) and the editor's drafts of the webhook
   notification suite and the search and type index services.
-- **Tests:** 219 [YAML-LD definitions](definitions.md) (180 MUST, 28 SHOULD, 11 MAY),
+- **Tests:** 220 [YAML-LD definitions](definitions.md) (181 MUST, 28 SHOULD, 11 MAY),
   format 0.16.0, frozen. They follow the 9 November 2026 Working Draft and the editor's drafts
   of the webhook notification suite and the search and type index services, cover all 27 tests
   of the LWS test group's `lws-test-suite`, and cover 243 of the 272 catalogued requirements
   that bind a server or an authorization server. Run `touchstone coverage` for the current figures.
 - **Authentication:** the access-token negative matrix, RFC 8693 token exchange, access
   grants, and the OpenID Connect, CID (HTTPS and did:key subjects) and SAML suites all
-  run end to end. Against the reference deployment, 216 of the 219 definitions pass; the other
+  run end to end. Against the reference deployment, 217 of the 220 definitions pass; the other
   three are inapplicable to it: the single-page pagination test, since the reference splits that
   container into pages, and two move tests for a storage that moves less than it does.
 - **Target servers:** the seven LWS server implementations Touchstone is run against (Halcyon,

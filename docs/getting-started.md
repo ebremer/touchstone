@@ -147,7 +147,7 @@ or an authorization server) at least one test cites:
 
 ```text
 $ touchstone coverage
-Requirements coverage: 243 of 272 covered by 219 test(s)
+Requirements coverage: 243 of 272 covered by 220 test(s)
 
 module                   level    covered/total
 lws10-authn-openid       MUST     2/2

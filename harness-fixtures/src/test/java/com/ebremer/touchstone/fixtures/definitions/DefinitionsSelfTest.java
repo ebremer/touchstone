@@ -152,6 +152,7 @@ class DefinitionsSelfTest {
                     "core/storage_authorization#protected-resource-metadata",
                     "core/storage_authorization#protected-resource-metadata-data-resource",
                     "core/storage_authorization#storage-root-same-origin",
+                    "core/storage_authorization#notification-service-challenge",
                     "core/storage_authorization#createDataResource-unauthorized",
                     "core/storage_authorization#updateDataResource-unauthorized",
                     "core/storage_authorization#deleteDataResource-unauthorized",

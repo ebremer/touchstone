@@ -32,7 +32,7 @@ exist for three reasons:
    Every one of its 27 tests has a counterpart here. Where one of its tests contradicts
    the current draft, the counterpart is corrected rather than copied (COVERAGE.md,
    table 1).
-2. **Go further than it.** There are 219 definitions against its 27, covering the
+2. **Go further than it.** There are 220 definitions against its 27, covering the
    authorization server, access grants, conditional requests, linksets, moving resources
    between containers, byte ranges, pagination, the access-token negative matrix, notifications (discovery and the webhook
    suite), the search and type index services, and the OpenID Connect, CID (HTTPS and
@@ -42,7 +42,7 @@ exist for three reasons:
    contributed yet; that is a later, deliberate step.
 
 `touchstone run` executes them. Its engine (`harness-core`, D-0054) implements
-`EXECUTION.md`, and every build runs all 219 against the reference deployment in
+`EXECUTION.md`, and every build runs all 220 against the reference deployment in
 `harness-fixtures` and against its broken twins.
 
 ## Layout

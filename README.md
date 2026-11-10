@@ -8,14 +8,14 @@ hosted agent identity documents) so credential failure paths can be tested
 deterministically.
 
 **Status: Phases 0–6 complete, running the YAML-LD definitions; for clients, phases C0–C8 of
-[CLIENT-TESTING.md](CLIENT-TESTING.md) are built, all but C6's pilot.** The tests are 219
+[CLIENT-TESTING.md](CLIENT-TESTING.md) are built, all but C6's pilot.** The tests are 220
 YAML-LD definitions (`definitions/`, format 0.16.0, frozen at Gate D; DECISIONS.md D-0104) that mirror
 and extend the LWS test group's JSON-LD suite, follow the **9 November 2026** Working
 Draft, and cover the core protocol, all three current authentication suites (OpenID
 Connect, CID with HTTPS and did:key subjects, SAML), the webhook notification suite and the
 search and type index services end to end. The engine that runs them implements
 `definitions/EXECUTION.md` (D-0054); the YAML manifests it replaced are retired (D-0055).
-Every build runs all 219 against a reference deployment, a storage server and an
+Every build runs all 220 against a reference deployment, a storage server and an
 authorization server, and against broken twins of both. Touchstone ships as a **Docker
 image + GitHub Action**, so a third-party LWS server gets a conformance report by adding
 one workflow file (`docs/distribution.md`). The LWS server implementations it is run

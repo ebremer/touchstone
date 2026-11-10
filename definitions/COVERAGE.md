@@ -6,7 +6,7 @@ discontinued on 2026-09-29; its tests run under the CID suite.
 
 ## Summary
 
-- **219 tests**: 180 MUST, 28 SHOULD, 11 MAY; 140 validation tests, 79 negative tests.
+- **220 tests**: 181 MUST, 28 SHOULD, 11 MAY; 141 validation tests, 79 negative tests.
 - **53 client rules** (`clients/`, judged by client sessions; OBSERVATION.md): 41 MUST, 10 SHOULD, 2 MAY. They cite 66 of the 85 requirements that bind a client or a receiver; the other 19 are not judged, each for a reason section 4 gives: 11 permissions a client cannot break, 5 obligations that do not show in what a client sends, 2 checks the session's one origin never puts to the test, and the conformance class itself (sections 4 and 5).
 - **282 catalog requirements** cited, 243 of the 272 that bind a server or an authorization server (section 4). For comparison, the retired `manifests/` covered 48 of 232.
 - **lws-test-suite:** all 27 of 27 tests are accounted for (table 1). The definitions change what those tests assert wherever it contradicts the 9 November draft.
@@ -27,7 +27,7 @@ discontinued on 2026-09-29; its tests run under the CID suite.
 | `core/moving` | 12 | 12 | 0 | 0 |
 | `core/notifications` | 15 | 14 | 1 | 0 |
 | `core/pagination` | 5 | 4 | 1 | 0 |
-| `core/storage_authorization` | 19 | 19 | 0 | 0 |
+| `core/storage_authorization` | 20 | 20 | 0 | 0 |
 | `index/manifest` | 40 | 30 | 6 | 4 |
 | `notifications/webhook/manifest` | 11 | 8 | 1 | 2 |
 
@@ -329,6 +329,7 @@ Definitions with no lws-test-suite counterpart extend it. That is every test in 
 | `protected-resource-metadata` | Validation | MUST | Authentication |  |
 | `protected-resource-metadata-data-resource` | Validation | MUST | Authentication |  |
 | `storage-root-same-origin` | Validation | MUST | Authentication |  |
+| `notification-service-challenge` | Validation | MUST | Authentication, ReachableFixtures |  |
 | `getContainer-authenticated-owner` | Validation | MUST | Authentication | getContainer-authenticated-owner |
 | `createDataResource-unauthorized` | Negative | MUST | Authentication | createDataResource-unauthorized |
 | `updateDataResource-unauthorized` | Negative | MUST | Authentication |  |
@@ -466,7 +467,7 @@ client sends (unobservable), or the conformance class itself (D-0087).
 | `lws10-core/authn-subject-claim-uri` | MUST | IdentityProvider | The subject claim is required and its value is a URI. | `authn-cid-didkey-missing-subject` | `client-cid-subject-claim` |
 | `lws10-core/authz-bearer-presentation-rfc6750` | MUST |  | Clients present access tokens via the Authorization header per RFC 6750. | `getContainer-authenticated-owner` | `client-token-in-authorization-header` |
 | `lws10-core/authz-client-discovery-validation` | MUST |  | Before requesting an access token a client performs the discovery checks against the requested URI, and does not use the discovered values if any check fails. |  | `client-token-after-discovery-checks` |
-| `lws10-core/authz-client-prm-resource-matches` | MUST | Server | The resource value of the protected resource metadata document is identical to the requested URI (RFC 9728 section 3.3). | `protected-resource-metadata`, `protected-resource-metadata-data-resource` | *Not judged: untried here.* The session's protected resource metadata always names the URL requested, so no 401 tries the check. Servers are judged on it by `protected-resource-metadata`. |
+| `lws10-core/authz-client-prm-resource-matches` | MUST | Server | The resource value of the protected resource metadata document is identical to the requested URI (RFC 9728 section 3.3). | `notification-service-challenge`, `protected-resource-metadata`, `protected-resource-metadata-data-resource` | *Not judged: untried here.* The session's protected resource metadata always names the URL requested, so no 401 tries the check. Servers are judged on it by `protected-resource-metadata`. |
 | `lws10-core/authz-client-resource-metadata-same-origin` | MUST | Server | The resource_metadata URL has the same scheme and authority as the requested URI. | `getContainer-private-unauthorized` | *Not judged: untried here.* The session serves everything from one origin, so none of its 401s names protected resource metadata elsewhere for a client to refuse. Servers are judged on it by `getContainer-private-unauthorized`. |
 | `lws10-core/authz-client-storage-root-same-origin` | MUST | Server | The client obtains the storage description of the storage the Link header names, whose StorageRoot serviceEndpoint has the same scheme and authority as the requested URI. | `storage-root-same-origin` | `client-token-after-discovery-checks` |
 | `lws10-core/authz-token-exchange-resource-param` | MUST | AuthorizationServer | The resource parameter is a required URI that populates aud, and is the URI of the storage that contains the requested resource, as the 401's Link header gave it; requests naming unknown or untrusted storages are rejected. | `authz-token-exchange-invalid-resource`, `authz-token-exchange-missing-resource`, `authz-token-exchange-valid` | `client-token-exchange-resource` |

@@ -263,7 +263,7 @@ that no test creates.
 
 ### 9. It is larger and current
 
-There are 219 tests against 27 (101 in format 0.2.0), and the 27 counterparts follow the 9
+There are 220 tests against 27 (101 in format 0.2.0), and the 27 counterparts follow the 9
 November 2026 draft:
 - DELETE answers 204, where lws-test-suite expects 200;
 - PUT may answer 200 or 204;

@@ -216,7 +216,7 @@ provides both.
 
 `./mvnw verify` runs the loop in `DefinitionsSelfTest`:
 
-- against the secured deployment, all 219 definitions run, and every one passes except three
+- against the secured deployment, all 220 definitions run, and every one passes except three
   that are inapplicable: the single-page pagination test, because the reference splits that
   container into pages, and the two move tests for a storage that moves less than the
   reference, which moves data resources and containers and keeps their URIs;

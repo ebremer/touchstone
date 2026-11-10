@@ -217,6 +217,110 @@ entries:
                 - pointer: /serviceEndpoint
                   sameOrigin: "${test.container}"
 
+  - id: "#notification-service-challenge"
+    type: ValidationTest
+    name: notification-service-challenge
+    label: A subscription without a token is challenged with the notification service's own protected resource metadata
+    comment: >-
+      The notification service endpoint is a protected resource like any other, and it may lie
+      outside every storage, so a client subscribes there without a token. The 401's challenge
+      names the protected resource metadata "of the requested resource", whose resource "MUST be
+      identical to the requested URI" (RFC 9728 section 3.3): the endpoint, not the topic. The
+      response links to a storage, and an access token for the storage then subscribes. Which
+      storage the core does not say for an endpoint that serves several; the test asks only that
+      a token for the storage linked works. A server that names the topic's metadata instead
+      leaves every client that checks the resource unable to subscribe (D-0113).
+    status: Proposed
+    level: MUST
+    source:
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#protected-resource-metadata
+      - https://www.w3.org/TR/2026/WD-lws10-core-20261109/#authorization-discovery-validation
+      - https://www.rfc-editor.org/rfc/rfc9728#section-3.3
+      - https://w3c.github.io/lws-protocol/lws10-notifications-webhook/#webhook-subscription
+    traits: [Post, Notifications, Authn]
+    requires: [Authentication, ReachableFixtures]
+    requirements:
+      - https://example.org/touchstone/req/lws10-core/authz-401-www-authenticate-challenge
+      - https://example.org/touchstone/req/lws10-core/authz-prm-conforms-rfc9728
+      - https://example.org/touchstone/req/lws10-core/authz-prm-authorization-servers
+      - https://example.org/touchstone/req/lws10-core/authz-client-prm-resource-matches
+      - https://example.org/touchstone/req/lws10-core/authz-401-storage-link
+    steps:
+      - label: the storage offers webhook subscriptions (otherwise this test does not apply)
+        precondition: true
+        request:
+          method: GET
+          url: "${storage}"
+          accept: application/lws+cid
+        response:
+          statusCode: 200
+          json:
+            - pointer: /service
+              some:
+                - pointer: /type
+                  hasValue: NotificationService
+                - pointer: /subscriptionType
+                  hasValue: WebhookSubscription
+      - label: a subscription without a token is challenged, with a link to a storage
+        as: anonymous
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: 401
+          authenticationChallenge:
+            wwwAuthenticate: Bearer
+            params:
+              - paramName: resource_metadata
+                capture: metadata
+          linkHeaders:
+            - rel: https://www.w3.org/ns/lws#storage
+              capture: linked
+      - label: the protected resource metadata names the notification service endpoint and an authorization server
+        request:
+          method: GET
+          url: "${metadata}"
+          accept: application/json
+        response:
+          statusCode: 200
+          contentType: application/json
+          json:
+            - pointer: /resource
+              equals: "${service.NotificationService}"
+            - pointer: /authorization_servers
+              jsonType: array
+            - pointer: /authorization_servers/0
+              jsonType: string
+              matches: '^https?://'
+      - label: with an access token for the storage, the same subscription is accepted
+        request:
+          method: POST
+          url: "${service.NotificationService}"
+          contentType: application/lws+json
+          bodyJSON:
+            "@context": ["https://www.w3.org/ns/lws/v1"]
+            type: WebhookSubscription
+            topic: ["${test.container}"]
+            inbox: "${test.inbox}"
+        response:
+          statusCode: "2xx"
+          json:
+            - pointer: /subscription
+              jsonType: string
+              capture: subscription
+      - label: cancel the subscription (tidying up, not judged)
+        request:
+          method: DELETE
+          url: "${subscription}"
+        response:
+          statusCode: ["2xx", "4xx"]
+
   - id: "#getContainer-authenticated-owner"
     type: ValidationTest
     name: getContainer-authenticated-owner
