@@ -63,7 +63,7 @@ more appropriate". A note adds that creating several container levels in one req
 
 ## 2026-10-29 — Factoidal's client, driven (D-0109)
 
-`driver/adapters/factoidal` drives `@factoidal/core` 0.34.0 (0.26.0 until D-0112, 0.18.0 until D-0110): 52 of 53
+`driver/adapters/factoidal` drives `@factoidal/core` 0.35.1 (0.34.0 until D-0114, 0.26.0 until D-0112, 0.18.0 until D-0110): 52 of 53
 rules pass, none fail.
 
 - [x] **Factoidal's next release.** Its main branch, past 0.18.0, takes `subscribe`'s endpoint

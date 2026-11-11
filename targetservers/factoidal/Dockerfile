@@ -5,13 +5,13 @@
 # default mode). See ../README.md for the contract and entrypoint.sh for the settings. Adapted from factoidal-core's own
 # deploy/lws-target.
 #
-# The source is the published package @factoidal/core at FACTOIDAL_VERSION (0.34.0, published 2026-11-08 with no git
+# The source is the published package @factoidal/core at FACTOIDAL_VERSION (0.35.1, published 2026-11-11 with no git
 # tag: factoidal-core's newest tag is v0.31.1; `lws-serve --authz` is in 0.18.0 and later), checked against
 # FACTOIDAL_INTEGRITY, the registry's dist.integrity. To build a local checkout instead (factoidal-core's npm/factoidal, after its wasm build):
 #   docker build --build-context source=/path/to/factoidal-core/npm/factoidal targetservers/factoidal
 
-ARG FACTOIDAL_VERSION=0.34.0
-ARG FACTOIDAL_INTEGRITY=sha512-G33Fi00NTpx4EOT67obm5Q2jzUDNkShxiA5KeH/dgASc95C4Ro5BIP8kBvcpPvhL3lD4wSJP7Yk36RcO43ZOqA==
+ARG FACTOIDAL_VERSION=0.35.1
+ARG FACTOIDAL_INTEGRITY=sha512-aBtWcRphD7jgt8fO8JvGfh3pS4RuQrICmS49n8Ci/kZ806Xwft2XpzmJBz+aUcT+FIDruRI7UexmQGfjB3NcbA==
 
 # ---- source: the package, unpacked ----
 FROM node:24.21.0-trixie-slim AS fetch

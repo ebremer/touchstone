@@ -5072,3 +5072,29 @@ the stdio server to start while another build loaded the machine (load average 2
 
 Drafted by an agent on branch `tests/notification-endpoint-challenge`; Erich asked for it to be merged into `master`
 (2026-11-10), as it stands: MUST, and the linked storage not checked.
+
+### D-0114 — the servers and clients Touchstone tests, at their latest versions (11 November)
+2026-11-11. Erich asked again for every server and client Touchstone tests to be at its latest version, for
+Touchstone to be deployed again, and for every run and page to be renewed. Each pin against its upstream that
+morning, from D-0112's (the two pin commits between, `2496463` and `20b5d58`, are included):
+
+| Implementation | D-0112 | Now |
+|---|---|---|
+| Halcyon (`next`) | `9dddc0a` | `40f74b6` (`e99bede` in `2496463`): controlled identifier documents cached, and a 503 when one cannot be fetched (the late-run 401s of `docker-halcyon`); an anonymous subscription answered with a 401 and the challenge, not a 403 (D-0113's test) |
+| lws-server (`master`) | `97e8ace` | unchanged |
+| sparq-lws-core (`main`) | `8fde60b` (v0.1.8) | `c5d9b03` (no tag; v0.1.8 is still the newest): each 401 names the protected resource metadata of the resource asked for, at every path and service endpoint; a change of `up` without a described `MoveResource` refused with 409; no 503 from a listing under churn |
+| Community Solid Server | PR #126, `6d7e9df` | PR #126, `ed404e9` (`904e0c5` in `2496463`): the subscription endpoint's 401 names the endpoint's own metadata; a GET, HEAD or DELETE of a subscription without a token is a 401 challenge, not a 404 |
+| lws-drupal (`main`) | `41d3ff8` | unchanged |
+| lws-client, in lws-drupal and the clients image | `4d4d562` | unchanged |
+| lwsd | `v0.0.7`, `c7fb260` | unchanged: still its newest tag |
+| Factoidal, server and client | 0.34.0 | 0.35.1 (published 2026-11-11 with no git tag; the newest tag is still `v0.31.1`) |
+
+**Factoidal 0.35.1, nothing to change in the target.** 0.35.0 and 0.35.1 are mostly Foafnaut, its JavaScript engine
+and XMPP. For LWS only the client changed: `verifyNotification` derives the RFC 9421 `@query` component from the
+inbox URL, where it looked `@query` up as a header field and refused every notification that covered it. That was
+the one failing interop cell, Factoidal's client against sparq-lws-core, whose deliveries cover `@query`.
+`lws-serve` takes the same options as 0.34.0's, `--delivery-dest-limit` among them, and the adapter the same
+module.
+
+The targets `css` and `sparq-lws` are rebuilt on vulcan; `factoidal` runs where `run-all.sh` runs it. No
+definition changes: the runs use D-0113's 220 tests and the 53 client rules.

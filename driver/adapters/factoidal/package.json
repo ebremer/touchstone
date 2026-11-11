@@ -8,6 +8,6 @@
     "node": ">=22.12"
   },
   "dependencies": {
-    "@factoidal/core": "0.34.0"
+    "@factoidal/core": "0.35.1"
   }
 }
