@@ -33,8 +33,8 @@ touchstone drive --client factoidal
 `FACTOIDAL_CLIENT_MODULE` names another copy of `lws/client.mjs`, a local build of Factoidal's
 `npm/factoidal` for one; the version in the hello is read from the `package.json` above it.
 
-Results on 2026-11-09, with 0.34.0, against the local client-session service (the same as 0.26.0's on 2026-10-29
-and 0.18.0's):
+Results on 2026-11-11, with 0.35.1, against the local client-session service (the same as 0.34.0's on 2026-11-09,
+0.26.0's on 2026-10-29 and 0.18.0's):
 - `touchstone driver check`: 34 of 34;
 - `touchstone drive --client factoidal`: 52 rules passed, none failed, one untested,
   `client-query-baseline-after-415`, which has no drive (a client that sends only the baseline

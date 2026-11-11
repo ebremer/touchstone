@@ -143,11 +143,12 @@ lets clients move resources between containers. On branch `spec/wd-2026-10-19`.
   `/.well-known/oauth-protected-resource/touchstone/clients/` to the service, as it
   forwards `/.well-known/lws-configuration/touchstone/clients/`, before sessions of this version
   can hand out tokens there. → **Done.**
-- [ ] **Target servers:** the Community Solid Server follows the draft since PR #126's `6d7e9df` (D-0112: 160/0/59,
+- [x] **Target servers:** the Community Solid Server follows the draft since PR #126's `6d7e9df` (D-0112: 160/0/59,
   conformant; it answered with `as_uri` and `realm` until then). Every target sends the RFC 9728 challenge.
-  sparq-lws-core (`main`, `8fde60b`, v0.1.8) still fails two metadata tests (the metadata its 401 names is the
+  sparq-lws-core (`main`, `8fde60b`, v0.1.8) failed two metadata tests (the metadata its 401 named was the
   storage's, never the resource's that was asked for) and two move tests (an `up` change accepted without
-  `MoveResource`).
+  `MoveResource`), and D-0113's test. → **Done (D-0114):** `c5d9b03` passes them all (206/0/14), so every
+  target is conformant.
 - [ ] **Later, if wanted:** a reference variant that does not preserve identifiers, so that
   `move-new-identifier-response` (200, the new anchor, `Content-Location`, 301 at the old URI) can
   be tested and validated.

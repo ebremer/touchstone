@@ -5098,3 +5098,16 @@ module.
 
 The targets `css` and `sparq-lws` are rebuilt on vulcan; `factoidal` runs where `run-all.sh` runs it. No
 definition changes: the runs use D-0113's 220 tests and the 53 client rules.
+
+- *Deployed* (2026-11-11): Touchstone `3890870` on vulcan (`deploy-touchstone.sh`) and ebremer.com, harness,
+  definitions and catalog unchanged since D-0113; vulcan's css and sparq-lws rebuilt (`deploy-targetservers.sh css
+  sparq-lws`, deploy repository; 238 s, the interop set with them). Every target run, all **conformant**:
+  docker-halcyon `41ce8fc0` 203/0/17, docker-lws-server `91e888c2` 205/0/15, docker-sparq-lws `9cb1caca` 206/0/14
+  (its five failures gone), docker-css `c1a4fc40` 161/0/59, docker-lws-drupal `0bd9fa6a` 209/0/11, docker-lwsd
+  `a1a3b308` 208/0/12, and Factoidal 0.35.1 `3b0f06ee` 211/0/9 (`run-all.sh`, on Erich's PC). The docker-* runs
+  share the fixture port 18110, so `touchstone.sh` runs them one at a time. `touchstone drive` of all twelve
+  clients: 52/0/1 each; `touchstone driver check` of the Factoidal adapter: 34 of 34. `interop-all.sh` (local,
+  the new target images and a clients image of `4d4d562`): **84 of 84**, where it was 72. The Community Solid
+  Server now challenges an unsubscribe without a token, and Factoidal's client verifies sparq-lws-core's
+  deliveries. The conformance pages (`/lws/conformance` revision 747, `/lws/conformance/clients` 745,
+  `/lws/interop` 746) show these runs.
